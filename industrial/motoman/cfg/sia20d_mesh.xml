@@ -10,6 +10,14 @@
 				<color rgba="0 0 1 1"/>
 			</material>
 		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_BASE.stl" />
+			</geometry>
+			<material name="blue">
+				<color rgba="0 0 1 1"/>
+			</material>
+		</collision>
 	</link>
 	<link name="link_s">
 		<visual>
@@ -20,16 +28,28 @@
 				<color rgba="0.8 0.8 0.8 1"/>
 			</material>
 		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_S.stl" />
+			</geometry>
+			<material name="silver">
+				<color rgba="0.8 0.8 0.8 1"/>
+			</material>
+		</collision>
 	</link>
 	<link name="link_l">
 		<visual>
 			<geometry>
 				<mesh filename="package://motoman/meshes/sia20d/visual/MOTOMAN_AXIS_L.stl"/>
 			</geometry>
-			<material name="blue">
-				<color rgba="0 0 1 1"/>
-			</material>
+			<material name="blue"/>
 		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_L.stl"/>
+			</geometry>
+			<material name="blue"/>
+		</collision>
 	</link>
 	<link name="link_e">
 		<visual>
@@ -38,6 +58,12 @@
 			</geometry>
 			<material name="silver"/>
 		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_E.stl"/>
+			</geometry>
+			<material name="silver"/>
+		</collision>
 	</link>
 	<link name="link_u">
 		<visual>
@@ -46,6 +72,12 @@
 			</geometry>
 			<material name="blue"/>
 		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_U.stl"/>
+			</geometry>
+			<material name="blue"/>
+		</collision>
 	</link>
 	<link name="link_r">
 		<visual>
@@ -54,6 +86,12 @@
 			</geometry>
 			<material name="silver"/>
 		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_R.stl"/>
+			</geometry>
+			<material name="silver"/>
+		</collision>
 	</link>
 	<link name="link_b">
 		<visual>
@@ -62,6 +100,12 @@
 			</geometry>
 			<material name="blue"/>
 		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_B.stl"/>
+			</geometry>
+			<material name="blue"/>
+		</collision>
 	</link>
 	<link name="link_t">
 		<visual>
@@ -70,6 +114,12 @@
 			</geometry>
 			<material name="silver"/>
 		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_T.stl" />
+			</geometry>
+			<material name="silver"/>
+		</collision>
 	</link>	
 	<!-- end of link list -->
 	<!-- joint list -->
