@@ -30,35 +30,83 @@
 */ 
 
 
-#ifndef __moto_socket_h
-#define __moto_socket_h
+#ifndef UDP_SOCKET_H
+#define UDP_SOCKET_H
 
-#include "ros/ros.h"
-#include "utils.h"
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <string.h>
-#include <iostream>
-#include <unistd.h>
-#include <fcntl.h>
+#include "sys/socket.h"
+#include "arpa/inet.h"
+#include "string.h"
+#include "smpl_msg_connection.h"
 
-class MotoSocket
-// Class for UDP socket object, used to communicate with motoros_server on MotoPlus
+#include "unistd.h"
+//#include "fcntl.h"
+
+namespace industrial
+{
+namespace udp_socket
+{
+
+class UdpSocket : industrial::smpl_msg_connection::SmplMsgConnection
 {
   public:
-    MotoSocket(char* buff, unsigned short port_num);
-    ~MotoSocket();
-    int sendData(char* buff, int data_length, bool is_blocking);
-    int sendMessage(int send_message[], bool is_blocking);
-    int sendMessage(int p0, int p1, int p2, int p3, int p4, int p5, int p6, int p7, int p8, int p9, int p10, bool is_blocking);
-    int recvData(char* buff, bool is_blocking);
-    int recvMessage(int recv_message[], bool is_blocking);
 
-  protected:
-    int sock_handle;
-    sockaddr_in server_sockaddr, client_sockaddr;
-    in_addr_t serveraddr;
-    socklen_t sizeof_sockaddr;
+
+  UdpSocket();
+    ~UdpSocket();
+
+    /**
+       * \brief initializes UDP server socket.  Object can either be a client OR
+       * a server, NOT BOTH.
+       *
+       * \param port_num port number (server & client port number must match)
+       *
+       * \return true on success, false otherwise (socket is invalid)
+       */
+    bool initServer(int port_num);
+
+    /**
+       * \brief initializes UDP client socket.  Object can either be a client OR
+       * a server, NOT BOTH.
+       *
+       * \param buff server address (in string form) xxx.xxx.xxx.xxx
+       * \param port_num port number (server & client port number must match)
+       *
+       * \return true on success, false otherwise (socket is invalid)
+       */
+    bool initClient(char *buff, int port_num);
+
+    // Virtual
+    bool send(industrial::byte_array::ByteArray & buffer);
+    bool receive(industrial::byte_array::ByteArray & buffer, size_t num_bytes);
+
+  
+
+  private:
+    int sock_handle_;
+    sockaddr_in sockaddr_;
+
+    static const int SOCKET_FAIL = -1;
+    static const int MAX_BUFFER_SIZE = 1024;
+
+    /**
+       * \brief internal data buffer for receiving
+       */
+      char buffer_[MAX_BUFFER_SIZE + 1];
+
+
+      // Override
+      // receive is overridden because the base class implementation assumed
+      // socket data could be read partially.  UDP socket data is lost when
+      // only a portion of it is read.  For that reason this receive method
+      // reads the entire data stream (assumed to be a single message).
+      bool receiveAllMsgs(industrial::simple_message::SimpleMessage & message);
+
+    int getSockHandle() const{ return sock_handle_;}
+    void setSockHandle(int sock_handle_){ this->sock_handle_ = sock_handle_;}
 };
+
+
+}//udp_socket
+}//industrial
 
 #endif

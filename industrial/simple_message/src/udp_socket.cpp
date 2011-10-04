@@ -29,125 +29,225 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-// ROS-side UDP Socket for ROS-MotoPlus communication
 
-#include "moto_socket.h"
+#include "udp_socket.h"
+#include "smpl_msg_connection.h"
+#include "log_wrapper.h"
+#include "simple_message.h"
 
-using utils::arrayIntToChar;
-using utils::arrayCharToInt;
+using namespace industrial::smpl_msg_connection;
+using namespace industrial::byte_array;
+using namespace industrial::simple_message;
 
-MotoSocket::MotoSocket(char* buff, unsigned short port_num)
+namespace industrial
+{
+namespace udp_socket
+{
+
+UdpSocket::UdpSocket()
 // Constructor for UDP socket object
 // Creates and binds UDP socket
 {
-  timeval tv;
-  tv.tv_sec = 10; // timeout in seconds
-  tv.tv_usec = 0;
-  sock_handle = -1;
-  int rc;
+  this->setSockHandle(this->SOCKET_FAIL);
+  memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
 
-  sock_handle = socket(AF_INET, SOCK_DGRAM, 0);
+  }
 
-  memset(&server_sockaddr, 0, sizeof(server_sockaddr));
-  server_sockaddr.sin_family = AF_INET;
-  serveraddr = inet_addr(buff);
-  server_sockaddr.sin_addr.s_addr = serveraddr;
-  server_sockaddr.sin_port = htons(port_num);
-
-  sizeof_sockaddr = sizeof(server_sockaddr);
-
-  //setsockopt(sock_handle, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-  //setsockopt(sock_handle, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-  fcntl(sock_handle, F_SETFL, O_NONBLOCK);
-  
-  memset(&client_sockaddr, 0, sizeof(client_sockaddr));
-  client_sockaddr.sin_family = AF_INET;
-  client_sockaddr.sin_addr.s_addr = INADDR_ANY;
-  client_sockaddr.sin_port = htons(port_num);
-
-  rc = bind(sock_handle, (sockaddr *)&client_sockaddr, sizeof(client_sockaddr));
-}
-
-MotoSocket::~MotoSocket()
+UdpSocket::~UdpSocket()
 // Destructor for UDP socket object
 // Closes socket
 {
-  close(sock_handle);
+  close(this->getSockHandle());
 }
 
-int MotoSocket::sendData(char* buff, int data_length, bool is_blocking)
-// Sends data to socket; returns number of bytes sent or error
+bool UdpSocket::initServer(int port_num)
 {
-  int result = -1;
-  if (is_blocking)
+  int rc;
+  bool rtn;
+
+  /* Create a socket using:
+   * AF_INET - IPv4 internet protocol
+   * SOCK_DGRAM - UDP type
+   * protocol (0) - System chooses
+   */
+  rc = socket(AF_INET, SOCK_DGRAM, 0);
+  if (this->SOCKET_FAIL != rc)
   {
-    while (ros::ok()) // Allow node to be killed by ROS while blocking
+    this->setSockHandle(rc);
+
+    // Initialize address data structure
+    this->sockaddr_.sin_family = AF_INET;
+    this->sockaddr_.sin_addr.s_addr = INADDR_ANY;
+    this->sockaddr_.sin_port = htons(port_num);
+
+    // This set the socket to be non-blocking (NOT SURE I WANT THIS) - sme
+    //fcntl(sock_handle, F_SETFL, O_NONBLOCK);
+
+    rc = bind(this->getSockHandle(), (sockaddr *)&this->sockaddr_, sizeof(&this->sockaddr_));
+
+    if (this->SOCKET_FAIL != rc)
     {
-      result = sendto(sock_handle, buff, data_length, 0, (sockaddr *)&server_sockaddr, sizeof(server_sockaddr));
-      if (result >= 0)
-        break;
+      rtn = true;
+    }
+    else
+    {
+      LOG_ERROR("Failed to bind socket, rc: %u", rc);
+      close(this->getSockHandle());
+      rtn = false;
     }
   }
   else
-    result = sendto(sock_handle, buff, data_length, 0, (sockaddr *)&server_sockaddr, sizeof(server_sockaddr));
-  return result;
-}
-
-int MotoSocket::sendMessage(int send_message[], bool is_blocking)
-// Sends message to socket; returns number of bytes sent or error
-{
-  char raw_message[44];
-  arrayIntToChar(send_message, raw_message, sizeof(raw_message));
-  return sendData(raw_message, sizeof(raw_message), is_blocking);
-}
-
-int MotoSocket::sendMessage(int p0, int p1, int p2, int p3, int p4, int p5, int p6, int p7, int p8, int p9, int p10, bool is_blocking)
-// Sends message to socket; returns number of bytes sent or error
-{
-  int send_message[11];
-  char raw_message[44];
-
-  send_message[0] = p0;
-  send_message[1] = p1;
-  send_message[2] = p2;
-  send_message[3] = p3;
-  send_message[4] = p4;
-  send_message[5] = p5;
-  send_message[6] = p6;
-  send_message[7] = p7;
-  send_message[8] = p8;
-  send_message[9] = p9;
-  send_message[10] = p10;
-
-  arrayIntToChar(send_message, raw_message, sizeof(raw_message));
-  return sendData(raw_message, sizeof(raw_message), is_blocking);
-}
-
-int MotoSocket::recvData(char* buff, bool is_blocking)
-// Receives data from socket; returns number of bytes received or error
-{
-  int result = -1;
-  if (is_blocking)
   {
-    while (ros::ok()) // Allow node to be killed by ROS while blocking
+    LOG_ERROR("Failed to create socket, rc: %u", rc);
+    rtn = false;
+  }
+  return rtn;
+}
+
+bool UdpSocket::initClient(char *buff, int port_num)
+{
+
+  int rc;
+  bool rtn;
+
+  /* Create a socket using:
+     * AF_INET - IPv4 internet protocol
+     * SOCK_DGRAM - UDP type
+     * protocol (0) - System chooses
+     */
+    rc = socket(AF_INET, SOCK_DGRAM, 0);
+    if (this->SOCKET_FAIL != rc)
     {
-      result = recvfrom(sock_handle, buff, 1024, 0, (sockaddr *)&server_sockaddr, &sizeof_sockaddr);
-      if (result >= 0)
-        break;
+      this->setSockHandle(rc);
+
+      // Initialize address data structure
+      this->sockaddr_.sin_family = AF_INET;
+      this->sockaddr_.sin_addr.s_addr = inet_addr(buff);
+      this->sockaddr_.sin_port = htons(port_num);
+
+    }
+    else
+    {
+      LOG_ERROR("Failed to create socket, rc: %u", rc);
+      rtn = false;
+    }
+    return rtn;
+}
+
+
+
+bool UdpSocket::receiveAllMsgs(SimpleMessage & message)
+{
+  ByteArray msgBuffer;
+
+  bool rtn = false;
+
+  rtn = this->receive(msgBuffer, 0);
+
+  if (rtn)
+  {
+    rtn = message.init(msgBuffer);
+
+    if (rtn)
+    {
+      rtn = true;
+    }
+    else
+    {
+      LOG_ERROR("Failed to initialize message");
+      rtn = false;
+    }
+
+  }
+  else
+  {
+    LOG_ERROR("Failed to receive message");
+    rtn = false;
+  }
+
+  return rtn;
+}
+
+
+
+
+bool UdpSocket::send(ByteArray & buffer)
+{
+  int rc = this->SOCKET_FAIL;
+  bool rtn = false;
+
+  // Nothing restricts the ByteArray from being larger than the what the socket
+  // can handle.
+  if (this->MAX_BUFFER_SIZE > buffer.getBufferSize())
+  {
+    rc = sendto(this->getSockHandle(), buffer.getRawDataPtr(),
+                    buffer.getBufferSize(), 0, (sockaddr *)&this->sockaddr_,
+                    sizeof(this->sockaddr_));
+    if (this->SOCKET_FAIL != rc)
+    {
+      rtn = true;
+    }
+    else
+    {
+      LOG_ERROR("Socket send failed, rc: %u", rc);
     }
   }
   else
-    result = recvfrom(sock_handle, buff, 1024, 0, (sockaddr *)&server_sockaddr, &sizeof_sockaddr);
-  return result;
+  {
+    LOG_ERROR("Buffer size: %u, is greater than max socket size: %u",
+              buffer.getBufferSize(), this->MAX_BUFFER_SIZE);
+    rtn = false;
+  }
+
+
+  return rtn;
 }
 
-int MotoSocket::recvMessage(int recv_message[], bool is_blocking)
-// Receives message from socket; returns number of bytes received or error
+
+
+bool UdpSocket::receive(ByteArray & buffer, size_t num_bytes)
 {
-  int result = -1;
-  char raw_message[44];
-  result = recvData(raw_message, is_blocking);
-  if (result > 0)
-    arrayCharToInt(raw_message, recv_message, sizeof(raw_message));
-  return result;
+  int rc = this->SOCKET_FAIL;
+  bool rtn = false;
+  socklen_t addrSize = 0;
+
+
+  // Reset the buffer (this is not required since the buffer length should
+  // ensure that we don't read any of the garbage that may be left over from
+  // a previous read), but it is good practice.
+
+  memset(&this->buffer_, 0, sizeof(this->buffer_));
+
+  // Doing a sanity check to determine if the byte array buffer is larger than
+  // what can be sent in the socket.  This should not happen and might be indicative
+  // of some code synchronization issues between the client and server base.
+  if (this->MAX_BUFFER_SIZE < buffer.getMaxBufferSize())
+    {
+    LOG_WARN("Socket buffer max size: %u, is larger than byte array buffer: %u",
+                this->MAX_BUFFER_SIZE, buffer.getMaxBufferSize());
+    }
+
+  addrSize = sizeof(this->sockaddr_);
+
+  rc = recvfrom(this->getSockHandle(), &this->buffer_, this->MAX_BUFFER_SIZE,
+                0, (sockaddr *)&this->sockaddr_, (socklen_t*)&addrSize);
+
+  if (this->SOCKET_FAIL != rc)
+  {
+
+    buffer.init(&this->buffer_[0], rc);
+    rtn = true;
+  }
+  else
+  {
+    LOG_ERROR("Socket receive failed, rc: %u", rc);
+    rtn = false;
+  }
+     return rtn;
 }
+
+
+
+
+}//udp_socket
+}//industrial

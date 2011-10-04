@@ -108,7 +108,7 @@ class SimpleMessage
    * to this requirement is that the protocol should not be so onerous as to overwhelm
    * the limited resources of the robot controller
    *
-   * 2. Format should allow for data string (ROS topic like)
+   * 2. Format should allow for data streaming (ROS topic like)
    *
    * 3. Format should allow for data reply (ROS service like)
    *

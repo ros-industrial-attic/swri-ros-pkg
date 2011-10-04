@@ -26,7 +26,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #					src/simple_message.cpp)
 rosbuild_add_library(simple_message src/byte_array.cpp
 					src/simple_message.cpp
-					src/smpl_msg_connection.cpp)
+					src/smpl_msg_connection.cpp
+					src/udp_socket.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
