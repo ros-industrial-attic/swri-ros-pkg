@@ -55,11 +55,19 @@ public:
 
   // Message
   bool send(industrial::simple_message::SimpleMessage & message);
+
+  // Do not override receive, it has logic to automatically respond to pings.  Enabling
+  // this at a low level is important.  It ensures ping logic is robust and not subject
+  // to programmer induced bugs.
   bool receive(industrial::simple_message::SimpleMessage & message);
   bool sendAndReceive(industrial::simple_message::SimpleMessage & send,
                       industrial::simple_message::SimpleMessage & recv);
 
 private:
+
+
+  // If you must override receive, then override this one.
+  bool receiveAllMsgs(industrial::simple_message::SimpleMessage & message);
 
 };
 

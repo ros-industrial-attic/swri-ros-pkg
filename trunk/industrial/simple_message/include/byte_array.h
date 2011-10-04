@@ -280,15 +280,24 @@ public:
      */
   unsigned int getBufferSize();
 
+  /**
+       * \brief gets current buffer size
+       *
+       * \return buffer size
+       */
+    unsigned int getMaxBufferSize();
+
 
 private:
   /**
    * \brief maximum array size (WARNING: THIS VALUE SHOULD NOT EXCEED THE MAX
    * 32-BIT INTEGER SIZE)
    *
-   * The byte array class uses shared 32-bit types.
+   * The byte array class uses shared 32-bit types, so the buffer size cannot
+   * be larger than this.  Ideally this value would be relatively small as passing
+   * large amounts of data is not desired.
    */
-  static const industrial::shared_types::shared_int MAX_SIZE = 256;
+  static const industrial::shared_types::shared_int MAX_SIZE = 255;
 
   /**
    * \brief internal data buffer
@@ -298,7 +307,7 @@ private:
   /**
    * \brief current buffer size
    */
-  size_t buffer_size_;
+  industrial::shared_types::shared_int buffer_size_;
 
 
 
@@ -309,7 +318,7 @@ private:
    *
    * \return true on success, false otherwise (new size is too large)
    */
-  bool setBufferSize(const size_t size);
+  bool setBufferSize(const industrial::shared_types::shared_int size);
 
   /**
    * \brief extends current buffer size
@@ -318,7 +327,7 @@ private:
    *
    * \return true on success, false otherwise (new size is too large)
    */
-  bool extendBufferSize(const size_t size);
+  bool extendBufferSize(const industrial::shared_types::shared_int size);
 
   /**
    * \brief shortens current buffer size
@@ -327,7 +336,7 @@ private:
    *
    * \return true on success, false otherwise (new size is less than 0)
    */
-  bool shortenBufferSize(size_t size);
+  bool shortenBufferSize(industrial::shared_types::shared_int size);
 
   /**
    * \brief gets pointer to unload location (buffer_size + 1)
@@ -346,7 +355,7 @@ private:
    *
    * \return pointer to load location (NULL is num_bytes > buffer_size_)
    */
-  char* getUnloadPtr(const size_t num_bytes);
+  char* getUnloadPtr(const industrial::shared_types::shared_int num_bytes);
 
 };
 

@@ -261,7 +261,14 @@ unsigned int ByteArray::getBufferSize()
   return this->buffer_size_;
 }
 
-bool ByteArray::setBufferSize(size_t size)
+
+unsigned int ByteArray::getMaxBufferSize()
+{
+  return this->MAX_SIZE;
+}
+
+
+bool ByteArray::setBufferSize(shared_int size)
 {
   bool rtn;
 
@@ -280,7 +287,7 @@ bool ByteArray::setBufferSize(size_t size)
 
 }
 
-bool ByteArray::extendBufferSize(size_t size)
+bool ByteArray::extendBufferSize(shared_int size)
 {
   unsigned int newSize;
 
@@ -289,7 +296,7 @@ bool ByteArray::extendBufferSize(size_t size)
 
 }
 
-bool ByteArray::shortenBufferSize(size_t size)
+bool ByteArray::shortenBufferSize(shared_int size)
 {
   unsigned int newSize;
   bool rtn;
@@ -319,7 +326,7 @@ char* ByteArray::getLoadPtr()
   return &this->buffer_[this->buffer_size_];
 }
 
-char* ByteArray::getUnloadPtr(size_t byteSize)
+char* ByteArray::getUnloadPtr(shared_int byteSize)
 {
   char* rtn;
 

@@ -72,7 +72,7 @@ return rtn;
 }
 
 
-bool SmplMsgConnection::receive(SimpleMessage & message)
+bool SmplMsgConnection::receiveAllMsgs(SimpleMessage & message)
 {
   ByteArray lengthBuffer;
   ByteArray msgBuffer;
@@ -112,6 +112,29 @@ bool SmplMsgConnection::receive(SimpleMessage & message)
   {
     LOG_ERROR("Failed to receive message length");
     rtn = false;
+  }
+
+  return rtn;
+}
+
+bool SmplMsgConnection::receive(SimpleMessage & message)
+{
+
+  bool rtn = false;
+
+  rtn = this->receiveAllMsgs(message);
+
+  if (rtn)
+  {
+    if(StandardMsgTypes::PING == message.getMessageType())
+    {
+      this->send(message);
+      rtn = false;
+    }
+    else
+    {
+      rtn = true;
+    }
   }
 
   return rtn;
