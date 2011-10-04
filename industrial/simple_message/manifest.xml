@@ -1,0 +1,14 @@
+<package>
+  <description brief="simple_message">
+
+     simple_message
+
+  </description>
+  <author>Shaun Edwards</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/simple_message</url>
+
+</package>
+
+
