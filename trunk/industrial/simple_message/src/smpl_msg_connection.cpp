@@ -52,7 +52,7 @@ SmplMsgConnection::~SmplMsgConnection()
 }
 
 
-bool SmplMsgConnection::send(SimpleMessage & message)
+bool SmplMsgConnection::sendMsg(SimpleMessage & message)
 {
   bool rtn;
   ByteArray msgData;
@@ -117,36 +117,49 @@ bool SmplMsgConnection::receiveAllMsgs(SimpleMessage & message)
   return rtn;
 }
 
-bool SmplMsgConnection::receive(SimpleMessage & message)
+bool SmplMsgConnection::receiveMsg(SimpleMessage & message)
 {
 
   bool rtn = false;
+  SimpleMessage ping;
 
-  rtn = this->receiveAllMsgs(message);
+  do {
+    rtn = this->receiveAllMsgs(message);
 
-  if (rtn)
-  {
-    if(StandardMsgTypes::PING == message.getMessageType())
+    if (rtn)
     {
-      this->send(message);
-      rtn = false;
+      // Respond to pings immediately (higher level messages
+      // are passed up to the calling function.
+      if(StandardMsgTypes::PING == message.getMessageType())
+      {
+        ping.init(StandardMsgTypes::PING, CommTypes::SERVICE_REPLY,
+                  ReplyTypes::SUCCESS, message.getData());
+
+        this->sendMsg(ping);
+      }
+      else
+      {
+        rtn = true;
+        break;
+      }
     }
     else
     {
-      rtn = true;
+      rtn = false;
+      break;
     }
-  }
+  } while (true);
 
   return rtn;
 }
 
-bool SmplMsgConnection::sendAndReceive(SimpleMessage & send, SimpleMessage & recv)
+bool SmplMsgConnection::sendAndReceiveMsg(SimpleMessage & send, SimpleMessage & recv)
 {	
   bool rtn = false;
-  rtn = this->send(send);
+  rtn = this->sendMsg(send);
   if (rtn)
   {
-    rtn = this->receive(recv);
+    rtn = this->receiveMsg(recv);
   }
   else
   {

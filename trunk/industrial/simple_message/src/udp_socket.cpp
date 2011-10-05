@@ -38,13 +38,14 @@
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::byte_array;
 using namespace industrial::simple_message;
+using namespace industrial::shared_types;
 
 namespace industrial
 {
 namespace udp_socket
 {
 
-UdpSocket::UdpSocket()
+UdpSocket::UdpSocket() : SmplMsgConnection()
 // Constructor for UDP socket object
 // Creates and binds UDP socket
 {
@@ -64,6 +65,7 @@ bool UdpSocket::initServer(int port_num)
 {
   int rc;
   bool rtn;
+  socklen_t addrSize = 0;
 
   /* Create a socket using:
    * AF_INET - IPv4 internet protocol
@@ -74,8 +76,12 @@ bool UdpSocket::initServer(int port_num)
   if (this->SOCKET_FAIL != rc)
   {
     this->setSockHandle(rc);
+    LOG_DEBUG("Socket created, rc: %d", rc);
+    LOG_DEBUG("Socket handle: %d", this->getSockHandle());
+
 
     // Initialize address data structure
+    memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
     this->sockaddr_.sin_family = AF_INET;
     this->sockaddr_.sin_addr.s_addr = INADDR_ANY;
     this->sockaddr_.sin_port = htons(port_num);
@@ -83,22 +89,24 @@ bool UdpSocket::initServer(int port_num)
     // This set the socket to be non-blocking (NOT SURE I WANT THIS) - sme
     //fcntl(sock_handle, F_SETFL, O_NONBLOCK);
 
-    rc = bind(this->getSockHandle(), (sockaddr *)&this->sockaddr_, sizeof(&this->sockaddr_));
+    addrSize = sizeof(this->sockaddr_);
+    rc = bind(this->getSockHandle(), (sockaddr *)&(this->sockaddr_), addrSize);
 
     if (this->SOCKET_FAIL != rc)
     {
       rtn = true;
+      LOG_INFO("Server socket successfully initialized");
     }
     else
     {
-      LOG_ERROR("Failed to bind socket, rc: %u", rc);
+      LOG_ERROR("Failed to bind socket, rc: %d", rc);
       close(this->getSockHandle());
       rtn = false;
     }
   }
   else
   {
-    LOG_ERROR("Failed to create socket, rc: %u", rc);
+    LOG_ERROR("Failed to create socket, rc: %d", rc);
     rtn = false;
   }
   return rtn;
@@ -111,27 +119,30 @@ bool UdpSocket::initClient(char *buff, int port_num)
   bool rtn;
 
   /* Create a socket using:
-     * AF_INET - IPv4 internet protocol
-     * SOCK_DGRAM - UDP type
-     * protocol (0) - System chooses
-     */
-    rc = socket(AF_INET, SOCK_DGRAM, 0);
-    if (this->SOCKET_FAIL != rc)
-    {
-      this->setSockHandle(rc);
+   * AF_INET - IPv4 internet protocol
+   * SOCK_DGRAM - UDP type
+   * protocol (0) - System chooses
+   */
+  rc = socket(AF_INET, SOCK_DGRAM, 0);
+  if (this->SOCKET_FAIL != rc)
+  {
+    this->setSockHandle(rc);
 
-      // Initialize address data structure
-      this->sockaddr_.sin_family = AF_INET;
-      this->sockaddr_.sin_addr.s_addr = inet_addr(buff);
-      this->sockaddr_.sin_port = htons(port_num);
+    // Initialize address data structure
+    memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
+    this->sockaddr_.sin_family = AF_INET;
+    this->sockaddr_.sin_addr.s_addr = inet_addr(buff);
+    this->sockaddr_.sin_port = htons(port_num);
 
-    }
-    else
-    {
-      LOG_ERROR("Failed to create socket, rc: %u", rc);
-      rtn = false;
-    }
-    return rtn;
+    rtn = true;
+
+  }
+  else
+  {
+    LOG_ERROR("Failed to create socket, rc: %d", rc);
+    rtn = false;
+  }
+  return rtn;
 }
 
 
@@ -146,6 +157,7 @@ bool UdpSocket::receiveAllMsgs(SimpleMessage & message)
 
   if (rtn)
   {
+    LOG_DEBUG("Recieve message bytes: %u", msgBuffer.getBufferSize());
     rtn = message.init(msgBuffer);
 
     if (rtn)
@@ -189,7 +201,7 @@ bool UdpSocket::send(ByteArray & buffer)
     }
     else
     {
-      LOG_ERROR("Socket send failed, rc: %u", rc);
+      LOG_ERROR("Socket send failed, rc: %d", rc);
     }
   }
   else
@@ -205,7 +217,7 @@ bool UdpSocket::send(ByteArray & buffer)
 
 
 
-bool UdpSocket::receive(ByteArray & buffer, size_t num_bytes)
+bool UdpSocket::receive(ByteArray & buffer, shared_int num_bytes)
 {
   int rc = this->SOCKET_FAIL;
   bool rtn = false;
@@ -234,13 +246,13 @@ bool UdpSocket::receive(ByteArray & buffer, size_t num_bytes)
 
   if (this->SOCKET_FAIL != rc)
   {
-
+    LOG_DEBUG("Byte array receive, bytes read: %u", rc);
     buffer.init(&this->buffer_[0], rc);
     rtn = true;
   }
   else
   {
-    LOG_ERROR("Socket receive failed, rc: %u", rc);
+    LOG_ERROR("Socket receive failed, rc: %d", rc);
     rtn = false;
   }
      return rtn;
