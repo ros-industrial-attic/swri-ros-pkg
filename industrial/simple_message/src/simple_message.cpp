@@ -65,9 +65,14 @@ bool SimpleMessage::init(ByteArray & msg)
   int dataSize;
   bool rtn;
 
-  if (msg.getBufferSize() > this->getHeaderSize())
+  if (msg.getBufferSize() >= this->getHeaderSize())
   {
-    dataSize = msg.getBufferSize() - this->getHeaderSize();
+    // Check to see if the message is larger than the standard header
+    // If so, copy out the data portion.
+    if (msg.getBufferSize() > this->getHeaderSize())
+    {
+      dataSize = msg.getBufferSize() - this->getHeaderSize();
+    }
     msg.unload(this->data_.getRawDataPtr(), dataSize);
     msg.unload(this->reply_code_);
     msg.unload(this->comm_type_);
@@ -76,6 +81,7 @@ bool SimpleMessage::init(ByteArray & msg)
   }
   else
   {
+    LOG_ERROR("Failed to init message, buffer size too small: %u", msg.getBufferSize());
     rtn = false;
   }
   return rtn;

@@ -34,6 +34,7 @@
 
 #include "byte_array.h"
 #include "simple_message.h"
+#include "shared_types.h"
 
 namespace industrial
 {
@@ -48,26 +49,27 @@ public:
   SmplMsgConnection();
   ~SmplMsgConnection();
 
-
-  // Overrides
-  virtual bool send(industrial::byte_array::ByteArray & buffer);
-  virtual bool receive(industrial::byte_array::ByteArray & buffer, size_t num_bytes);
-
   // Message
-  bool send(industrial::simple_message::SimpleMessage & message);
+  bool sendMsg(industrial::simple_message::SimpleMessage & message);
 
   // Do not override receive, it has logic to automatically respond to pings.  Enabling
   // this at a low level is important.  It ensures ping logic is robust and not subject
-  // to programmer induced bugs.
-  bool receive(industrial::simple_message::SimpleMessage & message);
-  bool sendAndReceive(industrial::simple_message::SimpleMessage & send,
+  // to programmer induced bugs (besides my own).
+  bool receiveMsg(industrial::simple_message::SimpleMessage & message);
+  bool sendAndReceiveMsg(industrial::simple_message::SimpleMessage & send,
                       industrial::simple_message::SimpleMessage & recv);
+
+  // If you must override receive, then override this one.
+  bool receiveAllMsgs(industrial::simple_message::SimpleMessage & message);
 
 private:
 
 
-  // If you must override receive, then override this one.
-  bool receiveAllMsgs(industrial::simple_message::SimpleMessage & message);
+  // Overrides
+  virtual bool send(industrial::byte_array::ByteArray & buffer) =0;
+  virtual bool receive(industrial::byte_array::ByteArray & buffer,
+                       industrial::shared_types::shared_int num_bytes) =0;
+
 
 };
 
