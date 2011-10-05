@@ -59,10 +59,11 @@ ByteArray::~ByteArray(void)
 void ByteArray::init()
 {
   memset(&(buffer_[0]), 0, this->MAX_SIZE);
+  this->setBufferSize(0);
 }
 
 
-bool ByteArray::init(const char* buffer, const size_t byte_size)
+bool ByteArray::init(const char* buffer, const shared_int byte_size)
 {
   bool rtn;
 
@@ -73,6 +74,8 @@ bool ByteArray::init(const char* buffer, const size_t byte_size)
   }
   else
   {
+    LOG_ERROR("Failed to initialize byte array, buffer size: %u greater than max: %u",
+              byte_size, this->getMaxBufferSize());
     rtn = false;
   }
   return rtn;
@@ -137,8 +140,8 @@ bool ByteArray::load(ByteArray &value)
   return this->load(value.getRawDataPtr(), value.getBufferSize());
 }
 
-//bool load(void* value, size_t byte_size);
-bool ByteArray::load(void* value, const size_t byte_size)
+
+bool ByteArray::load(void* value, const shared_int byte_size)
 {
 
   bool rtn;
@@ -196,14 +199,14 @@ bool ByteArray::unload(SimpleSerialize &value)
   return value.unload(this);
 }
 
-bool ByteArray::unload(ByteArray &value, const size_t byte_size)
+bool ByteArray::unload(ByteArray &value, const shared_int byte_size)
 {
   char* unloadPtr = this->getUnloadPtr(byte_size);
   bool rtn;
 
   if ( NULL != unloadPtr)
   {
-    rtn = value.load(unloadPtr, byte_size);
+    rtn = value.unload(unloadPtr, byte_size);
   }
   else
   {
@@ -214,7 +217,7 @@ bool ByteArray::unload(ByteArray &value, const size_t byte_size)
   return rtn;
 }
 
-bool ByteArray::unload(void* value, size_t byteSize)
+bool ByteArray::unload(void* value, shared_int byteSize)
 {
   bool rtn;
   char* unloadPtr;
@@ -279,7 +282,8 @@ bool ByteArray::setBufferSize(shared_int size)
   }
   else
   {
-    LOG_ERROR("Set buffer size larger than MAX");
+    LOG_ERROR("Set buffer size: %u, larger than MAX:, %u",
+              size, this->MAX_SIZE);
     rtn = false;
   }
 
@@ -305,14 +309,15 @@ bool ByteArray::shortenBufferSize(shared_int size)
   // we fail.  This is checked here (as opposed to setBufferSize)
   // because setBufferSize assumes a unsigned argument and therefore
   // wouldn't catch a negative size.
-  if (size > this->getBufferSize())
+  if (size < this->getBufferSize())
   {
     newSize = this->getBufferSize() - size;
     rtn = this->setBufferSize(newSize);
   }
   else
   {
-    LOG_ERROR("Failed to shorten buffer, buffer too small");
+    LOG_ERROR("Failed to shorten buffer by %u bytes, buffer too small, %u bytes",
+              size, this->getBufferSize());
     rtn = false;
   }
 

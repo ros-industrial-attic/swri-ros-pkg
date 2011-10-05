@@ -115,7 +115,7 @@ public:
      *
      * \return true on success, false otherwise (max array size exceeded).
      */
-  bool init(const char* buffer, const size_t byte_size);
+  bool init(const char* buffer, const industrial::shared_types::shared_int byte_size);
 
     /**
       * \brief Deep-Copy
@@ -191,7 +191,7 @@ public:
    * \return true on success, false otherwise (max array size exceeded).
    * Value not loaded
    */
-  bool load(void* value, const size_t byte_size);
+  bool load(void* value, const industrial::shared_types::shared_int byte_size);
 
 
 
@@ -243,7 +243,7 @@ public:
      *
      * \return true on success, false otherwise (array is empty)
      */
-  bool unload(ByteArray &value, const size_t byte_size);
+  bool unload(ByteArray &value, const industrial::shared_types::shared_int byte_size);
 
   /**
    * \brief unloads a void* (treated as char*) from the byte array
@@ -253,7 +253,7 @@ public:
    *
    * \return true on success, false otherwise (array is empty)
    */
-  bool unload(void* value, const size_t byteSize);
+  bool unload(void* value, const industrial::shared_types::shared_int byteSize);
 
 
 

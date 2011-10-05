@@ -177,7 +177,7 @@ private:
 
         void setMessageType(int msgType) {this->message_type_ = msgType;};
         void setCommType(int commType) {this->comm_type_ = commType;};
-        void setReplyCode(int replyCode) {this->comm_type_ = replyCode;};
+        void setReplyCode(int replyCode) {this->reply_code_ = replyCode;};
         void setData(industrial::byte_array::ByteArray & data);
 };
 

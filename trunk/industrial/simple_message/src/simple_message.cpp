@@ -51,6 +51,7 @@ SimpleMessage::~SimpleMessage(void)
 
 bool SimpleMessage::init(int msgType, int commType, int replyCode, ByteArray & data )
 {
+  LOG_DEBUG("SimpleMessage::init(%u, %u, %u, data...)", msgType, commType, replyCode);
   this->setMessageType(msgType);
   this->setCommType(commType);
   this->setReplyCode(replyCode);
