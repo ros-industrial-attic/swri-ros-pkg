@@ -56,19 +56,29 @@ namespace log_wrapper
 
 
 #define LOG_DEBUG(format, ...)  \
-  printf(format, ##__VA_ARGS__)
+  printf("DEBUG: "); \
+  printf(format, ##__VA_ARGS__); \
+  printf("\n")
 
 #define LOG_INFO(format, ...)  \
-    printf(format, ##__VA_ARGS__)
+    printf("INFO: "); \
+    printf(format, ##__VA_ARGS__); \
+    printf("\n")
 
 #define LOG_WARN(format, ...)  \
-    printf(format, ##__VA_ARGS__)
+    printf("WARN: "); \
+    printf(format, ##__VA_ARGS__); \
+    printf("\n")
 
 #define LOG_ERROR(format, ...)  \
-    printf(format, ##__VA_ARGS__)
+    printf("ERROR: "); \
+    printf(format, ##__VA_ARGS__); \
+    printf("\n")
 
 #define LOG_FATAL(format, ...)  \
-    printf(FATAL, ##__VA_ARGS__)
+    printf("FATAL: "); \
+    printf(FATAL, ##__VA_ARGS__); \
+    printf("\n")
 
 #endif //SIMP_LOGGER
 
@@ -99,19 +109,29 @@ namespace log_wrapper
 #ifdef MOTOPLUS_LOGGER
 
 #define LOG_DEBUG(format, ...)  \
-  printf(format, ##__VA_ARGS__)
+  printf("DEBUG: "); \
+  printf(format, ##__VA_ARGS__); \
+  printf("\n")
 
 #define LOG_INFO(format, ...)  \
-    printf(format, ##__VA_ARGS__)
+    printf("INFO: "); \
+    printf(format, ##__VA_ARGS__); \
+    printf("\n")
 
 #define LOG_WARN(format, ...)  \
-    printf(format, ##__VA_ARGS__)
+    printf("WARN: "); \
+    printf(format, ##__VA_ARGS__); \
+    printf("\n")
 
 #define LOG_ERROR(format, ...)  \
-    printf(format, ##__VA_ARGS__)
+    printf("ERROR: "); \
+    printf(format, ##__VA_ARGS__); \
+    printf("\n")
 
 #define LOG_FATAL(format, ...)  \
-    printf(FATAL, ##__VA_ARGS__)
+    printf("FATAL: "); \
+    printf(FATAL, ##__VA_ARGS__); \
+    printf("\n")
 
 #endif //MOTPLUS_LOGGER
 
