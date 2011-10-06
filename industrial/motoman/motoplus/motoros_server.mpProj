@@ -12,8 +12,17 @@
     <FileForProject>system.h</FileForProject>
     <FileForProject>utils.cpp</FileForProject>
     <FileForProject>utils.h</FileForProject>
+    <FileForProject>smpl_msg_connection.h</FileForProject>
+    <FileForProject>byte_array.cpp</FileForProject>
+    <FileForProject>byte_array.h</FileForProject>
+    <FileForProject>log_wrapper.h</FileForProject>
+    <FileForProject>shared_types.h</FileForProject>
+    <FileForProject>simple_message.cpp</FileForProject>
+    <FileForProject>simple_message.h</FileForProject>
+    <FileForProject>smpl_msg_connection.cpp</FileForProject>
+    <FileForProject>simple_serialize.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>mpMain.cpp</LastFileOpened>
+  <LastFileOpened>simple_serialize.h</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
