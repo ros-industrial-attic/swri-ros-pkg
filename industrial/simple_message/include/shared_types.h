@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Software License Agreement (BSD License)
 *
 * Copyright (c) 2011, Southwest Research Institute
@@ -56,8 +56,7 @@ namespace shared_types
 
 // By default we will define ROS_TYPES.  Defining another type should redefine these
 // types below (assuming the compiler doesn't choke).
-#define ROS_TYPES
-#ifdef ROS_TYPES
+#ifdef ROS
 
 
 //  Real and integer types should be 4 bytes (this may change between 32 bit and
@@ -66,21 +65,21 @@ typedef int shared_int;
 typedef float shared_real;
 typedef bool shared_bool;
 
-#endif //ROS_TYPES
+#endif //ROS
 
 
 
-#ifdef MOTOPLUS_TYPES
+#ifdef MOTOPLUS
 
 typedef int shared_int;
 typedef float shared_real;
 typedef bool shared_bool;
 
-#endif //MOTOPLUS_TYPES
+#endif //MOTOPLUS
 
 
 
 } // namespace shared_types
 } // namespace industrial
 
-#endif /* LOG_WRAPPER_H_ */
+#endif /* SHARED_TYPES_H */

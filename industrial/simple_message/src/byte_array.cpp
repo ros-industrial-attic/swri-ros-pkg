@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -29,6 +29,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef MOTOPLUS //motoPlus header must be first
+#include "motoPlus.h"
+#endif
+
 #include "byte_array.h"
 #include "simple_serialize.h"
 #include "log_wrapper.h"
@@ -36,14 +40,14 @@
 #include "string.h"
 
 
-namespace industrial
-{
-namespace byte_array
-{
+//namespace industrial
+//{
+//namespace byte_array
+//{
 
 using namespace industrial::simple_serialize;
 using namespace industrial::shared_types;
-
+using namespace industrial::byte_array;
 
 ByteArray::ByteArray(void)
 {
@@ -130,7 +134,7 @@ bool ByteArray::load(shared_int value)
   return this->load(&value, sizeof(shared_int));
 }
 
-bool ByteArray::load(SimpleSerialize &value)
+bool ByteArray::load(simple_serialize::SimpleSerialize &value)
 {
   return value.load(this);
 }
@@ -194,7 +198,7 @@ bool ByteArray::unload(shared_int &value)
   return this->unload(&value, sizeof(shared_int));
 }
 
-bool ByteArray::unload(SimpleSerialize &value)
+bool ByteArray::unload(simple_serialize::SimpleSerialize &value)
 {
   return value.unload(this);
 }
@@ -348,5 +352,5 @@ char* ByteArray::getUnloadPtr(shared_int byteSize)
   return rtn;
 }
 
-} // namespace byte_array
-} // namespace industrial
+//} // namespace byte_array
+//} // namespace industrial

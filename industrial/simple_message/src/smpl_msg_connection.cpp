@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -29,9 +29,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#ifdef MOTOPLUS //motoPlus header must be first
+#include "motoPlus.h"
+#endif
+
+#include "log_wrapper.h"
 #include "smpl_msg_connection.h"
 #include "byte_array.h"
-#include "log_wrapper.h"
 
 using namespace industrial::simple_message;
 using namespace industrial::byte_array;
