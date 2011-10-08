@@ -8,6 +8,8 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/simple_message</url>
+  
+  <depend package="roscpp"/>
 
 </package>
 
