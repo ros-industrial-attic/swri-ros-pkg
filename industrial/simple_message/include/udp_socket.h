@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Yaskawa America, Inc.
@@ -32,14 +32,20 @@
 #ifndef UDP_SOCKET_H
 #define UDP_SOCKET_H
 
-#include "shared_types.h"
+
+#ifdef ROS
 #include "sys/socket.h"
 #include "arpa/inet.h"
 #include "string.h"
-#include "smpl_msg_connection.h"
-
 #include "unistd.h"
-//#include "fcntl.h"
+#endif
+
+#ifdef MOTOPLUSE
+#include "motoPlus.h"
+#endif
+
+#include "shared_types.h"
+#include "smpl_msg_connection.h"
 
 namespace industrial
 {
@@ -110,3 +116,4 @@ private:
 } //industrial
 
 #endif
+

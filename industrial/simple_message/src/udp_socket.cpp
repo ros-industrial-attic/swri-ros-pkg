@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Software License Agreement (BSD License) 
 *
 * Copyright (c) 2011, Yaskawa America, Inc.
@@ -30,8 +30,43 @@
 */ 
 
 
+#ifdef ROS
+
+#include "sys/socket.h"
+#include "arpa/inet.h"
+#include "string.h"
+#include "unistd.h"
+
+#define SOCKET(domain, type, protocol) socket(domain, type, protocol);
+#define BIND(sockfd, addr, addrlen) bind(sockfd, addr, addrlen);
+#define SEND_TO(sockfd, buf, len, flags, dest_addr, addrlen) sendto(sockfd, buf, len, flags dest_addr, addrlen)
+#define RECV_FROM(sockfd, buf, len, flags, src_addr, addrlen) recvfrom(sockfd, buf, len, flags, src_addr, addrlen)
+#define CLOSE(fd) close(fd)
+#define HTONS(num) htons(num)
+#define INET_ADDR(str) inet_addr(str)
+
+#endif
+
+
+
+
+#ifdef MOTOPLUS
+
+#include "motoPlus.h"
+
+#define SOCKET(domain, type, protocol) mpSocket(domain, type, protocol)
+#define BIND(sockfd, addr, addrlen) mpBind(sockfd, addr, addrlen)
+#define SEND_TO(sockfd, buf, len, flags, dest_addr, addrlen) mpSendTo(sockfd, buf, len, flags, dest_addr, addrlen)
+#define RECV_FROM(sockfd, buf, len, flags, src_addr, addrlen) mpRecvFrom(sockfd, buf, len, flags, src_addr, addrlen)
+#define CLOSE(fd) mpClose(fd)
+#define HTONS(num) mpHtons(num)
+#define INET_ADDR(str) mpInetAddr(str)
+
+#endif
+
+
+
 #include "udp_socket.h"
-#include "smpl_msg_connection.h"
 #include "log_wrapper.h"
 #include "simple_message.h"
 
@@ -47,7 +82,6 @@ namespace udp_socket
 
 UdpSocket::UdpSocket() : SmplMsgConnection()
 // Constructor for UDP socket object
-// Creates and binds UDP socket
 {
   this->setSockHandle(this->SOCKET_FAIL);
   memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
@@ -58,21 +92,21 @@ UdpSocket::~UdpSocket()
 // Destructor for UDP socket object
 // Closes socket
 {
-  close(this->getSockHandle());
+  CLOSE(this->getSockHandle());
 }
 
 bool UdpSocket::initServer(int port_num)
 {
   int rc;
   bool rtn;
-  socklen_t addrSize = 0;
+  unsigned int addrSize = 0;
 
   /* Create a socket using:
    * AF_INET - IPv4 internet protocol
    * SOCK_DGRAM - UDP type
    * protocol (0) - System chooses
    */
-  rc = socket(AF_INET, SOCK_DGRAM, 0);
+  rc = SOCKET(AF_INET, SOCK_DGRAM, 0);
   if (this->SOCKET_FAIL != rc)
   {
     this->setSockHandle(rc);
@@ -84,13 +118,13 @@ bool UdpSocket::initServer(int port_num)
     memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
     this->sockaddr_.sin_family = AF_INET;
     this->sockaddr_.sin_addr.s_addr = INADDR_ANY;
-    this->sockaddr_.sin_port = htons(port_num);
+    this->sockaddr_.sin_port = HTONS(port_num);
 
     // This set the socket to be non-blocking (NOT SURE I WANT THIS) - sme
     //fcntl(sock_handle, F_SETFL, O_NONBLOCK);
 
     addrSize = sizeof(this->sockaddr_);
-    rc = bind(this->getSockHandle(), (sockaddr *)&(this->sockaddr_), addrSize);
+    rc = BIND(this->getSockHandle(), (sockaddr *)&(this->sockaddr_), addrSize);
 
     if (this->SOCKET_FAIL != rc)
     {
@@ -100,7 +134,7 @@ bool UdpSocket::initServer(int port_num)
     else
     {
       LOG_ERROR("Failed to bind socket, rc: %d", rc);
-      close(this->getSockHandle());
+      CLOSE(this->getSockHandle());
       rtn = false;
     }
   }
@@ -123,7 +157,7 @@ bool UdpSocket::initClient(char *buff, int port_num)
    * SOCK_DGRAM - UDP type
    * protocol (0) - System chooses
    */
-  rc = socket(AF_INET, SOCK_DGRAM, 0);
+  rc = SOCKET(AF_INET, SOCK_DGRAM, 0);
   if (this->SOCKET_FAIL != rc)
   {
     this->setSockHandle(rc);
@@ -131,8 +165,8 @@ bool UdpSocket::initClient(char *buff, int port_num)
     // Initialize address data structure
     memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
     this->sockaddr_.sin_family = AF_INET;
-    this->sockaddr_.sin_addr.s_addr = inet_addr(buff);
-    this->sockaddr_.sin_port = htons(port_num);
+    this->sockaddr_.sin_addr.s_addr = INET_ADDR(buff);
+    this->sockaddr_.sin_port = HTONS(port_num);
 
     rtn = true;
 
@@ -192,7 +226,7 @@ bool UdpSocket::send(ByteArray & buffer)
   // can handle.
   if (this->MAX_BUFFER_SIZE > buffer.getBufferSize())
   {
-    rc = sendto(this->getSockHandle(), buffer.getRawDataPtr(),
+    rc = SEND_TO(this->getSockHandle(), buffer.getRawDataPtr(),
                     buffer.getBufferSize(), 0, (sockaddr *)&this->sockaddr_,
                     sizeof(this->sockaddr_));
     if (this->SOCKET_FAIL != rc)
@@ -221,7 +255,7 @@ bool UdpSocket::receive(ByteArray & buffer, shared_int num_bytes)
 {
   int rc = this->SOCKET_FAIL;
   bool rtn = false;
-  socklen_t addrSize = 0;
+  unsigned int addrSize = 0;
 
 
   // Reset the buffer (this is not required since the buffer length should
@@ -241,8 +275,8 @@ bool UdpSocket::receive(ByteArray & buffer, shared_int num_bytes)
 
   addrSize = sizeof(this->sockaddr_);
 
-  rc = recvfrom(this->getSockHandle(), &this->buffer_, this->MAX_BUFFER_SIZE,
-                0, (sockaddr *)&this->sockaddr_, (socklen_t*)&addrSize);
+  rc = RECV_FROM(this->getSockHandle(), &this->buffer_[0], this->MAX_BUFFER_SIZE,
+                0, (sockaddr *)&this->sockaddr_, (int*)&addrSize);
 
   if (this->SOCKET_FAIL != rc)
   {
@@ -263,3 +297,4 @@ bool UdpSocket::receive(ByteArray & buffer, shared_int num_bytes)
 
 }//udp_socket
 }//industrial
+
