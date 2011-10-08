@@ -32,7 +32,9 @@
 #ifndef LOG_WRAPPER_H_
 #define LOG_WRAPPER_H_
 
-#include <stdio.h>  //printf
+#ifdef ROS
+#include "ros/ros.h"
+#endif
 
 namespace industrial
 {
@@ -46,35 +48,6 @@ namespace industrial
  */
 namespace log_wrapper
 {
-
-
-// By default we will log to printf.  Other types of logging (if defined) will
-// override these definitions below.
-
-#define LOG_DEBUG(format, ...)  \
-  printf("DEBUG: "); \
-  printf(format, ##__VA_ARGS__); \
-  printf("\n")
-
-#define LOG_INFO(format, ...)  \
-    printf("INFO: "); \
-    printf(format, ##__VA_ARGS__); \
-    printf("\n")
-
-#define LOG_WARN(format, ...)  \
-    printf("WARN: "); \
-    printf(format, ##__VA_ARGS__); \
-    printf("\n")
-
-#define LOG_ERROR(format, ...)  \
-    printf("ERROR: "); \
-    printf(format, ##__VA_ARGS__); \
-    printf("\n")
-
-#define LOG_FATAL(format, ...)  \
-    printf("FATAL: "); \
-    printf(FATAL, ##__VA_ARGS__); \
-    printf("\n")
     
 
 // Define ROS if this library will execute under ROS
@@ -102,32 +75,39 @@ namespace log_wrapper
 // Define MOTOPLUS if this library will execute under MOTOPLUS
 #ifdef MOTOPLUS
 
-#define LOG_DEBUG(format, ...)  \
+#define LOG_DEBUG(format, ...)  do { \
   printf("DEBUG: "); \
   printf(format, ##__VA_ARGS__); \
-  printf("\n")
+  printf("\n") \
+  while(0)
 
-#define LOG_INFO(format, ...)  \
+#define LOG_INFO(format, ...)  do {  \
     printf("INFO: "); \
     printf(format, ##__VA_ARGS__); \
-    printf("\n")
+    printf("\n") \
+    while(0)
 
-#define LOG_WARN(format, ...)  \
+#define LOG_WARN(format, ...)  do {  \
     printf("WARN: "); \
     printf(format, ##__VA_ARGS__); \
-    printf("\n")
+    printf("\n") \
+    while(0)
 
-#define LOG_ERROR(format, ...)  \
+#define LOG_ERROR(format, ...)  do {  \
     printf("ERROR: "); \
     printf(format, ##__VA_ARGS__); \
-    printf("\n")
+    printf("\n") \
+    while(0)
 
-#define LOG_FATAL(format, ...)  \
+#define LOG_FATAL(format, ...)  do {  \
     printf("FATAL: "); \
     printf(FATAL, ##__VA_ARGS__); \
-    printf("\n")
+    printf("\n") \
+    while(0)
 
 #endif //MOTPLUS
+
+
 
 } // namespace industrial
 } // namespace loge_wrapper
