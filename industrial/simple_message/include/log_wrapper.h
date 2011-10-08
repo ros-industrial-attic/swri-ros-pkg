@@ -36,6 +36,10 @@
 #include "ros/ros.h"
 #endif
 
+#ifdef MOTOPLUS
+#include "motoPlus.h"
+#endif
+
 namespace industrial
 {
 
@@ -75,35 +79,20 @@ namespace log_wrapper
 // Define MOTOPLUS if this library will execute under MOTOPLUS
 #ifdef MOTOPLUS
 
-#define LOG_DEBUG(format, ...)  do { \
-  printf("DEBUG: "); \
+#define LOG(level, format, ...) \
+do \
+{ \
+  printf(level); \
+  printf(": "); \
   printf(format, ##__VA_ARGS__); \
-  printf("\n") \
-  while(0)
+  printf("\n"); \
+  } while (0)
 
-#define LOG_INFO(format, ...)  do {  \
-    printf("INFO: "); \
-    printf(format, ##__VA_ARGS__); \
-    printf("\n") \
-    while(0)
-
-#define LOG_WARN(format, ...)  do {  \
-    printf("WARN: "); \
-    printf(format, ##__VA_ARGS__); \
-    printf("\n") \
-    while(0)
-
-#define LOG_ERROR(format, ...)  do {  \
-    printf("ERROR: "); \
-    printf(format, ##__VA_ARGS__); \
-    printf("\n") \
-    while(0)
-
-#define LOG_FATAL(format, ...)  do {  \
-    printf("FATAL: "); \
-    printf(FATAL, ##__VA_ARGS__); \
-    printf("\n") \
-    while(0)
+#define LOG_DEBUG(format, ...) LOG("DEBUG", format, ##__VA_ARGS__) 
+#define LOG_INFO(format, ...)  LOG("INFO", format, ##__VA_ARGS__)
+#define LOG_WARN(format, ...)  LOG("WARNING", format, ##__VA_ARGS__)
+#define LOG_ERROR(format, ...)  LOG("ERROR", format, ##__VA_ARGS__)
+#define LOG_FATAL(format, ...)  LOG("FATAL", format, ##__VA_ARGS__)
 
 #endif //MOTPLUS
 
