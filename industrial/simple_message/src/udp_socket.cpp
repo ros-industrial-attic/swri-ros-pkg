@@ -39,11 +39,12 @@
 
 #define SOCKET(domain, type, protocol) socket(domain, type, protocol);
 #define BIND(sockfd, addr, addrlen) bind(sockfd, addr, addrlen);
-#define SEND_TO(sockfd, buf, len, flags, dest_addr, addrlen) sendto(sockfd, buf, len, flags dest_addr, addrlen)
+#define SEND_TO(sockfd, buf, len, flags, dest_addr, addrlen) sendto(sockfd, buf, len, flags, dest_addr, addrlen)
 #define RECV_FROM(sockfd, buf, len, flags, src_addr, addrlen) recvfrom(sockfd, buf, len, flags, src_addr, addrlen)
 #define CLOSE(fd) close(fd)
 #define HTONS(num) htons(num)
 #define INET_ADDR(str) inet_addr(str)
+#define SOCKLEN_T socklen_t
 
 #endif
 
@@ -61,6 +62,7 @@
 #define CLOSE(fd) mpClose(fd)
 #define HTONS(num) mpHtons(num)
 #define INET_ADDR(str) mpInetAddr(str)
+#define SOCKLEN_T unsigned int
 
 #endif
 
@@ -99,7 +101,7 @@ bool UdpSocket::initServer(int port_num)
 {
   int rc;
   bool rtn;
-  unsigned int addrSize = 0;
+  SOCKLEN_T addrSize = 0;
 
   /* Create a socket using:
    * AF_INET - IPv4 internet protocol
@@ -255,7 +257,7 @@ bool UdpSocket::receive(ByteArray & buffer, shared_int num_bytes)
 {
   int rc = this->SOCKET_FAIL;
   bool rtn = false;
-  unsigned int addrSize = 0;
+  SOCKLEN_T addrSize = 0;
 
 
   // Reset the buffer (this is not required since the buffer length should
@@ -276,7 +278,7 @@ bool UdpSocket::receive(ByteArray & buffer, shared_int num_bytes)
   addrSize = sizeof(this->sockaddr_);
 
   rc = RECV_FROM(this->getSockHandle(), &this->buffer_[0], this->MAX_BUFFER_SIZE,
-                0, (sockaddr *)&this->sockaddr_, (int*)&addrSize);
+                0, (sockaddr *)&this->sockaddr_, &addrSize);
 
   if (this->SOCKET_FAIL != rc)
   {
