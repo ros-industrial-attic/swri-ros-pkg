@@ -211,7 +211,7 @@ TEST(MessageManagerSuite, init)
   UdpSocket udp;
 
   EXPECT_TRUE(manager.init(&udp));
-  //EXPECT_FALSE(manager.init(NULL));
+  EXPECT_FALSE(manager.init(NULL));
 
 }
 
@@ -222,11 +222,15 @@ TEST(MessageManagerSuite, addHandler)
   PingHandler handler;
 
   EXPECT_EQ(0, manager.getNumHandlers());
+
   ASSERT_TRUE(manager.init(&udp));
   EXPECT_EQ(1, manager.getNumHandlers());
   EXPECT_FALSE(manager.add(NULL));
+
+  ASSERT_TRUE(handler.init(&udp));
   EXPECT_FALSE(manager.add(&handler));
 }
+
 
 TEST(MessageManagerSuite, ping)
 {
@@ -245,12 +249,22 @@ TEST(MessageManagerSuite, ping)
 
   ASSERT_TRUE(manager.init(&server));
 
+  // It appears the first UDP message is always lost.  For now we send an initial
+  // ping (which is lost) and then send a follow up in order to test test the
+  // manager
+  EXPECT_TRUE(client.sendMsg(pingRequest));
+  EXPECT_TRUE(client.sendMsg(pingRequest));
+  manager.spinOnce();
   EXPECT_TRUE(client.sendMsg(pingRequest));
   manager.spinOnce();
   EXPECT_TRUE(client.receiveMsg(pingReply));
   EXPECT_EQ(pingReply.getMessageType(), StandardMsgTypes::PING);
   EXPECT_EQ(pingReply.getReplyCode(), ReplyTypes::SUCCESS);
+
 }
+
+
+
 // Run all the tests that were declared with TEST()
 int main(int argc, char **argv){
 testing::InitGoogleTest(&argc, argv);

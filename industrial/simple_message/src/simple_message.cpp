@@ -106,7 +106,10 @@ void SimpleMessage::toByteArray(ByteArray & msg)
   msg.load(this->getMessageType());
   msg.load(this->getCommType());
   msg.load(this->getReplyCode());
-  msg.load(this->getData().getRawDataPtr(), this->data_.getBufferSize());
+  if (this->data_.getBufferSize() > 0 )
+  {
+    msg.load(this->getData().getRawDataPtr(), this->data_.getBufferSize());
+  }
 
 }
 
