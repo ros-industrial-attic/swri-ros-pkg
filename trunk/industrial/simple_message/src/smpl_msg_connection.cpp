@@ -77,7 +77,7 @@ return rtn;
 }
 
 
-bool SmplMsgConnection::receiveAllMsgs(SimpleMessage & message)
+bool SmplMsgConnection::receiveMsg(SimpleMessage & message)
 {
   ByteArray lengthBuffer;
   ByteArray msgBuffer;
@@ -122,25 +122,7 @@ bool SmplMsgConnection::receiveAllMsgs(SimpleMessage & message)
   return rtn;
 }
 
-bool SmplMsgConnection::receiveMsg(SimpleMessage & message)
-{
 
-  bool rtn = false;
-
-  rtn = this->receiveAllMsgs(message);
-
-  if (rtn)
-  {
-    rtn = true;
-  }
-
-  else
-  {
-    rtn = false;
-  }
-
-  return rtn;
-}
 
 bool SmplMsgConnection::sendAndReceiveMsg(SimpleMessage & send, SimpleMessage & recv)
 {	

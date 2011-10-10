@@ -87,7 +87,7 @@ public:
   // socket data could be read partially.  UDP socket data is lost when
   // only a portion of it is read.  For that reason this receive method
   // reads the entire data stream (assumed to be a single message).
-  bool  receiveAllMsgs(industrial::simple_message::SimpleMessage & message);
+  bool  receiveMsg(industrial::simple_message::SimpleMessage & message);
 
 private:
   int sock_handle_;

@@ -183,7 +183,7 @@ bool UdpSocket::initClient(char *buff, int port_num)
 
 
 
-bool UdpSocket::receiveAllMsgs(SimpleMessage & message)
+bool UdpSocket::receiveMsg(SimpleMessage & message)
 {
   ByteArray msgBuffer;
 
