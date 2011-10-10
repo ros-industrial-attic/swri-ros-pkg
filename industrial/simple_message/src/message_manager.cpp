@@ -29,328 +29,170 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef MOTOPLUS //motoPlus header must be first
-#include "motoPlus.h"
-#endif
 
-#include "byte_array.h"
-#include "simple_serialize.h"
+#include "message_manager.h"
 #include "log_wrapper.h"
+#include "simple_message.h"
 
-#include "string.h"
+using namespace industrial::smpl_msg_connection;
+using namespace industrial::message_handler;
+using namespace industrial::simple_message;
 
 
-//namespace industrial
-//{
-//namespace byte_array
-//{
-
-using namespace industrial::simple_serialize;
-using namespace industrial::shared_types;
-using namespace industrial::byte_array;
-
-ByteArray::ByteArray(void)
+namespace industrial
 {
-  this->init();
+namespace message_manager
+{
+
+
+/**
+   * \brief Constructor
+   */
+MessageManager::MessageManager()
+{
+  this->num_handlers_ = 0;
 }
 
-
-ByteArray::~ByteArray(void)
-{
-}
-
-
-void ByteArray::init()
-{
-  memset(&(buffer_[0]), 0, this->MAX_SIZE);
-  this->setBufferSize(0);
-}
-
-
-bool ByteArray::init(const char* buffer, const shared_int byte_size)
-{
-  bool rtn;
-
-  if ( this->MAX_SIZE >= byte_size )
+  MessageManager::~MessageManager()
   {
-    this->load((void*)buffer, byte_size);
-    rtn = true;
-  }
-  else
-  {
-    LOG_ERROR("Failed to initialize byte array, buffer size: %u greater than max: %u",
-              byte_size, this->getMaxBufferSize());
-    rtn = false;
-  }
-  return rtn;
-}
 
-
-void ByteArray::copyFrom(ByteArray & buffer)
-{
-  if (buffer.getBufferSize() != 0)
-  {
-    this->setBufferSize(buffer.getBufferSize());
-    memcpy(this->getRawDataPtr(), buffer.getRawDataPtr(), this->buffer_size_);
-  }
-  else
-  {
-    LOG_WARN("Byte array copy not performed, buffer to copy is empty");
-  }
-}
-
-
-char* ByteArray::getRawDataPtr()
-{
-  if (0 != this->buffer_size_)
-  {
-    return &this->buffer_[0];
-  }
-  else
-  {
-    LOG_ERROR("Failed to return char buffer pointer, buffer is empty");
-    return NULL;
-  }
-}
-
-/****************************************************************
- // load(*)
- //
- // Methods for loading various data types.
- //
- */
-bool ByteArray::load(shared_bool value)
-{
-  return this->load(&value, sizeof(shared_bool));
-}
-
-bool ByteArray::load(shared_real value)
-{
-  return this->load(&value,  sizeof(shared_real));
-}
-
-bool ByteArray::load(shared_int value)
-{
-  return this->load(&value, sizeof(shared_int));
-}
-
-bool ByteArray::load(simple_serialize::SimpleSerialize &value)
-{
-  return value.load(this);
-}
-
-bool ByteArray::load(ByteArray &value)
-{
-  return this->load(value.getRawDataPtr(), value.getBufferSize());
-}
-
-
-bool ByteArray::load(void* value, const shared_int byte_size)
-{
-
-  bool rtn;
-  // Get the load pointer before extending the buffer.
-  char* loadPtr;
-
-  // Check inputs
-  if ( NULL == value)
-  {
-    LOG_ERROR("NULL point passed into load method");
-    return false;
   }
 
-  loadPtr = this->getLoadPtr();
 
-  if (this->extendBufferSize(byte_size))
+  bool MessageManager::init(SmplMsgConnection* connection)
   {
-    memcpy(loadPtr, value, byte_size);
-    rtn = true;
-  }
-  else
-  {
-    LOG_ERROR("Failed to load byte array");
-    rtn = false;
-  }
+    bool rtn = false;
 
-  return rtn;
-}
+    LOG_INFO("Initializing message manager");
 
-/****************************************************************
- // unload(*)
- //
- // Methods for unloading various data types.  Unloading data shortens
- // the internal buffer.  The resulting memory that holds the data is
- // lost.
- //
- */
-bool ByteArray::unload(shared_bool & value)
-{
-  return this->unload(&value, sizeof(shared_bool));
-}
-
-bool ByteArray::unload(shared_real &value)
-{
-  return this->unload(&value, sizeof(shared_real));
-}
-
-bool ByteArray::unload(shared_int &value)
-{
-  return this->unload(&value, sizeof(shared_int));
-}
-
-bool ByteArray::unload(simple_serialize::SimpleSerialize &value)
-{
-  return value.unload(this);
-}
-
-bool ByteArray::unload(ByteArray &value, const shared_int byte_size)
-{
-  char* unloadPtr = this->getUnloadPtr(byte_size);
-  bool rtn;
-
-  if ( NULL != unloadPtr)
-  {
-    rtn = value.unload(unloadPtr, byte_size);
-  }
-  else
-  {
-    LOG_ERROR("Unload pointer returned NULL");
-    rtn = false;
-  }
-
-  return rtn;
-}
-
-bool ByteArray::unload(void* value, shared_int byteSize)
-{
-  bool rtn;
-  char* unloadPtr;
-
-
-  // Check inputs
-  if ( NULL == value)
-  {
-    LOG_ERROR("NULL point passed into unload method");
-    return false;
-  }
-
-  unloadPtr = this->getUnloadPtr(byteSize);
-
-  if ( NULL != unloadPtr )
-  {
-
-    if (this->shortenBufferSize(byteSize))
+    if (NULL != connection)
     {
-      memcpy(value, unloadPtr, byteSize);
-      rtn = true;
+      LOG_DEBUG("Valid message connection passed in");
+
+      LOG_DEBUG("Valid message connection passed in");
+
+      this->setConnection(connection);
+      this->getPingHandler().init(connection);
+
+      LOG_DEBUG("Adding default ping handler to manager");
+      if( this->add(&this->getPingHandler()) )
+      {
+        rtn = true;
+      }
+      else
+      {
+        rtn = false;
+        LOG_WARN("Failed to add ping handler, manager won't respond to pings");
+      }
     }
     else
     {
-      LOG_ERROR("Failed to shorten array");
+      LOG_ERROR("NULL connection passed into manager init");
       rtn = false;
     }
+
+    return rtn;
   }
-  else
+
+  void MessageManager::spinOnce()
   {
-    LOG_ERROR("Unload pointer returned NULL");
-    rtn = false;
+    SimpleMessage msg;
+    MessageHandler* handler = NULL;
+
+    if (this->getConnection()->receiveMsg(msg))
+    {
+      handler = this->getHandler(msg.getMessageType());
+
+      if (NULL != handler)
+      {
+        handler->callback(msg);
+      }
+      else
+      {
+        //TODO: Need to reply if required
+        if (CommTypes::SERVICE_REQUEST == msg.getCommType())
+        {
+          simple_message::SimpleMessage fail;
+          fail.init(msg.getMessageType(),CommTypes::SERVICE_REPLY,
+                    ReplyTypes::FAILURE );
+          this->getConnection()->sendMsg(fail);
+        }
+        LOG_ERROR("Message callback for message type: %d, not exectued",
+                  msg.getMessageType());
+      }
+    }
+    else
+    {
+      LOG_ERROR("Failed to receive incoming message");
+    }
   }
 
-  return rtn;
-}
 
-
-
-
-
-unsigned int ByteArray::getBufferSize()
-{
-  return this->buffer_size_;
-}
-
-
-unsigned int ByteArray::getMaxBufferSize()
-{
-  return this->MAX_SIZE;
-}
-
-
-bool ByteArray::setBufferSize(shared_int size)
-{
-  bool rtn;
-
-  if (this->MAX_SIZE >= size)
+  void MessageManager::spin()
   {
-    this->buffer_size_ = size;
-    rtn = true;
+    while(true)
+    {
+      this->spinOnce();
+    }
   }
-  else
+
+
+  bool MessageManager::add(MessageHandler * handler)
   {
-    LOG_ERROR("Set buffer size: %u, larger than MAX:, %u",
-              size, this->MAX_SIZE);
-    rtn = false;
+    bool rtn = false;
+
+    if (this->getMaxNumHandlers() > this->getNumHandlers())
+      // If get handler returns NULL then a hander for the message type
+      // does not exist and this one can be added, otherwise return
+      // and error
+      if (NULL == getHandler(handler->getMsgType()))
+      {
+        this->handlers_[this->getNumHandlers()] = handler;
+        this->setNumHandlers(this->getNumHandlers() + 1);
+        rtn = true;
+      }
+      else
+      {
+        LOG_ERROR("Failed to add handler for: %d, handler already exists",
+                  handler->getMsgType());
+        rtn = false;
+      }
+    else
+    {
+      LOG_ERROR("Max number of hanlders exceeded");
+      rtn = false;
+    }
+    return rtn;
   }
 
-  return rtn;
 
-}
-
-bool ByteArray::extendBufferSize(shared_int size)
-{
-  unsigned int newSize;
-
-  newSize = this->getBufferSize() + size;
-  return this->setBufferSize(newSize);
-
-}
-
-bool ByteArray::shortenBufferSize(shared_int size)
-{
-  unsigned int newSize;
-  bool rtn;
-
-  // If the buffer is not larger than the size it is shortened by
-  // we fail.  This is checked here (as opposed to setBufferSize)
-  // because setBufferSize assumes a unsigned argument and therefore
-  // wouldn't catch a negative size.
-  if (size <= this->getBufferSize())
+  MessageHandler* MessageManager::getHandler(int msg_type)
   {
-    newSize = this->getBufferSize() - size;
-    rtn = this->setBufferSize(newSize);
-  }
-  else
-  {
-    LOG_ERROR("Failed to shorten buffer by %u bytes, buffer too small, %u bytes",
-              size, this->getBufferSize());
-    rtn = false;
-  }
+    MessageHandler* rtn = NULL;
+    MessageHandler* temp = NULL;
 
-  return rtn;
+    for(unsigned int i = 0; i < this->getMaxNumHandlers(); i++)
+    {
+      temp = this->handlers_[i];
+      if (temp->getMsgType() == msg_type)
+      {
+        rtn = temp;
+        break;
+      }
+    }
 
-}
+    if (NULL == rtn)
+    {
+      LOG_WARN("Handler not found for type: %d", msg_type);
+    }
 
-char* ByteArray::getLoadPtr()
-{
-
-  return &this->buffer_[this->buffer_size_];
-}
-
-char* ByteArray::getUnloadPtr(shared_int byteSize)
-{
-  char* rtn;
-
-  if (byteSize <= this->getBufferSize())
-  {
-    rtn = this->getLoadPtr() - byteSize;
-  }
-  else
-  {
-    LOG_ERROR("Get unload pointer failed, buffer too small");
-    rtn = NULL;
+    return rtn;
   }
 
-  return rtn;
-}
 
-//} // namespace byte_array
-//} // namespace industrial
+
+
+
+
+} // namespace message_manager
+} // namespace industrial

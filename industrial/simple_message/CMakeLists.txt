@@ -30,15 +30,28 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/byte_array.cpp
 #					src/simple_message.cpp)
-rosbuild_add_library(simple_message src/byte_array.cpp
+rosbuild_add_library(simple_message 
+					src/byte_array.cpp
 					src/simple_message.cpp
 					src/smpl_msg_connection.cpp
-					src/udp_socket.cpp)
+					src/udp_socket.cpp
+					src/message_handler.cpp
+					src/message_manager.cpp
+					src/ping_handler.cpp
+					src/ping_message.cpp
+					)
+					
 rosbuild_add_gtest(utest test/utest.cpp
 					src/byte_array.cpp
 					src/simple_message.cpp
 					src/smpl_msg_connection.cpp
-					src/udp_socket.cpp)
+					src/udp_socket.cpp
+					src/message_handler.cpp
+					src/message_manager.cpp
+					src/ping_handler.cpp
+					src/ping_message.cpp
+					)
+					
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)

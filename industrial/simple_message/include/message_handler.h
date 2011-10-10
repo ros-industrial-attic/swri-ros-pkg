@@ -33,6 +33,7 @@
 #define MESSAGE_HANDLER_H
 
 #include "simple_message.h"
+#include "smpl_msg_connection.h"
 
 namespace industrial
 {
@@ -46,7 +47,7 @@ namespace message_handler
 //* MessageHandler
 /**
  * Defines the interface used for function callbacks when a message is received.
- * When used in conjuction with a message_manager (link) generic message handling
+ * When used in conjunction with a message_manager (link) generic message handling
  * can be achieved.
  *
  * THIS CLASS IS NOT THREAD-SAFE
@@ -61,13 +62,13 @@ public:
    * \brief Constructor
    */
   MessageHandler();
-  
-    /**
+
+  /**
    * \brief Destructor
    */
   ~MessageHandler();
 
-   /**
+  /**
    * \brief Callback function that should be executed when a message arrives
    * DO NOT OVERRIDE THIS FUNCTION.  It performs message validation before the
    * internal callback (which should be overridden) is called.  If one is required
@@ -77,28 +78,32 @@ public:
    *
    * \return true on success, false otherwise
    */
-  bool callback(simple_message & in);
-  
-    /**
+  bool callback(industrial::simple_message::SimpleMessage & in);
+
+  /**
    * \brief Gets message type that callback expects
    *
    * \return message type
    */
-  int getMsgType() {return this->msg_type_;};
+  int getMsgType()
+  {
+    return this->msg_type_;
+  }
+  ;
 
-private:
+protected:
+  /**
+   * \brief Gets connectoin for message replies
+   *
+   * \return connection reference
+   */
+  industrial::smpl_msg_connection::SmplMsgConnection*getConnection()
+  {
+    return this->connection_;
+  }
+  ;
 
   /**
-   * \brief Reference to reply connection (called if incoming message requires a reply)
-   */
-  industrial::smpl_msg_connection::SmplMsgConnection* connection_;
-  
-  /**
-   * \brief Message type expected by callback
-   */
-  int msg_type_;
-  
-      /**
    * \brief Class initializer
    *
    * \param msg_type type of message expected
@@ -106,7 +111,19 @@ private:
    *
    * \return true on success, false otherwise (an invalid message type)
    */
-  bool init(int msg_type, SmplMsgConnection * connection);
+  bool init(int msg_type, industrial::smpl_msg_connection::SmplMsgConnection* connection);
+
+private:
+
+  /**
+   * \brief Reference to reply connection (called if incoming message requires a reply)
+   */
+  industrial::smpl_msg_connection::SmplMsgConnection* connection_;
+
+  /**
+   * \brief Message type expected by callback
+   */
+  int msg_type_;
 
   /**
    * \brief Virtual callback function
@@ -115,8 +132,8 @@ private:
    *
    * \return true on success, false otherwise
    */
-  virtual bool internalCB(msg in)=0;
-  
+  virtual bool internalCB(industrial::simple_message::SimpleMessage & in)=0;
+
   /**
    * \brief Validates incoming message for processing by internal callback
    *
@@ -124,29 +141,29 @@ private:
    *
    * \return true on if valid, false otherwise
    */
-  bool validateMsg(industrial::simple_message:SimpleMessage in);
-  
-  
+  bool validateMsg(industrial::simple_message::SimpleMessage & in);
+
   /**
    * \brief Sets connection for message replies
    *
    * \param connection connection reference
    */
-  void setConnection(industrial::smpl_msg_connection::SmplMsgConnection* connection) {this->connection_ = connection;};
-  /**
-   * \brief Gets connectoin for message replies
-   *
-   * \return connection reference
-   */
-  industrial::smpl_msg_connection::SmplMsgConnection*getConnection() {return this->connection_;};
-  
-  
+  void setConnection(industrial::smpl_msg_connection::SmplMsgConnection* connection)
+  {
+    this->connection_ = connection;
+  }
+  ;
+
   /**
    * \brief Sets message type that callback expects
    *
    * \param msg_type message type
    */
-  void setMsgType(int msg_type) {this->msg_type_ = msg_type;};
+  void setMsgType(int msg_type)
+  {
+    this->msg_type_ = msg_type;
+  }
+  ;
 
 };
 
@@ -154,4 +171,3 @@ private:
 } //namespace industrial
 
 #endif //MESSAGE_HANDLER_H
-

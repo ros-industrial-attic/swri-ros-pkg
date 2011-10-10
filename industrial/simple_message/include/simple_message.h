@@ -139,6 +139,7 @@ public:
 
 	bool init(int msgType, int commType, int replyCode,
 	          industrial::byte_array::ByteArray &data );
+        bool init(int msgType, int commType, int replyCode);
         bool init(industrial::byte_array::ByteArray & msg);
 
         void toByteArray(industrial::byte_array::ByteArray & msg);

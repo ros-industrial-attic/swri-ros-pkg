@@ -30,9 +30,15 @@
 */ 
 
 
-#include "udp_socket.h"
 #include "simple_message.h"
+#include "byte_array.h"
+#include "shared_types.h"
 #include "smpl_msg_connection.h"
+#include "udp_socket.h"
+#include "ping_message.h"
+#include "ping_handler.h"
+#include "message_manager.h"
+
 #include <gtest/gtest.h>
 
 using namespace industrial::simple_message;
@@ -40,6 +46,9 @@ using namespace industrial::byte_array;
 using namespace industrial::shared_types;
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::udp_socket;
+using namespace industrial::ping_message;
+using namespace industrial::ping_handler;
+using namespace industrial::message_manager;
 
 TEST(ByteArraySuite, init)
 {
@@ -127,7 +136,7 @@ TEST(ByteArraySuite, copy)
 
 
 
-TEST(MessageSuite, init)
+TEST(SimpleMessageSuite, init)
 {
   SimpleMessage msg;
   ByteArray bytes;
@@ -146,36 +155,102 @@ TEST(MessageSuite, init)
   EXPECT_FALSE(msg.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,ReplyTypes::FAILURE, bytes));
 }
 
-TEST(ConnectionSuite, ping)
+TEST(PingMessageSuite, init)
+{
+  PingMessage ping;
+  SimpleMessage msg;
+
+  EXPECT_FALSE(ping.init(msg));
+  ping.init();
+  EXPECT_EQ(StandardMsgTypes::PING, ping.getMsgType());
+
+  ping = PingMessage();
+  ASSERT_TRUE(msg.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,
+                    ReplyTypes::UNUSED));
+  EXPECT_TRUE(ping.init(msg));
+  EXPECT_EQ(StandardMsgTypes::PING, ping.getMsgType());
+}
+
+
+TEST(PingMessageSuite, toMessage)
+{
+  PingMessage ping;
+  SimpleMessage msg;
+
+  ping.init();
+
+  ASSERT_TRUE(ping.toReply(msg));
+  EXPECT_EQ(StandardMsgTypes::PING, msg.getMessageType());
+  EXPECT_EQ(CommTypes::SERVICE_REPLY, msg.getCommType());
+  EXPECT_EQ(ReplyTypes::SUCCESS, msg.getReplyCode());
+
+  ASSERT_TRUE(ping.toRequest(msg));
+  EXPECT_EQ(StandardMsgTypes::PING, msg.getMessageType());
+  EXPECT_EQ(CommTypes::SERVICE_REQUEST, msg.getCommType());
+  EXPECT_EQ(ReplyTypes::UNUSED, msg.getReplyCode());
+
+  EXPECT_FALSE(ping.toTopic(msg));
+
+}
+
+TEST(PingHandlerSuite, init)
+{
+  PingHandler handler;
+  UdpSocket udp;
+
+  ASSERT_TRUE(handler.init(&udp));
+  EXPECT_EQ(StandardMsgTypes::PING,handler.getMsgType());
+
+  EXPECT_FALSE(handler.init(NULL));
+
+}
+
+TEST(MessageManagerSuite, init)
+{
+  MessageManager manager;
+  UdpSocket udp;
+
+  EXPECT_TRUE(manager.init(&udp));
+  //EXPECT_FALSE(manager.init(NULL));
+
+}
+
+TEST(MessageManagerSuite, addHandler)
+{
+  MessageManager manager;
+  UdpSocket udp;
+  PingHandler handler;
+
+  EXPECT_EQ(0, manager.getNumHandlers());
+  ASSERT_TRUE(manager.init(&udp));
+  EXPECT_EQ(1, manager.getNumHandlers());
+  EXPECT_FALSE(manager.add(NULL));
+  EXPECT_FALSE(manager.add(&handler));
+}
+
+TEST(MessageManagerSuite, ping)
 {
   const int portNumber = 11000;
   char ipAddr[] = "127.0.0.1";
 
-  ByteArray buffer;
-
   UdpSocket client, server;
-
-  SimpleMessage pingRequest, pingReply, msg;
-
+  SimpleMessage pingRequest, pingReply;
+  MessageManager manager;
 
   ASSERT_TRUE(pingRequest.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,
-                    ReplyTypes::UNUSED, buffer));
-  ASSERT_TRUE(pingReply.init(StandardMsgTypes::PING, CommTypes::SERVICE_REPLY,
-                      ReplyTypes::SUCCESS, buffer));
+                    ReplyTypes::UNUSED));
+
   ASSERT_TRUE(server.initServer(portNumber));
   ASSERT_TRUE(client.initClient(&ipAddr[0], portNumber));
 
+  ASSERT_TRUE(manager.init(&server));
+
   EXPECT_TRUE(client.sendMsg(pingRequest));
-  EXPECT_TRUE(server.receiveAllMsgs(msg));
-  EXPECT_EQ(msg.getMessageType(), StandardMsgTypes::PING);
-  EXPECT_TRUE(server.sendMsg(pingReply));
-  EXPECT_TRUE(client.receiveAllMsgs(msg));
-  EXPECT_EQ(msg.getMessageType(), StandardMsgTypes::PING);
-  EXPECT_EQ(msg.getReplyCode(), ReplyTypes::SUCCESS);
-
+  manager.spinOnce();
+  EXPECT_TRUE(client.receiveMsg(pingReply));
+  EXPECT_EQ(pingReply.getMessageType(), StandardMsgTypes::PING);
+  EXPECT_EQ(pingReply.getReplyCode(), ReplyTypes::SUCCESS);
 }
-
-
 // Run all the tests that were declared with TEST()
 int main(int argc, char **argv){
 testing::InitGoogleTest(&argc, argv);

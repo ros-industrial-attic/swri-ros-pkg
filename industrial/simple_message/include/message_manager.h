@@ -32,6 +32,9 @@
 #ifndef MESSAGE_MANAGER_H
 #define MESSAGE_MANAGER_H
 
+#include "smpl_msg_connection.h"
+#include "message_handler.h"
+#include "ping_handler.h"
 
 namespace industrial
 {
@@ -48,7 +51,7 @@ namespace message_manager
  * the desired operation and send a reply, if required.
  *
  * The message manager can be run in two ways.  spin(), similar to ROS this executes
- * a blocking execution indefintiely or spinOnce(), where a single execution of the
+ * a blocking execution indefinitely or spinOnce(), where a single execution of the
  * manager is performed.  In spinOnce mode, other server operations can be made, but
  * the server application must make certain to execute the spinOnce() function at a
  * minimum rate so as not to loose connection data.
@@ -60,21 +63,19 @@ namespace message_manager
 class MessageManager
 {
 
-
 public:
 
   /**
    * \brief Constructor
    */
   MessageManager();
-  
-    /**
+
+  /**
    * \brief Destructor
    */
   ~MessageManager();
-  
-  
-      /**
+
+  /**
    * \brief Class initializer
    *
    * \param connection simple message connection that will be managed.
@@ -83,20 +84,20 @@ public:
    *
    * \return true on success, false otherwise
    */
-  bool init(industrial::smpl_msg_connection::SmplMsgConnection * connection);
+  bool init(industrial::smpl_msg_connection::SmplMsgConnection* connection);
 
-   /**
+  /**
    * \brief Perform an single execution of the message manager (a single
    * receive and send (if required)
    */
   void spinOnce();
-  
+
   /**
    * \brief Perform a indefinite execution of the message manager
    */
   void spin();
-  
-    /**
+
+  /**
    * \brief Adds a message handler to the manager
    *
    * \param handler handler to add
@@ -104,25 +105,33 @@ public:
    * \return true if successful, otherwise false (max number of handlers
    * reached or handler for message type already exists).
    */
-  bool add(industrial::message_handler::MessageHandler handler);
-  
-    /**
+  bool add(industrial::message_handler::MessageHandler* handler);
+
+  /**
    * \brief Gets number of handlers
    *
    * \return connection reference
    */
-  unsigned int getNumHandlers() {return this->num_handlers_;};
-  
-    /**
+  unsigned int getNumHandlers()
+  {
+    return this->num_handlers_;
+  }
+  ;
+
+  /**
    * \brief Gets maximumn number of handlers
    *
    * \return connection reference
    */
-  unsigned int getMaxNumHandlers() {return this->MAX_NUM_HANDLERS;};
+  unsigned int getMaxNumHandlers()
+  {
+    return this->MAX_NUM_HANDLERS;
+  }
+  ;
 
 private:
 
-/**
+  /**
    * \brief Maximum number of handlers
    *
    * The number of handlers is limited in order to avoid dynamic memory allocation
@@ -138,13 +147,18 @@ private:
   /**
    * \brief Reference to reply connection (called if incoming message requires a reply)
    */
-  industrial::smpl_msg_connection SmplMsgConnection* connection_;
-  
+  industrial::smpl_msg_connection::SmplMsgConnection* connection_;
+
+  /**
+   * \brief Internal ping handle (by default every message manager can handle pings)
+   */
+  industrial::ping_handler::PingHandler ping_hndlr_;
+
   /**
    * \brief Number of handlers
    */
-  unsigned int num_handlers_; 
-  
+  unsigned int num_handlers_;
+
   /**
    * \brief Gets message handler for specific message type
    *
@@ -153,28 +167,50 @@ private:
    * \return reference to message handler or NULL if one doesn't exist
    */
   industrial::message_handler::MessageHandler* getHandler(int msg_type);
-  
+
+  /**
+   * \brief Gets ping handler
+   *
+   * \return connection reference
+   */
+  industrial::ping_handler::PingHandler& getPingHandler()
+  {
+    return this->ping_hndlr_;
+  }
+  ;
+
   /**
    * \brief Sets connection manager
    *
    * \param connection connection reference
    */
-  void setConnection(industrial::smpl_msg_connection::SmplMsgConnection* connection) {this->connection_ = connection;};
-  
+  void setConnection(industrial::smpl_msg_connection::SmplMsgConnection* connection)
+  {
+    this->connection_ = connection;
+  }
+  ;
+
   /**
    * \brief Gets connection for manager
    *
    * \return connection reference
    */
-  industrial::smpl_msg_connection::SmplMsgConnection* getConnection() {return this->connection_;};
-  
-  
+  industrial::smpl_msg_connection::SmplMsgConnection* getConnection()
+  {
+    return this->connection_;
+  }
+  ;
+
   /**
    * \brief Sets message type that callback expects
    *
    * \param msg_type message type
    */
-  void setNumHandlers(unsigned int num_handlers) {this->num_handlers_ = num_handlers;};
+  void setNumHandlers(unsigned int num_handlers)
+  {
+    this->num_handlers_ = num_handlers;
+  }
+  ;
 
 };
 
@@ -182,4 +218,3 @@ private:
 } // namespace message_manager
 
 #endif //MESSAGE_MANAGER
-
