@@ -29,6 +29,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "message_handler.h"
+#include "log_wrapper.h"
 
 namespace industrial
 {
@@ -41,7 +43,7 @@ using namespace industrial::simple_message;
 MessageHandler::MessageHandler(void)
 {
   this->setConnection(NULL);
-  this->setMsgType(StandardMsgType::UNUSED);
+  this->setMsgType(StandardMsgTypes::UNUSED);
 }
 
 
@@ -50,16 +52,17 @@ MessageHandler::~MessageHandler(void)
 }
 
 
-bool MessageHandler::init(int msg_type, SmplMsgConnection * connection)
+bool MessageHandler::init(int msg_type, SmplMsgConnection* connection)
 {
   bool rtn = false;
   
-  if (StandardMsgType::UNUSED != msg_type)
+  if (StandardMsgTypes::UNUSED != msg_type)
   {
     if (NULL != connection)
     {
       this->setConnection(connection);
       this->setMsgType(msg_type);
+      rtn = true;
     }
     else
     {
@@ -78,7 +81,7 @@ bool MessageHandler::init(int msg_type, SmplMsgConnection * connection)
 
     
     
-bool MessageHandler::callback(simple_message & in)
+bool MessageHandler::callback(SimpleMessage & in)
 {
   bool rtn = false;
   
@@ -88,7 +91,7 @@ bool MessageHandler::callback(simple_message & in)
   }
   else
   {
-    LOG_ERROR("Invalid message passed to callback")
+    LOG_ERROR("Invalid message passed to callback");
     rtn = true;
   }
   
@@ -96,26 +99,26 @@ bool MessageHandler::callback(simple_message & in)
 }
 
 
-bool MessageHandler::validateMsg(SimpleMessage in)
+bool MessageHandler::validateMsg(SimpleMessage & in)
 {
   bool rtn = false;
   
-  if (in.validate())
+  if (in.validateMessage())
   {
-    if in.getMessageType() == this->getMsgType()
+    if (in.getMessageType() == this->getMsgType())
     {
       rtn = true;
     }
     else
     {
-      LOG_WARNING("Message type: %d, doesn't match handler type: &d",
+      LOG_WARN("Message type: %d, doesn't match handler type: &d",
                   in.getMessageType(), this->getMsgType());
       rtn = false;
     }
   }
   else
   {
-    LOG_WARNING("Passed in message invalid");
+    LOG_WARN("Passed in message invalid");
   }
 
   return rtn;

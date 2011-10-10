@@ -53,6 +53,14 @@ SimpleMessage::~SimpleMessage(void)
 }
 
 
+
+bool SimpleMessage::init(int msgType, int commType, int replyCode)
+{
+  ByteArray data;
+  data.init();
+  return this->init(msgType, commType, replyCode, data);
+}
+
 bool SimpleMessage::init(int msgType, int commType, int replyCode, ByteArray & data )
 {
   LOG_DEBUG("SimpleMessage::init(%u, %u, %u, data...)", msgType, commType, replyCode);

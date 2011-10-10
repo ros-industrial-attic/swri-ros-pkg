@@ -126,34 +126,18 @@ bool SmplMsgConnection::receiveMsg(SimpleMessage & message)
 {
 
   bool rtn = false;
-  SimpleMessage ping;
 
-  do {
-    rtn = this->receiveAllMsgs(message);
+  rtn = this->receiveAllMsgs(message);
 
-    if (rtn)
-    {
-      // Respond to pings immediately (higher level messages
-      // are passed up to the calling function.
-      if(StandardMsgTypes::PING == message.getMessageType())
-      {
-        ping.init(StandardMsgTypes::PING, CommTypes::SERVICE_REPLY,
-                  ReplyTypes::SUCCESS, message.getData());
+  if (rtn)
+  {
+    rtn = true;
+  }
 
-        this->sendMsg(ping);
-      }
-      else
-      {
-        rtn = true;
-        break;
-      }
-    }
-    else
-    {
-      rtn = false;
-      break;
-    }
-  } while (true);
+  else
+  {
+    rtn = false;
+  }
 
   return rtn;
 }
