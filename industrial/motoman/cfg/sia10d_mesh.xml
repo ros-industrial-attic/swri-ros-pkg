@@ -1,10 +1,10 @@
 <?xml version="1.0" ?>
-<robot name="MotomanSIA10D">
+<robot name="sia10d_mesh">
 	<!-- link list -->
-	<link name="motoman_base">
+	<link name="base_link">
 		<visual>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/visual/Motoman/STL/HighResBinary/motoman_sia10d_base.STL" />
+				<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_BASE.stl" />
 			</geometry>
 			<material name="blue">
 				<color rgba="0 0 1 1"/>
@@ -12,17 +12,17 @@
 		</visual>
 		<collision>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/collision/Motoman/SLT/LowResBinary/motoman_sia10d_base.stl" />
+				<mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_BASE.stl" />
 			</geometry>
-			<material name="yellow">
-				<color rgba="0 1 1 1"/>
+			<material name="blue">
+				<color rgba="0 0 1 1"/>
 			</material>
 		</collision>
 	</link>
-	<link name="motoman_axis_s">
+	<link name="link_s">
 		<visual>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/visual/Motoman/STL/HighResBinary/motoman_sia10d_axis_s.STL"/>
+				<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_S.stl"/>
 			</geometry>
 			<material name="silver">
 				<color rgba="0.8 0.8 0.8 1"/>
@@ -30,147 +30,147 @@
 		</visual>
 		<collision>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/collision/Motoman/SLT/LowResBinary/motoman_sia10d_axis_s.stl" />
+				<mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_S.stl" />
 			</geometry>
-			<material name="yellow"/>
-		</collision>
-	</link>
-	<link name="motoman_axis_l">
-		<visual>
-			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/visual/Motoman/STL/HighResBinary/motoman_sia10d_axis_l.STL"/>
-			</geometry>
-			<material name="blue">
-				<color rgba="0 0 1 1"/>
+			<material name="silver">
+				<color rgba="0.8 0.8 0.8 1"/>
 			</material>
-		</visual>
-		<collision>
-			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/collision/Motoman/SLT/LowResBinary/motoman_sia10d_axis_l.stl" />
-			</geometry>
-			<material name="yellow"/>
 		</collision>
 	</link>
-	<link name="motoman_axis_e">
+	<link name="link_l">
 		<visual>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/visual/Motoman/STL/HighResBinary/motoman_sia10d_axis_e.STL"/>
-			</geometry>
-			<material name="silver"/>
-		</visual>
-		<collision>
-			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/collision/Motoman/SLT/LowResBinary/motoman_sia10d_axis_e.stl" />
-			</geometry>
-			<material name="yellow"/>
-		</collision>
-	</link>
-	<link name="motoman_axis_u">
-		<visual>
-			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/visual/Motoman/STL/HighResBinary/motoman_sia10d_axis_u.STL"/>
+				<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_L.stl"/>
 			</geometry>
 			<material name="blue"/>
 		</visual>
 		<collision>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/collision/Motoman/SLT/LowResBinary/motoman_sia10d_axis_u.stl" />
+				<mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_L.stl" />
 			</geometry>
-			<material name="yellow"/>
+			<material name="blue"/>
 		</collision>
 	</link>
-	<link name="motoman_axis_r">
+	<link name="link_e">
 		<visual>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/visual/Motoman/STL/HighResBinary/motoman_sia10d_axis_r.STL"/>
+				<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_E.stl"/>
 			</geometry>
 			<material name="silver"/>
 		</visual>
 		<collision>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/collision/Motoman/SLT/LowResBinary/motoman_sia10d_axis_r.stl" />
+				<mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_E.stl" />
 			</geometry>
-			<material name="yellow"/>
+			<material name="silver"/>
 		</collision>
 	</link>
-	<link name="motoman_axis_b">
+	<link name="link_u">
 		<visual>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/visual/Motoman/STL/HighResBinary/motoman_sia10d_axis_b.STL"/>
+				<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_U.stl"/>
 			</geometry>
 			<material name="blue"/>
 		</visual>
 		<collision>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/collision/Motoman/SLT/LowResBinary/motoman_sia10d_axis_b.stl" />
+				<mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_U.stl" />
 			</geometry>
-			<material name="yellow"/>
+			<material name="blue"/>
 		</collision>
 	</link>
-	<link name="motoman_axis_t">
+	<link name="link_r">
 		<visual>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/visual/Motoman/STL/HighResBinary/motoman_sia10d_axis_t.STL" />
+				<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_R.stl"/>
 			</geometry>
 			<material name="silver"/>
 		</visual>
 		<collision>
 			<geometry>
-				<mesh filename="package://MotomanSIA10D_Arm_Pkg/meshes/collision/Motoman/SLT/LowResBinary/motoman_sia10d_axis_t.stl" />
+				<mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_R.stl" />
 			</geometry>
-			<material name="yellow"/>
+			<material name="silver"/>
+		</collision>
+	</link>
+	<link name="link_b">
+		<visual>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_B.stl"/>
+			</geometry>
+			<material name="blue"/>
+		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_B.stl" />
+			</geometry>
+			<material name="blue"/>
+		</collision>
+	</link>
+	<link name="link_t">
+		<visual>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_T.stl" />
+			</geometry>
+			<material name="silver"/>
+		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_T.stl" />
+			</geometry>
+			<material name="silver"/>
 		</collision>
 	</link>
 	<!-- end of link list -->
 	<!-- joint list -->
 	<joint name="joint_s" type="revolute">
-		<parent link="motoman_base"/>
-		<child link="motoman_axis_s"/>
+		<parent link="base_link"/>
+		<child link="link_s"/>
 		<origin xyz="0 0 0.36" rpy="0 0 3.1415"/>
 		<axis xyz="0 0 1" />
-		<limit effort="1000.0" lower="-3.1415" upper="3.1415" velocity="100" />
+		<limit lower="-3.1416" upper="3.1416" effort="100" velocity="2.96" />
 	</joint>
 	<joint name="joint_l" type="revolute">
-		<parent link="motoman_axis_s"/>
-		<child link="motoman_axis_l"/>
+		<parent link="link_s"/>
+		<child link="link_l"/>
 		<origin xyz="0 0 0" rpy="1.570 3.1416 0"/>
 		<axis xyz="0 0 1" />
-		<limit effort="1000.0" lower="-3.1416" upper="3.1416" velocity="100" />
+		<limit lower="-1.91" upper="1.91" effort="100" velocity="2.96" />
 	</joint>
 	<joint name="joint_e" type="revolute">
-		<parent link="motoman_axis_l"/>
-		<child link="motoman_axis_e"/>
+		<parent link="link_l"/>
+		<child link="link_e"/>
 		<origin xyz="0 -0.36 0" rpy="1.570 0 0"/>
 		<axis xyz="0 0 1" />
-		<limit effort="1000.0" lower="-3.1416" upper="3.1416" velocity="100" />
+		<limit lower="-2.96" upper="2.96" effort="100" velocity="2.96" />
 	</joint>
 	<joint name="joint_u" type="revolute">
-		<parent link="motoman_axis_e"/>
-		<child link="motoman_axis_u"/>
+		<parent link="link_e"/>
+		<child link="link_u"/>
 		<origin xyz="0 0 0" rpy="-1.570 0 0"/>
 		<axis xyz="0 0 -1" />
-		<limit effort="1000.0" lower="-3.1416" upper="3.1416" velocity="100" />
+		<limit lower="-2.35" upper="2.35" effort="100" velocity="2.96" />
 	</joint>
 	<joint name="joint_r" type="revolute">
-		<parent link="motoman_axis_u"/>
-		<child link="motoman_axis_r"/>
+		<parent link="link_u"/>
+		<child link="link_r"/>
 		<origin xyz="0 -0.360 0" rpy="1.570 0 0"/>
 		<axis xyz="0 0 -1" />
-		<limit effort="1000.0" lower="-3.1416" upper="3.1416" velocity="100" />
+		<limit lower="-3.1416" upper="3.1416" effort="100" velocity="3.48" />
 	</joint>
 	<joint name="joint_b" type="revolute">
-		<parent link="motoman_axis_r"/>
-		<child link="motoman_axis_b"/>
+		<parent link="link_r"/>
+		<child link="link_b"/>
 		<origin xyz="0 0 0" rpy="-1.570 0 0"/>
 		<axis xyz="0 0 -1" />
-		<limit effort="1000.0" lower="-3.1416" upper="3.1416" velocity="100" />
+		<limit lower="-1.91" upper="1.91" effort="100" velocity="3.48" />
 	</joint>
 	<joint name="joint_t" type="revolute">
-		<parent link="motoman_axis_b"/>
-		<child link="motoman_axis_t"/>
+		<parent link="link_b"/>
+		<child link="link_t"/>
 		<origin xyz="0 -0.155 0" rpy="1.570 0 0"/>
 		<axis xyz="0 0 -1" />
-		<limit effort="1000.0" lower="-3.1416" upper="3.1416" velocity="100" />
+		<limit lower="-3.1416" upper="3.1416" effort="100" velocity="6.97" />
 	</joint>
 	<!-- end of joint list -->
 		
