@@ -60,20 +60,24 @@ bool PingHandler::internalCB(industrial::simple_message::SimpleMessage & in)
     {
       if(this->getConnection()->sendMsg(msg))
       {
+        LOG_INFO("Ping return sent");
         rtn = true;
       }
       else
       {
+        LOG_ERROR("Failed to send ping return");
         rtn = false;
       }
     }
     else
     {
+      LOG_ERROR("Failed to generate ping reply message");
       rtn = false;
     }
   }
   else
   {
+    LOG_ERROR("Failed to initialize ping message");
     rtn = false;
   }
 

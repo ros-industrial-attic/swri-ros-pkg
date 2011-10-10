@@ -29,7 +29,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "message_manager.h"
 #include "log_wrapper.h"
 #include "simple_message.h"
@@ -38,110 +37,108 @@ using namespace industrial::smpl_msg_connection;
 using namespace industrial::message_handler;
 using namespace industrial::simple_message;
 
-
 namespace industrial
 {
 namespace message_manager
 {
 
-
 /**
-   * \brief Constructor
-   */
+ * \brief Constructor
+ */
 MessageManager::MessageManager()
 {
   this->num_handlers_ = 0;
+  for (unsigned int i = 0; i < this->getMaxNumHandlers(); i++)
+  {
+    this->handlers_[i] = NULL;
+  }
 }
 
-  MessageManager::~MessageManager()
+MessageManager::~MessageManager()
+{
+
+}
+
+bool MessageManager::init(SmplMsgConnection* connection)
+{
+  bool rtn = false;
+
+  LOG_INFO("Initializing message manager");
+
+  if (NULL != connection)
   {
+    this->setConnection(connection);
+    this->getPingHandler().init(connection);
 
-  }
-
-
-  bool MessageManager::init(SmplMsgConnection* connection)
-  {
-    bool rtn = false;
-
-    LOG_INFO("Initializing message manager");
-
-    if (NULL != connection)
+    if (this->add(&this->getPingHandler()))
     {
-      LOG_DEBUG("Valid message connection passed in");
-
-      LOG_DEBUG("Valid message connection passed in");
-
-      this->setConnection(connection);
-      this->getPingHandler().init(connection);
-
-      LOG_DEBUG("Adding default ping handler to manager");
-      if( this->add(&this->getPingHandler()) )
-      {
-        rtn = true;
-      }
-      else
-      {
-        rtn = false;
-        LOG_WARN("Failed to add ping handler, manager won't respond to pings");
-      }
+      rtn = true;
     }
     else
     {
-      LOG_ERROR("NULL connection passed into manager init");
       rtn = false;
+      LOG_WARN("Failed to add ping handler, manager won't respond to pings");
     }
 
-    return rtn;
+  }
+  else
+  {
+    LOG_ERROR("NULL connection passed into manager init");
+    rtn = false;
   }
 
-  void MessageManager::spinOnce()
+  return rtn;
+}
+
+void MessageManager::spinOnce()
+{
+  SimpleMessage msg;
+  MessageHandler* handler = NULL;
+
+  if (this->getConnection()->receiveMsg(msg))
   {
-    SimpleMessage msg;
-    MessageHandler* handler = NULL;
+    LOG_INFO("Message received");
+    handler = this->getHandler(msg.getMessageType());
 
-    if (this->getConnection()->receiveMsg(msg))
+    if (NULL != handler)
     {
-      handler = this->getHandler(msg.getMessageType());
-
-      if (NULL != handler)
-      {
-        handler->callback(msg);
-      }
-      else
-      {
-        //TODO: Need to reply if required
-        if (CommTypes::SERVICE_REQUEST == msg.getCommType())
-        {
-          simple_message::SimpleMessage fail;
-          fail.init(msg.getMessageType(),CommTypes::SERVICE_REPLY,
-                    ReplyTypes::FAILURE );
-          this->getConnection()->sendMsg(fail);
-        }
-        LOG_ERROR("Message callback for message type: %d, not exectued",
-                  msg.getMessageType());
-      }
+      LOG_INFO("Executing handler callback for message type: %d", handler->getMsgType());
+      handler->callback(msg);
     }
     else
     {
-      LOG_ERROR("Failed to receive incoming message");
+      if (CommTypes::SERVICE_REQUEST == msg.getCommType())
+      {
+        simple_message::SimpleMessage fail;
+        fail.init(msg.getMessageType(), CommTypes::SERVICE_REPLY, ReplyTypes::FAILURE);
+        this->getConnection()->sendMsg(fail);
+        LOG_WARN("Unhandled message type encounters, sending failure reply");
+      }
+      LOG_ERROR("Message callback for message type: %d, not exectued", msg.getMessageType());
     }
   }
-
-
-  void MessageManager::spin()
+  else
   {
-    while(true)
-    {
-      this->spinOnce();
-    }
+    LOG_ERROR("Failed to receive incoming message");
   }
+}
 
-
-  bool MessageManager::add(MessageHandler * handler)
+void MessageManager::spin()
+{
+  while (true)
   {
-    bool rtn = false;
+    this->spinOnce();
+  }
+}
 
+bool MessageManager::add(MessageHandler * handler)
+{
+  bool rtn = false;
+
+  if (NULL != handler)
+  {
     if (this->getMaxNumHandlers() > this->getNumHandlers())
+    {
       // If get handler returns NULL then a hander for the message type
       // does not exist and this one can be added, otherwise return
       // and error
@@ -149,50 +146,62 @@ MessageManager::MessageManager()
       {
         this->handlers_[this->getNumHandlers()] = handler;
         this->setNumHandlers(this->getNumHandlers() + 1);
+        LOG_INFO("Added message handler for message type: %d", handler->getMsgType());
         rtn = true;
       }
       else
       {
-        LOG_ERROR("Failed to add handler for: %d, handler already exists",
-                  handler->getMsgType());
+        LOG_ERROR("Failed to add handler for: %d, handler already exists", handler->getMsgType());
         rtn = false;
       }
+    }
     else
     {
       LOG_ERROR("Max number of hanlders exceeded");
       rtn = false;
     }
-    return rtn;
   }
-
-
-  MessageHandler* MessageManager::getHandler(int msg_type)
+  else
   {
-    MessageHandler* rtn = NULL;
-    MessageHandler* temp = NULL;
+    LOG_ERROR("NULL handler not added");
+    rtn = false;
+  }
+  return rtn;
+}
 
-    for(unsigned int i = 0; i < this->getMaxNumHandlers(); i++)
+MessageHandler* MessageManager::getHandler(int msg_type)
+{
+  MessageHandler* rtn = NULL;
+  MessageHandler* temp = NULL;
+
+  for (unsigned int i = 0; i < this->getMaxNumHandlers(); i++)
+  {
+    temp = this->handlers_[i];
+    // The handlers are searched until the appropriate handler is found
+    // or a NULL value is found (signifies the end of the buffer);
+    if (NULL != temp)
     {
-      temp = this->handlers_[i];
       if (temp->getMsgType() == msg_type)
       {
         rtn = temp;
         break;
       }
     }
-
-    if (NULL == rtn)
+    else
     {
-      LOG_WARN("Handler not found for type: %d", msg_type);
+      rtn = NULL;
+      LOG_WARN("Null value encountered, end of handlers reached");
+      break;
     }
-
-    return rtn;
   }
 
+  if (NULL == rtn)
+  {
+    LOG_WARN("Handler not found for type: %d", msg_type);
+  }
 
-
-
-
+  return rtn;
+}
 
 } // namespace message_manager
 } // namespace industrial
