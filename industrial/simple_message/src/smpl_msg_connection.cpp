@@ -65,7 +65,7 @@ bool SmplMsgConnection::sendMsg(SimpleMessage & message)
   if (message.validateMessage())
   {
     message.toByteArray(msgData);
-    rtn = this->send(msgData);
+    rtn = this->sendBytes(msgData);
   }
   else
   {
@@ -86,7 +86,7 @@ bool SmplMsgConnection::receiveMsg(SimpleMessage & message)
   bool rtn = false;
 
 
-  rtn = this->receive(lengthBuffer, message.getLengthSize());
+  rtn = this->receiveBytes(lengthBuffer, message.getLengthSize());
 
   if (rtn)
   {
@@ -94,7 +94,7 @@ bool SmplMsgConnection::receiveMsg(SimpleMessage & message)
 
     if (rtn)
     {
-      rtn = this->receive(msgBuffer, length);
+      rtn = this->receiveBytes(msgBuffer, length);
 
       if (rtn)
       {

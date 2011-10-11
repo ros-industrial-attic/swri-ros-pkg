@@ -35,6 +35,7 @@ rosbuild_add_library(simple_message
 					src/simple_message.cpp
 					src/smpl_msg_connection.cpp
 					src/udp_socket.cpp
+					src/tcp_socket.cpp
 					src/message_handler.cpp
 					src/message_manager.cpp
 					src/ping_handler.cpp
@@ -46,6 +47,7 @@ rosbuild_add_gtest(utest test/utest.cpp
 					src/simple_message.cpp
 					src/smpl_msg_connection.cpp
 					src/udp_socket.cpp
+					src/tcp_socket.cpp
 					src/message_handler.cpp
 					src/message_manager.cpp
 					src/ping_handler.cpp
