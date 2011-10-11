@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -63,12 +63,12 @@
 
 #define SOCKET(domain, type, protocol) mpSocket(domain, type, protocol)
 #define BIND(sockfd, addr, addrlen) mpBind(sockfd, addr, addrlen)
-#define SET_NO_DELAY(sockfd) -1 //MOTOPLUS does not allow for setting the "no delay" socket option
+#define SET_NO_DELAY(sockfd, val) -1 //MOTOPLUS does not allow for setting the "no delay" socket option
 #define LISTEN(sockfd, n) mpListen(sockfd, n)
 #define CONNECT(sockfd, dest_addr ,addrlen) mpConnect(sockfd, dest_addr, addrlen)
 #define SEND_TO(sockfd, buf, len, flags, dest_addr, addrlen) mpSendTo(sockfd, buf, len, flags, dest_addr, addrlen)
 #define SEND(sockfd, buf, len, flags) mpSend(sockfd, buf, len, flags)
-#define RECV_FROM(sockfd, buf, len, flags, src_addr, addrlen) mpRecvFrom(sockfd, buf, len, flags, src_addr, addrlen)
+#define RECV_FROM(sockfd, buf, len, flags, src_addr, addrlen) mpRecvFrom(sockfd, buf, len, flags, src_addr, (int*)addrlen)
 #define RECV(sockfd, buf, len, flags) mpRecv(sockfd, buf, len, flags)
 #define CLOSE(fd) mpClose(fd)
 #define HTONS(num) mpHtons(num)

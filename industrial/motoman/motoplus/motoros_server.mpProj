@@ -2,29 +2,32 @@
 <MotoPlusProject>
   <ProjectName>motoros_server</ProjectName>
   <FilesInProject>
+    <FileForProject>tcp_socket.h</FileForProject>
+    <FileForProject>tcp_socket.cpp</FileForProject>
+    <FileForProject>system.h</FileForProject>
+    <FileForProject>system.cpp</FileForProject>
+    <FileForProject>smpl_msg_connection.h</FileForProject>
+    <FileForProject>smpl_msg_connection.cpp</FileForProject>
+    <FileForProject>simple_serialize.h</FileForProject>
+    <FileForProject>simple_message.h</FileForProject>
+    <FileForProject>simple_message.cpp</FileForProject>
+    <FileForProject>shared_types.h</FileForProject>
+    <FileForProject>ros_socket.h</FileForProject>
+    <FileForProject>ros_socket.cpp</FileForProject>
+    <FileForProject>p_var_q.h</FileForProject>
+    <FileForProject>p_var_q.cpp</FileForProject>
+    <FileForProject>mpMain.cpp</FileForProject>
     <FileForProject>log_wrapper.h</FileForProject>
     <FileForProject>byte_array.h</FileForProject>
     <FileForProject>byte_array.cpp</FileForProject>
     <FileForProject>definitions.h</FileForProject>
-    <FileForProject>mpMain.cpp</FileForProject>
-    <FileForProject>p_var_q.cpp</FileForProject>
-    <FileForProject>p_var_q.h</FileForProject>
-    <FileForProject>ros_socket.cpp</FileForProject>
-    <FileForProject>ros_socket.h</FileForProject>
-    <FileForProject>shared_types.h</FileForProject>
-    <FileForProject>simple_message.cpp</FileForProject>
-    <FileForProject>simple_message.h</FileForProject>
-    <FileForProject>simple_serialize.h</FileForProject>
-    <FileForProject>smpl_msg_connection.cpp</FileForProject>
-    <FileForProject>smpl_msg_connection.h</FileForProject>
-    <FileForProject>system.cpp</FileForProject>
-    <FileForProject>system.h</FileForProject>
+    <FileForProject>udp_socket.cpp</FileForProject>
+    <FileForProject>udp_socket.h</FileForProject>
     <FileForProject>utils.cpp</FileForProject>
     <FileForProject>utils.h</FileForProject>
-    <FileForProject>udp_socket.h</FileForProject>
-    <FileForProject>udp_socket.cpp</FileForProject>
+    <FileForProject>simple_socket.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>udp_socket.cpp</LastFileOpened>
+  <LastFileOpened>simple_socket.h</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
