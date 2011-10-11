@@ -123,13 +123,13 @@ void SimpleMessage::setData( ByteArray & data)
 bool SimpleMessage::validateMessage()
 {
 
-  if ( StandardMsgTypes::UNUSED == this->getMessageType())
+  if ( StandardMsgTypes::INVALID == this->getMessageType())
   {
     LOG_WARN("Invalid message type: %u", this->getMessageType());
     return false;
   }
 
-  if ( CommTypes::UNUSED == this->getCommType())
+  if ( CommTypes::INVALID == this->getCommType())
   {
     LOG_WARN("Invalid comms. type: %u", this->getCommType());
     return false;
@@ -137,9 +137,9 @@ bool SimpleMessage::validateMessage()
 
   if (
       (CommTypes::SERVICE_REPLY ==  this->getCommType() &&
-          ReplyTypes::UNUSED == this->getReplyCode()) ||
+          ReplyTypes::INVALID == this->getReplyCode()) ||
           ((CommTypes::SERVICE_REPLY !=  this->getCommType() &&
-              ReplyTypes::UNUSED != this->getReplyCode()))
+              ReplyTypes::INVALID != this->getReplyCode()))
   )
   {
     LOG_WARN("Invalid reply. Comm type: %u, Reply type: %u",
