@@ -43,7 +43,7 @@ using namespace industrial::simple_message;
 MessageHandler::MessageHandler(void)
 {
   this->setConnection(NULL);
-  this->setMsgType(StandardMsgTypes::UNUSED);
+  this->setMsgType(StandardMsgTypes::INVALID);
 }
 
 
@@ -56,7 +56,7 @@ bool MessageHandler::init(int msg_type, SmplMsgConnection* connection)
 {
   bool rtn = false;
   
-  if (StandardMsgTypes::UNUSED != msg_type)
+  if (StandardMsgTypes::INVALID != msg_type)
   {
     if (NULL != connection)
     {

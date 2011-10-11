@@ -51,7 +51,7 @@ namespace StandardMsgTypes
 {
   enum StandardMsgType
   {
- UNUSED = 0,
+ INVALID = 0,
  PING = 1
   };
 }
@@ -64,7 +64,7 @@ namespace CommTypes
 {
   enum CommType
   {
- UNUSED = 0,
+ INVALID = 0,
  TOPIC = 1,
  SERVICE_REQUEST = 2,
  SERVICE_REPLY = 3
@@ -80,7 +80,7 @@ namespace ReplyTypes
 {
   enum ReplyType
   {
- UNUSED = 0,
+ INVALID = 0,
  SUCCESS = 1,
  FAILURE = 2
   };

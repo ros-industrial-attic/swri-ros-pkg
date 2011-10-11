@@ -144,13 +144,13 @@ TEST(SimpleMessageSuite, init)
   ByteArray bytes;
 
   // Valid messages
-  EXPECT_TRUE(msg.init(StandardMsgTypes::PING, CommTypes::TOPIC, ReplyTypes::UNUSED, bytes));
-  EXPECT_TRUE(msg.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,ReplyTypes::UNUSED, bytes));
+  EXPECT_TRUE(msg.init(StandardMsgTypes::PING, CommTypes::TOPIC, ReplyTypes::INVALID, bytes));
+  EXPECT_TRUE(msg.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,ReplyTypes::INVALID, bytes));
   EXPECT_TRUE(msg.init(StandardMsgTypes::PING, CommTypes::SERVICE_REPLY,ReplyTypes::SUCCESS, bytes));
   EXPECT_TRUE(msg.init(StandardMsgTypes::PING, CommTypes::SERVICE_REPLY,ReplyTypes::FAILURE, bytes));
 
   // Unused command
-  EXPECT_FALSE(msg.init(StandardMsgTypes::UNUSED, CommTypes::UNUSED,ReplyTypes::UNUSED, bytes));
+  EXPECT_FALSE(msg.init(StandardMsgTypes::INVALID, CommTypes::INVALID,ReplyTypes::INVALID, bytes));
 
   // Service request with a reply
   EXPECT_FALSE(msg.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,ReplyTypes::SUCCESS, bytes));
@@ -168,7 +168,7 @@ TEST(PingMessageSuite, init)
 
   ping = PingMessage();
   ASSERT_TRUE(msg.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,
-                    ReplyTypes::UNUSED));
+                    ReplyTypes::INVALID));
   EXPECT_TRUE(ping.init(msg));
   EXPECT_EQ(StandardMsgTypes::PING, ping.getMsgType());
 }
@@ -189,7 +189,7 @@ TEST(PingMessageSuite, toMessage)
   ASSERT_TRUE(ping.toRequest(msg));
   EXPECT_EQ(StandardMsgTypes::PING, msg.getMessageType());
   EXPECT_EQ(CommTypes::SERVICE_REQUEST, msg.getCommType());
-  EXPECT_EQ(ReplyTypes::UNUSED, msg.getReplyCode());
+  EXPECT_EQ(ReplyTypes::INVALID, msg.getReplyCode());
 
   EXPECT_FALSE(ping.toTopic(msg));
 
@@ -245,7 +245,7 @@ TEST(MessageManagerSuite, ping)
   MessageManager udpManager, tcpManager;
 
   ASSERT_TRUE(pingRequest.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,
-                    ReplyTypes::UNUSED));
+                    ReplyTypes::INVALID));
 
   ASSERT_TRUE(udpServer.initServer(portNumber));
   ASSERT_TRUE(udpClient.initClient(&ipAddr[0], portNumber));

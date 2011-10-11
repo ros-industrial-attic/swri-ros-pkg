@@ -79,7 +79,7 @@ void PingMessage::init()
 
 bool PingMessage::toRequest(industrial::simple_message::SimpleMessage & msg)
 {
-  return msg.init(this->getMsgType(),CommTypes::SERVICE_REQUEST,ReplyTypes::UNUSED);
+  return msg.init(this->getMsgType(),CommTypes::SERVICE_REQUEST,ReplyTypes::INVALID);
 }
 
 bool PingMessage::toReply(industrial::simple_message::SimpleMessage & msg)
