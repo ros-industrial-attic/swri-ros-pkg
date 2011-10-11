@@ -1,72 +1,33 @@
 ﻿/*
-* Software License Agreement (BSD License) 
-*
-* Copyright (c) 2011, Yaskawa America, Inc.
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*
-*       * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*       * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*       * Neither the name of the Yaskawa America, Inc., nor the names 
-*       of its contributors may be used to endorse or promote products derived
-*       from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*/ 
-
-
-#ifdef ROS
-
-#include "sys/socket.h"
-#include "arpa/inet.h"
-#include "string.h"
-#include "unistd.h"
-
-#define SOCKET(domain, type, protocol) socket(domain, type, protocol);
-#define BIND(sockfd, addr, addrlen) bind(sockfd, addr, addrlen);
-#define SEND_TO(sockfd, buf, len, flags, dest_addr, addrlen) sendto(sockfd, buf, len, flags, dest_addr, addrlen)
-#define RECV_FROM(sockfd, buf, len, flags, src_addr, addrlen) recvfrom(sockfd, buf, len, flags, src_addr, addrlen)
-#define CLOSE(fd) close(fd)
-#define HTONS(num) htons(num)
-#define INET_ADDR(str) inet_addr(str)
-#define SOCKLEN_T socklen_t
-
-#endif
-
-
-
-
-#ifdef MOTOPLUS
-
-#include "motoPlus.h"
-
-#define SOCKET(domain, type, protocol) mpSocket(domain, type, protocol)
-#define BIND(sockfd, addr, addrlen) mpBind(sockfd, addr, addrlen)
-#define SEND_TO(sockfd, buf, len, flags, dest_addr, addrlen) mpSendTo(sockfd, buf, len, flags, dest_addr, addrlen)
-#define RECV_FROM(sockfd, buf, len, flags, src_addr, addrlen) mpRecvFrom(sockfd, buf, len, flags, src_addr, addrlen)
-#define CLOSE(fd) mpClose(fd)
-#define HTONS(num) mpHtons(num)
-#define INET_ADDR(str) mpInetAddr(str)
-#define SOCKLEN_T unsigned int
-
-#endif
-
-
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2011, Yaskawa America, Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *       * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *       * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *       * Neither the name of the Yaskawa America, Inc., nor the names
+ *       of its contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "udp_socket.h"
 #include "log_wrapper.h"
@@ -82,13 +43,13 @@ namespace industrial
 namespace udp_socket
 {
 
-UdpSocket::UdpSocket() : SmplMsgConnection()
+UdpSocket::UdpSocket()
 // Constructor for UDP socket object
 {
   this->setSockHandle(this->SOCKET_FAIL);
   memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
 
-  }
+}
 
 UdpSocket::~UdpSocket()
 // Destructor for UDP socket object
@@ -114,7 +75,6 @@ bool UdpSocket::initServer(int port_num)
     this->setSockHandle(rc);
     LOG_DEBUG("Socket created, rc: %d", rc);
     LOG_DEBUG("Socket handle: %d", this->getSockHandle());
-
 
     // Initialize address data structure
     memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
@@ -181,15 +141,13 @@ bool UdpSocket::initClient(char *buff, int port_num)
   return rtn;
 }
 
-
-
 bool UdpSocket::receiveMsg(SimpleMessage & message)
 {
   ByteArray msgBuffer;
 
   bool rtn = false;
 
-  rtn = this->receive(msgBuffer, 0);
+  rtn = this->receiveBytes(msgBuffer, 0);
 
   if (rtn)
   {
@@ -216,10 +174,7 @@ bool UdpSocket::receiveMsg(SimpleMessage & message)
   return rtn;
 }
 
-
-
-
-bool UdpSocket::send(ByteArray & buffer)
+bool UdpSocket::sendBytes(ByteArray & buffer)
 {
   int rc = this->SOCKET_FAIL;
   bool rtn = false;
@@ -229,8 +184,8 @@ bool UdpSocket::send(ByteArray & buffer)
   if (this->MAX_BUFFER_SIZE > buffer.getBufferSize())
   {
     rc = SEND_TO(this->getSockHandle(), buffer.getRawDataPtr(),
-                    buffer.getBufferSize(), 0, (sockaddr *)&this->sockaddr_,
-                    sizeof(this->sockaddr_));
+        buffer.getBufferSize(), 0, (sockaddr *)&this->sockaddr_,
+        sizeof(this->sockaddr_));
     if (this->SOCKET_FAIL != rc)
     {
       rtn = true;
@@ -242,23 +197,18 @@ bool UdpSocket::send(ByteArray & buffer)
   }
   else
   {
-    LOG_ERROR("Buffer size: %u, is greater than max socket size: %u",
-              buffer.getBufferSize(), this->MAX_BUFFER_SIZE);
+    LOG_ERROR("Buffer size: %u, is greater than max socket size: %u", buffer.getBufferSize(), this->MAX_BUFFER_SIZE);
     rtn = false;
   }
-
 
   return rtn;
 }
 
-
-
-bool UdpSocket::receive(ByteArray & buffer, shared_int num_bytes)
+bool UdpSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
 {
   int rc = this->SOCKET_FAIL;
   bool rtn = false;
   SOCKLEN_T addrSize = 0;
-
 
   // Reset the buffer (this is not required since the buffer length should
   // ensure that we don't read any of the garbage that may be left over from
@@ -270,15 +220,15 @@ bool UdpSocket::receive(ByteArray & buffer, shared_int num_bytes)
   // what can be sent in the socket.  This should not happen and might be indicative
   // of some code synchronization issues between the client and server base.
   if (this->MAX_BUFFER_SIZE < buffer.getMaxBufferSize())
-    {
+  {
     LOG_WARN("Socket buffer max size: %u, is larger than byte array buffer: %u",
-                this->MAX_BUFFER_SIZE, buffer.getMaxBufferSize());
-    }
+             this->MAX_BUFFER_SIZE, buffer.getMaxBufferSize());
+  }
 
   addrSize = sizeof(this->sockaddr_);
 
   rc = RECV_FROM(this->getSockHandle(), &this->buffer_[0], this->MAX_BUFFER_SIZE,
-                0, (sockaddr *)&this->sockaddr_, &addrSize);
+      0, (sockaddr *)&this->sockaddr_, &addrSize);
 
   if (this->SOCKET_FAIL != rc)
   {
@@ -291,12 +241,9 @@ bool UdpSocket::receive(ByteArray & buffer, shared_int num_bytes)
     LOG_ERROR("Socket receive failed, rc: %d", rc);
     rtn = false;
   }
-     return rtn;
+  return rtn;
 }
 
-
-
-
-}//udp_socket
-}//industrial
+} //udp_socket
+} //industrial
 

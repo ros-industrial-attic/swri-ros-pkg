@@ -44,6 +44,7 @@
 #include "motoPlus.h"
 #endif
 
+#include "simple_socket.h"
 #include "shared_types.h"
 #include "smpl_msg_connection.h"
 
@@ -52,7 +53,7 @@ namespace industrial
 namespace udp_socket
 {
 
-class UdpSocket : public industrial::smpl_msg_connection::SmplMsgConnection
+class UdpSocket : public industrial::simple_socket::SimpleSocket
 {
 public:
 
@@ -80,7 +81,19 @@ public:
    */
   bool initClient(char *buff, int port_num);
 
+  /**
+     * \brief In UDP sockets a connect is not required (returns true)
+     *
+     * \return true on success, false otherwise
+     */
+    bool connectToServer() {return true;};
 
+    /**
+     * \brief In UDP sockets a listen is not required (returns true)
+     *
+     * \return true on success, false otherwise
+     */
+    bool listenForClient() {return true;};
 
   // Override
   // receive is overridden because the base class implementation assumed
@@ -90,26 +103,12 @@ public:
   bool  receiveMsg(industrial::simple_message::SimpleMessage & message);
 
 private:
-  int sock_handle_;
-  sockaddr_in sockaddr_;
-
-  static const int SOCKET_FAIL = -1;
-  static const int MAX_BUFFER_SIZE = 1024;
-
-  /**
-   * \brief internal data buffer for receiving
-   */
-  char buffer_[MAX_BUFFER_SIZE + 1];
 
   // Virtual
-  bool send(industrial::byte_array::ByteArray & buffer);
-  bool receive(industrial::byte_array::ByteArray & buffer,
+  bool sendBytes(industrial::byte_array::ByteArray & buffer);
+  bool receiveBytes(industrial::byte_array::ByteArray & buffer,
       industrial::shared_types::shared_int num_bytes);
 
-  int getSockHandle() const
-  { return sock_handle_;}
-  void setSockHandle(int sock_handle_)
-  { this->sock_handle_ = sock_handle_;}
 };
 
 } //udp_socket

@@ -35,6 +35,7 @@
 #include "shared_types.h"
 #include "smpl_msg_connection.h"
 #include "udp_socket.h"
+#include "tcp_socket.h"
 #include "ping_message.h"
 #include "ping_handler.h"
 #include "message_manager.h"
@@ -46,6 +47,7 @@ using namespace industrial::byte_array;
 using namespace industrial::shared_types;
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::udp_socket;
+using namespace industrial::tcp_socket;
 using namespace industrial::ping_message;
 using namespace industrial::ping_handler;
 using namespace industrial::message_manager;
@@ -237,32 +239,26 @@ TEST(MessageManagerSuite, ping)
   const int portNumber = 11000;
   char ipAddr[] = "127.0.0.1";
 
-  UdpSocket client, server;
+  UdpSocket udpClient, udpServer;
+  TcpSocket tcpClient, tcpServer;
   SimpleMessage pingRequest, pingReply;
-  MessageManager manager;
+  MessageManager udpManager, tcpManager;
 
   ASSERT_TRUE(pingRequest.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,
                     ReplyTypes::UNUSED));
 
-  ASSERT_TRUE(server.initServer(portNumber));
-  ASSERT_TRUE(client.initClient(&ipAddr[0], portNumber));
+  ASSERT_TRUE(udpServer.initServer(portNumber));
+  ASSERT_TRUE(udpClient.initClient(&ipAddr[0], portNumber));
 
-  ASSERT_TRUE(manager.init(&server));
+  ASSERT_TRUE(udpManager.init(&udpServer));
+  EXPECT_TRUE(udpClient.sendMsg(pingRequest));
 
-  // It appears the first UDP message is always lost.  For now we send an initial
-  // ping (which is lost) and then send a follow up in order to test test the
-  // manager
-  EXPECT_TRUE(client.sendMsg(pingRequest));
-  EXPECT_TRUE(client.sendMsg(pingRequest));
-  // Commenting out ping return until a more reliable connection is implemented
-  /*
-  manager.spinOnce();
-  EXPECT_TRUE(client.sendMsg(pingRequest));
-  manager.spinOnce();
-  EXPECT_TRUE(client.receiveMsg(pingReply));
-  EXPECT_EQ(pingReply.getMessageType(), StandardMsgTypes::PING);
-  EXPECT_EQ(pingReply.getReplyCode(), ReplyTypes::SUCCESS);
-  */
+  ASSERT_TRUE(tcpServer.initServer(portNumber));
+  ASSERT_TRUE(tcpClient.initClient(&ipAddr[0], portNumber));
+
+  ASSERT_TRUE(tcpManager.init(&tcpServer));
+  EXPECT_FALSE(tcpClient.sendMsg(pingRequest)); // NOT CONNECTED YET!
+
 
 }
 
