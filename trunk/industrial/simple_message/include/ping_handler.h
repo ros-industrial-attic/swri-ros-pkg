@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -55,8 +55,6 @@ namespace ping_handler
 class PingHandler : public industrial::message_handler::MessageHandler
 {
 
-  using industrial::message_handler::MessageHandler::init;
-
 public:
   /**
 * \brief Class initializer
@@ -66,6 +64,17 @@ public:
 * \return true on success, false otherwise (an invalid message type)
 */
 bool init(industrial::smpl_msg_connection::SmplMsgConnection* connection);
+
+  /**
+* \brief Class initializer (Direct call to base class with the same name)
+* I couldn't get the "using" form to work/
+*
+* \param connection simple message connection that will be used to send replies.
+*
+* \return true on success, false otherwise (an invalid message type)
+*/
+bool init(int msg_type, industrial::smpl_msg_connection::SmplMsgConnection* connection)
+{ return MessageHandler::init(msg_type, connection);};
 
 
 private:
