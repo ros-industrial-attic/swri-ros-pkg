@@ -86,6 +86,25 @@ namespace simple_socket
 {
 
 /**
+ * \brief Enumeration of standard socket ports (supported by all platforms).
+ * These are defined for convienence.  Other ports may be used.  Additional 
+ * ports for application specific needs may also be defined.
+ */
+namespace StandardSocketPorts
+{
+  enum StandardSocketPort
+  {
+ MOTION = 11000,
+ SYSTEM = 11001,
+ STATE  = 11002,
+ IO     = 11003
+  };
+}
+typedef StandardSocketPorts::StandardSocketPort StandardSocketPort;
+
+
+
+/**
  * \brief Defines socket functions required for a simple connection type.
  */
 class SimpleSocket : public industrial::smpl_msg_connection::SmplMsgConnection

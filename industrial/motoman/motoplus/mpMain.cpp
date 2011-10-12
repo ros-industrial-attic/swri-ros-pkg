@@ -40,6 +40,10 @@
 #include "utils.h"
 #include "system.h"
 
+#include "log_wrapper.h"
+#include "tcp_socket.h"
+#include "message_manager.h"
+
 // Using directives
 using utils::arrayIntToChar;
 using utils::arrayCharToInt;
@@ -59,8 +63,10 @@ void parseSystemMessage(LONG recv_message[], ROSSocket *sock);
 // Function definitions
 extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)
 {	
+    /*
   motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+						*/
   system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
   mpExitUsrRoot; //Ends the initialization task.
@@ -130,7 +136,7 @@ void parseMotionMessage(LONG recv_message[], ROSSocket *sock)
 	  if (pvq != NULL)
 	  {
 		delete pvq; // End position variable queue motion
-		printf("%d ",*pvq);
+		//printf("%d ",*pvq);
 		pvq = NULL;
 		sock->sendMessage(CMD_END_PVQ, RC_SUCCESS, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED);
 		printf("PVQ Deleted");
@@ -142,9 +148,22 @@ void parseMotionMessage(LONG recv_message[], ROSSocket *sock)
   }
 }
 
+using namespace industrial::simple_socket;
+using namespace industrial::tcp_socket;
+using namespace industrial::message_manager;
 void systemServer(void)
 // Persistent UDP server that receives system messages from Motoros node (ROS interface) and relays to parseSystemMessage
 {
+TcpSocket connection;
+MessageManager manager;
+
+connection.initServer(StandardSocketPorts::SYSTEM);
+connection.listenForClient();
+
+manager.init(&connection);
+manager.spin();
+
+/*
   LONG bytes_recv;
   LONG recv_message[11];
 	
@@ -170,6 +189,7 @@ void systemServer(void)
 	printf("System socket deleted");
 	printf("\n");
   }
+  */
 }
 
 void parseSystemMessage(LONG recv_message[], ROSSocket *sock)
