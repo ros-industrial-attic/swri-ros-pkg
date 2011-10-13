@@ -77,7 +77,7 @@ public:
    *
    * \return object size (in bytes)
    */
-  virtual size_t byteLength()=0;
+  virtual unsigned int byteLength()=0;
 
 };
 

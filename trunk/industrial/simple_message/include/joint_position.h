@@ -29,86 +29,109 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef PING_MESSAGE_H
-#define PING_MESSAGE_H
+#ifndef JOINT_POSITION_H
+#define JOINT_POSITION_H
 
-#include "typed_message.h"
 #include "simple_message.h"
+#include "simple_serialize.h"
+#include "shared_types.h"
 
 namespace industrial
 {
-namespace ping_message
+namespace joint_position
 {
 
 /**
- * \brief Class encapsulated ping message generation methods (either to or
- * from a SimpleMessage type.
+ * \brief Class encapsulated joint position data.  For simplicity and cross platform
+ * compliance, this is implemented as a fixed size array.
  */
-//* PingMessage
+//* JointMessage
 /**
  *
  * THIS CLASS IS NOT THREAD-SAFE
  *
  */
 
-class PingMessage : public industrial::typed_message::TypedMessage
+class JointPosition : public industrial::simple_serialize::SimpleSerialize
 {
 public:
-
   /**
    * \brief Default constructor
    *
-   * This method creates an empty byte ping message.
+   * This method creates empty data.
    *
    */
-  PingMessage(void);
-
+  JointPosition(void);
   /**
    * \brief Destructor
    *
    */
-  ~PingMessage(void);
+  ~JointPosition(void);
 
   /**
-   * \brief Initializes message from a simple message
-   *
-   * \return true if message successfully initialized, otherwise false
-   */
-  bool init(industrial::simple_message::SimpleMessage & msg);
-
-  /**
-   * \brief Initializes a new ping message
+   * \brief Initializes a empty joint data
    *
    */
   void init();
 
   /**
-   * \brief creates a simple_message request
+   * \brief Sets a joint value within the buffer
    *
-   * \return true if message successfully initialized, otherwise false
+   * \param joint index
+   * \param joint value
+   *
+   * \return true if value set, otherwise false (index greater than max)
    */
-  bool toRequest(industrial::simple_message::SimpleMessage & msg);
+  bool setJoint(industrial::shared_types::shared_int index, industrial::shared_types::shared_real value);
 
   /**
-   * \brief creates a simple_message reply
+   * \brief Gets a joint value within the buffer
    *
-   * \return true if message successfully initialized, otherwise false
+   * \param joint index
+   * \param joint value (passed by reference)
+   *
+   * \return true if value valid, otherwise false (index greater than max)
    */
-  bool toReply(industrial::simple_message::SimpleMessage & msg);
+  bool getJoint(industrial::shared_types::shared_int index, industrial::shared_types::shared_real & value);
+  /**
+   * \brief Copies the passed in value
+   *
+   * \param src (value to copy)
+   */
+  void copyFrom(JointPosition &src);
 
   /**
-   * \brief creates a simple_message topic
+   * \brief returns the maximum number of joints the message holds
    *
-   * \return true if message successfully initialized, otherwise false
+   * \return max number of joints
    */
-  bool toTopic(industrial::simple_message::SimpleMessage & msg);
+  int getMaxNumJoints() const
+  {
+    return MAX_NUM_JOINTS;
+  }
+
+  // Overrides - SimpleSerialize
+  bool load(industrial::byte_array::ByteArray *buffer);
+  bool unload(industrial::byte_array::ByteArray *buffer);
+  unsigned int byteLength()
+  {
+    return MAX_NUM_JOINTS * sizeof(industrial::shared_types::shared_real);
+  }
 
 private:
 
+  /**
+   * \brief maximum number of joints positions that can be held in the message.
+   */
+  static const industrial::shared_types::shared_int MAX_NUM_JOINTS = 10;
+  /**
+   * \brief internal data buffer
+   */
+  industrial::shared_types::shared_real joints_[MAX_NUM_JOINTS];
 
 };
 
 }
 }
 
-#endif /* PING_MESSAGE_H */
+#endif /* JOINT_POSITION_H */

@@ -40,6 +40,8 @@ rosbuild_add_library(simple_message
 					src/message_manager.cpp
 					src/ping_handler.cpp
 					src/ping_message.cpp
+					src/joint_position.cpp
+					src/joint_message.cpp
 					)
 					
 rosbuild_add_gtest(utest test/utest.cpp
@@ -52,6 +54,8 @@ rosbuild_add_gtest(utest test/utest.cpp
 					src/message_manager.cpp
 					src/ping_handler.cpp
 					src/ping_message.cpp
+					src/joint_position.cpp
+					src/joint_message.cpp
 					)
 					
 #target_link_libraries(${PROJECT_NAME} another_library)

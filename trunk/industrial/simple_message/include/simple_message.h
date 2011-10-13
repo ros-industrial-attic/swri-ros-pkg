@@ -52,7 +52,8 @@ namespace StandardMsgTypes
   enum StandardMsgType
   {
  INVALID = 0,
- PING = 1
+ PING = 1,
+ JOINT = 10
   };
 }
 typedef StandardMsgTypes::StandardMsgType StandardMsgType;
