@@ -29,73 +29,90 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef PING_MESSAGE_H
-#define PING_MESSAGE_H
+#ifndef JOINT_MESSAGE_H
+#define JOINT_MESSAGE_H
 
 #include "typed_message.h"
 #include "simple_message.h"
+#include "shared_types.h"
+#include "joint_position.h"
 
 namespace industrial
 {
-namespace ping_message
+namespace joint_message
 {
 
 /**
- * \brief Class encapsulated ping message generation methods (either to or
+ * \brief Class encapsulated joint message generation methods (either to or
  * from a SimpleMessage type.
  */
-//* PingMessage
+//* JointMessage
 /**
+ * The JOINT message structure is meant to contain joint position information
+ * either related to a trajectory point or a joint feedback message.  The
+ * data structure is as follow:
+ *
+ * int SEQ_NUM identifies the order within a trajectory sequence (not valid for feedback)
+ * real JOINTS[MAX_NUM_JOINTS] joint values.  The number of joints are fixed and assumed
+ *                              to be in a known order (defined both by the order in ROS
+ *                              and the order as defined by the robot.
+ *
  *
  * THIS CLASS IS NOT THREAD-SAFE
  *
  */
 
-class PingMessage : public industrial::typed_message::TypedMessage
+class JointMessage : public industrial::typed_message::TypedMessage,
+                     public industrial::simple_serialize::SimpleSerialize
 {
 public:
-
   /**
    * \brief Default constructor
    *
-   * This method creates an empty byte ping message.
+   * This method creates an empty message.
    *
    */
-  PingMessage(void);
-
+  JointMessage(void);
   /**
    * \brief Destructor
    *
    */
-  ~PingMessage(void);
-
+  ~JointMessage(void);
   /**
    * \brief Initializes message from a simple message
+   *
+   * \param simple message to construct from
    *
    * \return true if message successfully initialized, otherwise false
    */
   bool init(industrial::simple_message::SimpleMessage & msg);
 
   /**
-   * \brief Initializes a new ping message
+   * \brief Initializes message from a simple message
+   *
+   * \param sequence number
+   * \param joints
+   *
+   */
+  void init(industrial::shared_types::shared_int seq, industrial::joint_position::JointPosition & joints);
+
+  /**
+   * \brief Initializes a new joint message
    *
    */
   void init();
-
   /**
    * \brief creates a simple_message request
    *
    * \return true if message successfully initialized, otherwise false
    */
   bool toRequest(industrial::simple_message::SimpleMessage & msg);
-
   /**
    * \brief creates a simple_message reply
    *
    * \return true if message successfully initialized, otherwise false
    */
   bool toReply(industrial::simple_message::SimpleMessage & msg);
-
   /**
    * \brief creates a simple_message topic
    *
@@ -103,12 +120,48 @@ public:
    */
   bool toTopic(industrial::simple_message::SimpleMessage & msg);
 
-private:
+  /**
+   * \brief Sets message sequence number
+   *
+   * \param message sequence number
+   */
+  void setSequence(industrial::shared_types::shared_int sequence_)
+  {
+    this->sequence_ = sequence_;
+  }
 
+  /**
+   * \brief returns the maximum message sequence number
+   *
+   * \return message sequence number
+   */
+  industrial::shared_types::shared_int getSequence() const
+  {
+    return sequence_;
+  }
+
+  // Overrides - SimpleSerialize
+    bool load(industrial::byte_array::ByteArray *buffer);
+    bool unload(industrial::byte_array::ByteArray *buffer);
+    unsigned int byteLength()
+    {
+      return sizeof(industrial::shared_types::shared_int) + this->joints_.byteLength();
+    }
+
+
+private:
+  /**
+   * \brief maximum number of joints positions that can be held in the message.
+   */
+  industrial::shared_types::shared_int sequence_;
+  /**
+   * \brief maximum number of joints positions that can be held in the message.
+   */
+  industrial::joint_position::JointPosition joints_;
 
 };
 
 }
 }
 
-#endif /* PING_MESSAGE_H */
+#endif /* JOINT_MESSAGE_H */

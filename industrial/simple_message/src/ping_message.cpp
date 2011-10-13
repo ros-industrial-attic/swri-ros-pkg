@@ -57,14 +57,14 @@ bool PingMessage::init(SimpleMessage & msg)
 {
   bool rtn = false;
 
-  if (this->getMsgType() == msg.getMessageType())
+  if (this->getMessageType() == msg.getMessageType())
   {
     rtn = true;
   }
   else
   {
     LOG_ERROR("Failed to initialize message, wrong type: %d, expected %d",
-              msg.getMessageType(), this->getMsgType());
+              msg.getMessageType(), this->getMessageType());
     rtn = false;
   }
 
@@ -79,12 +79,12 @@ void PingMessage::init()
 
 bool PingMessage::toRequest(industrial::simple_message::SimpleMessage & msg)
 {
-  return msg.init(this->getMsgType(),CommTypes::SERVICE_REQUEST,ReplyTypes::INVALID);
+  return msg.init(this->getMessageType(),CommTypes::SERVICE_REQUEST,ReplyTypes::INVALID);
 }
 
 bool PingMessage::toReply(industrial::simple_message::SimpleMessage & msg)
 {
-  return msg.init(this->getMsgType(),CommTypes::SERVICE_REPLY,ReplyTypes::SUCCESS);
+  return msg.init(this->getMessageType(),CommTypes::SERVICE_REPLY,ReplyTypes::SUCCESS);
 }
 
 
