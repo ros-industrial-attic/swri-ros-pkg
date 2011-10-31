@@ -2,13 +2,13 @@
 
 ==Vision==
 
-* Supported by a community of industrial robotics professionals
-* Provides a one stop location for industrial related ROS software
-* Software robustness and reliability meet the needs of industrial applications
-* Does not replace any one technology entirely, rather it combines the relative strengths of ROS and existing technology (i.e. combining ROS high level functionality with the low level reliability and safety of an industrial robot controller).
-* Stimulates the development of hardware agnostic software by standardizing interfaces (mostly through the use of standardized ROS messages, see Standard Messages)
-* Provides an “easy” path to apply cutting edge research to industrial applications by using a common ROS architecture
-* Provides simple, easy to use, well documented APIs
+  * Supported by a community of industrial robotics professionals
+  * Provides a one stop location for industrial related ROS software
+  * Software robustness and reliability meet the needs of industrial applications
+  * Does not replace any one technology entirely, rather it combines the relative strengths of ROS and existing technology (i.e. combining ROS high level functionality with the low level reliability and safety of an industrial robot controller).
+  * Stimulates the development of hardware agnostic software by standardizing interfaces (mostly through the use of standardized ROS messages, see Standard Messages)
+  * Provides an “easy” path to apply cutting edge research to industrial applications by using a common ROS architecture
+  * Provides simple, easy to use, well documented APIs
 
 ==Open Source Discussion==
 
@@ -20,27 +20,27 @@ There is also the misconception that being part of the community means you must 
 
 ===Near-term (Completed by Jan 2012)===
 
-* Determine the set of standard ROS messages that shall be used for interfacing with industrial robot controllers
-* Create a suite of software that can be used to develop ROS interfaces across a variety of platforms (focusing on industrial robot controllers – See Common Software Tools)
-* Implement a ROS interface on a commercial robot controller.
-* Demonstrate an industrial application that uses high level ROS functionality include, path/motion planning, 3-D sensing, and grasping planning.
+  * Determine the set of standard ROS messages that shall be used for interfacing with industrial robot controllers
+  * Create a suite of software that can be used to develop ROS interfaces across a variety of platforms (focusing on industrial robot controllers – See Common Software Tools)
+  * Implement a ROS interface on a commercial robot controller.
+  * Demonstrate an industrial application that uses high level ROS functionality include, path/motion planning, 3-D sensing, and grasping planning.
 
 ===Long-term===
 
-* Support multiple controllers from different vendors
-* Support for highly accurate robot motion (i.e. executing a controller linear move for welding)
-* Native drive support for other automation equipment:
-** Programmable Logic Controllers
-** Servo Drives
-** Industrial Network Cards (DeviceNet, EtherCat, ControlNet, Profibus, etc)
-** Input/Output Boards
-** PID Controllers
-* Incorporate ROS visual State Machine development tools.  Provide abstract state machine functionality for operating states that are common to most industrial applications, i.e. auto mode, faulted, fault recover, manual mode, etc.
-* Support for OPC ([http://www.opcfoundation.org/ http://www.opcfoundation.org])
-* Security Controls (at least to the level that industrial systems support security today – the bar is low).
-* Human Machine Interfaces (HMIs), Supervisory Control and Data Acquisition (SCADA)
-** Leverage ROS GUI tools to develop custom HMIs/SCADA
-** Interface with existing HMI/SCADA packages, allowing ROS-Industrial to easily be used in a classical industrial system
+  * Support multiple controllers from different vendors
+  * Support for highly accurate robot motion (i.e. executing a controller linear move for welding)
+  * Native drive support for other automation equipment:
+  ** Programmable Logic Controllers
+  ** Servo Drives
+  ** Industrial Network Cards (DeviceNet, EtherCat, ControlNet, Profibus, etc)
+  ** Input/Output Boards
+  ** PID Controllers
+  * Incorporate ROS visual State Machine development tools.  Provide abstract state machine functionality for operating states that are common to most industrial applications, i.e. auto mode, faulted, fault recover, manual mode, etc.
+  * Support for OPC ([http://www.opcfoundation.org/ http://www.opcfoundation.org])
+  * Security Controls (at least to the level that industrial systems support security today – the bar is low).
+  * Human Machine Interfaces (HMIs), Supervisory Control and Data Acquisition (SCADA)
+  ** Leverage ROS GUI tools to develop custom HMIs/SCADA
+  ** Interface with existing HMI/SCADA packages, allowing ROS-Industrial to easily be used in a classical industrial system
 
 ==Standard Messages==
 
@@ -50,9 +50,9 @@ ROS is a message based architecture.  Processes and hardware drivers communicate
 
 The proposed robot controller message interfaces have been divided into three categories:
 
-* Motion Interfaces – Methods for executing and canceling robot motion
-* State Interfaces – Methods for reporting the robot state
-* IO Interface – Methods for writing and reading robot IO.
+  * Motion Interfaces – Methods for executing and canceling robot motion
+  * State Interfaces – Methods for reporting the robot state
+  * IO Interface – Methods for writing and reading robot IO.
 
 ====Motion Interfaces====
 
@@ -94,6 +94,14 @@ The mid level interface steams joint points to the controller as they are execut
 
 Some – Such an interface is likely to bypass some safeties depending on the controller
 
+
+=====Low Level – Joint Torque Streaming =====
+
+======Functional Description======
+
+TBD: See [http://www.ros.org/wiki/lwr_fri]
+
+
 ====Robot State Interface====
 
 =====Functional Description=====
@@ -104,14 +112,14 @@ The robot state interfaces will provide robot and robot controller status inform
 
 An appropriate ROS topic (or even similar) does not appear to exist.  A custom message type may be required.  It should include:
 
-* Mode (TEACH, AUTO, MAN, etc…)
-* Status (OK, WARNING, ERROR, FAULTED, etc)
-* Error Code (Current error)
-* Motion Status (IN_MOTION, STOPPED, BRAKED, etc)
-* E-Stop Status (OK, E_STOPPED)
-* Current Position
-* Current Velocity
-* TBD…
+  * Mode (TEACH, AUTO, MAN, etc…)
+  * Status (OK, WARNING, ERROR, FAULTED, etc)
+  * Error Code (Current error)
+  * Motion Status (IN_MOTION, STOPPED, BRAKED, etc)
+  * E-Stop Status (OK, E_STOPPED)
+  * Current Position
+  * Current Velocity
+  * TBD…
 
 ====Robot IO Interface====
 
@@ -129,14 +137,14 @@ The read service will allow any ROS node to read the state of an input or output
 
 Inputs:
 
-* IO type (DIGITIAL_IN, DIGITAL_OUT, ANALOG_IN, ANALOG_OUT)
-* Network (Network identifier – specific to robot config)
-* Module (Network address of IO module)
-* Offset (Local byte offset, within module memory space)
+  * IO type (DIGITIAL_IN, DIGITAL_OUT, ANALOG_IN, ANALOG_OUT)
+  * Network (Network identifier – specific to robot config)
+  * Module (Network address of IO module)
+  * Offset (Local byte offset, within module memory space)
 
 Outputs:
 
-* Value (IO value)
+  * Value (IO value)
 
 =====Write Service=====
 
@@ -144,11 +152,11 @@ The read service will allow any ROS node to write the state of an output (inputs
 
 Inputs:
 
-* IO type (DIGITIAL_IN, DIGITAL_OUT, ANALOG_IN, ANALOG_OUT)
-* Network (Network identifier – specific to robot config)
-* Module (Network address of IO module)
-* Offset (Local byte offset, within module memory space)
-* Value (value to write)
+  * IO type (DIGITIAL_IN, DIGITAL_OUT, ANALOG_IN, ANALOG_OUT)
+  * Network (Network identifier – specific to robot config)
+  * Module (Network address of IO module)
+  * Offset (Local byte offset, within module memory space)
+  * Value (value to write)
 
 ==Common Software Tools==
 
