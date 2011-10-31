@@ -1,0 +1,161 @@
+=ROS-Industrial=
+
+==Vision==
+
+* Supported by a community of industrial robotics professionals
+* Provides a one stop location for industrial related ROS software
+* Software robustness and reliability meet the needs of industrial applications
+* Does not replace any one technology entirely, rather it combines the relative strengths of ROS and existing technology (i.e. combining ROS high level functionality with the low level reliability and safety of an industrial robot controller).
+* Stimulates the development of hardware agnostic software by standardizing interfaces (mostly through the use of standardized ROS messages, see Standard Messages)
+* Provides an “easy” path to apply cutting edge research to industrial applications by using a common ROS architecture
+* Provides simple, easy to use, well documented APIs
+
+==Open Source Discussion==
+
+This section is not meant to expel the virtues of open source software.  Rather it is intended to discuss common misconceptions about ROS-Industrial being open source.  ROS-Industrial uses the BSD license.  This license is considered “business friendly” in that is does not restrict is use.  The code can be used for any purpose and does not require the release of any related code.  The last point is important, as many have mistakenly thought that providing a ROS interface to their equipment required the release of proprietary software that implements that interface.  This is not the case.  We expect the majority of ROS-Interfaces will make use of existing interfaces.  The ROS portion simply implements a ROS node to convert ROS messages to interface specific requirements.
+
+There is also the misconception that being part of the community means you must give you software away for free.  The main goal of the community is to develop and standardize ROS interfaces.  The software which implements those interfaces can be open source or sold by individual vendors.  This choice is at the discretion of the developers.  If this results in every vendor selling their own software that accepts the standardized interface, then the main goal of achieving industrial systems integration with ROS, will still be realized.
+
+==Roadmap==
+
+===Near-term (Completed by Jan 2012)===
+
+* Determine the set of standard ROS messages that shall be used for interfacing with industrial robot controllers
+* Create a suite of software that can be used to develop ROS interfaces across a variety of platforms (focusing on industrial robot controllers – See Common Software Tools)
+* Implement a ROS interface on a commercial robot controller.
+* Demonstrate an industrial application that uses high level ROS functionality include, path/motion planning, 3-D sensing, and grasping planning.
+
+===Long-term===
+
+* Support multiple controllers from different vendors
+* Support for highly accurate robot motion (i.e. executing a controller linear move for welding)
+* Native drive support for other automation equipment:
+** Programmable Logic Controllers
+** Servo Drives
+** Industrial Network Cards (DeviceNet, EtherCat, ControlNet, Profibus, etc)
+** Input/Output Boards
+** PID Controllers
+* Incorporate ROS visual State Machine development tools.  Provide abstract state machine functionality for operating states that are common to most industrial applications, i.e. auto mode, faulted, fault recover, manual mode, etc.
+* Support for OPC ([http://www.opcfoundation.org/ http://www.opcfoundation.org])
+* Security Controls (at least to the level that industrial systems support security today – the bar is low).
+* Human Machine Interfaces (HMIs), Supervisory Control and Data Acquisition (SCADA)
+** Leverage ROS GUI tools to develop custom HMIs/SCADA
+** Interface with existing HMI/SCADA packages, allowing ROS-Industrial to easily be used in a classical industrial system
+
+==Standard Messages==
+
+ROS is a message based architecture.  Processes and hardware drivers communicate with each other via defined messages.  By defining standard ROS messages for controllers, actuators, and sensors, a level of hardware abstraction and device independence is achieved.  It is important to note, that this approach does not specify a particular hardware/software interface to the equipment.  Rather, it just specifies that whatever the hardware/software interface may be, it must be wrapped within a ROS node that accepts the standard message types defined below.
+
+===Robot Controller Messages===
+
+The proposed robot controller message interfaces have been divided into three categories:
+
+* Motion Interfaces – Methods for executing and canceling robot motion
+* State Interfaces – Methods for reporting the robot state
+* IO Interface – Methods for writing and reading robot IO.
+
+====Motion Interfaces====
+
+The motion interfaces have been divided into three levels.  Not every robot can or will support every level interface.  The highest level interface provides basic point-to-point motion capabilities using the controller’s inherent trajectory planning, and maintains all controller safeties.  Even at the highest level, ROS capabilities including, 2-D/3-D perception, motion planning, and grasp planning will be leveraged. All controllers are expected to be able to support the highest level interface.  The mid-level interface allows for dynamic path re-planning on the fly with smooth motion (i.e. no stops for trajectory changes).  In addition to leveraging the same ROS capabilities as the high level interface, dynamic path planning for obstacles and dynamic objects could also be leveraged.  The lowest level interface will accept joint torques.  Unlike higher level control, this interface will have hard real-time constraints.  This interface allows for exotic types of control, such as force control.
+
+=====High Level – Trajectory Downloading and Execution=====
+
+======Functional Description======
+
+The high level interface node simply executes pre-planned (by ROS) joint-interpolated motions.  The plan, called a trajectory, is downloaded to the controller and executed.   The trajectory executes to completion.  The trajectory is interrupted (motion stopped) when a new trajectory is sent.  An empty trajectory is sent to cancel the current motion. 
+
+======Subscribed Topics======
+
+[http://www.ros.org/doc/api/trajectory_msgs/html/msg/JointTrajectory.html http://www.ros.org/doc/api/trajectory_msgs/html/msg/JointTrajectory.html] 
+
+======Published Topics======
+
+[http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html] (&lt;=10 hz. publish frequency)
+
+======Safety Implications======
+
+None – Safety handled at controller level
+
+=====Mid Level – Joint Point Streaming =====
+
+======Functional Description======
+
+The mid level interface steams joint points to the controller as they are executed.  Some buffering is performed on the controller in order to ensure a smooth trajectory.  Motion will not start until the controller buffer is full.  Motion stops when the internal buffer on the controller is empty.  It is up to the ROS nodes to ensure that points are published at needed rate so that the internal controller buffer remains full.  (This rate is trajectory specific.  It can be calculated based on the duration between points).
+
+======Subscribed Topics======
+
+[http://www.ros.org/doc/api/trajectory_msgs/html/msg/JointTrajectoryPoint.html http://www.ros.org/doc/api/trajectory_msgs/html/msg/JointTrajectoryPoint.html] (rate should not exceed ~40 hz., the likely limit of this interface)
+
+======Published Topics======
+
+[http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html] (rate should be &gt;= to the required subscription rate so that dynamic path planning can have an accurate estimation of current position)
+
+======Safety Implications======
+
+Some – Such an interface is likely to bypass some safeties depending on the controller
+
+====Robot State Interface====
+
+=====Functional Description=====
+
+The robot state interfaces will provide robot and robot controller status information.  This will not include information needed for control purposes and therefore can be provided at a lower rate.
+
+=====Published Topics=====
+
+An appropriate ROS topic (or even similar) does not appear to exist.  A custom message type may be required.  It should include:
+
+* Mode (TEACH, AUTO, MAN, etc…)
+* Status (OK, WARNING, ERROR, FAULTED, etc)
+* Error Code (Current error)
+* Motion Status (IN_MOTION, STOPPED, BRAKED, etc)
+* E-Stop Status (OK, E_STOPPED)
+* Current Position
+* Current Velocity
+* TBD…
+
+====Robot IO Interface====
+
+=====Functional Description=====
+
+Many robots support IO directly wired to the controller or via a local IO network.  These IO typically include sensors and actuators that are used to drive the robot end-effectors.  The IO interface allows inputs to be read and outputs to be set by other ROS nodes.  Robot IO are inherently very configurable.  The interface should allow for any type of IO configuration.
+
+=====Topic or Service=====
+
+Inputs and outputs are probably best handled by ROS topics.  By using ROS topics the state of inputs and outputs could be published and read by all ROS nodes.  Unfortunately, all topics would have to be funneled through the single IO interface node.  In order to maintain flexibility the IO interface node topics for both inputs and outputs would have to be configurable at launch time (the topics for sensors and actuators couldn’t be hardcoded into the IO interface because it must be generic enough to handle any IO configuration).  In order to maintain this flexibility, services will provided for reading from and writing to IO (THERE HAS TO BE A BETTER WAY TO ACHIEVE THIS, OTHER THAN SERVICES, BUT I DO NOT KNOW WHAT IT IS – Possible method for using topics, see [http://answers.ros.org/question/2693/creating-publishers-and-subscribers-based-on-a http://answers.ros.org/question/2693/creating-publishers-and-subscribers-based-on-a] ).
+
+=====Read Service=====
+
+The read service will allow any ROS node to read the state of an input or output.
+
+Inputs:
+
+* IO type (DIGITIAL_IN, DIGITAL_OUT, ANALOG_IN, ANALOG_OUT)
+* Network (Network identifier – specific to robot config)
+* Module (Network address of IO module)
+* Offset (Local byte offset, within module memory space)
+
+Outputs:
+
+* Value (IO value)
+
+=====Write Service=====
+
+The read service will allow any ROS node to write the state of an output (inputs can only be written to by the controller as part of the IO update cycle).
+
+Inputs:
+
+* IO type (DIGITIAL_IN, DIGITAL_OUT, ANALOG_IN, ANALOG_OUT)
+* Network (Network identifier – specific to robot config)
+* Module (Network address of IO module)
+* Offset (Local byte offset, within module memory space)
+* Value (value to write)
+
+==Common Software Tools==
+
+===Socket based communications tools (In development)===
+
+TODO: High level overview of socket based communications for communicating with a robot controller (most robot controllers support some form of socket based communications)
+
+===Simplified messaging scheme (In development)===
+
+TODO: High level overview of simplified messaging scheme developed to mimic ROS messages but simplified enough to allow typical robot controllers to decode them.
