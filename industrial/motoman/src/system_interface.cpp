@@ -31,20 +31,43 @@
 
 
 #include "ros/ros.h"
-#include "moto_socket.h"
-#include "utils.h"
-#include "definitions.h"
+#include "tcp_socket.h"
+#include "simple_message.h"
+#include "ping_message.h"
 
-using std::cout;
-using std::cin;
-using std::endl;
-using utils::arrayIntToChar;
-using utils::arrayCharToInt;
+using namespace industrial::simple_socket;
+using namespace industrial::tcp_socket;
+using namespace industrial::simple_message;
+using namespace industrial::ping_message;
+
 
 int main(int argc, char** argv)
 // Allows user to send commands to the robot
 {
-  char buff[1024] = "192.168.10.20"; // Robot IP address
+  char ip[1024] = "127.0.0.0"; // Robot IP address
+  SimpleMessage reply, request;
+  PingMessage tReply, tRequest;
+  TcpSocket connection;
+
+  ROS_INFO("Setting up tcp client");
+  connection.initClient(ip, StandardSocketPorts::SYSTEM);
+
+  ROS_INFO("Connecting to server");
+  if (connection.connectToServer())
+  {
+    tRequest.init();
+    tRequest.toRequest(request);
+
+    ROS_INFO("Sending ping");
+    connection.sendAndReceiveMsg(request, reply);
+
+    ROS_INFO("Ping recieved");
+    tReply.init(reply);
+  }
+
+
+
+  /*
   int command;
   int reply_message[11];
 
@@ -65,5 +88,6 @@ int main(int argc, char** argv)
       cout << reply_message[i] << " ";
     cout << endl;
   }
+  */
   return 0;
 }
