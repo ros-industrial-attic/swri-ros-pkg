@@ -15,7 +15,7 @@ rosbuild_init()
 # and various robot controlers.  This requires conditionally compiling
 # certain functions and headers.  The definition below enables compiling
 # for a ROS node.
-add_definitions(-DROS=1)  #build using ROS libraryes
+add_definitions(-DROS=1)  #build using ROS libraries
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
