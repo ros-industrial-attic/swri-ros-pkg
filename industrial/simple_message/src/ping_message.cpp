@@ -74,7 +74,7 @@ bool PingMessage::init(SimpleMessage & msg)
 
 void PingMessage::init()
 {
-  // Nothing to do
+  this->setMessageType(StandardMsgTypes::PING);
 }
 
 bool PingMessage::toRequest(industrial::simple_message::SimpleMessage & msg)

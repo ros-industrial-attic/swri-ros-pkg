@@ -164,13 +164,13 @@ TEST(PingMessageSuite, init)
 
   EXPECT_FALSE(ping.init(msg));
   ping.init();
-  EXPECT_EQ(StandardMsgTypes::PING, ping.getMsgType());
+  EXPECT_EQ(StandardMsgTypes::PING, ping.getMessageType());
 
   ping = PingMessage();
   ASSERT_TRUE(msg.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,
                     ReplyTypes::INVALID));
   EXPECT_TRUE(ping.init(msg));
-  EXPECT_EQ(StandardMsgTypes::PING, ping.getMsgType());
+  EXPECT_EQ(StandardMsgTypes::PING, ping.getMessageType());
 }
 
 

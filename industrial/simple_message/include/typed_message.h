@@ -92,12 +92,18 @@ public:
    */
   virtual bool toTopic(industrial::simple_message::SimpleMessage & msg)=0;
 
-protected:
-
+  /**
+     * \brief gets message type (enumeration)
+     *
+     * \return message type
+     */
   int getMessageType() const
   {
     return message_type_;
   }
+
+protected:
+
 
   void setMessageType(int MESSAGE_TYPE = industrial::simple_message::StandardMsgTypes::INVALID)
   {
