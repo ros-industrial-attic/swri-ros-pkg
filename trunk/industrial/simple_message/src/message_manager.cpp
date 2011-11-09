@@ -125,6 +125,7 @@ void MessageManager::spinOnce()
 
 void MessageManager::spin()
 {
+  LOG_INFO("Entering message manager spin loop");
   while (true)
   {
     this->spinOnce();

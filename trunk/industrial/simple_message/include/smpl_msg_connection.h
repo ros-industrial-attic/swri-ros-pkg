@@ -50,8 +50,8 @@ public:
   ~SmplMsgConnection();
 
   // Message
-  bool sendMsg(industrial::simple_message::SimpleMessage & message);
-  bool receiveMsg(industrial::simple_message::SimpleMessage & message);
+  virtual bool sendMsg(industrial::simple_message::SimpleMessage & message);
+  virtual bool receiveMsg(industrial::simple_message::SimpleMessage & message);
   bool sendAndReceiveMsg(industrial::simple_message::SimpleMessage & send,
                       industrial::simple_message::SimpleMessage & recv);
 

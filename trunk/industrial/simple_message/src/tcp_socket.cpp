@@ -251,7 +251,7 @@ bool TcpSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
     LOG_WARN("Socket buffer max size: %u, is larger than byte array buffer: %u",
              this->MAX_BUFFER_SIZE, buffer.getMaxBufferSize());
   }
-
+	
   rc = RECV(this->getSockHandle(), &this->buffer_[0], num_bytes, 0);
 
   if (this->SOCKET_FAIL != rc)
@@ -263,6 +263,7 @@ bool TcpSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
   else
   {
     LOG_ERROR("Socket receive failed, rc: %d", rc);
+    LOG_ERROR("Socket errno: %d", errno);
     rtn = false;
   }
   return rtn;
