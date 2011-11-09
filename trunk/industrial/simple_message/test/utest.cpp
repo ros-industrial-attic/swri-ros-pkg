@@ -274,23 +274,26 @@ TEST(MessageManagerSuite, tcp)
 
 
   // TCP Socket testing
-  // Construct server and start in a thread
+  // Construct server
   ASSERT_TRUE(tcpServer.initServer(tcpPort));
-  ASSERT_TRUE(tcpServer.listenForClient());
-  ASSERT_TRUE(tcpManager.init(&tcpServer));
-  //boost::thread tcpSrvThrd(boost::bind(&MessageManager::spin, &tcpManager));
 
-  // Construct a client and try to ping the server
+  // Construct a client
   ASSERT_TRUE(tcpClient.initClient(&ipAddr[0], tcpPort));
   ASSERT_TRUE(tcpClient.connectToServer());
-  ASSERT_TRUE(tcpClient.sendMsg(pingRequest));
-  //ASSERT_TRUE(tcpClient.receiveMsg(pingReply));
-  //ASSERT_TRUE(tcpClient.sendAndReceiveMsg(pingRequest, pingReply));
 
-  
+  // Listen for client connection, init manager and start thread
   ASSERT_TRUE(tcpServer.listenForClient());
-  ASSERT_TRUE(tcpServer.receiveMsg(pingReply));
+  ASSERT_TRUE(tcpManager.init(&tcpServer));
 
+  // TODO: The message manager is not thread safe (threads are used for testing,
+  // but running the message manager in a thread results in errors when the
+  // underlying connection is deconstructed before the manager
+  boost::thread tcpSrvThrd(boost::bind(&MessageManager::spin, &tcpManager));
+
+  // Ping the server
+  ASSERT_TRUE(tcpClient.sendMsg(pingRequest));
+  ASSERT_TRUE(tcpClient.receiveMsg(pingReply));
+  ASSERT_TRUE(tcpClient.sendAndReceiveMsg(pingRequest, pingReply));
 }
 
 

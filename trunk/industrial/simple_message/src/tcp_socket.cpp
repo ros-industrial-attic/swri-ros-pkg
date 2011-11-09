@@ -83,8 +83,7 @@ bool TcpSocket::initServer(int port_num)
     err = errno;
     if (this->SOCKET_FAIL == rc)
     {
-      LOG_WARN("Failed to set no socket delay, errno: %d, sending data can be delayed by up to 250ms",
-               err);
+      LOG_WARN("Failed to set no socket delay, errno: %d, sending data can be delayed by up to 250ms", err);
     }
 
     // Initialize address data structure
@@ -98,8 +97,20 @@ bool TcpSocket::initServer(int port_num)
 
     if (this->SOCKET_FAIL != rc)
     {
-      rtn = true;
       LOG_INFO("Server socket successfully initialized");
+
+      rc = LISTEN(this->getSockHandle(), 1);
+
+      if (this->SOCKET_FAIL != rc)
+      {
+        LOG_INFO("Socket in listen mode");
+        rtn = true;
+      }
+      else
+      {
+        LOG_ERROR("Failed to set socket to listen");
+        rtn = false;
+      }
     }
     else
     {
@@ -114,6 +125,7 @@ bool TcpSocket::initServer(int port_num)
     LOG_ERROR("Failed to create socket, rc: %d", rc);
     rtn = false;
   }
+
   return rtn;
 }
 
@@ -121,17 +133,23 @@ bool TcpSocket::listenForClient()
 {
   bool rtn = false;
   int rc = this->SOCKET_FAIL;
+  int socket = this->SOCKET_FAIL;
 
-  rc = LISTEN(this->getSockHandle(), 1);
+  rc = ACCEPT(this->getSockHandle(), NULL, NULL);
 
-  if (this->SOCKET_FAIL != rc )
+  if (this->SOCKET_FAIL != rc)
   {
-    LOG_INFO("Client socket connected");
+    // The accept call above creates a new socket.  The old
+    // socket handle is no longer needed, since only a single
+    // server-client socket connection is allowed.
+    CLOSE(this->getSockHandle());
+    this->setSockHandle(rc);
+    LOG_INFO("Client socket accepted");
     rtn = true;
   }
   else
   {
-    LOG_ERROR("Failed to listen for client connection");
+    LOG_ERROR("Failed to accept for client connection");
     rtn = false;
   }
 
@@ -251,7 +269,7 @@ bool TcpSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
     LOG_WARN("Socket buffer max size: %u, is larger than byte array buffer: %u",
              this->MAX_BUFFER_SIZE, buffer.getMaxBufferSize());
   }
-	
+
   rc = RECV(this->getSockHandle(), &this->buffer_[0], num_bytes, 0);
 
   if (this->SOCKET_FAIL != rc)

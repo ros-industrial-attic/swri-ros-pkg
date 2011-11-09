@@ -60,12 +60,15 @@ SmplMsgConnection::~SmplMsgConnection()
 bool SmplMsgConnection::sendMsg(SimpleMessage & message)
 {
   bool rtn;
+  ByteArray sendBuffer;
   ByteArray msgData;
 
   if (message.validateMessage())
   {
     message.toByteArray(msgData);
-    rtn = this->sendBytes(msgData);
+    sendBuffer.load((int)msgData.getBufferSize());
+    sendBuffer.load(msgData);
+    rtn = this->sendBytes(sendBuffer);
   }
   else
   {
@@ -91,6 +94,7 @@ bool SmplMsgConnection::receiveMsg(SimpleMessage & message)
   if (rtn)
   {
     rtn = lengthBuffer.unload(length);
+    LOG_DEBUG("Message length: %d", rtn);
 
     if (rtn)
     {
