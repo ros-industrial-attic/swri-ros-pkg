@@ -45,6 +45,7 @@
 #define BIND(sockfd, addr, addrlen) bind(sockfd, addr, addrlen)
 #define SET_NO_DELAY(sockfd, val) setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))
 #define LISTEN(sockfd, n) listen(sockfd, n)
+#define ACCEPT(sockfd, addr, addrlen) accept(sockfd, addr, addrlen)
 #define CONNECT(sockfd, dest_addr ,addrlen) connect(sockfd, dest_addr, addrlen)
 #define SEND_TO(sockfd, buf, len, flags, dest_addr, addrlen) sendto(sockfd, buf, len, flags, dest_addr, addrlen)
 #define SEND(sockfd, buf, len, flags) send(sockfd, buf, len, flags)
@@ -65,6 +66,7 @@
 #define BIND(sockfd, addr, addrlen) mpBind(sockfd, addr, addrlen)
 #define SET_NO_DELAY(sockfd, val) -1 //MOTOPLUS does not allow for setting the "no delay" socket option
 #define LISTEN(sockfd, n) mpListen(sockfd, n)
+#define ACCEPT(sockfd, addr, addrlen) mpAccept(sockfd, addr, addrlen)
 #define CONNECT(sockfd, dest_addr ,addrlen) mpConnect(sockfd, dest_addr, addrlen)
 #define SEND_TO(sockfd, buf, len, flags, dest_addr, addrlen) mpSendTo(sockfd, buf, len, flags, dest_addr, addrlen)
 #define SEND(sockfd, buf, len, flags) mpSend(sockfd, buf, len, flags)
