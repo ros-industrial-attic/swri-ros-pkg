@@ -41,6 +41,7 @@
 #include "message_manager.h"
 
 #include <gtest/gtest.h>
+#include <boost/thread/thread.hpp>
 
 using namespace industrial::simple_message;
 using namespace industrial::byte_array;
@@ -234,31 +235,61 @@ TEST(MessageManagerSuite, addHandler)
 }
 
 
-TEST(MessageManagerSuite, ping)
+TEST(MessageManagerSuite, udp)
 {
-  const int portNumber = 11000;
+  const int udpPort = 11000;
   char ipAddr[] = "127.0.0.1";
 
   UdpSocket udpClient, udpServer;
-  TcpSocket tcpClient, tcpServer;
   SimpleMessage pingRequest, pingReply;
-  MessageManager udpManager, tcpManager;
+  MessageManager udpManager;
 
   ASSERT_TRUE(pingRequest.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,
                     ReplyTypes::INVALID));
 
-  ASSERT_TRUE(udpServer.initServer(portNumber));
-  ASSERT_TRUE(udpClient.initClient(&ipAddr[0], portNumber));
+  // UDP Socket testing
+  // Construct server and start in a thread
+  ASSERT_TRUE(udpServer.initServer(udpPort));
+  ASSERT_TRUE(udpManager.init(&udpServer)); 
+  boost::thread udpSrvThrd(boost::bind(&MessageManager::spin, &udpManager));
 
-  ASSERT_TRUE(udpManager.init(&udpServer));
-  EXPECT_TRUE(udpClient.sendMsg(pingRequest));
+  // Construct a client and try to ping the server
+  ASSERT_TRUE(udpClient.initClient(&ipAddr[0], udpPort));
+  ASSERT_TRUE(udpClient.sendMsg(pingRequest));
+  ASSERT_TRUE(udpClient.receiveMsg(pingReply));
+  ASSERT_TRUE(udpClient.sendAndReceiveMsg(pingRequest, pingReply));
+}
 
-  ASSERT_TRUE(tcpServer.initServer(portNumber));
-  ASSERT_TRUE(tcpClient.initClient(&ipAddr[0], portNumber));
+TEST(MessageManagerSuite, tcp)
+{
+  const int tcpPort = 11000;
+  char ipAddr[] = "127.0.0.1";
 
+  TcpSocket tcpClient, tcpServer;
+  SimpleMessage pingRequest, pingReply;
+  MessageManager tcpManager;
+
+  ASSERT_TRUE(pingRequest.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,
+                    ReplyTypes::INVALID));
+
+
+  // TCP Socket testing
+  // Construct server and start in a thread
+  ASSERT_TRUE(tcpServer.initServer(tcpPort));
+  ASSERT_TRUE(tcpServer.listenForClient());
   ASSERT_TRUE(tcpManager.init(&tcpServer));
-  EXPECT_FALSE(tcpClient.sendMsg(pingRequest)); // NOT CONNECTED YET!
+  //boost::thread tcpSrvThrd(boost::bind(&MessageManager::spin, &tcpManager));
 
+  // Construct a client and try to ping the server
+  ASSERT_TRUE(tcpClient.initClient(&ipAddr[0], tcpPort));
+  ASSERT_TRUE(tcpClient.connectToServer());
+  ASSERT_TRUE(tcpClient.sendMsg(pingRequest));
+  //ASSERT_TRUE(tcpClient.receiveMsg(pingReply));
+  //ASSERT_TRUE(tcpClient.sendAndReceiveMsg(pingRequest, pingReply));
+
+  
+  ASSERT_TRUE(tcpServer.listenForClient());
+  ASSERT_TRUE(tcpServer.receiveMsg(pingReply));
 
 }
 
