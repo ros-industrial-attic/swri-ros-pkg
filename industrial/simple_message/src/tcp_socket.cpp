@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -270,7 +270,13 @@ bool TcpSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
              this->MAX_BUFFER_SIZE, buffer.getMaxBufferSize());
   }
 
-  rc = RECV(this->getSockHandle(), &this->buffer_[0], num_bytes, 0);
+  // On some platforms (motoplus) the RECV function returns zero bytes instead
+  // of blocking until num_bytes is read.  The logic below assumes that either
+  // zero or num_bytes is read (This may cause some issues).
+  do{
+    rc = RECV(this->getSockHandle(), &this->buffer_[0], num_bytes, 0);
+  }
+  while(rc == 0);
 
   if (this->SOCKET_FAIL != rc)
   {
