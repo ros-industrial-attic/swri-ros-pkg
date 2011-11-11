@@ -32,7 +32,7 @@
 #ifndef UDP_SERVER_H
 #define UDP_SERVER_H
 
-#include "udp_socket.h"
+#include "socket/udp_socket.h"
 
 namespace industrial
 {

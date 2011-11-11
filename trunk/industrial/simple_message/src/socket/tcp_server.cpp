@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "tcp_server.h"
+#include "socket/tcp_server.h"
 #include "log_wrapper.h"
 
 namespace industrial

@@ -32,7 +32,7 @@
 #ifndef TCP_SERVER_H
 #define TCP_SERVER_H
 
-#include "tcp_socket.h"
+#include "socket/tcp_socket.h"
 
 namespace industrial
 {
