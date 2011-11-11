@@ -35,6 +35,8 @@
 #include "smpl_msg_connection.h"
 #include "message_handler.h"
 #include "ping_handler.h"
+#include "comms_fault_handler.h"
+#include "simple_comms_fault_handler.h"
 
 namespace industrial
 {
@@ -85,6 +87,21 @@ public:
    * \return true on success, false otherwise
    */
   bool init(industrial::smpl_msg_connection::SmplMsgConnection* connection);
+
+  /**
+   * \brief Class initializer
+   *
+   * \param simple message connection that will be managed.
+   * This connection must be properly initialized and connected before
+   * it is passed to the manager.
+   *
+   * \param connection fault handler to be used in case of a connection
+   * fault.
+   *
+   * \return true on success, false otherwise
+   */
+  bool init(industrial::smpl_msg_connection::SmplMsgConnection* connection,
+            industrial::comms_fault_handler::CommsFaultHandler* fault_handler);
 
   /**
    * \brief Perform an single execution of the message manager (a single
@@ -155,6 +172,17 @@ private:
   industrial::ping_handler::PingHandler ping_hndlr_;
 
   /**
+   * \brief Internal default comms handler (this is used if a communications fault handler is
+   * not specified as part of the class init.
+   */
+  industrial::simple_comms_fault_handler::SimpleCommsFaultHandler def_comms_hndlr_;
+
+  /**
+   * \brief Reference to comms handler
+   */
+  industrial::comms_fault_handler::CommsFaultHandler* comms_hndlr_;
+
+  /**
    * \brief Number of handlers
    */
   unsigned int num_handlers_;
@@ -168,6 +196,35 @@ private:
    */
   industrial::message_handler::MessageHandler* getHandler(int msg_type);
 
+  /**
+   * \brief Gets communications fault handler
+   *
+   * \return reference to message handler or NULL if one doesn't exist
+   */
+  industrial::comms_fault_handler::CommsFaultHandler* getCommsFaultHandler()
+  {
+    return this->comms_hndlr_;
+  }
+
+  /**
+   * \brief Gets communications fault handler
+   *
+   * \param Pointer to message handler
+   */
+  void setCommsFaultHandler(industrial::comms_fault_handler::CommsFaultHandler* handler)
+  {
+    this->comms_hndlr_ = handler;
+  }
+
+  /**
+   * \brief Gets default communications fault handler
+   *
+   * \return reference to message handler or NULL if one doesn't exist
+   */
+  industrial::simple_comms_fault_handler::SimpleCommsFaultHandler& getDefaultCommsFaultHandler()
+  {
+    return this->def_comms_hndlr_;
+  }
   /**
    * \brief Gets ping handler
    *

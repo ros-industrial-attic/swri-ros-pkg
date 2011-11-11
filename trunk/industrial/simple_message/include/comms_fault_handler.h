@@ -29,92 +29,46 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "socket/tcp_client.h"
-#include "log_wrapper.h"
+#ifndef COMMS_FAULT_HANDLER_H
+#define COMMS_FAULT_HANDLER_H
 
 namespace industrial
 {
-namespace tcp_client
+namespace comms_fault_handler
 {
 
-TcpClient::TcpClient()
+/**
+ * \brief Interface definition for communications fault handler.  Defines the type
+ * of communcations faults that can be handled and the function callbacks that should
+ * be executed under the specific fault conditions.
+ *
+ */
+class CommsFaultHandler
+
 {
+public:
 
-}
+  /**
+   * \brief Send failure callback method. TODO: This callback may not be used
+   *
+   */
+  virtual void sendFailCB()=0;
 
-TcpClient::~TcpClient()
-{
-  LOG_DEBUG("Destructing TCPClient");
-}
+  /**
+   * \brief Receive failure callback method TODO: This callback may not be used
+   *
+   */
+  virtual void receiveFailCB()=0;
 
-bool TcpClient::init(char *buff, int port_num)
-{
+  /**
+   * \brief Connection failure callback method
+   *
+   */
+  virtual void connectionFailCB()=0;
 
-  int rc;
-  bool rtn;
-  int disableNodeDelay = 1;
+};
 
-  rc = SOCKET(AF_INET, SOCK_STREAM, 0);
-  if (this->SOCKET_FAIL != rc)
-  {
-    this->setSockHandle(rc);
+} //namespace comms_fault_handler
+} //namespace industrial
 
-    // The set no delay disables the NAGEL algorithm
-    rc = SET_NO_DELAY(this->getSockHandle(), disableNodeDelay);
-    if (this->SOCKET_FAIL == rc)
-    {
-      LOG_WARN("Failed to set no socket delay, sending data can be delayed by up to 250ms");
-    }
-
-    // Initialize address data structure
-    memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
-    this->sockaddr_.sin_family = AF_INET;
-    this->sockaddr_.sin_addr.s_addr = INET_ADDR(buff);
-    this->sockaddr_.sin_port = HTONS(port_num);
-
-    rtn = true;
-
-  }
-  else
-  {
-    LOG_ERROR("Failed to create socket, rc: %d", rc);
-    rtn = false;
-  }
-  return rtn;
-}
-
-bool TcpClient::makeConnect()
-{
-  bool rtn = false;
-  int rc = this->SOCKET_FAIL;
-  SOCKLEN_T addrSize = 0;
-
-  if (!this->isConnected())
-  {
-    addrSize = sizeof(this->sockaddr_);
-    rc = CONNECT(this->getSockHandle(), (sockaddr *)&this->sockaddr_, addrSize);
-    if (this->SOCKET_FAIL != rc)
-    {
-      LOG_INFO("Connected to server");
-      this->setConnected(true);
-      rtn = true;
-    }
-    else
-    {
-      LOG_ERROR("Failed to connect to server");
-      rtn = false;
-    }
-  }
-
-  else
-  {
-    LOG_WARN("Tried to connect when socket already in connected state");
-  }
-
-  return rtn;
-
-}
-
-} //tcp_client
-} //industrial
-
+#endif /* COMMS_FAULT_HANDLER_H */

@@ -36,6 +36,8 @@
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::message_handler;
 using namespace industrial::simple_message;
+using namespace industrial::comms_fault_handler;
+using namespace industrial::simple_comms_fault_handler;
 
 namespace industrial
 {
@@ -52,6 +54,7 @@ MessageManager::MessageManager()
   {
     this->handlers_[i] = NULL;
   }
+  this->comms_hndlr_ = NULL;
 }
 
 MessageManager::~MessageManager()
@@ -63,23 +66,14 @@ bool MessageManager::init(SmplMsgConnection* connection)
 {
   bool rtn = false;
 
-  LOG_INFO("Initializing message manager");
+  LOG_INFO("Initializing message manager with default comms fault handler");
+
 
   if (NULL != connection)
   {
-    this->setConnection(connection);
-    this->getPingHandler().init(connection);
-
-    if (this->add(&this->getPingHandler()))
-    {
-      rtn = true;
-    }
-    else
-    {
-      rtn = false;
-      LOG_WARN("Failed to add ping handler, manager won't respond to pings");
-    }
-
+    this->getDefaultCommsFaultHandler().init(connection);
+    this->init(connection, (CommsFaultHandler*)(&this->getDefaultCommsFaultHandler()));
+    rtn = true;
   }
   else
   {
@@ -90,10 +84,49 @@ bool MessageManager::init(SmplMsgConnection* connection)
   return rtn;
 }
 
+bool MessageManager::init(SmplMsgConnection* connection, CommsFaultHandler* fault_handler)
+{
+  bool rtn = false;
+
+    LOG_INFO("Initializing message manager");
+
+    if (NULL != connection && NULL != fault_handler)
+    {
+      this->setConnection(connection);
+      this->getPingHandler().init(connection);
+      this->setCommsFaultHandler(fault_handler);
+
+      if (this->add(&this->getPingHandler()))
+      {
+        rtn = true;
+      }
+      else
+      {
+        rtn = false;
+        LOG_WARN("Failed to add ping handler, manager won't respond to pings");
+      }
+
+    }
+    else
+    {
+      LOG_ERROR("NULL connection or NULL fault handler passed into manager init");
+      rtn = false;
+    }
+
+    return rtn;
+  }
+
+
+
 void MessageManager::spinOnce()
 {
   SimpleMessage msg;
   MessageHandler* handler = NULL;
+
+  if(!this->getConnection()->isConnected())
+  {
+    this->getCommsFaultHandler()->connectionFailCB();
+  }
 
   if (this->getConnection()->receiveMsg(msg))
   {
@@ -120,6 +153,7 @@ void MessageManager::spinOnce()
   else
   {
     LOG_ERROR("Failed to receive incoming message");
+    this->getCommsFaultHandler()->sendFailCB();
   }
 }
 
