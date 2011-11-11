@@ -34,8 +34,10 @@
 #include "byte_array.h"
 #include "shared_types.h"
 #include "smpl_msg_connection.h"
-#include "udp_socket.h"
-#include "tcp_socket.h"
+#include "udp_client.h"
+#include "udp_server.h"
+#include "tcp_client.h"
+#include "tcp_server.h"
 #include "ping_message.h"
 #include "ping_handler.h"
 #include "message_manager.h"
@@ -48,7 +50,11 @@ using namespace industrial::byte_array;
 using namespace industrial::shared_types;
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::udp_socket;
+using namespace industrial::udp_client;
+using namespace industrial::udp_server;
 using namespace industrial::tcp_socket;
+using namespace industrial::tcp_client;
+using namespace industrial::tcp_server;
 using namespace industrial::ping_message;
 using namespace industrial::ping_handler;
 using namespace industrial::message_manager;
@@ -199,7 +205,7 @@ TEST(PingMessageSuite, toMessage)
 TEST(PingHandlerSuite, init)
 {
   PingHandler handler;
-  UdpSocket udp;
+  UdpClient udp;
 
   ASSERT_TRUE(handler.init(&udp));
   EXPECT_EQ(StandardMsgTypes::PING,handler.getMsgType());
@@ -211,7 +217,7 @@ TEST(PingHandlerSuite, init)
 TEST(MessageManagerSuite, init)
 {
   MessageManager manager;
-  UdpSocket udp;
+  UdpClient udp;
 
   EXPECT_TRUE(manager.init(&udp));
   EXPECT_FALSE(manager.init(NULL));
@@ -221,7 +227,7 @@ TEST(MessageManagerSuite, init)
 TEST(MessageManagerSuite, addHandler)
 {
   MessageManager manager;
-  UdpSocket udp;
+  UdpClient udp;
   PingHandler handler;
 
   EXPECT_EQ(0, manager.getNumHandlers());
@@ -240,7 +246,8 @@ TEST(MessageManagerSuite, udp)
   const int udpPort = 11000;
   char ipAddr[] = "127.0.0.1";
 
-  UdpSocket udpClient, udpServer;
+  UdpClient* udpClient = new UdpClient();
+  UdpServer udpServer;
   SimpleMessage pingRequest, pingReply;
   MessageManager udpManager;
 
@@ -249,15 +256,21 @@ TEST(MessageManagerSuite, udp)
 
   // UDP Socket testing
   // Construct server and start in a thread
-  ASSERT_TRUE(udpServer.initServer(udpPort));
+  ASSERT_TRUE(udpServer.init(udpPort));
   ASSERT_TRUE(udpManager.init(&udpServer)); 
   boost::thread udpSrvThrd(boost::bind(&MessageManager::spin, &udpManager));
 
   // Construct a client and try to ping the server
-  ASSERT_TRUE(udpClient.initClient(&ipAddr[0], udpPort));
-  ASSERT_TRUE(udpClient.sendMsg(pingRequest));
-  ASSERT_TRUE(udpClient.receiveMsg(pingReply));
-  ASSERT_TRUE(udpClient.sendAndReceiveMsg(pingRequest, pingReply));
+  ASSERT_TRUE(udpClient->init(&ipAddr[0], udpPort));
+  ASSERT_TRUE(udpClient->sendMsg(pingRequest));
+  ASSERT_TRUE(udpClient->receiveMsg(pingReply));
+  ASSERT_TRUE(udpClient->sendAndReceiveMsg(pingRequest, pingReply));
+
+  // Delete client and try to reconnect
+  delete udpClient;
+  udpClient = new UdpClient();
+  ASSERT_TRUE(udpClient->init(&ipAddr[0], udpPort));
+  ASSERT_TRUE(udpClient->sendAndReceiveMsg(pingRequest, pingReply));
 }
 
 TEST(MessageManagerSuite, tcp)
@@ -265,7 +278,8 @@ TEST(MessageManagerSuite, tcp)
   const int tcpPort = 11000;
   char ipAddr[] = "127.0.0.1";
 
-  TcpSocket tcpClient, tcpServer;
+  TcpClient* tcpClient = new TcpClient();
+  TcpServer tcpServer;
   SimpleMessage pingRequest, pingReply;
   MessageManager tcpManager;
 
@@ -274,15 +288,16 @@ TEST(MessageManagerSuite, tcp)
 
 
   // TCP Socket testing
+
   // Construct server
-  ASSERT_TRUE(tcpServer.initServer(tcpPort));
+  ASSERT_TRUE(tcpServer.init(tcpPort));
 
   // Construct a client
-  ASSERT_TRUE(tcpClient.initClient(&ipAddr[0], tcpPort));
-  ASSERT_TRUE(tcpClient.connectToServer());
+  ASSERT_TRUE(tcpClient->init(&ipAddr[0], tcpPort));
+  ASSERT_TRUE(tcpClient->makeConnect());
 
   // Listen for client connection, init manager and start thread
-  ASSERT_TRUE(tcpServer.listenForClient());
+  ASSERT_TRUE(tcpServer.makeConnect());
   ASSERT_TRUE(tcpManager.init(&tcpServer));
 
   // TODO: The message manager is not thread safe (threads are used for testing,
@@ -291,10 +306,21 @@ TEST(MessageManagerSuite, tcp)
   boost::thread tcpSrvThrd(boost::bind(&MessageManager::spin, &tcpManager));
 
   // Ping the server
-  ASSERT_TRUE(tcpClient.sendMsg(pingRequest));
-  ASSERT_TRUE(tcpClient.receiveMsg(pingReply));
-  ASSERT_TRUE(tcpClient.sendAndReceiveMsg(pingRequest, pingReply));
+  ASSERT_TRUE(tcpClient->sendMsg(pingRequest));
+  ASSERT_TRUE(tcpClient->receiveMsg(pingReply));
+  ASSERT_TRUE(tcpClient->sendAndReceiveMsg(pingRequest, pingReply));
+
+  /*
+  // Delete client and try to reconnect
+  delete tcpClient
+  tcpClient = new TcpClient()
+  ASSERT_TRUE(tcpClient->init(&ipAddr[0], tcpPort));
+  ASSERT_TRUE(tcpClient->makeConnect());
+  ASSERT_TRUE(tcpClient->sendAndReceiveMsg(pingRequest, pingReply));
+  */
 }
+
+
 
 
 

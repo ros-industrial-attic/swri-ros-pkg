@@ -47,15 +47,6 @@ namespace industrial
 namespace smpl_msg_connection
 {
 
-SmplMsgConnection::SmplMsgConnection()
-{
-}
-
-
-SmplMsgConnection::~SmplMsgConnection()
-{
-}
-
 
 bool SmplMsgConnection::sendMsg(SimpleMessage & message)
 {
@@ -94,7 +85,7 @@ bool SmplMsgConnection::receiveMsg(SimpleMessage & message)
   if (rtn)
   {
     rtn = lengthBuffer.unload(length);
-    LOG_DEBUG("Message length: %d", rtn);
+    LOG_DEBUG("Message length: %d", length);
 
     if (rtn)
     {

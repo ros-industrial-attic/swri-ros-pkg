@@ -89,22 +89,17 @@ namespace simple_socket
 
 /**
  * \brief Enumeration of standard socket ports (supported by all platforms).
- * These are defined for convienence.  Other ports may be used.  Additional 
+ * These are defined for convenience.  Other ports may be used.  Additional
  * ports for application specific needs may also be defined.
  */
 namespace StandardSocketPorts
 {
-  enum StandardSocketPort
-  {
- MOTION = 11000,
- SYSTEM = 11001,
- STATE  = 11002,
- IO     = 11003
-  };
+enum StandardSocketPort
+{
+  MOTION = 11000, SYSTEM = 11001, STATE = 11002, IO = 11003
+};
 }
 typedef StandardSocketPorts::StandardSocketPort StandardSocketPort;
-
-
 
 /**
  * \brief Defines socket functions required for a simple connection type.
@@ -114,58 +109,52 @@ class SimpleSocket : public industrial::smpl_msg_connection::SmplMsgConnection
 public:
 
   /**
-   * \brief initializes TCP server socket.  Object can either be a client OR
-   * a server, NOT BOTH.
-   *
-   * \param port_num port number (server & client port number must match)
-   *
-   * \return true on success, false otherwise (socket is invalid)
-   */
-  virtual bool initServer(int port_num)=0;
+     * \brief Constructor
+     */
+  SimpleSocket(){}
 
   /**
-   * \brief initializes TCP client socket.  Object can either be a client OR
-   * a server, NOT BOTH.
-   *
-   * \param buff server address (in string form) xxx.xxx.xxx.xxx
-   * \param port_num port number (server & client port number must match)
-   *
-   * \return true on success, false otherwise (socket is invalid)
-   */
-  virtual bool initClient(char *buff, int port_num)=0;
-
-  /**
-   * \brief connects a client to the server (this function should only be
-   * called if a client socket was initialized.
-   *
-   * \return true on success, false otherwise
-   */
-  virtual bool connectToServer()=0;
-
-  /**
-   * \brief listens for a client connection (this function should only be
-   * called if a server socket was initialized.
-   *
-   * \return true on success, false otherwise
-   */
-  virtual bool listenForClient()=0;
+     * \brief Destructor
+     */
+  virtual ~SimpleSocket(){}
 
 protected:
+
+  /**
+   * \brief socket handle for sending/receiving data
+   */
   int sock_handle_;
+
+  /**
+   * \brief address/port of remote socket
+   */
   sockaddr_in sockaddr_;
 
+  /**
+   * \brief socket fail return value
+   */
   static const int SOCKET_FAIL = -1;
-  static const int MAX_BUFFER_SIZE = 1024;
 
+  /**
+   * \brief maximum size of buffer for receiving data (fixed memory size used
+   * in order to avoid dynamic memory allocation)
+   */
+  static const int MAX_BUFFER_SIZE = 1024;
   /**
    * \brief internal data buffer for receiving
    */
   char buffer_[MAX_BUFFER_SIZE + 1];
 
-  int  getSockHandle() const
-  { return sock_handle_;}
+int  getSockHandle() const
+  {
+    return sock_handle_;
+  }
+
   void setSockHandle(int sock_handle_)
-  { this->sock_handle_ = sock_handle_;}
+  {
+    this->sock_handle_ = sock_handle_;
+  }
+
 };
 
 } //simple_socket

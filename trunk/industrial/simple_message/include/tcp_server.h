@@ -1,7 +1,7 @@
 ﻿/*
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2011, Yaskawa America, Inc.
+ * Copyright (c) 2011, Southwest Research Institute
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,7 +12,7 @@
  *       * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *       * Neither the name of the Yaskawa America, Inc., nor the names
+ *       * Neither the name of the Southwest Research Institute, nor the names
  *       of its contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -29,58 +29,66 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UDP_SOCKET_H
-#define UDP_SOCKET_H
+#ifndef TCP_SERVER_H
+#define TCP_SERVER_H
 
-
-#ifdef ROS
-#include "sys/socket.h"
-#include "arpa/inet.h"
-#include "string.h"
-#include "unistd.h"
-#endif
-
-#ifdef MOTOPLUSE
-#include "motoPlus.h"
-#endif
-
-#include "simple_socket.h"
-#include "shared_types.h"
-#include "smpl_msg_connection.h"
+#include "tcp_socket.h"
 
 namespace industrial
 {
-namespace udp_socket
+namespace tcp_server
 {
 
-class UdpSocket : public industrial::simple_socket::SimpleSocket
+/**
+ * \brief Defines TCP server functions.
+ */
+class TcpServer : public industrial::tcp_socket::TcpSocket
 {
 public:
 
-  UdpSocket();
-  ~UdpSocket();
+  /**
+   * \brief Constructor
+   */
+  TcpServer();
 
-  bool isConnected(){return true;}
-  bool makeConnect() {return true;};
+  /**
+   * \brief Destructor
+   */
+  ~TcpServer();
 
-  // Override
-  // receive is overridden because the base class implementation assumed
-  // socket data could be read partially.  UDP socket data is lost when
-  // only a portion of it is read.  For that reason this receive method
-  // reads the entire data stream (assumed to be a single message).
-  bool  receiveMsg(industrial::simple_message::SimpleMessage & message);
+  /**
+   * \brief initializes TCP server socket.  The connect method must be called
+   * following initialization in order to communicate with the remote host.
+   *
+   * \param port_num port number (server & client port number must match)
+   *
+   * \return true on success, false otherwise (socket is invalid)
+   */
+  bool init(int port_num);
 
-private:
+  // Overrides
+  bool makeConnect();
 
-  // Virtual
-  bool sendBytes(industrial::byte_array::ByteArray & buffer);
-  bool receiveBytes(industrial::byte_array::ByteArray & buffer,
-      industrial::shared_types::shared_int num_bytes);
+protected:
+  /**
+   * \brief server handle.  Every time a connection is made, the class generates
+   * a new handle for sending/receiving.  The server handle is saved off to a
+   * separate variable so that recoving a lost connection is possible.
+   */
+  int srvr_handle_;
 
+  int getSrvrHandle() const
+  {
+    return srvr_handle_;
+  }
+
+  void setSrvrHandle(int srvr_handle_)
+  {
+    this->srvr_handle_ = srvr_handle_;
+  }
 };
 
-} //udp_socket
+} //simple_socket
 } //industrial
 
-#endif
-
+#endif /* TCP_SERVER_H */

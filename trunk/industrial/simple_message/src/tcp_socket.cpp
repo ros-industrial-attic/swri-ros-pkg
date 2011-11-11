@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -32,6 +32,7 @@
 #include "tcp_socket.h"
 #include "log_wrapper.h"
 #include "simple_message.h"
+#include "shared_types.h"
 
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::byte_array;
@@ -48,6 +49,7 @@ TcpSocket::TcpSocket()
 {
   this->setSockHandle(this->SOCKET_FAIL);
   memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
+  this->setConnected(false);
 
 }
 
@@ -58,199 +60,47 @@ TcpSocket::~TcpSocket()
   CLOSE(this->getSockHandle());
 }
 
-bool TcpSocket::initServer(int port_num)
+bool TcpSocket::sendBytes(ByteArray & buffer)
 {
-  int rc;
-  bool rtn;
-  int err;
-  SOCKLEN_T addrSize = 0;
-  int disableNodeDelay = 1;
+  int rc = this->SOCKET_FAIL;
+  bool rtn = false;
 
-  /* Create a socket using:
-   * AF_INET - IPv4 internet protocol
-   * SOCK_STREAM - TCP type
-   * protocol (0) - System chooses
-   */
-  rc = SOCKET(AF_INET, SOCK_STREAM, 0);
-  if (this->SOCKET_FAIL != rc)
+  if (this->isConnected())
   {
-    this->setSockHandle(rc);
-    LOG_DEBUG("Socket created, rc: %d", rc);
-    LOG_DEBUG("Socket handle: %d", this->getSockHandle());
-
-    // The set no delay disables the NAGEL algorithm
-    rc = SET_NO_DELAY(this->getSockHandle(), disableNodeDelay);
-    err = errno;
-    if (this->SOCKET_FAIL == rc)
+    // Nothing restricts the ByteArray from being larger than the what the socket
+    // can handle.
+    if (this->MAX_BUFFER_SIZE > buffer.getBufferSize())
     {
-      LOG_WARN("Failed to set no socket delay, errno: %d, sending data can be delayed by up to 250ms", err);
-    }
-
-    // Initialize address data structure
-    memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
-    this->sockaddr_.sin_family = AF_INET;
-    this->sockaddr_.sin_addr.s_addr = INADDR_ANY;
-    this->sockaddr_.sin_port = HTONS(port_num);
-
-    addrSize = sizeof(this->sockaddr_);
-    rc = BIND(this->getSockHandle(), (sockaddr *)&(this->sockaddr_), addrSize);
-
-    if (this->SOCKET_FAIL != rc)
-    {
-      LOG_INFO("Server socket successfully initialized");
-
-      rc = LISTEN(this->getSockHandle(), 1);
+      rc = SEND(this->getSockHandle(), buffer.getRawDataPtr(), buffer.getBufferSize(), 0);
 
       if (this->SOCKET_FAIL != rc)
       {
-        LOG_INFO("Socket in listen mode");
         rtn = true;
       }
       else
       {
-        LOG_ERROR("Failed to set socket to listen");
         rtn = false;
+        this->setConnected(false);
+        LOG_ERROR("Socket sendBytes failed, rc: %d", rc);
       }
     }
     else
     {
-      LOG_ERROR("Failed to bind socket, rc: %d", rc);
-      CLOSE(this->getSockHandle());
+      LOG_ERROR("Buffer size: %u, is greater than max socket size: %u", buffer.getBufferSize(), this->MAX_BUFFER_SIZE);
       rtn = false;
     }
 
   }
   else
   {
-    LOG_ERROR("Failed to create socket, rc: %d", rc);
     rtn = false;
+    LOG_WARN("Not connected, bytes not sent");
   }
 
   return rtn;
 }
 
-bool TcpSocket::listenForClient()
-{
-  bool rtn = false;
-  int rc = this->SOCKET_FAIL;
-  int socket = this->SOCKET_FAIL;
-
-  rc = ACCEPT(this->getSockHandle(), NULL, NULL);
-
-  if (this->SOCKET_FAIL != rc)
-  {
-    // The accept call above creates a new socket.  The old
-    // socket handle is no longer needed, since only a single
-    // server-client socket connection is allowed.
-    CLOSE(this->getSockHandle());
-    this->setSockHandle(rc);
-    LOG_INFO("Client socket accepted");
-    rtn = true;
-  }
-  else
-  {
-    LOG_ERROR("Failed to accept for client connection");
-    rtn = false;
-  }
-
-  return rtn;
-
-}
-
-bool TcpSocket::initClient(char *buff, int port_num)
-{
-
-  int rc;
-  bool rtn;
-  int disableNodeDelay = 1;
-
-  /* Create a socket using:
-   * AF_INET - IPv4 internet protocol
-   * SOCK_DGRAM - UDP type
-   * protocol (0) - System chooses
-   */
-  rc = SOCKET(AF_INET, SOCK_STREAM, 0);
-  if (this->SOCKET_FAIL != rc)
-  {
-    this->setSockHandle(rc);
-
-    // The set no delay disables the NAGEL algorithm
-    rc = SET_NO_DELAY(this->getSockHandle(), disableNodeDelay);
-    if (this->SOCKET_FAIL == rc)
-    {
-      LOG_WARN("Failed to set no socket delay, sending data can be delayed by up to 250ms");
-    }
-
-    // Initialize address data structure
-    memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
-    this->sockaddr_.sin_family = AF_INET;
-    this->sockaddr_.sin_addr.s_addr = INET_ADDR(buff);
-    this->sockaddr_.sin_port = HTONS(port_num);
-
-    rtn = true;
-
-  }
-  else
-  {
-    LOG_ERROR("Failed to create socket, rc: %d", rc);
-    rtn = false;
-  }
-  return rtn;
-}
-
-bool TcpSocket::connectToServer()
-{
-  bool rtn = false;
-  int rc = this->SOCKET_FAIL;
-  SOCKLEN_T addrSize = 0;
-
-  addrSize = sizeof(this->sockaddr_);
-  rc = CONNECT(this->getSockHandle(), (sockaddr *)&this->sockaddr_, addrSize);
-  if (this->SOCKET_FAIL != rc)
-  {
-    LOG_INFO("Connected to server");
-    rtn = true;
-  }
-  else
-  {
-    LOG_ERROR("Failed to connect to server");
-    rtn = false;
-  }
-
-  return rtn;
-
-}
-
-bool TcpSocket::sendBytes(ByteArray & buffer)
-{
-  int rc = this->SOCKET_FAIL;
-  bool rtn = false;
-
-  // Nothing restricts the ByteArray from being larger than the what the socket
-  // can handle.
-  if (this->MAX_BUFFER_SIZE > buffer.getBufferSize())
-  {
-    rc = SEND(this->getSockHandle(), buffer.getRawDataPtr(), buffer.getBufferSize(), 0);
-
-    if (this->SOCKET_FAIL != rc)
-    {
-      rtn = true;
-    }
-    else
-    {
-      LOG_ERROR("Socket sendBytes failed, rc: %d", rc);
-    }
-  }
-  else
-  {
-    LOG_ERROR("Buffer size: %u, is greater than max socket size: %u", buffer.getBufferSize(), this->MAX_BUFFER_SIZE);
-    rtn = false;
-  }
-
-  return rtn;
-}
-
-bool TcpSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
+bool TcpSocket::receiveBytes(ByteArray & buffer, industrial::shared_types::shared_int num_bytes)
 {
   int rc = this->SOCKET_FAIL;
   bool rtn = false;
@@ -269,26 +119,28 @@ bool TcpSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
     LOG_WARN("Socket buffer max size: %u, is larger than byte array buffer: %u",
              this->MAX_BUFFER_SIZE, buffer.getMaxBufferSize());
   }
-
-  // On some platforms (motoplus) the RECV function returns zero bytes instead
-  // of blocking until num_bytes is read.  The logic below assumes that either
-  // zero or num_bytes is read (This may cause some issues).
-  do{
-    rc = RECV(this->getSockHandle(), &this->buffer_[0], num_bytes, 0);
-  }
-  while(rc == 0);
-
-  if (this->SOCKET_FAIL != rc)
+  if (this->isConnected())
   {
-    LOG_DEBUG("Byte array receive, bytes read: %u", rc);
-    buffer.init(&this->buffer_[0], rc);
-    rtn = true;
+    rc = RECV(this->getSockHandle(), &this->buffer_[0], num_bytes, 0);
+
+    if (this->SOCKET_FAIL != rc)
+    {
+      LOG_DEBUG("Byte array receive, bytes read: %u", rc);
+      buffer.init(&this->buffer_[0], rc);
+      rtn = true;
+    }
+    else
+    {
+      LOG_ERROR("Socket receive failed, rc: %d", rc);
+      LOG_ERROR("Socket errno: %d", errno);
+      this->setConnected(false);
+      rtn = false;
+    }
   }
   else
   {
-    LOG_ERROR("Socket receive failed, rc: %d", rc);
-    LOG_ERROR("Socket errno: %d", errno);
     rtn = false;
+    LOG_WARN("Not connected, bytes not sent");
   }
   return rtn;
 }

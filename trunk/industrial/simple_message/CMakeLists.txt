@@ -34,8 +34,13 @@ rosbuild_add_library(simple_message
 					src/byte_array.cpp
 					src/simple_message.cpp
 					src/smpl_msg_connection.cpp
+					src/simple_socket.cpp
 					src/udp_socket.cpp
+					src/udp_client.cpp
+					src/udp_server.cpp
 					src/tcp_socket.cpp
+					src/tcp_client.cpp
+					src/tcp_server.cpp
 					src/message_handler.cpp
 					src/message_manager.cpp
 					src/ping_handler.cpp
@@ -48,8 +53,13 @@ rosbuild_add_gtest(utest test/utest.cpp
 					src/byte_array.cpp
 					src/simple_message.cpp
 					src/smpl_msg_connection.cpp
+					src/simple_socket.cpp
 					src/udp_socket.cpp
+					src/udp_client.cpp
+					src/udp_server.cpp
 					src/tcp_socket.cpp
+					src/tcp_client.cpp
+					src/tcp_server.cpp
 					src/message_handler.cpp
 					src/message_manager.cpp
 					src/ping_handler.cpp

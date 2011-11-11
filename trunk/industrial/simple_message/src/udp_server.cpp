@@ -29,58 +29,72 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UDP_SOCKET_H
-#define UDP_SOCKET_H
-
-
-#ifdef ROS
-#include "sys/socket.h"
-#include "arpa/inet.h"
-#include "string.h"
-#include "unistd.h"
-#endif
-
-#ifdef MOTOPLUSE
-#include "motoPlus.h"
-#endif
-
-#include "simple_socket.h"
-#include "shared_types.h"
-#include "smpl_msg_connection.h"
+#include "udp_server.h"
+#include "log_wrapper.h"
 
 namespace industrial
 {
-namespace udp_socket
+namespace udp_server
 {
 
-class UdpSocket : public industrial::simple_socket::SimpleSocket
+UdpServer::UdpServer()
 {
-public:
+}
 
-  UdpSocket();
-  ~UdpSocket();
+UdpServer::~UdpServer()
+{
+}
 
-  bool isConnected(){return true;}
-  bool makeConnect() {return true;};
+bool UdpServer::init(int port_num)
+{
+  int rc;
+  bool rtn;
+  SOCKLEN_T addrSize = 0;
 
-  // Override
-  // receive is overridden because the base class implementation assumed
-  // socket data could be read partially.  UDP socket data is lost when
-  // only a portion of it is read.  For that reason this receive method
-  // reads the entire data stream (assumed to be a single message).
-  bool  receiveMsg(industrial::simple_message::SimpleMessage & message);
+  /* Create a socket using:
+   * AF_INET - IPv4 internet protocol
+   * SOCK_DGRAM - UDP type
+   * protocol (0) - System chooses
+   */
+  rc = SOCKET(AF_INET, SOCK_DGRAM, 0);
+  if (this->SOCKET_FAIL != rc)
+  {
+    this->setSockHandle(rc);
+    LOG_DEBUG("Socket created, rc: %d", rc);
+    LOG_DEBUG("Socket handle: %d", this->getSockHandle());
 
-private:
+    // Initialize address data structure
+    memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
+    this->sockaddr_.sin_family = AF_INET;
+    this->sockaddr_.sin_addr.s_addr = INADDR_ANY;
+    this->sockaddr_.sin_port = HTONS(port_num);
 
-  // Virtual
-  bool sendBytes(industrial::byte_array::ByteArray & buffer);
-  bool receiveBytes(industrial::byte_array::ByteArray & buffer,
-      industrial::shared_types::shared_int num_bytes);
+    // This set the socket to be non-blocking (NOT SURE I WANT THIS) - sme
+    //fcntl(sock_handle, F_SETFL, O_NONBLOCK);
 
-};
+    addrSize = sizeof(this->sockaddr_);
+    rc = BIND(this->getSockHandle(), (sockaddr *)&(this->sockaddr_), addrSize);
 
-} //udp_socket
+    if (this->SOCKET_FAIL != rc)
+    {
+      rtn = true;
+      LOG_INFO("Server socket successfully initialized");
+    }
+    else
+    {
+      LOG_ERROR("Failed to bind socket, rc: %d", rc);
+      CLOSE(this->getSockHandle());
+      rtn = false;
+    }
+  }
+  else
+  {
+    LOG_ERROR("Failed to create socket, rc: %d", rc);
+    rtn = false;
+  }
+  return rtn;
+}
+
+} //udp_server
 } //industrial
-
-#endif
 

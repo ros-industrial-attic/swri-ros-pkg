@@ -29,58 +29,55 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UDP_SOCKET_H
-#define UDP_SOCKET_H
-
-
-#ifdef ROS
-#include "sys/socket.h"
-#include "arpa/inet.h"
-#include "string.h"
-#include "unistd.h"
-#endif
-
-#ifdef MOTOPLUSE
-#include "motoPlus.h"
-#endif
-
-#include "simple_socket.h"
-#include "shared_types.h"
-#include "smpl_msg_connection.h"
+#include "udp_client.h"
+#include "log_wrapper.h"
 
 namespace industrial
 {
-namespace udp_socket
+namespace udp_client
 {
 
-class UdpSocket : public industrial::simple_socket::SimpleSocket
+UdpClient::UdpClient()
 {
-public:
+}
 
-  UdpSocket();
-  ~UdpSocket();
+UdpClient::~UdpClient()
+{
+}
 
-  bool isConnected(){return true;}
-  bool makeConnect() {return true;};
+bool UdpClient::init(char *buff, int port_num)
+{
 
-  // Override
-  // receive is overridden because the base class implementation assumed
-  // socket data could be read partially.  UDP socket data is lost when
-  // only a portion of it is read.  For that reason this receive method
-  // reads the entire data stream (assumed to be a single message).
-  bool  receiveMsg(industrial::simple_message::SimpleMessage & message);
+  int rc;
+  bool rtn;
 
-private:
+  /* Create a socket using:
+   * AF_INET - IPv4 internet protocol
+   * SOCK_DGRAM - UDP type
+   * protocol (0) - System chooses
+   */
+  rc = SOCKET(AF_INET, SOCK_DGRAM, 0);
+  if (this->SOCKET_FAIL != rc)
+  {
+    this->setSockHandle(rc);
 
-  // Virtual
-  bool sendBytes(industrial::byte_array::ByteArray & buffer);
-  bool receiveBytes(industrial::byte_array::ByteArray & buffer,
-      industrial::shared_types::shared_int num_bytes);
+    // Initialize address data structure
+    memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
+    this->sockaddr_.sin_family = AF_INET;
+    this->sockaddr_.sin_addr.s_addr = INET_ADDR(buff);
+    this->sockaddr_.sin_port = HTONS(port_num);
 
-};
+    rtn = true;
 
-} //udp_socket
+  }
+  else
+  {
+    LOG_ERROR("Failed to create socket, rc: %d", rc);
+    rtn = false;
+  }
+  return rtn;
+}
+
+} //udp_client
 } //industrial
-
-#endif
 

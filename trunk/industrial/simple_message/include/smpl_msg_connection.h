@@ -46,24 +46,32 @@ class SmplMsgConnection
 {
 public:
 
-  SmplMsgConnection();
-  ~SmplMsgConnection();
-
   // Message
   virtual bool sendMsg(industrial::simple_message::SimpleMessage & message);
   virtual bool receiveMsg(industrial::simple_message::SimpleMessage & message);
   bool sendAndReceiveMsg(industrial::simple_message::SimpleMessage & send,
-                      industrial::simple_message::SimpleMessage & recv);
+                         industrial::simple_message::SimpleMessage & recv);
 
+  /**
+   * \brief return connection status
+   *
+   * \return true if connected
+   */
+  virtual bool isConnected()=0;
+
+  /**
+   * \brief connects to the remote host
+   *
+   * \return true on success, false otherwise
+   */
+  virtual bool makeConnect()=0;
 
 private:
-
 
   // Overrides
   virtual bool sendBytes(industrial::byte_array::ByteArray & buffer) =0;
   virtual bool receiveBytes(industrial::byte_array::ByteArray & buffer,
-                       industrial::shared_types::shared_int num_bytes) =0;
-
+                            industrial::shared_types::shared_int num_bytes) =0;
 
 };
 
@@ -71,4 +79,3 @@ private:
 } //namespace industrial
 
 #endif //SIMPLE_MESSAGE_CONNECTION_H
-
