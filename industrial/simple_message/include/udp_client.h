@@ -29,57 +29,40 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UDP_SOCKET_H
-#define UDP_SOCKET_H
+#ifndef UDP_CLIENT_H
+#define UDP_CLIENT_H
 
-
-#ifdef ROS
-#include "sys/socket.h"
-#include "arpa/inet.h"
-#include "string.h"
-#include "unistd.h"
-#endif
-
-#ifdef MOTOPLUSE
-#include "motoPlus.h"
-#endif
-
-#include "simple_socket.h"
-#include "shared_types.h"
-#include "smpl_msg_connection.h"
+#include "udp_socket.h"
 
 namespace industrial
 {
-namespace udp_socket
+namespace udp_client
 {
 
-class UdpSocket : public industrial::simple_socket::SimpleSocket
+class UdpClient : public industrial::udp_socket::UdpSocket
 {
 public:
 
-  UdpSocket();
-  ~UdpSocket();
+  UdpClient();
+  ~UdpClient();
 
-  bool isConnected(){return true;}
-  bool makeConnect() {return true;};
+/*
+   * \brief initializes UDP client socket
+   *
+   * \param buff server address (in string form) xxx.xxx.xxx.xxx
+   * \param port_num port number (server & client port number must match)
+   *
+   * \return true on success, false otherwise (socket is invalid)
+   */
+  bool init(char *buff, int port_num);
 
-  // Override
-  // receive is overridden because the base class implementation assumed
-  // socket data could be read partially.  UDP socket data is lost when
-  // only a portion of it is read.  For that reason this receive method
-  // reads the entire data stream (assumed to be a single message).
-  bool  receiveMsg(industrial::simple_message::SimpleMessage & message);
 
 private:
 
-  // Virtual
-  bool sendBytes(industrial::byte_array::ByteArray & buffer);
-  bool receiveBytes(industrial::byte_array::ByteArray & buffer,
-      industrial::shared_types::shared_int num_bytes);
 
 };
 
-} //udp_socket
+} //udp_server
 } //industrial
 
 #endif

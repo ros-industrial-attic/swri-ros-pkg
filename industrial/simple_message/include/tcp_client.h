@@ -1,7 +1,7 @@
 ﻿/*
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2011, Yaskawa America, Inc.
+ * Copyright (c) 2011, Southwest Research Institute
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,7 +12,7 @@
  *       * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *       * Neither the name of the Yaskawa America, Inc., nor the names
+ *       * Neither the name of the Southwest Research Institute, nor the names
  *       of its contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -29,58 +29,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UDP_SOCKET_H
-#define UDP_SOCKET_H
+#ifndef TCP_CLIENT_H
+#define TCP_CLIENT_H
 
-
-#ifdef ROS
-#include "sys/socket.h"
-#include "arpa/inet.h"
-#include "string.h"
-#include "unistd.h"
-#endif
-
-#ifdef MOTOPLUSE
-#include "motoPlus.h"
-#endif
-
-#include "simple_socket.h"
-#include "shared_types.h"
-#include "smpl_msg_connection.h"
+#include "tcp_socket.h"
 
 namespace industrial
 {
-namespace udp_socket
+namespace tcp_client
 {
 
-class UdpSocket : public industrial::simple_socket::SimpleSocket
+
+/**
+ * \brief Defines TCP client functions.
+ */
+class TcpClient : public industrial::tcp_socket::TcpSocket
 {
 public:
 
-  UdpSocket();
-  ~UdpSocket();
+  /**
+   * \brief Constructor
+   */
+  TcpClient();
 
-  bool isConnected(){return true;}
-  bool makeConnect() {return true;};
+  /**
+   * \brief Destructor
+   */
+  ~TcpClient();
 
-  // Override
-  // receive is overridden because the base class implementation assumed
-  // socket data could be read partially.  UDP socket data is lost when
-  // only a portion of it is read.  For that reason this receive method
-  // reads the entire data stream (assumed to be a single message).
-  bool  receiveMsg(industrial::simple_message::SimpleMessage & message);
+  /**
+     * \brief initializes TCP client socket.  Object can either be a client OR
+     * a server, NOT BOTH.
+     *
+     * \param buff server address (in string form) xxx.xxx.xxx.xxx
+     * \param port_num port number (server & client port number must match)
+     *
+     * \return true on success, false otherwise (socket is invalid)
+     */
+    bool init(char *buff, int port_num);
 
-private:
+    // Overrides
+    bool makeConnect();
 
-  // Virtual
-  bool sendBytes(industrial::byte_array::ByteArray & buffer);
-  bool receiveBytes(industrial::byte_array::ByteArray & buffer,
-      industrial::shared_types::shared_int num_bytes);
 
 };
 
-} //udp_socket
+} //tcp_client
 } //industrial
 
-#endif
-
+#endif /* TCP_CLIENT_H */

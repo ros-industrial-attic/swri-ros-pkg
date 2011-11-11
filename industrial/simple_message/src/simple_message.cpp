@@ -84,8 +84,8 @@ bool SimpleMessage::init(ByteArray & msg)
     if (msg.getBufferSize() > this->getHeaderSize())
     {
       dataSize = msg.getBufferSize() - this->getHeaderSize();
+      msg.unload(this->data_.getRawDataPtr(), dataSize);
     }
-    msg.unload(this->data_.getRawDataPtr(), dataSize);
     msg.unload(this->reply_code_);
     msg.unload(this->comm_type_);
     msg.unload(this->message_type_);

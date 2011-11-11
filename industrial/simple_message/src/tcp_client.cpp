@@ -29,62 +29,91 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TCP_SOCKET_H
-#define TCP_SOCKET_H
-
-#ifdef ROS
-#include "sys/socket.h"
-#include "arpa/inet.h"
-#include "string.h"
-#include "unistd.h"
-#endif
-
-#ifdef MOTOPLUSE
-#include "motoPlus.h"
-#endif
-
-#include "simple_socket.h"
-#include "shared_types.h"
+#include "tcp_client.h"
+#include "log_wrapper.h"
 
 namespace industrial
 {
-namespace tcp_socket
+namespace tcp_client
 {
 
-class TcpSocket : public industrial::simple_socket::SimpleSocket
+TcpClient::TcpClient()
 {
-public:
 
-  TcpSocket();
-  virtual ~TcpSocket();
+}
 
-protected:
+TcpClient::~TcpClient()
+{
+}
 
-  bool isConnected()
+bool TcpClient::init(char *buff, int port_num)
+{
+
+  int rc;
+  bool rtn;
+  int disableNodeDelay = 1;
+
+  rc = SOCKET(AF_INET, SOCK_STREAM, 0);
+  if (this->SOCKET_FAIL != rc)
   {
-    return connected_;
+    this->setSockHandle(rc);
+
+    // The set no delay disables the NAGEL algorithm
+    rc = SET_NO_DELAY(this->getSockHandle(), disableNodeDelay);
+    if (this->SOCKET_FAIL == rc)
+    {
+      LOG_WARN("Failed to set no socket delay, sending data can be delayed by up to 250ms");
+    }
+
+    // Initialize address data structure
+    memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
+    this->sockaddr_.sin_family = AF_INET;
+    this->sockaddr_.sin_addr.s_addr = INET_ADDR(buff);
+    this->sockaddr_.sin_port = HTONS(port_num);
+
+    rtn = true;
+
+  }
+  else
+  {
+    LOG_ERROR("Failed to create socket, rc: %d", rc);
+    rtn = false;
+  }
+  return rtn;
+}
+
+bool TcpClient::makeConnect()
+{
+  bool rtn = false;
+  int rc = this->SOCKET_FAIL;
+  SOCKLEN_T addrSize = 0;
+
+  if (!this->isConnected())
+  {
+    addrSize = sizeof(this->sockaddr_);
+    rc = CONNECT(this->getSockHandle(), (sockaddr *)&this->sockaddr_, addrSize);
+    if (this->SOCKET_FAIL != rc)
+    {
+      LOG_INFO("Connected to server");
+      this->setConnected(true);
+      rtn = true;
+    }
+    else
+    {
+      LOG_ERROR("Failed to connect to server");
+      rtn = false;
+    }
   }
 
-  void setConnected(bool connected_)
+  else
   {
-    this->connected_ = connected_;
+    LOG_WARN("Tried to connect when socket already in connected state");
   }
 
-private:
+  return rtn;
 
-  /**
-   * \brief flag indicating socket connection status
-   */
-  bool connected_;
+}
 
-  // Virtual
-  bool sendBytes(industrial::byte_array::ByteArray & buffer);
-  bool receiveBytes(industrial::byte_array::ByteArray & buffer,
-                    industrial::shared_types::shared_int num_bytes);
-
-};
-
-} //tcp_socket
+} //tcp_client
 } //industrial
 
-#endif /* TCP_SOCKET_H */
