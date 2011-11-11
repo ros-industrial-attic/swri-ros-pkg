@@ -41,6 +41,7 @@
 #include "ping_message.h"
 #include "ping_handler.h"
 #include "message_manager.h"
+#include "simple_comms_fault_handler.h"
 
 #include <gtest/gtest.h>
 #include <boost/thread/thread.hpp>
@@ -58,6 +59,7 @@ using namespace industrial::tcp_server;
 using namespace industrial::ping_message;
 using namespace industrial::ping_handler;
 using namespace industrial::message_manager;
+using namespace industrial::simple_comms_fault_handler;
 
 TEST(ByteArraySuite, init)
 {
@@ -310,14 +312,18 @@ TEST(MessageManagerSuite, tcp)
   ASSERT_TRUE(tcpClient->receiveMsg(pingReply));
   ASSERT_TRUE(tcpClient->sendAndReceiveMsg(pingRequest, pingReply));
 
-  /*
+
   // Delete client and try to reconnect
-  delete tcpClient
-  tcpClient = new TcpClient()
+
+
+
+  delete tcpClient;
+  sleep(10);  //Allow time for client to destruct and free up port
+  tcpClient = new TcpClient();
   ASSERT_TRUE(tcpClient->init(&ipAddr[0], tcpPort));
   ASSERT_TRUE(tcpClient->makeConnect());
   ASSERT_TRUE(tcpClient->sendAndReceiveMsg(pingRequest, pingReply));
-  */
+
 }
 
 

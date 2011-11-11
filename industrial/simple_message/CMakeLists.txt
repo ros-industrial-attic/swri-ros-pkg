@@ -12,7 +12,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rosbuild_init()
 
 # The simple_message library is designed to cross compile on Ubuntu
-# and various robot controlers.  This requires conditionally compiling
+# and various robot controllers.  This requires conditionally compiling
 # certain functions and headers.  The definition below enables compiling
 # for a ROS node.
 add_definitions(-DROS=1)  #build using ROS libraries
@@ -34,6 +34,7 @@ rosbuild_add_library(simple_message
 					src/byte_array.cpp
 					src/simple_message.cpp
 					src/smpl_msg_connection.cpp
+					
 					src/socket/simple_socket.cpp
 					src/socket/udp_socket.cpp
 					src/socket/udp_client.cpp
@@ -41,18 +42,22 @@ rosbuild_add_library(simple_message
 					src/socket/tcp_socket.cpp
 					src/socket/tcp_client.cpp
 					src/socket/tcp_server.cpp
+					
 					src/message_handler.cpp
 					src/message_manager.cpp
 					src/ping_handler.cpp
 					src/ping_message.cpp
 					src/joint_position.cpp
 					src/joint_message.cpp
-					)
 					
+					src/simple_comms_fault_handler.cpp
+					)
+	
 rosbuild_add_gtest(utest test/utest.cpp
 					src/byte_array.cpp
 					src/simple_message.cpp
 					src/smpl_msg_connection.cpp
+					
 					src/socket/simple_socket.cpp
 					src/socket/udp_socket.cpp
 					src/socket/udp_client.cpp
@@ -60,13 +65,15 @@ rosbuild_add_gtest(utest test/utest.cpp
 					src/socket/tcp_socket.cpp
 					src/socket/tcp_client.cpp
 					src/socket/tcp_server.cpp
+					
 					src/message_handler.cpp
 					src/message_manager.cpp
 					src/ping_handler.cpp
 					src/ping_message.cpp
 					src/joint_position.cpp
 					src/joint_message.cpp
-					)
+					
+					src/simple_comms_fault_handler.cpp)
 					
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()

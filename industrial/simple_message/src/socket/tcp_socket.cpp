@@ -57,6 +57,7 @@ TcpSocket::~TcpSocket()
 // Destructor for UDP socket object
 // Closes socket
 {
+  LOG_DEBUG("Destructing TCPSocket");
   CLOSE(this->getSockHandle());
 }
 
@@ -80,7 +81,6 @@ bool TcpSocket::sendBytes(ByteArray & buffer)
       else
       {
         rtn = false;
-        this->setConnected(false);
         LOG_ERROR("Socket sendBytes failed, rc: %d", rc);
       }
     }
@@ -96,6 +96,11 @@ bool TcpSocket::sendBytes(ByteArray & buffer)
     rtn = false;
     LOG_WARN("Not connected, bytes not sent");
   }
+
+  if (!rtn)
+    {
+      this->setConnected(false);
+    }
 
   return rtn;
 }
@@ -125,15 +130,22 @@ bool TcpSocket::receiveBytes(ByteArray & buffer, industrial::shared_types::share
 
     if (this->SOCKET_FAIL != rc)
     {
-      LOG_DEBUG("Byte array receive, bytes read: %u", rc);
-      buffer.init(&this->buffer_[0], rc);
-      rtn = true;
+      if (rc > 0)
+      {
+        LOG_DEBUG("Byte array receive, bytes read: %u", rc);
+        buffer.init(&this->buffer_[0], rc);
+        rtn = true;
+      }
+      else
+      {
+        LOG_WARN("Recieved zero bytes: %u", rc);
+        rtn = false;
+      }
     }
     else
     {
       LOG_ERROR("Socket receive failed, rc: %d", rc);
       LOG_ERROR("Socket errno: %d", errno);
-      this->setConnected(false);
       rtn = false;
     }
   }
@@ -141,6 +153,11 @@ bool TcpSocket::receiveBytes(ByteArray & buffer, industrial::shared_types::share
   {
     rtn = false;
     LOG_WARN("Not connected, bytes not sent");
+  }
+
+  if (!rtn)
+  {
+    this->setConnected(false);
   }
   return rtn;
 }
