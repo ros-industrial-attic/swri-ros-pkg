@@ -44,7 +44,7 @@
 #include "motoPlus.h"
 #endif
 
-#include "simple_socket.h"
+#include "socket/simple_socket.h"
 #include "shared_types.h"
 #include "smpl_msg_connection.h"
 

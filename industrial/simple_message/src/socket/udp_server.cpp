@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "udp_server.h"
+#include "socket/udp_server.h"
 #include "log_wrapper.h"
 
 namespace industrial

@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "simple_socket.h"
+#include "socket/simple_socket.h"
 #include "log_wrapper.h"
 
 namespace industrial

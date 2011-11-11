@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "udp_socket.h"
+#include "socket/udp_socket.h"
 #include "log_wrapper.h"
 #include "simple_message.h"
 

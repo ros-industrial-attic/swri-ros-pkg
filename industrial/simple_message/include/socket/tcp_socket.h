@@ -43,7 +43,7 @@
 #include "motoPlus.h"
 #endif
 
-#include "simple_socket.h"
+#include "socket/simple_socket.h"
 #include "shared_types.h"
 
 namespace industrial

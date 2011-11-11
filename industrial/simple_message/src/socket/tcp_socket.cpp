@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "tcp_socket.h"
+#include "socket/tcp_socket.h"
 #include "log_wrapper.h"
 #include "simple_message.h"
 #include "shared_types.h"
