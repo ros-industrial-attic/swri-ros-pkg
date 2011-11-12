@@ -32,7 +32,13 @@
 #ifndef TCP_SERVER_H
 #define TCP_SERVER_H
 
+#ifdef ROS
 #include "socket/tcp_socket.h"
+#endif
+
+#ifdef MOTOPLUS
+#include "tcp_socket.h"
+#endif
 
 namespace industrial
 {

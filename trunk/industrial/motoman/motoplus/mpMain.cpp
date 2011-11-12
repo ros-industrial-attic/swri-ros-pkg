@@ -41,7 +41,7 @@
 #include "system.h"
 
 #include "log_wrapper.h"
-#include "tcp_socket.h"
+#include "tcp_server.h"
 #include "message_manager.h"
 
 // Using directives
@@ -149,16 +149,16 @@ void parseMotionMessage(LONG recv_message[], ROSSocket *sock)
 }
 
 using namespace industrial::simple_socket;
-using namespace industrial::tcp_socket;
+using namespace industrial::tcp_server;
 using namespace industrial::message_manager;
 void systemServer(void)
 // Persistent UDP server that receives system messages from Motoros node (ROS interface) and relays to parseSystemMessage
 {
-TcpSocket connection;
+TcpServer connection;
 MessageManager manager;
 
-connection.initServer(StandardSocketPorts::SYSTEM);
-connection.listenForClient();
+connection.init(StandardSocketPorts::SYSTEM);
+connection.makeConnect();
 
 manager.init(&connection);
 manager.spin();
