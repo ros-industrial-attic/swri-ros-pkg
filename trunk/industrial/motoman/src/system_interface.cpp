@@ -34,6 +34,7 @@
 #include "tcp_socket.h"
 #include "simple_message.h"
 #include "ping_message.h"
+#include <iostream>
 
 using namespace industrial::simple_socket;
 using namespace industrial::tcp_socket;
@@ -44,7 +45,8 @@ using namespace industrial::ping_message;
 int main(int argc, char** argv)
 // Allows user to send commands to the robot
 {
-  char ip[1024] = "127.0.0.0"; // Robot IP address
+  char ip[1024] = "192.168.10.3"; // Robot IP address
+  bool exit = false;
   SimpleMessage reply, request;
   PingMessage tReply, tRequest;
   TcpSocket connection;
@@ -57,11 +59,15 @@ int main(int argc, char** argv)
   {
     tRequest.init();
     tRequest.toRequest(request);
-
+    
+    do {
     ROS_INFO("Sending ping");
     connection.sendAndReceiveMsg(request, reply);
-
     ROS_INFO("Ping recieved");
+    std::cout << "Type 1 to exit" << std::endl;
+    std::cin >> exit;
+	} while (!exit);
+
     tReply.init(reply);
   }
 
