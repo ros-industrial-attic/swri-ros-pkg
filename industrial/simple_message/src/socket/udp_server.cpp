@@ -29,7 +29,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef ROS
 #include "socket/udp_server.h"
+#endif
+
+#ifdef MOTOPLUS
+#include "udp_server.h"
+#endif
+
 #include "log_wrapper.h"
 
 namespace industrial

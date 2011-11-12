@@ -32,7 +32,14 @@
 #ifndef UDP_SERVER_H
 #define UDP_SERVER_H
 
+#ifdef ROS
 #include "socket/udp_socket.h"
+#endif
+
+#ifdef MOTOPLUS
+#include "udp_socket.h"
+#endif
+
 
 namespace industrial
 {

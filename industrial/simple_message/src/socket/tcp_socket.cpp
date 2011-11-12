@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -29,7 +29,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef ROS
 #include "socket/tcp_socket.h"
+#endif
+
+#ifdef MOTOPLUS
+#include "tcp_socket.h"
+#endif
+
 #include "log_wrapper.h"
 #include "simple_message.h"
 #include "shared_types.h"

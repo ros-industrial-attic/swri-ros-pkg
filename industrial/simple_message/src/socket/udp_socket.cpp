@@ -29,7 +29,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef ROS
 #include "socket/udp_socket.h"
+#endif
+
+#ifdef MOTOPLUS
+#include "udp_socket.h"
+#endif
+
 #include "log_wrapper.h"
 #include "simple_message.h"
 

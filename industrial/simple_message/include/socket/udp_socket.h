@@ -38,13 +38,16 @@
 #include "arpa/inet.h"
 #include "string.h"
 #include "unistd.h"
-#endif
-
-#ifdef MOTOPLUSE
-#include "motoPlus.h"
-#endif
 
 #include "socket/simple_socket.h"
+#endif
+
+#ifdef MOTOPLUS
+#include "motoPlus.h"
+
+#include "simple_socket.h"
+#endif
+
 #include "shared_types.h"
 #include "smpl_msg_connection.h"
 
