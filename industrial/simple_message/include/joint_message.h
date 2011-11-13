@@ -39,6 +39,15 @@
 
 namespace industrial
 {
+namespace joint_position
+{
+// Class declaration required for function prototypes below
+class JointPosition;
+}
+}
+
+namespace industrial
+{
 namespace joint_message
 {
 
@@ -88,7 +97,7 @@ public:
   bool init(industrial::simple_message::SimpleMessage & msg);
 
   /**
-   * \brief Initializes message from a simple message
+   * \brief Initializes message from a joint structure
    *
    * \param sequence number
    * \param joints
@@ -140,18 +149,28 @@ public:
     return sequence_;
   }
 
-  // Overrides - SimpleSerialize
-    bool load(industrial::byte_array::ByteArray *buffer);
-    bool unload(industrial::byte_array::ByteArray *buffer);
-    unsigned int byteLength()
-    {
-      return sizeof(industrial::shared_types::shared_int) + this->joints_.byteLength();
-    }
+  /**
+   * \brief returns reference to underlying joint class
+   *
+   * \return reference to joint class
+   */
+  industrial::joint_position::JointPosition& getJoints()
+  {
+    return this->joints_;
+  }
 
+  // Overrides - SimpleSerialize
+  bool load(industrial::byte_array::ByteArray *buffer);
+  bool unload(industrial::byte_array::ByteArray *buffer);
+
+  unsigned int byteLength()
+  {
+    return sizeof(industrial::shared_types::shared_int) + this->joints_.byteLength();
+  }
 
 private:
   /**
-   * \brief maximum number of joints positions that can be held in the message.
+   * \brief sequence number (for those joints messages that require it)
    */
   industrial::shared_types::shared_int sequence_;
   /**

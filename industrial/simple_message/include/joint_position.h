@@ -35,6 +35,17 @@
 #include "simple_message.h"
 #include "simple_serialize.h"
 #include "shared_types.h"
+//#include "joint_message.h"
+/*
+namespace industrial
+{
+namespace joint_message
+{
+// Class declaration required for function prototypes below
+class JointMessage;
+}
+}
+*/
 
 namespace industrial
 {
@@ -75,6 +86,12 @@ public:
   void init();
 
   /**
+   * \brief Initializes joint position from joint message
+   *
+   */
+  //void init(industrial::joint_message::JointMessage& joint_msg);
+
+  /**
    * \brief Sets a joint value within the buffer
    *
    * \param joint index
@@ -109,6 +126,13 @@ public:
   {
     return MAX_NUM_JOINTS;
   }
+
+  /**
+     * \brief == operator implementation
+     *
+     * \return true if equal
+     */
+  bool operator==(JointPosition &rhs);
 
   // Overrides - SimpleSerialize
   bool load(industrial::byte_array::ByteArray *buffer);
