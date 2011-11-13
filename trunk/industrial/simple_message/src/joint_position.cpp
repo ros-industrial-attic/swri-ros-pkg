@@ -57,6 +57,13 @@ void JointPosition::init()
   }
 }
 
+/*
+void JointPosition::init(industrial::joint_message::JointMessage& joint_msg)
+{
+  this->init();
+  this->copyFrom(joint_msg.getJoints());
+}
+*/
 bool JointPosition::setJoint(shared_int index, shared_real value)
 {
   bool rtn = false;
@@ -96,10 +103,30 @@ void JointPosition::copyFrom(JointPosition &src)
   shared_real value = 0.0;
 
   for (int i = 0; i < this->getMaxNumJoints(); i++)
+  {
+    src.getJoint(i, value);
+    this->setJoint(i, value);
+  }
+}
+
+bool JointPosition::operator==(JointPosition &rhs)
+{
+  bool rtn = true;
+
+  shared_real lhsvalue, rhsvalue;
+
+  for (int i = 0; i < this->getMaxNumJoints(); i++)
+  {
+    this->getJoint(i, lhsvalue);
+    rhs.getJoint(i, rhsvalue);
+    if (lhsvalue != rhsvalue)
     {
-      src.getJoint(i, value);
-      this->setJoint(i, value);
+      rtn = false;
+      break;
     }
+  }
+  return rtn;
+
 }
 
 bool JointPosition::load(industrial::byte_array::ByteArray *buffer)

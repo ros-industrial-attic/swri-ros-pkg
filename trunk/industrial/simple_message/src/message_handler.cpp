@@ -111,7 +111,7 @@ bool MessageHandler::validateMsg(SimpleMessage & in)
     }
     else
     {
-      LOG_WARN("Message type: %d, doesn't match handler type: &d",
+      LOG_WARN("Message type: %d, doesn't match handler type: %d",
                   in.getMessageType(), this->getMsgType());
       rtn = false;
     }

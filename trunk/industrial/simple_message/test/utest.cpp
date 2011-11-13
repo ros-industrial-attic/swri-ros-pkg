@@ -1,34 +1,33 @@
 /*
-* Software License Agreement (BSD License) 
-*
-* Copyright (c) 2011, Southwest Research Institute
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*
-* 	* Redistributions of source code must retain the above copyright
-* 	notice, this list of conditions and the following disclaimer.
-* 	* Redistributions in binary form must reproduce the above copyright
-* 	notice, this list of conditions and the following disclaimer in the
-* 	documentation and/or other materials provided with the distribution.
-* 	* Neither the name of the Southwest Research Institute, nor the names 
-*	of its contributors may be used to endorse or promote products derived
-*	from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*/ 
-
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2011, Southwest Research Institute
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 	* Redistributions of source code must retain the above copyright
+ * 	notice, this list of conditions and the following disclaimer.
+ * 	* Redistributions in binary form must reproduce the above copyright
+ * 	notice, this list of conditions and the following disclaimer in the
+ * 	documentation and/or other materials provided with the distribution.
+ * 	* Neither the name of the Southwest Research Institute, nor the names
+ *	of its contributors may be used to endorse or promote products derived
+ *	from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "simple_message.h"
 #include "byte_array.h"
@@ -40,6 +39,8 @@
 #include "socket/tcp_server.h"
 #include "ping_message.h"
 #include "ping_handler.h"
+#include "joint_message.h"
+#include "joint_position.h"
 #include "message_manager.h"
 #include "simple_comms_fault_handler.h"
 
@@ -58,6 +59,8 @@ using namespace industrial::tcp_client;
 using namespace industrial::tcp_server;
 using namespace industrial::ping_message;
 using namespace industrial::ping_handler;
+using namespace industrial::joint_position;
+using namespace industrial::joint_message;
 using namespace industrial::message_manager;
 using namespace industrial::simple_comms_fault_handler;
 
@@ -119,16 +122,16 @@ TEST(ByteArraySuite, loading)
   // Unloading a single member (down to an empty buffer size)
   EXPECT_TRUE(empty.load(bIN));
   EXPECT_EQ(empty.getBufferSize(), sizeof(shared_bool));
-    EXPECT_TRUE(empty.unload(bOUT));
-    EXPECT_EQ(empty.getBufferSize(), 0);
-    EXPECT_EQ(bOUT, bIN);
+  EXPECT_TRUE(empty.unload(bOUT));
+  EXPECT_EQ(empty.getBufferSize(), 0);
+  EXPECT_EQ(bOUT, bIN);
 }
 
 TEST(ByteArraySuite, copy)
 {
 
   const shared_int SIZE = 100;
-    char buffer[SIZE];
+  char buffer[SIZE];
 
   // Copy
   ByteArray copyFrom;
@@ -144,8 +147,6 @@ TEST(ByteArraySuite, copy)
   EXPECT_FALSE(copyTo.load(copyFrom));
   EXPECT_EQ(copyTo.getBufferSize(), 2*SIZE);
 }
-
-
 
 TEST(SimpleMessageSuite, init)
 {
@@ -176,12 +177,10 @@ TEST(PingMessageSuite, init)
   EXPECT_EQ(StandardMsgTypes::PING, ping.getMessageType());
 
   ping = PingMessage();
-  ASSERT_TRUE(msg.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,
-                    ReplyTypes::INVALID));
+  ASSERT_TRUE(msg.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST, ReplyTypes::INVALID));
   EXPECT_TRUE(ping.init(msg));
   EXPECT_EQ(StandardMsgTypes::PING, ping.getMessageType());
 }
-
 
 TEST(PingMessageSuite, toMessage)
 {
@@ -210,7 +209,7 @@ TEST(PingHandlerSuite, init)
   UdpClient udp;
 
   ASSERT_TRUE(handler.init(&udp));
-  EXPECT_EQ(StandardMsgTypes::PING,handler.getMsgType());
+  EXPECT_EQ(StandardMsgTypes::PING, handler.getMsgType());
 
   EXPECT_FALSE(handler.init(NULL));
 
@@ -242,7 +241,6 @@ TEST(MessageManagerSuite, addHandler)
   EXPECT_FALSE(manager.add(&handler));
 }
 
-
 TEST(MessageManagerSuite, udp)
 {
   const int udpPort = 11000;
@@ -253,13 +251,12 @@ TEST(MessageManagerSuite, udp)
   SimpleMessage pingRequest, pingReply;
   MessageManager udpManager;
 
-  ASSERT_TRUE(pingRequest.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,
-                    ReplyTypes::INVALID));
+  ASSERT_TRUE(pingRequest.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST, ReplyTypes::INVALID));
 
   // UDP Socket testing
   // Construct server and start in a thread
   ASSERT_TRUE(udpServer.init(udpPort));
-  ASSERT_TRUE(udpManager.init(&udpServer)); 
+  ASSERT_TRUE(udpManager.init(&udpServer));
   boost::thread udpSrvThrd(boost::bind(&MessageManager::spin, &udpManager));
 
   // Construct a client and try to ping the server
@@ -285,9 +282,7 @@ TEST(MessageManagerSuite, tcp)
   SimpleMessage pingRequest, pingReply;
   MessageManager tcpManager;
 
-  ASSERT_TRUE(pingRequest.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST,
-                    ReplyTypes::INVALID));
-
+  ASSERT_TRUE(pingRequest.init(StandardMsgTypes::PING, CommTypes::SERVICE_REQUEST, ReplyTypes::INVALID));
 
   // TCP Socket testing
 
@@ -312,13 +307,10 @@ TEST(MessageManagerSuite, tcp)
   ASSERT_TRUE(tcpClient->receiveMsg(pingReply));
   ASSERT_TRUE(tcpClient->sendAndReceiveMsg(pingRequest, pingReply));
 
-
   // Delete client and try to reconnect
 
-
-
   delete tcpClient;
-  sleep(10);  //Allow time for client to destruct and free up port
+  sleep(10); //Allow time for client to destruct and free up port
   tcpClient = new TcpClient();
   ASSERT_TRUE(tcpClient->init(&ipAddr[0], tcpPort));
   ASSERT_TRUE(tcpClient->makeConnect());
@@ -326,16 +318,64 @@ TEST(MessageManagerSuite, tcp)
 
 }
 
+TEST(JointMessage, init)
+{
+  JointPosition joint;
 
+  joint.init();
+  EXPECT_TRUE(joint.setJoint(0, 1.0));
+  EXPECT_TRUE(joint.setJoint(1, 2.0));
+  EXPECT_TRUE(joint.setJoint(2, 3.0));
+  EXPECT_TRUE(joint.setJoint(3, 4.0));
+  EXPECT_TRUE(joint.setJoint(4, 5.0));
+  EXPECT_TRUE(joint.setJoint(5, 6.0));
+  EXPECT_TRUE(joint.setJoint(6, 7.0));
+  EXPECT_TRUE(joint.setJoint(7, 8.0));
+  EXPECT_TRUE(joint.setJoint(8, 9.0));
+  EXPECT_TRUE(joint.setJoint(9, 10.0));
 
+  EXPECT_FALSE(joint.setJoint(10, 11.0));
 
-
-// Run all the tests that were declared with TEST()
-int main(int argc, char **argv){
-testing::InitGoogleTest(&argc, argv);
-return RUN_ALL_TESTS();
 }
 
+TEST(JointMessage, equal)
+{
+  JointPosition jointlhs, jointrhs;
 
+  jointrhs.init();
+  jointlhs.init();
+  jointlhs.setJoint(0, -1.0);
+  jointlhs.setJoint(9, 1.0);
 
+  EXPECT_FALSE(jointlhs==jointrhs);
+
+  jointrhs.setJoint(0, -1.0);
+  jointrhs.setJoint(9, 1.0);
+
+  EXPECT_TRUE(jointlhs==jointrhs);
+
+}
+
+TEST(JointMessage, toMessage)
+{
+  JointPosition toMessage, fromMessage;
+  JointMessage msg;
+
+  toMessage.init();
+  toMessage.setJoint(4, 44.44);
+
+  msg.init(1, toMessage);
+
+  fromMessage.copyFrom(msg.getJoints());
+
+  EXPECT_TRUE(toMessage==fromMessage);
+
+}
+
+// Run all the tests that were declared with TEST()
+int main(int argc, char **argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
 
