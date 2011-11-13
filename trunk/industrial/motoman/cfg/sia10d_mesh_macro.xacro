@@ -1,7 +1,7 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-	<xacro:macro name="sia20d_mesh">
+	<xacro:macro name="sia20d_mesh" params="prefix">
 		<!-- link list -->
-		<link name="base_link">
+		<link name="${prefix}base_link">
 			<visual>
 				<geometry>
 					<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_BASE.stl" />
@@ -19,7 +19,7 @@
 				</material>
 			</collision>
 		</link>
-		<link name="link_s">
+		<link name="${prefix}link_s">
 			<visual>
 				<geometry>
 					<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_S.stl"/>
@@ -35,7 +35,7 @@
 				<material name="yellow"/>
 			</collision>
 		</link>
-		<link name="link_l">
+		<link name="${prefix}link_l">
 			<visual>
 				<geometry>
 					<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_L.stl"/>
@@ -49,7 +49,7 @@
 				<material name="yellow"/>
 			</collision>
 		</link>
-		<link name="link_e">
+		<link name="${prefix}link_e">
 			<visual>
 				<geometry>
 					<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_E.stl"/>
@@ -63,7 +63,7 @@
 				<material name="yellow"/>
 			</collision>
 		</link>
-		<link name="link_u">
+		<link name="${prefix}link_u">
 			<visual>
 				<geometry>
 					<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_U.stl"/>
@@ -77,7 +77,7 @@
 				<material name="yellow"/>
 			</collision>
 		</link>
-		<link name="link_r">
+		<link name="${prefix}link_r">
 			<visual>
 				<geometry>
 					<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_R.stl"/>
@@ -91,7 +91,7 @@
 				<material name="yellow"/>
 			</collision>
 		</link>
-		<link name="link_b">
+		<link name="${prefix}link_b">
 			<visual>
 				<geometry>
 					<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_B.stl"/>
@@ -105,7 +105,7 @@
 				<material name="yellow"/>
 			</collision>
 		</link>
-		<link name="link_t">
+		<link name="${prefix}link_t">
 			<visual>
 				<geometry>
 					<mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_T.stl" />
@@ -121,49 +121,49 @@
 		</link>
 		<!-- end of link list -->
 		<!-- joint list -->
-		<joint name="joint_s" type="revolute">
+		<joint name="${prefix}joint_s" type="revolute">
 			<parent link="base_link"/>
 			<child link="link_s"/>
 			<origin xyz="0 0 0.36" rpy="0 0 3.1415"/>
 			<axis xyz="0 0 1" />
 			<limit lower="-3.1416" upper="3.1416" effort="100" velocity="2.96" />
 		</joint>
-		<joint name="joint_l" type="revolute">
+		<joint name="${prefix}joint_l" type="revolute">
 			<parent link="link_s"/>
 			<child link="link_l"/>
 			<origin xyz="0 0 0" rpy="1.570 3.1416 0"/>
 			<axis xyz="0 0 1" />
 			<limit lower="-1.91" upper="1.91" effort="100" velocity="2.96" />
 		</joint>
-		<joint name="joint_e" type="revolute">
+		<joint name="${prefix}joint_e" type="revolute">
 			<parent link="link_l"/>
 			<child link="link_e"/>
 			<origin xyz="0 -0.36 0" rpy="1.570 0 0"/>
 			<axis xyz="0 0 1" />
 			<limit lower="-2.96" upper="2.96" effort="100" velocity="2.96" />
 		</joint>
-		<joint name="joint_u" type="revolute">
+		<joint name="${prefix}joint_u" type="revolute">
 			<parent link="link_e"/>
 			<child link="link_u"/>
 			<origin xyz="0 0 0" rpy="-1.570 0 0"/>
 			<axis xyz="0 0 -1" />
 			<limit lower="-2.35" upper="2.35" effort="100" velocity="2.96" />
 		</joint>
-		<joint name="joint_r" type="revolute">
+		<joint name="${prefix}joint_r" type="revolute">
 			<parent link="link_u"/>
 			<child link="link_r"/>
 			<origin xyz="0 -0.360 0" rpy="1.570 0 0"/>
 			<axis xyz="0 0 -1" />
 			<limit lower="-3.1416" upper="3.1416" effort="100" velocity="3.48" />
 		</joint>
-		<joint name="joint_b" type="revolute">
+		<joint name="${prefix}joint_b" type="revolute">
 			<parent link="link_r"/>
 			<child link="link_b"/>
 			<origin xyz="0 0 0" rpy="-1.570 0 0"/>
 			<axis xyz="0 0 -1" />
 			<limit lower="-1.91" upper="1.91" effort="100" velocity="3.48" />
 		</joint>
-		<joint name="joint_t" type="revolute">
+		<joint name="${prefix}joint_t" type="revolute">
 			<parent link="link_b"/>
 			<child link="link_t"/>
 			<origin xyz="0 -0.155 0" rpy="1.570 0 0"/>

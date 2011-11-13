@@ -31,13 +31,13 @@
 
 
 #include "ros/ros.h"
-#include "tcp_socket.h"
+#include "socket/tcp_client.h"
 #include "simple_message.h"
 #include "ping_message.h"
 #include <iostream>
 
 using namespace industrial::simple_socket;
-using namespace industrial::tcp_socket;
+using namespace industrial::tcp_client;
 using namespace industrial::simple_message;
 using namespace industrial::ping_message;
 
@@ -49,13 +49,13 @@ int main(int argc, char** argv)
   bool exit = false;
   SimpleMessage reply, request;
   PingMessage tReply, tRequest;
-  TcpSocket connection;
+  TcpClient connection;
 
   ROS_INFO("Setting up tcp client");
-  connection.initClient(ip, StandardSocketPorts::SYSTEM);
+  connection.init(ip, StandardSocketPorts::SYSTEM);
 
   ROS_INFO("Connecting to server");
-  if (connection.connectToServer())
+  if (connection.makeConnect())
   {
     tRequest.init();
     tRequest.toRequest(request);
