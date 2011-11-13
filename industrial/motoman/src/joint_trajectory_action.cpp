@@ -45,8 +45,8 @@ public:
   JointTrajectoryAction(ros::NodeHandle &n) :
     node_(n),
     action_server_(node_, "joint_trajectory_action",
-                   boost::bind(&JointTrajectoryExecuter::goalCB, this, _1),
-                   boost::bind(&JointTrajectoryExecuter::cancelCB, this, _1),
+                   boost::bind(&JointTrajectoryAction::goalCB, this, _1),
+                   boost::bind(&JointTrajectoryAction::cancelCB, this, _1),
                    false),
     has_active_goal_(false)
   {
@@ -92,8 +92,18 @@ public:
     }
     pn.param("constraints/stopped_velocity_tolerance", stopped_velocity_tolerance_, 0.01);
 
-    watchdog_timer_ = node_.createTimer(ros::Duration(1.0), &JointTrajectoryExecuter::watchdog, this);
 
+    pub_controller_command_ =
+      node_.advertise<trajectory_msgs::JointTrajectory>("command", 1);
+    /* DISABLING JOINT CONTROLLER STATE TOPIC
+    sub_controller_state_ =
+      node_.subscribe("state", 1, &JointTrajectoryExecuter::controllerStateCB, this);
+
+
+    watchdog_timer_ = node_.createTimer(ros::Duration(1.0), &JointTrajectoryExecuter::watchdog, this);
+     */
+
+    /* DISABLING CONTROLLER POLLING
     ros::Time started_waiting_for_controller = ros::Time::now();
     while (ros::ok() && !last_controller_state_)
     {
@@ -106,12 +116,15 @@ public:
       }
       ros::Duration(0.1).sleep();
     }
+    */
 
     action_server_.start();
   }
 
-  ~JointTrajectoryExecuter()
+  ~JointTrajectoryAction()
   {
+   pub_controller_command_.shutdown();
+    //sub_controller_state_.shutdown();
     watchdog_timer_.stop();
   }
 
@@ -138,6 +151,7 @@ private:
 
   void watchdog(const ros::TimerEvent &e)
   {
+    /* DISABLING WATCHDOG
     ros::Time now = ros::Time::now();
 
     // Aborts the active goal if the controller does not appear to be active.
@@ -163,6 +177,7 @@ private:
         has_active_goal_ = false;
       }
     }
+    */
   }
 
   void goalCB(GoalHandle gh)
@@ -215,10 +230,13 @@ private:
 
   ros::NodeHandle node_;
   FJTAServer action_server_;
+  ros::Publisher pub_controller_command_;
+  ros::Subscriber sub_controller_state_;
   ros::Timer watchdog_timer_;
 
   bool has_active_goal_;
   GoalHandle active_goal_;
+  trajectory_msgs::JointTrajectory current_traj_;
 
 
   std::vector<std::string> joint_names_;
@@ -227,6 +245,7 @@ private:
   double goal_time_constraint_;
   double stopped_velocity_tolerance_;
 
+  /* DISABLING CONTROLLER STATE CALLBACK FOR NOW
   pr2_controllers_msgs::JointTrajectoryControllerStateConstPtr last_controller_state_;
   void controllerStateCB(const pr2_controllers_msgs::JointTrajectoryControllerStateConstPtr &msg)
   {
@@ -309,6 +328,7 @@ private:
 
     }
   }
+  */
 };
 
 
@@ -316,7 +336,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "joint_trajectory_action_node");
   ros::NodeHandle node;//("~");
-  JointTrajectoryExecuter jte(node);
+  JointTrajectoryAction jte(node);
 
   ros::spin();
 
