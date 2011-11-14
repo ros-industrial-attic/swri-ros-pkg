@@ -35,14 +35,20 @@
 
 #include "motoPlus.h"
 #include "definitions.h"
-#include "p_var_q.h"
-#include "ros_socket.h"
+//#include "p_var_q.h"
+//#include "ros_socket.h"
 #include "utils.h"
 #include "system.h"
 
 #include "log_wrapper.h"
 #include "tcp_server.h"
+#include "udp_server.h"
 #include "message_manager.h"
+#include "ros_conversion.h"
+#include "joint_position.h"
+#include "joint_message.h"
+#include "simple_message.h"
+
 
 // Using directives
 using utils::arrayIntToChar;
@@ -51,6 +57,7 @@ using utils::arrayCharToInt;
 // Global data
 int motion_server_task_ID;
 int system_server_task_ID;
+int state_server_task_ID;
 bool motion_allowed_var = true;
 bool* motion_allowed = &motion_allowed_var;
 
@@ -58,7 +65,7 @@ bool* motion_allowed = &motion_allowed_var;
 void motionServer();
 void parseMotionMessage(LONG recv_message[], ROSSocket *sock);
 void systemServer();
-void parseSystemMessage(LONG recv_message[], ROSSocket *sock);
+void stateServer(void);
 
 // Function definitions
 extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)
@@ -66,12 +73,17 @@ extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int 
     /*
   motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-						*/
+						
   system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+  */
+  
+  state_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)stateServer,
+						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+  
   mpExitUsrRoot; //Ends the initialization task.
 }
-
+/*
 void motionServer(void)
 // Persistent UDP server that receives motion messages from Motoros node (ROS interface) and relays to parseMotionMessage
 {
@@ -147,76 +159,79 @@ void parseMotionMessage(LONG recv_message[], ROSSocket *sock)
 	  break;
   }
 }
+*/
 
-using namespace industrial::simple_socket;
-using namespace industrial::tcp_server;
-using namespace industrial::message_manager;
+/*
 void systemServer(void)
 // Persistent UDP server that receives system messages from Motoros node (ROS interface) and relays to parseSystemMessage
 {
-TcpServer connection;
-MessageManager manager;
 
-connection.init(StandardSocketPorts::SYSTEM);
-connection.makeConnect();
+    using namespace industrial::simple_socket;
+    using namespace industrial::tcp_server;
+    using namespace industrial::message_manager;
+    
+    TcpServer connection;
+    MessageManager manager;
+    
+    connection.init(StandardSocketPorts::SYSTEM);
+    connection.makeConnect();
+    
+    manager.init(&connection);
+    manager.spin();
 
-manager.init(&connection);
-manager.spin();
-
-/*
-  LONG bytes_recv;
-  LONG recv_message[11];
-	
-  FOREVER
-  {
-    ROSSocket *sock = new ROSSocket(SYSTEM_PORT); // Socket object
-	printf("System socket created");
-	printf("\n");
-		
-	FOREVER
-	{
-	  memset(recv_message, 0, sizeof(recv_message));
-	  bytes_recv = sock->recvMessage(recv_message);
-	  if (bytes_recv == ERROR)
-	  {
-        printf("System socket receive error");
-        printf("\n");
-		break;
-	  }
-	  parseSystemMessage(recv_message, sock);
-	}
-	delete sock;
-	printf("System socket deleted");
-	printf("\n");
-  }
-  */
 }
+*/
 
-void parseSystemMessage(LONG recv_message[], ROSSocket *sock)
-// Receives messages from system UDP server and decides next action based on command ID of message
+void stateServer(void)
 {
-  LONG command_ID = recv_message[0];
-  static System *sys = new System(sock, motion_allowed);
-  LONG reply_code;
-  LONG reply_message[11];
-	
-  switch(command_ID) // Decide response based on command ID of message
-  {
-    case CMD_HOLD:
-	  reply_code = sys->hold(true);
-	  sock->sendMessage(CMD_HOLD, reply_code, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED);
-	  break;
-	case CMD_GET_FB_PULSE:
-	  sys->getFBPulse(reply_message);
-	  sock->sendMessage(reply_message);
-	  break;
-	case CMD_GET_FB_SPEED:
-	  sys->getFBSpeed(reply_message);
-	  sock->sendMessage(reply_message);
-	  break;
-	case CMD_GET_TORQUE:
-	  sys->getTorque(reply_message);
-	  sock->sendMessage(reply_message);
-	  break;
-  }
+    using namespace industrial::simple_socket;
+    using namespace industrial::udp_server;
+    using namespace industrial::joint_message;
+    using namespace industrial::joint_position;
+    using namespace industrial::simple_message;
+    using namespace motoman::ros_conversion;
+    
+    UdpServer connection;
+    JointPosition rosJoints;
+    JointMessage msg;
+    SimpleMessage simpMsg;
+    
+    void* stopWatchID = NULL;
+    const int period = 1000; //ms (publish once/second)
+    float msecPerTick = mpGetRtc();
+    float processTime = 0;
+    float sleepTime = 0;
+    
+    connection.init(StandardSocketPorts::STATE);
+    
+    // Creating a stop watch with a single lap timer.  This will be used
+    // to calculate the thread sleep period between message sending.
+    stopWatchID = mpStopWatchCreate(1);
+    LOG_DEBUG("Created stop watch: %d", stopWatchID);
+    mpStopWatchStart(stopWatchID);
+    FOREVER
+    {
+      connection.makeConnect();
+      while(connection.isConnected())
+      {
+        mpStopWatchLap(stopWatchID);
+        getRosFbPos(rosJoints);
+        msg.init(0, rosJoints);
+        msg.toTopic(simpMsg);
+        connection.sendMsg(simpMsg);
+        
+        processTime = mpStopWatchGetTime(stopWatchID);
+        sleepTime = period - processTime;
+        if (sleepTime > 0)
+        {
+            mpTaskDelay(sleepTime/msecPerTick);
+        }
+        else
+        {
+            LOG_WARN("Process time: %d, exceeded period time: %d", processTime,
+                period);
+        }
+      };
+
+    }
 }

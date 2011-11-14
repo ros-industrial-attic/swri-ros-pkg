@@ -2,17 +2,18 @@
 <MotoPlusProject>
   <ProjectName>motoros_server</ProjectName>
   <FilesInProject>
-    <FileForProject>udp_server.h</FileForProject>
-    <FileForProject>udp_server.cpp</FileForProject>
-    <FileForProject>udp_client.h</FileForProject>
-    <FileForProject>udp_client.cpp</FileForProject>
+    <FileForProject>ros_conversion.cpp</FileForProject>
+    <FileForProject>simple_socket.cpp</FileForProject>
+    <FileForProject>joint_position.h</FileForProject>
+    <FileForProject>joint_position.cpp</FileForProject>
+    <FileForProject>joint_message.h</FileForProject>
+    <FileForProject>joint_message.cpp</FileForProject>
     <FileForProject>tcp_socket.h</FileForProject>
     <FileForProject>tcp_socket.cpp</FileForProject>
     <FileForProject>tcp_server.h</FileForProject>
     <FileForProject>tcp_server.cpp</FileForProject>
     <FileForProject>tcp_client.h</FileForProject>
     <FileForProject>tcp_client.cpp</FileForProject>
-    <FileForProject>udp_socket.h</FileForProject>
     <FileForProject>simple_comms_fault_handler.h</FileForProject>
     <FileForProject>simple_comms_fault_handler.cpp</FileForProject>
     <FileForProject>comms_fault_handler.h</FileForProject>
@@ -25,13 +26,10 @@
     <FileForProject>message_manager.cpp</FileForProject>
     <FileForProject>message_manager.h</FileForProject>
     <FileForProject>mpMain.cpp</FileForProject>
-    <FileForProject>p_var_q.cpp</FileForProject>
-    <FileForProject>p_var_q.h</FileForProject>
     <FileForProject>ping_handler.cpp</FileForProject>
     <FileForProject>ping_handler.h</FileForProject>
     <FileForProject>ping_message.cpp</FileForProject>
     <FileForProject>ping_message.h</FileForProject>
-    <FileForProject>ros_socket.cpp</FileForProject>
     <FileForProject>ros_socket.h</FileForProject>
     <FileForProject>shared_types.h</FileForProject>
     <FileForProject>simple_message.cpp</FileForProject>
@@ -42,12 +40,18 @@
     <FileForProject>smpl_msg_connection.h</FileForProject>
     <FileForProject>system.cpp</FileForProject>
     <FileForProject>system.h</FileForProject>
+    <FileForProject>ros_conversion.h</FileForProject>
     <FileForProject>typed_message.h</FileForProject>
+    <FileForProject>udp_client.cpp</FileForProject>
+    <FileForProject>udp_client.h</FileForProject>
+    <FileForProject>udp_server.cpp</FileForProject>
+    <FileForProject>udp_server.h</FileForProject>
     <FileForProject>udp_socket.cpp</FileForProject>
+    <FileForProject>udp_socket.h</FileForProject>
     <FileForProject>utils.cpp</FileForProject>
     <FileForProject>utils.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>udp_socket.cpp</LastFileOpened>
+  <LastFileOpened>simple_socket.h</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>

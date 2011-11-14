@@ -88,11 +88,11 @@ do \
   printf("\n"); \
   } while (0)
 
-#define LOG_DEBUG(format, ...) LOG("DEBUG", format, ##__VA_ARGS__) 
-#define LOG_INFO(format, ...)  LOG("INFO", format, ##__VA_ARGS__)
-#define LOG_WARN(format, ...)  LOG("WARNING", format, ##__VA_ARGS__)
-#define LOG_ERROR(format, ...)  LOG("ERROR", format, ##__VA_ARGS__)
-#define LOG_FATAL(format, ...)  LOG("FATAL", format, ##__VA_ARGS__)
+#define LOG_DEBUG(format, ...) //LOG("DEBUG", format, ##__VA_ARGS__) 
+#define LOG_INFO(format, ...)  //LOG("INFO", format, ##__VA_ARGS__)
+#define LOG_WARN(format, ...)  //LOG("WARNING", format, ##__VA_ARGS__)
+#define LOG_ERROR(format, ...)  //LOG("ERROR", format, ##__VA_ARGS__)
+#define LOG_FATAL(format, ...)  //LOG("FATAL", format, ##__VA_ARGS__)
 
 #endif //MOTPLUS
 
