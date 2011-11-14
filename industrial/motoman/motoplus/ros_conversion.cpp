@@ -180,6 +180,7 @@ void toMotomanJointOrder(JointPosition & joints)
 void getMotomanFbPos(JointPosition & pos)
 {
     LONG getPulseRtn = 0;
+    
     MP_CTRL_GRP_SEND_DATA sData;
     MP_FB_PULSE_POS_RSP_DATA rData;
     
@@ -188,9 +189,11 @@ void getMotomanFbPos(JointPosition & pos)
         
     // Get pulse data from robot
     getPulseRtn = mpGetFBPulsePos (&sData,&rData);
+    
     if (0 == getPulseRtn)
     {
-        toJointPosition(rData, pos);
+        // UNCOMMENTING THIS LINE CAUSES ALARM 1020 - 4
+        //toJointPosition(rData, pos);
     }
     else
     {
@@ -198,15 +201,16 @@ void getMotomanFbPos(JointPosition & pos)
     }
 }
 
-
+/*
 void getRosFbPos(JointPosition & pos)
 {
     getMotomanFbPos(pos);
     toRosJointOrder(pos);
 }
-
+*/
 void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, JointPosition & dest)
 {    
+/*
     int minJointSize = 0;
     int jointPosSize = dest.getMaxNumJoints();
     
@@ -230,7 +234,8 @@ void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, JointPosition & dest)
     for(int i = 0; i < minJointSize; i++)
     {
           dest.setJoint(i, src.lPos[i]);
-    }      
+    }
+    */
 }
 
 } //ros_conversion
