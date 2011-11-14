@@ -42,12 +42,14 @@
 
 #include "log_wrapper.h"
 #include "tcp_server.h"
-#include "udp_server.h"
 #include "message_manager.h"
+
+//#include "udp_server.h"
 #include "ros_conversion.h"
-#include "joint_position.h"
-#include "joint_message.h"
-#include "simple_message.h"
+//#include "joint_position.h"
+//#include "joint_message.h"
+//#include "simple_message.h"
+
 
 
 // Using directives
@@ -76,11 +78,11 @@ extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int 
 						
   system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-  */
+  
   
   state_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)stateServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-  
+  */
   mpExitUsrRoot; //Ends the initialization task.
 }
 /*
@@ -184,6 +186,7 @@ void systemServer(void)
 
 void stateServer(void)
 {
+/*
     using namespace industrial::simple_socket;
     using namespace industrial::udp_server;
     using namespace industrial::joint_message;
@@ -209,6 +212,8 @@ void stateServer(void)
     stopWatchID = mpStopWatchCreate(1);
     LOG_DEBUG("Created stop watch: %d", stopWatchID);
     mpStopWatchStart(stopWatchID);
+    
+    
     FOREVER
     {
       connection.makeConnect();
@@ -231,7 +236,8 @@ void stateServer(void)
             LOG_WARN("Process time: %d, exceeded period time: %d", processTime,
                 period);
         }
-      };
+      }
 
     }
+    */
 }

@@ -2,45 +2,45 @@
 <MotoPlusProject>
   <ProjectName>motoros_server</ProjectName>
   <FilesInProject>
-    <FileForProject>ros_conversion.cpp</FileForProject>
-    <FileForProject>simple_socket.cpp</FileForProject>
-    <FileForProject>joint_position.h</FileForProject>
-    <FileForProject>joint_position.cpp</FileForProject>
-    <FileForProject>joint_message.h</FileForProject>
-    <FileForProject>joint_message.cpp</FileForProject>
-    <FileForProject>tcp_socket.h</FileForProject>
-    <FileForProject>tcp_socket.cpp</FileForProject>
-    <FileForProject>tcp_server.h</FileForProject>
-    <FileForProject>tcp_server.cpp</FileForProject>
-    <FileForProject>tcp_client.h</FileForProject>
-    <FileForProject>tcp_client.cpp</FileForProject>
-    <FileForProject>simple_comms_fault_handler.h</FileForProject>
-    <FileForProject>simple_comms_fault_handler.cpp</FileForProject>
-    <FileForProject>comms_fault_handler.h</FileForProject>
-    <FileForProject>log_wrapper.h</FileForProject>
-    <FileForProject>definitions.h</FileForProject>
-    <FileForProject>byte_array.cpp</FileForProject>
-    <FileForProject>byte_array.h</FileForProject>
-    <FileForProject>message_handler.cpp</FileForProject>
-    <FileForProject>message_handler.h</FileForProject>
-    <FileForProject>message_manager.cpp</FileForProject>
-    <FileForProject>message_manager.h</FileForProject>
-    <FileForProject>mpMain.cpp</FileForProject>
-    <FileForProject>ping_handler.cpp</FileForProject>
-    <FileForProject>ping_handler.h</FileForProject>
-    <FileForProject>ping_message.cpp</FileForProject>
     <FileForProject>ping_message.h</FileForProject>
+    <FileForProject>ping_message.cpp</FileForProject>
+    <FileForProject>ping_handler.h</FileForProject>
+    <FileForProject>ping_handler.cpp</FileForProject>
+    <FileForProject>mpMain.cpp</FileForProject>
+    <FileForProject>message_manager.h</FileForProject>
+    <FileForProject>message_manager.cpp</FileForProject>
+    <FileForProject>message_handler.h</FileForProject>
+    <FileForProject>message_handler.cpp</FileForProject>
+    <FileForProject>byte_array.h</FileForProject>
+    <FileForProject>byte_array.cpp</FileForProject>
+    <FileForProject>definitions.h</FileForProject>
+    <FileForProject>log_wrapper.h</FileForProject>
+    <FileForProject>comms_fault_handler.h</FileForProject>
+    <FileForProject>joint_message.cpp</FileForProject>
+    <FileForProject>joint_message.h</FileForProject>
+    <FileForProject>joint_position.cpp</FileForProject>
+    <FileForProject>joint_position.h</FileForProject>
+    <FileForProject>ros_conversion.cpp</FileForProject>
+    <FileForProject>ros_conversion.h</FileForProject>
     <FileForProject>ros_socket.h</FileForProject>
     <FileForProject>shared_types.h</FileForProject>
+    <FileForProject>simple_comms_fault_handler.cpp</FileForProject>
+    <FileForProject>simple_comms_fault_handler.h</FileForProject>
     <FileForProject>simple_message.cpp</FileForProject>
     <FileForProject>simple_message.h</FileForProject>
     <FileForProject>simple_serialize.h</FileForProject>
+    <FileForProject>simple_socket.cpp</FileForProject>
     <FileForProject>simple_socket.h</FileForProject>
     <FileForProject>smpl_msg_connection.cpp</FileForProject>
     <FileForProject>smpl_msg_connection.h</FileForProject>
     <FileForProject>system.cpp</FileForProject>
     <FileForProject>system.h</FileForProject>
-    <FileForProject>ros_conversion.h</FileForProject>
+    <FileForProject>tcp_client.cpp</FileForProject>
+    <FileForProject>tcp_client.h</FileForProject>
+    <FileForProject>tcp_server.cpp</FileForProject>
+    <FileForProject>tcp_server.h</FileForProject>
+    <FileForProject>tcp_socket.cpp</FileForProject>
+    <FileForProject>tcp_socket.h</FileForProject>
     <FileForProject>typed_message.h</FileForProject>
     <FileForProject>udp_client.cpp</FileForProject>
     <FileForProject>udp_client.h</FileForProject>
@@ -51,7 +51,7 @@
     <FileForProject>utils.cpp</FileForProject>
     <FileForProject>utils.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>simple_socket.h</LastFileOpened>
+  <LastFileOpened>ros_conversion.cpp</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
