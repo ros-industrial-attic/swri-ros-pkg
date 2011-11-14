@@ -1,0 +1,130 @@
+=ROS-Industrial - Development Tasks=
+The following is a list of tasks that are specific to the ROS-Industrial effort and will be included in 
+
+the ROS-Industrial stack.
+
+==Motoman - DX100 ROS Interface==
+
+  * Assigned to: Shaun Edwards
+  * High Level Description: The motoman DX100 controller provides the capability to compile and execute 
+
+C/C++ code on the real time system.  This capability enables fast communications and allows for code reuse 
+
+between the ROS system and the controller.  This capability allows for the implementation of both the high 
+
+ and mid level interfaces.
+
+==Generic IO Interface==
+
+  * Assigned to: ??
+  * High Level Description: A generic interface is needed for networked inputs and outputs.  In a standard 
+
+automation cell, IO is generally connected to the master controller via one of the common field buses 
+
+(EthernetIP, DeviceNet, Ethercat, ControlNet, Modbus, etc).  The vision of ROS-Industrial is that the PC 
+
+running ROS could function as the master controller (at least for IO that does require real time control, 
+
+i.e. PID loops).  In order for this to occur ROS drivers for the various network types will have to be 
+
+created.  The goal of this task is to develop a higher level of abstraction that defines IO generically 
+
+and would allow for communications on any type of network.  Such a level of abstraction is possible 
+
+because despite the greaty number of networks and the difference, they have the same basic structure for 
+
+device addressing.  A proof of concept implementation could be implemented for the robotiq gripper on the 
+
+armadillo robot.
+
+==Robot State Machine==
+
+  * Assigned to: ??
+  * High Level Description:  The high level function of a robot workcell can easily be described in terms 
+
+of a state machine.  Several standard modes of operation exist, including: manual, automatic, faulted, 
+
+fault recovery, homing, etc.  Furthermore the sub-states of these modes and the transitions between modes 
+
+can also be standardized.  A high level state machine structure does not exist in the typcial robot 
+
+programming languages and therefore must be reimplemented for every robot work cell.  Creating a high 
+
+level structure would remove this reimpmentaiton cost and allow developers to focus on the sequencing of 
+
+events that are specific to every installation.  In addition, common modes of operation such as fault 
+
+recovery can be made more robust as compared today where fault recovery is done in a more ad-hoc manor.
+
+==Teleop Picking==
+
+  * Assigned to: ??
+  * High Level Description:  The grasp planning group has demonstrated an interactive graspping 
+
+application.  The application allows the user to specify (in rviz) a desired grasp.  The application gives 
+
+feedback to the user indicating when the simulated gripper has encountered an object and also whether the 
+
+arm kinetmatics allow for the gripper pose.  Such an application not only makes a very neat interactive 
+
+demo, it would also have applications in telerobotics with industrial manipulators.
+
+
+==Industrial Robot Simulation==
+
+  * Assigned to: ??
+  * High Level Description:  Each robot vendor sells a simulation envirnment.  For the most part the 
+
+software allows one to setup a virtual environment from 3D models and execute robot programs (simulating 
+
+the actual controller execution).  These environments are temendously useful for evaulting cycle times and 
+
+testing the positional limits of the workspace under static conditions.  However, the software does not 
+
+simulate sensor feedback (at least not complex sensors), so the robot behavior under dynamic conditions 
+
+that require sensor integration are not easily simulated.  Other vendors (maily delmia) sell general 
+
+simulation software that includes some level of robot simlation.  Their ability to simulate complex 
+
+sensors (particularly 3D sensors) is uncertain.  The gazebo simulator in ROS, with it's sensor simulation 
+
+capabilities, could provide a better simulation solution for integrating complex sensors.
+
+
+==Industrial Robot Dashboard/GUI==
+
+==PR2(like) Diagnostics==
+
+==OPC Integration==
+
+==Fieldbus Interface Card Support==
+
+==ABB Robot Integration==
+
+
+
+
+
+
+=Related Development Tasks=
+The following is a list of tasks that are related to the ROS-Industrial effort but are a part of other ROS 
+
+stacks.  None the less, these results of these tasks will be leveraged in the ROS-Industrial stack.
+
+==Robot Arm Calibration==
+
+  * Assigned to: Mike
+  * High Level Description:  The calibration of the transform between the robot base link and some 
+
+external sensor is a common task.  Calibration of additional system parameters (robot link lengths, zero 
+
+offsets) further complicates this calibration process.  The PR2 calibration process represents the state 
+
+of the are in multi-variable calibration.  The goal of this task is to generalize and simplify the PR2 
+
+calibration for all arm/multi-sensor configurations.
+
+==Workspace Visualizer/Evaluator==
+
+==Robotiq Interface==
