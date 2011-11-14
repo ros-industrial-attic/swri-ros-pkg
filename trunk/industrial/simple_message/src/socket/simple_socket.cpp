@@ -29,7 +29,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef ROS
 #include "socket/simple_socket.h"
+#endif
+
+#ifdef MOTOPLUS
+#include "simple_socket.h"
+#endif
+
 #include "log_wrapper.h"
 
 namespace industrial

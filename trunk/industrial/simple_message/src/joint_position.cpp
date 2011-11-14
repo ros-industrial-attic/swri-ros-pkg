@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -97,6 +97,14 @@ bool JointPosition::getJoint(shared_int index, shared_real & value)
   }
   return rtn;
 }
+
+shared_real JointPosition::getJoint(shared_int index)
+{
+  shared_real rtn = 0.0;
+  this->getJoint(index, rtn);
+  return rtn;
+}
+  
 
 void JointPosition::copyFrom(JointPosition &src)
 {
