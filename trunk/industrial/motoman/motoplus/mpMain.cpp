@@ -35,8 +35,8 @@
 
 #include "motoPlus.h"
 #include "definitions.h"
-//#include "p_var_q.h"
-//#include "ros_socket.h"
+#include "p_var_q.h"
+#include "ros_socket.h"
 #include "utils.h"
 #include "system.h"
 
@@ -44,11 +44,11 @@
 #include "tcp_server.h"
 #include "message_manager.h"
 
-//#include "udp_server.h"
+#include "udp_server.h"
 #include "ros_conversion.h"
-//#include "joint_position.h"
-//#include "joint_message.h"
-//#include "simple_message.h"
+#include "joint_position.h"
+#include "joint_message.h"
+#include "simple_message.h"
 
 
 
@@ -78,11 +78,11 @@ extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int 
 						
   system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-  
+  */
   
   state_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)stateServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-  */
+  
   mpExitUsrRoot; //Ends the initialization task.
 }
 /*
@@ -163,7 +163,7 @@ void parseMotionMessage(LONG recv_message[], ROSSocket *sock)
 }
 */
 
-/*
+
 void systemServer(void)
 // Persistent UDP server that receives system messages from Motoros node (ROS interface) and relays to parseSystemMessage
 {
@@ -182,11 +182,11 @@ void systemServer(void)
     manager.spin();
 
 }
-*/
+
 
 void stateServer(void)
 {
-/*
+
     using namespace industrial::simple_socket;
     using namespace industrial::udp_server;
     using namespace industrial::joint_message;
@@ -200,10 +200,11 @@ void stateServer(void)
     SimpleMessage simpMsg;
     
     void* stopWatchID = NULL;
-    const int period = 1000; //ms (publish once/second)
+    const int period = 10000; //ms (publish once/second)
     float msecPerTick = mpGetRtc();
     float processTime = 0;
     float sleepTime = 0;
+    int delayTicks = 0;
     
     connection.init(StandardSocketPorts::STATE);
     
@@ -223,21 +224,34 @@ void stateServer(void)
         getRosFbPos(rosJoints);
         msg.init(0, rosJoints);
         msg.toTopic(simpMsg);
+        LOG_DEBUG("Sending joint state message");
         connection.sendMsg(simpMsg);
         
         processTime = mpStopWatchGetTime(stopWatchID);
         sleepTime = period - processTime;
+        mpStopWatchReset(stopWatchID);
+        /*
         if (sleepTime > 0)
         {
-            mpTaskDelay(sleepTime/msecPerTick);
+            delayTicks = sleepTime/msecPerTick
+            mpTaskDelay(delayTicks);
         }
         else
         {
-            LOG_WARN("Process time: %d, exceeded period time: %d", processTime,
+            LOG_WARN("Process time: %f, exceeded period time: %d", processTime,
                 period);
         }
+        */
+        // DEBUG CODE
+        delayTicks = sleepTime/msecPerTick;
+        LOG_DEBUG("msec/tick: %f, processTime: %f, sleepTime: %f, delayTicks: %d", 
+            msecPerTick, processTime, sleepTime, delayTicks);
+        mpTaskDelay(period);
+        // END DEBUG
+        
+        
       }
 
     }
-    */
+    
 }

@@ -192,7 +192,6 @@ void getMotomanFbPos(JointPosition & pos)
     
     if (0 == getPulseRtn)
     {
-        // UNCOMMENTING THIS LINE CAUSES ALARM 1020 - 4
         toJointPosition(rData, pos);
     }
     else
@@ -201,13 +200,13 @@ void getMotomanFbPos(JointPosition & pos)
     }
 }
 
-/*
+
 void getRosFbPos(JointPosition & pos)
 {
     getMotomanFbPos(pos);
     toRosJointOrder(pos);
 }
-*/
+
 void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, JointPosition & dest)
 {    
 

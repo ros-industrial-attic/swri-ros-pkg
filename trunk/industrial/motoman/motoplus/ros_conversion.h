@@ -82,10 +82,8 @@ enum RosJointIndex
 }
 typedef RosJointIndexes::RosJointIndex RosJointIndex;
 
-// TODO: The joint values below should be of type MotomanJointIndex, but
-// I can't get the compiler to recognize that as a type.
-float toPulses(float radians, int joint);
-float toRadians(float pulses, int joint);
+float toPulses(float radians, MotomanJointIndex joint);
+float toRadians(float pulses, MotomanJointIndex joint);
 
 void toRosJointOrder(industrial::joint_position::JointPosition & joints);
 void toMotomanJointOrder(industrial::joint_position::JointPosition & joints);
