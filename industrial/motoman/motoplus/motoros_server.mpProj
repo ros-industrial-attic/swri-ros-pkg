@@ -2,24 +2,24 @@
 <MotoPlusProject>
   <ProjectName>motoros_server</ProjectName>
   <FilesInProject>
-    <FileForProject>ping_message.h</FileForProject>
-    <FileForProject>ping_message.cpp</FileForProject>
-    <FileForProject>ping_handler.h</FileForProject>
-    <FileForProject>ping_handler.cpp</FileForProject>
-    <FileForProject>mpMain.cpp</FileForProject>
-    <FileForProject>message_manager.h</FileForProject>
-    <FileForProject>message_manager.cpp</FileForProject>
-    <FileForProject>message_handler.h</FileForProject>
-    <FileForProject>message_handler.cpp</FileForProject>
-    <FileForProject>byte_array.h</FileForProject>
-    <FileForProject>byte_array.cpp</FileForProject>
-    <FileForProject>definitions.h</FileForProject>
-    <FileForProject>log_wrapper.h</FileForProject>
-    <FileForProject>comms_fault_handler.h</FileForProject>
-    <FileForProject>joint_message.cpp</FileForProject>
-    <FileForProject>joint_message.h</FileForProject>
-    <FileForProject>joint_position.cpp</FileForProject>
     <FileForProject>joint_position.h</FileForProject>
+    <FileForProject>joint_position.cpp</FileForProject>
+    <FileForProject>joint_message.h</FileForProject>
+    <FileForProject>joint_message.cpp</FileForProject>
+    <FileForProject>comms_fault_handler.h</FileForProject>
+    <FileForProject>log_wrapper.h</FileForProject>
+    <FileForProject>definitions.h</FileForProject>
+    <FileForProject>byte_array.cpp</FileForProject>
+    <FileForProject>byte_array.h</FileForProject>
+    <FileForProject>message_handler.cpp</FileForProject>
+    <FileForProject>message_handler.h</FileForProject>
+    <FileForProject>message_manager.cpp</FileForProject>
+    <FileForProject>message_manager.h</FileForProject>
+    <FileForProject>mpMain.cpp</FileForProject>
+    <FileForProject>ping_handler.cpp</FileForProject>
+    <FileForProject>ping_handler.h</FileForProject>
+    <FileForProject>ping_message.cpp</FileForProject>
+    <FileForProject>ping_message.h</FileForProject>
     <FileForProject>ros_conversion.cpp</FileForProject>
     <FileForProject>ros_conversion.h</FileForProject>
     <FileForProject>ros_socket.h</FileForProject>
@@ -50,8 +50,12 @@
     <FileForProject>udp_socket.h</FileForProject>
     <FileForProject>utils.cpp</FileForProject>
     <FileForProject>utils.h</FileForProject>
+    <FileForProject>ros_socket.h</FileForProject>
+    <FileForProject>p_var_q.cpp</FileForProject>
+    <FileForProject>p_var_q.h</FileForProject>
+    <FileForProject>ros_socket.cpp</FileForProject>
   </FilesInProject>
-  <LastFileOpened>ros_conversion.cpp</LastFileOpened>
+  <LastFileOpened>mpMain.cpp</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
