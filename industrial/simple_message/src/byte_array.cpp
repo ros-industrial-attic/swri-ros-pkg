@@ -73,6 +73,7 @@ bool ByteArray::init(const char* buffer, const shared_int byte_size)
 
   if ( this->MAX_SIZE >= byte_size )
   {
+    LOG_DEBUG("Initializing buffer to size: %d", byte_size);
     this->load((void*)buffer, byte_size);
     rtn = true;
   }
@@ -102,15 +103,7 @@ void ByteArray::copyFrom(ByteArray & buffer)
 
 char* ByteArray::getRawDataPtr()
 {
-  if (0 != this->buffer_size_)
-  {
-    return &this->buffer_[0];
-  }
-  else
-  {
-    LOG_ERROR("Failed to return char buffer pointer, buffer is empty");
-    return NULL;
-  }
+  return &this->buffer_[0];
 }
 
 /****************************************************************

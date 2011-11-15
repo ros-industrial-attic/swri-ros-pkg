@@ -93,6 +93,7 @@ bool SmplMsgConnection::receiveMsg(SimpleMessage & message)
 
       if (rtn)
       {
+        LOG_DEBUG("receiveMsg: initializing SimpleMessage");
         rtn = message.init(msgBuffer);
       }
       else

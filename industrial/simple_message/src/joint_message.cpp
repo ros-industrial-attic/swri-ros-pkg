@@ -128,7 +128,7 @@ bool JointMessage::load(ByteArray *buffer)
     else
     {
       rtn = false;
-      LOG_ERROR("Failed to unload sequence data");
+      LOG_ERROR("Failed to load sequence data");
     }
   }
   else
