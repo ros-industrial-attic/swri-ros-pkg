@@ -193,7 +193,7 @@ void getMotomanFbPos(JointPosition & pos)
     if (0 == getPulseRtn)
     {
         // UNCOMMENTING THIS LINE CAUSES ALARM 1020 - 4
-        //toJointPosition(rData, pos);
+        toJointPosition(rData, pos);
     }
     else
     {
@@ -210,7 +210,7 @@ void getRosFbPos(JointPosition & pos)
 */
 void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, JointPosition & dest)
 {    
-/*
+
     int minJointSize = 0;
     int jointPosSize = dest.getMaxNumJoints();
     
@@ -235,7 +235,7 @@ void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, JointPosition & dest)
     {
           dest.setJoint(i, src.lPos[i]);
     }
-    */
+    
 }
 
 } //ros_conversion

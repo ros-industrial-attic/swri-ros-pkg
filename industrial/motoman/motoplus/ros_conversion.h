@@ -82,9 +82,6 @@ enum RosJointIndex
 }
 typedef RosJointIndexes::RosJointIndex RosJointIndex;
 
-} //ros_conversion
-} //motoman
-
 // TODO: The joint values below should be of type MotomanJointIndex, but
 // I can't get the compiler to recognize that as a type.
 float toPulses(float radians, int joint);
@@ -98,5 +95,10 @@ void getRosFbPos(industrial::joint_position::JointPosition & pos);
 
 void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, 
     industrial::joint_position::JointPosition & dest);
+    
+    
+} //ros_conversion
+} //motoman
+
 
 #endif //ROS_CONVERSION_H
