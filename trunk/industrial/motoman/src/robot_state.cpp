@@ -31,10 +31,12 @@
 
 #include "ros/ros.h"
 #include "socket/simple_socket.h"
+#include "socket/udp_client.h"
 #include "socket/tcp_client.h"
 #include "joint_relay_handler.h"
 #include "message_manager.h"
 
+using namespace industrial::udp_client;
 using namespace industrial::tcp_client;
 using namespace industrial::message_manager;
 using namespace industrial::simple_socket;
@@ -51,7 +53,7 @@ int main(int argc, char** argv)
 
   JointRelayHandler jr_handler(n);
 
-  ROS_INFO("Setting up tcp client");
+  ROS_INFO("Setting up client");
   connection.init(ip, StandardSocketPorts::STATE);
   connection.makeConnect();
 
