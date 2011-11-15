@@ -91,6 +91,15 @@ sensors (particularly 3D sensors) is uncertain.  The gazebo simulator in ROS, wi
 
 capabilities, could provide a better simulation solution for integrating complex sensors.
 
+==ROS Serial Integration/Standardization==
+
+  * Assigned to: ??
+  * High Level Description:  ROS-Industrial will provide libraries to simplify connections (especially on those controllers that support C/C++).  Part of this library includes a simple messaging protocol that mimics ROS messages but allows them to be sent over a ethernet connection.  A similar approach is taken in ROS Serial.  It would be nice to standardize on a protocol that has wider support.  A quick look has found the following limitations:
+
+    * The ROS Serial handler code that runs on the embedded system provides a lot of functionality for automatically negotiating topic connections.  The ROS-Industrial approach must keep in mind the capabilities of all robot controllers.  The auto-negotiation process would have to be implemented on several controllers.  It is not clear whether all contollers would be capable of this.  Instead, ROS-Industrial will implement a fixed set of topics/services.  The ROS Serial executable code will not be used, but the protocol defined in ROS Serial will be.
+    * The ROS Serial protocol does not handle arrays well.  Since the main message that is sent between ROS and the robot controller is the trajecory message, which includes arrays, this funcitonality must be verified/cleaned up/fixed.
+    * Dynamic memory allocation on the robot controller is to be avoided (memory leaks will cause dangerous problems on the robot).  Verify that the ROS Serial serialization code does not require dynamic memory allocation.
+    * The ROS Serial or protocol subset should be capable of being complies and loaded on the robot controller.  We currenlty have access to the motoman controller, so this will be our testbed.
 
 ==Industrial Robot Dashboard/GUI==
 
