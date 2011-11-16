@@ -52,7 +52,9 @@
 #define RECV_FROM(sockfd, buf, len, flags, src_addr, addrlen) recvfrom(sockfd, buf, len, flags, src_addr, addrlen)
 #define RECV(sockfd, buf, len, flags) recv(sockfd, buf, len, flags)
 #define CLOSE(fd) close(fd)
+#ifndef HTONS // OSX defines HTONS
 #define HTONS(num) htons(num)
+#endif
 #define INET_ADDR(str) inet_addr(str)
 #define SOCKLEN_T socklen_t
 

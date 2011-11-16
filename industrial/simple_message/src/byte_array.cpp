@@ -353,7 +353,7 @@ bool ByteArray::shortenBufferSize(shared_int size)
   // we fail.  This is checked here (as opposed to setBufferSize)
   // because setBufferSize assumes a unsigned argument and therefore
   // wouldn't catch a negative size.
-  if (size <= this->getBufferSize())
+  if (size <= (shared_int)this->getBufferSize())
   {
     newSize = this->getBufferSize() - size;
     rtn = this->setBufferSize(newSize);
@@ -378,7 +378,7 @@ char* ByteArray::getUnloadPtr(shared_int byteSize)
 {
   char* rtn;
 
-  if (byteSize <= this->getBufferSize())
+  if (byteSize <= (shared_int)this->getBufferSize())
   {
     rtn = this->getLoadPtr() - byteSize;
   }

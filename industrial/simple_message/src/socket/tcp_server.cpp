@@ -60,7 +60,7 @@ bool TcpServer::init(int port_num)
 {
   int rc;
   bool rtn;
-  int err;
+  //int err;
   SOCKLEN_T addrSize = 0;
 
   rc = SOCKET(AF_INET, SOCK_STREAM, 0);
@@ -117,7 +117,7 @@ bool TcpServer::makeConnect()
 {
   bool rtn = false;
   int rc = this->SOCKET_FAIL;
-  int socket = this->SOCKET_FAIL;
+  //int socket = this->SOCKET_FAIL;
   int disableNodeDelay = 1;
   int err = 0;
 
