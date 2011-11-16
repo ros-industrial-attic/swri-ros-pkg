@@ -36,6 +36,7 @@
 #include "message_handler.h"
 #include "ros/ros.h"
 #include <pr2_controllers_msgs/JointTrajectoryControllerState.h>
+#include <sensor_msgs/JointState.h>
 
 
 namespace motoman
@@ -89,8 +90,10 @@ bool init(int msg_type, industrial::smpl_msg_connection::SmplMsgConnection* conn
 
 private:
 
-  pr2_controllers_msgs::JointTrajectoryControllerState joint_state_;
-  ros::Publisher pub_joint_state_;
+  pr2_controllers_msgs::JointTrajectoryControllerState joint_control_state_;
+  sensor_msgs::JointState joint_sensor_state_;
+  ros::Publisher pub_joint_control_state_;
+  ros::Publisher pub_joint_sensor_state_;
   ros::NodeHandle node_;
 
   static const int NUM_OF_JOINTS_ = 7;
