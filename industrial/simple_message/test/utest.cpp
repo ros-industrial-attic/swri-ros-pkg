@@ -303,7 +303,6 @@ TEST(MessageManagerSuite, udp)
   pthread_join(udpSrvThrd, NULL);
 }
 
-/*
 TEST(MessageManagerSuite, tcp)
 {
   const int tcpPort = 11000;
@@ -353,7 +352,6 @@ TEST(MessageManagerSuite, tcp)
   pthread_cancel(tcpSrvThrd);
   pthread_join(tcpSrvThrd, NULL);
 }
-*/
 
 TEST(JointMessage, init)
 {
