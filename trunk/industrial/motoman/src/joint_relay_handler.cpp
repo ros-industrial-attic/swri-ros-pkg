@@ -98,6 +98,7 @@ bool JointRelayHandler::internalCB(industrial::simple_message::SimpleMessage & i
       this->joint_state_.desired.positions[i] = 0.0;
       this->joint_state_.error.positions[i] = 0.0;
     }
+    this->joint_state_.header.stamp = ros::Time::now();
     this->pub_joint_state_.publish(this->joint_state_);
 
     // Reply back to the controller if the sender requested it.
