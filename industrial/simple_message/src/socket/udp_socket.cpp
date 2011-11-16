@@ -70,12 +70,20 @@ bool UdpSocket::receiveMsg(SimpleMessage & message)
   ByteArray msgBuffer;
 
   bool rtn = false;
+  shared_int size = 0;
 
   rtn = this->receiveBytes(msgBuffer, 0);
 
   if (rtn)
   {
     LOG_DEBUG("Recieve message bytes: %u", msgBuffer.getBufferSize());
+    LOG_DEBUG("Unloading message length from front of the buffer");
+    size = msgBuffer.unloadFront((void*)(&size), sizeof(shared_int));
+
+    if ( size != ( msgBuffer.getBufferSize() - message.getLengthSize() ) )
+    {
+      LOG_WARN("readBytes returned a message larger than the expect size");
+    }
     rtn = message.init(msgBuffer);
 
     if (rtn)

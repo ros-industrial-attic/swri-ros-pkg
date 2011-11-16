@@ -39,7 +39,6 @@
 
 #include "string.h"
 
-
 //namespace industrial
 //{
 //namespace byte_array
@@ -54,11 +53,9 @@ ByteArray::ByteArray(void)
   this->init();
 }
 
-
 ByteArray::~ByteArray(void)
 {
 }
-
 
 void ByteArray::init()
 {
@@ -66,12 +63,11 @@ void ByteArray::init()
   this->setBufferSize(0);
 }
 
-
 bool ByteArray::init(const char* buffer, const shared_int byte_size)
 {
   bool rtn;
 
-  if ( this->MAX_SIZE >= byte_size )
+  if (this->MAX_SIZE >= byte_size)
   {
     LOG_DEBUG("Initializing buffer to size: %d", byte_size);
     this->load((void*)buffer, byte_size);
@@ -86,7 +82,6 @@ bool ByteArray::init(const char* buffer, const shared_int byte_size)
   return rtn;
 }
 
-
 void ByteArray::copyFrom(ByteArray & buffer)
 {
   if (buffer.getBufferSize() != 0)
@@ -99,7 +94,6 @@ void ByteArray::copyFrom(ByteArray & buffer)
     LOG_WARN("Byte array copy not performed, buffer to copy is empty");
   }
 }
-
 
 char* ByteArray::getRawDataPtr()
 {
@@ -119,7 +113,7 @@ bool ByteArray::load(shared_bool value)
 
 bool ByteArray::load(shared_real value)
 {
-  return this->load(&value,  sizeof(shared_real));
+  return this->load(&value, sizeof(shared_real));
 }
 
 bool ByteArray::load(shared_int value)
@@ -129,14 +123,15 @@ bool ByteArray::load(shared_int value)
 
 bool ByteArray::load(simple_serialize::SimpleSerialize &value)
 {
+  LOG_DEBUG("Executing byte array load through simple serialize");
   return value.load(this);
 }
 
 bool ByteArray::load(ByteArray &value)
 {
+  LOG_DEBUG("Executing byte array load through byte array");
   return this->load(value.getRawDataPtr(), value.getBufferSize());
 }
-
 
 bool ByteArray::load(void* value, const shared_int byte_size)
 {
@@ -145,8 +140,9 @@ bool ByteArray::load(void* value, const shared_int byte_size)
   // Get the load pointer before extending the buffer.
   char* loadPtr;
 
+  LOG_DEBUG("Executing byte array load through void*, size: %d", byte_size);
   // Check inputs
-  if ( NULL == value)
+  if (NULL == value)
   {
     LOG_ERROR("NULL point passed into load method");
     return false;
@@ -193,17 +189,29 @@ bool ByteArray::unload(shared_int &value)
 
 bool ByteArray::unload(simple_serialize::SimpleSerialize &value)
 {
+  LOG_DEBUG("Executing byte array unload through simple serialize");
   return value.unload(this);
 }
 
 bool ByteArray::unload(ByteArray &value, const shared_int byte_size)
 {
+  LOG_DEBUG("Executing byte array unload through byte array");
   char* unloadPtr = this->getUnloadPtr(byte_size);
   bool rtn;
 
-  if ( NULL != unloadPtr)
+  if (NULL != unloadPtr)
   {
-    rtn = value.unload(unloadPtr, byte_size);
+    if (this->shortenBufferSize(byte_size))
+    {
+
+      rtn = value.load(unloadPtr, byte_size);
+      rtn = true;
+    }
+    else
+    {
+      LOG_ERROR("Failed to shorten array");
+      rtn = false;
+    }
   }
   else
   {
@@ -219,9 +227,9 @@ bool ByteArray::unload(void* value, shared_int byteSize)
   bool rtn;
   char* unloadPtr;
 
-
+  LOG_DEBUG("Executing byte array unload through void*, size: %d", byteSize);
   // Check inputs
-  if ( NULL == value)
+  if (NULL == value)
   {
     LOG_ERROR("NULL point passed into unload method");
     return false;
@@ -229,7 +237,7 @@ bool ByteArray::unload(void* value, shared_int byteSize)
 
   unloadPtr = this->getUnloadPtr(byteSize);
 
-  if ( NULL != unloadPtr )
+  if (NULL != unloadPtr)
   {
 
     if (this->shortenBufferSize(byteSize))
@@ -252,21 +260,61 @@ bool ByteArray::unload(void* value, shared_int byteSize)
   return rtn;
 }
 
+bool ByteArray::unloadFront(void* value, const industrial::shared_types::shared_int byteSize)
+{
+  bool rtn;
+  char* unloadPtr = NULL;
+  char* nextPtr = NULL;
+  shared_int sizeRemain;
 
+  // Check inputs
+  if (NULL == value)
+  {
+    LOG_ERROR("NULL point passed into unload method");
+    return false;
+  }
 
+  unloadPtr = &this->buffer_[0];
 
+  if (NULL != unloadPtr)
+  {
+    nextPtr = unloadPtr + byteSize;
+    sizeRemain = this->getBufferSize() - byteSize;
+
+    LOG_DEBUG("Unloading: %d bytes, %d bytes remain", byteSize, sizeRemain);
+    if (this->shortenBufferSize(byteSize))
+    {
+      LOG_DEBUG("Preparing to copy value");
+      memcpy(value, unloadPtr, byteSize);
+      LOG_DEBUG("Value is unloaded, performing move");
+      memmove(unloadPtr, nextPtr, sizeRemain);
+      LOG_DEBUG("Move operation completed");
+      rtn = true;
+    }
+    else
+    {
+      LOG_ERROR("Failed to shorten array");
+      rtn = false;
+    }
+  }
+  else
+  {
+    LOG_ERROR("Unload pointer returned NULL");
+    rtn = false;
+  }
+
+  return rtn;
+}
 
 unsigned int ByteArray::getBufferSize()
 {
   return this->buffer_size_;
 }
 
-
 unsigned int ByteArray::getMaxBufferSize()
 {
   return this->MAX_SIZE;
 }
-
 
 bool ByteArray::setBufferSize(shared_int size)
 {
@@ -279,8 +327,7 @@ bool ByteArray::setBufferSize(shared_int size)
   }
   else
   {
-    LOG_ERROR("Set buffer size: %u, larger than MAX:, %u",
-              size, this->MAX_SIZE);
+    LOG_ERROR("Set buffer size: %u, larger than MAX:, %u", size, this->MAX_SIZE);
     rtn = false;
   }
 
@@ -313,8 +360,7 @@ bool ByteArray::shortenBufferSize(shared_int size)
   }
   else
   {
-    LOG_ERROR("Failed to shorten buffer by %u bytes, buffer too small, %u bytes",
-              size, this->getBufferSize());
+    LOG_ERROR("Failed to shorten buffer by %u bytes, buffer too small, %u bytes", size, this->getBufferSize());
     rtn = false;
   }
 
