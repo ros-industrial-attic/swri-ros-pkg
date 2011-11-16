@@ -80,7 +80,7 @@ bool UdpSocket::receiveMsg(SimpleMessage & message)
     LOG_DEBUG("Unloading message length from front of the buffer");
     size = msgBuffer.unloadFront((void*)(&size), sizeof(shared_int));
 
-    if ( size != ( msgBuffer.getBufferSize() - message.getLengthSize() ) )
+    if ( size != (shared_int)( msgBuffer.getBufferSize() - message.getLengthSize() ) )
     {
       LOG_WARN("readBytes returned a message larger than the expect size");
     }
@@ -113,7 +113,7 @@ bool UdpSocket::sendBytes(ByteArray & buffer)
 
   // Nothing restricts the ByteArray from being larger than the what the socket
   // can handle.
-  if (this->MAX_BUFFER_SIZE > buffer.getBufferSize())
+  if (this->MAX_BUFFER_SIZE > (int)buffer.getBufferSize())
   {
     rc = SEND_TO(this->getSockHandle(), buffer.getRawDataPtr(),
         buffer.getBufferSize(), 0, (sockaddr *)&this->sockaddr_,
@@ -151,7 +151,7 @@ bool UdpSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
   // Doing a sanity check to determine if the byte array buffer is larger than
   // what can be sent in the socket.  This should not happen and might be indicative
   // of some code synchronization issues between the client and server base.
-  if (this->MAX_BUFFER_SIZE < buffer.getMaxBufferSize())
+  if (this->MAX_BUFFER_SIZE < (int)buffer.getMaxBufferSize())
   {
     LOG_WARN("Socket buffer max size: %u, is larger than byte array buffer: %u",
              this->MAX_BUFFER_SIZE, buffer.getMaxBufferSize());

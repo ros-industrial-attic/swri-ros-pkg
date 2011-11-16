@@ -77,7 +77,7 @@ TEST(ByteArraySuite, init)
 
   // Valid byte arrays
   EXPECT_TRUE(bytes.init(&buffer[0], SIZE));
-  EXPECT_EQ(bytes.getBufferSize(), SIZE);
+  EXPECT_EQ((shared_int)bytes.getBufferSize(), SIZE);
 
   // Invalid init (too big)
   // Invalid buffers
@@ -102,28 +102,28 @@ TEST(ByteArraySuite, loading)
   EXPECT_TRUE(bytes.load(bIN));
   EXPECT_EQ(bytes.getBufferSize(), SIZE+sizeof(shared_bool));
   EXPECT_TRUE(bytes.unload(bOUT));
-  EXPECT_EQ(bytes.getBufferSize(), SIZE);
+  EXPECT_EQ((shared_int)bytes.getBufferSize(), SIZE);
   EXPECT_EQ(bOUT, bIN);
 
   // Integer loading
   EXPECT_TRUE(bytes.load(iIN));
   EXPECT_EQ(bytes.getBufferSize(), SIZE+sizeof(shared_int));
   EXPECT_TRUE(bytes.unload(iOUT));
-  EXPECT_EQ(bytes.getBufferSize(), SIZE);
+  EXPECT_EQ((shared_int)bytes.getBufferSize(), SIZE);
   EXPECT_EQ(iOUT, iIN);
 
   // Real loading
   EXPECT_TRUE(bytes.load(rIN));
   EXPECT_EQ(bytes.getBufferSize(), SIZE+sizeof(shared_real));
   EXPECT_TRUE(bytes.unload(rOUT));
-  EXPECT_EQ(bytes.getBufferSize(), SIZE);
+  EXPECT_EQ((shared_int)bytes.getBufferSize(), SIZE);
   EXPECT_EQ(rOUT, rIN);
 
   // Unloading a single member (down to an empty buffer size)
   EXPECT_TRUE(empty.load(bIN));
   EXPECT_EQ(empty.getBufferSize(), sizeof(shared_bool));
   EXPECT_TRUE(empty.unload(bOUT));
-  EXPECT_EQ(empty.getBufferSize(), 0);
+  EXPECT_EQ((int)empty.getBufferSize(), 0);
   EXPECT_EQ(bOUT, bIN);
 
   // Loading two members (unloading the first) and then checking the value of the second
@@ -136,7 +136,7 @@ TEST(ByteArraySuite, loading)
   EXPECT_TRUE(empty.unloadFront((void*)&rOUT, sizeof(shared_real)));
   EXPECT_EQ(rOUT, rIN);
   EXPECT_TRUE(empty.unload(iOUT));
-  EXPECT_EQ(empty.getBufferSize(), 0);
+  EXPECT_EQ((int)empty.getBufferSize(), 0);
   EXPECT_EQ(iOUT, iIN);
 }
 
@@ -152,13 +152,13 @@ TEST(ByteArraySuite, copy)
 
   EXPECT_TRUE(copyFrom.init(&buffer[0], SIZE));
   EXPECT_TRUE(copyTo.load(copyFrom));
-  EXPECT_EQ(copyTo.getBufferSize(), SIZE);
+  EXPECT_EQ((shared_int)copyTo.getBufferSize(), SIZE);
   EXPECT_TRUE(copyTo.load(copyFrom));
-  EXPECT_EQ(copyTo.getBufferSize(), 2*SIZE);
+  EXPECT_EQ((shared_int)copyTo.getBufferSize(), 2*SIZE);
 
   //Copy too large
   EXPECT_FALSE(copyTo.load(copyFrom));
-  EXPECT_EQ(copyTo.getBufferSize(), 2*SIZE);
+  EXPECT_EQ((shared_int)copyTo.getBufferSize(), 2*SIZE);
 }
 
 TEST(SimpleMessageSuite, init)
@@ -244,10 +244,10 @@ TEST(MessageManagerSuite, addHandler)
   UdpClient udp;
   PingHandler handler;
 
-  EXPECT_EQ(0, manager.getNumHandlers());
+  EXPECT_EQ(0, (int)manager.getNumHandlers());
 
   ASSERT_TRUE(manager.init(&udp));
-  EXPECT_EQ(1, manager.getNumHandlers());
+  EXPECT_EQ(1, (int)manager.getNumHandlers());
   EXPECT_FALSE(manager.add(NULL));
 
   ASSERT_TRUE(handler.init(&udp));

@@ -77,7 +77,7 @@ bool TcpSocket::sendBytes(ByteArray & buffer)
   {
     // Nothing restricts the ByteArray from being larger than the what the socket
     // can handle.
-    if (this->MAX_BUFFER_SIZE > buffer.getBufferSize())
+    if (this->MAX_BUFFER_SIZE > (int)buffer.getBufferSize())
     {
       rc = SEND(this->getSockHandle(), buffer.getRawDataPtr(), buffer.getBufferSize(), 0);
 
@@ -126,7 +126,7 @@ bool TcpSocket::receiveBytes(ByteArray & buffer, industrial::shared_types::share
   // Doing a sanity check to determine if the byte array buffer is larger than
   // what can be sent in the socket.  This should not happen and might be indicative
   // of some code synchronization issues between the client and server base.
-  if (this->MAX_BUFFER_SIZE < buffer.getMaxBufferSize())
+  if (this->MAX_BUFFER_SIZE < (int)buffer.getMaxBufferSize())
   {
     LOG_WARN("Socket buffer max size: %u, is larger than byte array buffer: %u",
              this->MAX_BUFFER_SIZE, buffer.getMaxBufferSize());
