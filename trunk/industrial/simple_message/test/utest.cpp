@@ -125,6 +125,19 @@ TEST(ByteArraySuite, loading)
   EXPECT_TRUE(empty.unload(bOUT));
   EXPECT_EQ(empty.getBufferSize(), 0);
   EXPECT_EQ(bOUT, bIN);
+
+  // Loading two members (unloading the first) and then checking the value of the second
+  rOUT = 0.0;
+  iOUT = 0;
+  EXPECT_TRUE(empty.load(rIN));
+  EXPECT_EQ(empty.getBufferSize(), sizeof(shared_real));
+  EXPECT_TRUE(empty.load(iIN));
+  EXPECT_EQ(empty.getBufferSize(), sizeof(shared_real)+sizeof(shared_int));
+  EXPECT_TRUE(empty.unloadFront((void*)&rOUT, sizeof(shared_real)));
+  EXPECT_EQ(rOUT, rIN);
+  EXPECT_TRUE(empty.unload(iOUT));
+  EXPECT_EQ(empty.getBufferSize(), 0);
+  EXPECT_EQ(iOUT, iIN);
 }
 
 TEST(ByteArraySuite, copy)
@@ -370,6 +383,50 @@ TEST(JointMessage, toMessage)
 
   EXPECT_TRUE(toMessage==fromMessage);
 
+}
+
+TEST(JointMessageComms, tcp)
+{
+  const int tcpPort = 11010;
+  char ipAddr[] = "127.0.0.1";
+
+  TcpClient tcpClient;
+  TcpServer tcpServer;
+  SimpleMessage msgSend, msgRecv;
+  JointMessage jointSend, jointRecv;
+  JointPosition posSend, posRecv;
+
+  posSend.init();
+  posSend.setJoint(0,1.0);
+  posSend.setJoint(1,2.0);
+  posSend.setJoint(2,3.0);
+  posSend.setJoint(3,4.0);
+  posSend.setJoint(4,5.0);
+  posSend.setJoint(5,6.0);
+  posSend.setJoint(6,7.0);
+  posSend.setJoint(7,8.0);
+  posSend.setJoint(8,9.0);
+  posSend.setJoint(9,10.0);
+
+  jointSend.init(1, posSend);
+  ASSERT_TRUE(jointSend.toTopic(msgSend));
+
+  // Construct server
+
+  ASSERT_TRUE(tcpServer.init(tcpPort));
+
+  // Construct a client
+  ASSERT_TRUE(tcpClient.init(&ipAddr[0], tcpPort));
+  ASSERT_TRUE(tcpClient.makeConnect());
+
+  // Listen for client connection, init manager and start thread
+  ASSERT_TRUE(tcpServer.makeConnect());
+
+  ASSERT_TRUE(tcpClient.sendMsg(msgSend));
+  ASSERT_TRUE(tcpServer.receiveMsg(msgRecv));
+  ASSERT_TRUE(jointRecv.init(msgRecv));
+  posRecv.copyFrom(jointRecv.getJoints());
+  ASSERT_TRUE(posRecv==posSend);
 }
 
 // Run all the tests that were declared with TEST()

@@ -255,6 +255,18 @@ public:
    */
   bool unload(void* value, const industrial::shared_types::shared_int byteSize);
 
+  /**
+     * \brief unloads a void* (treated as char*) from the beginning of the array.
+     * WARNING: This method performs a memmove every time it is called (this is
+     * expensive).
+     *
+     * \param value to unload
+     * \byte_syze number of bytes to unload
+     *
+     * \return true on success, false otherwise (array is empty)
+     */
+    bool unloadFront(void* value, const industrial::shared_types::shared_int byteSize);
+
 
 
 

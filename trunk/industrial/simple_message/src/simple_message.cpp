@@ -63,7 +63,8 @@ bool SimpleMessage::init(int msgType, int commType, int replyCode)
 
 bool SimpleMessage::init(int msgType, int commType, int replyCode, ByteArray & data )
 {
-  LOG_DEBUG("SimpleMessage::init(%u, %u, %u, data...)", msgType, commType, replyCode);
+  LOG_DEBUG("SimpleMessage::init(type: %d, comm: %d, reply: %d, data[%d]...)",
+            msgType, commType, replyCode, data.getBufferSize());
   this->setMessageType(msgType);
   this->setCommType(commType);
   this->setReplyCode(replyCode);
@@ -85,12 +86,14 @@ bool SimpleMessage::init(ByteArray & msg)
     {
       dataSize = msg.getBufferSize() - this->getHeaderSize();
       LOG_DEBUG("Unloading data portion of message: %d bytes", dataSize);
-      msg.unload(this->data_.getRawDataPtr(), dataSize);
+      msg.unload(this->data_, dataSize);
     }
     LOG_DEBUG("Unloading header data");
     msg.unload(this->reply_code_);
     msg.unload(this->comm_type_);
     msg.unload(this->message_type_);
+    LOG_DEBUG("SimpleMessage::init(type: %d, comm: %d, reply: %d, data[%d]...)",
+              this->message_type_, this->comm_type_, this->reply_code_, this->data_.getBufferSize());
     rtn = this->validateMessage();
   }
   else

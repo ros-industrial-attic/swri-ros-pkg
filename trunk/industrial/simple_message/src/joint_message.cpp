@@ -46,6 +46,7 @@ namespace joint_message
 
 JointMessage::JointMessage(void)
 {
+  this->setMessageType(StandardMsgTypes::JOINT);
   this->init();
 }
 
@@ -94,7 +95,7 @@ void JointMessage::init()
 bool JointMessage::toRequest(industrial::simple_message::SimpleMessage & msg)
 {
   ByteArray data;
-  data.load(this);
+  data.load(*this);
   return msg.init(this->getMessageType(), CommTypes::SERVICE_REQUEST, ReplyTypes::INVALID, data);
 }
 
@@ -102,7 +103,7 @@ bool JointMessage::toReply(industrial::simple_message::SimpleMessage & msg)
 {
 
   ByteArray data;
-  data.load(this);
+  data.load(*this);
   return msg.init(this->getMessageType(), CommTypes::SERVICE_REPLY, ReplyTypes::INVALID, data);
 
 }
@@ -110,14 +111,15 @@ bool JointMessage::toReply(industrial::simple_message::SimpleMessage & msg)
 bool JointMessage::toTopic(industrial::simple_message::SimpleMessage & msg)
 {
   ByteArray data;
-  data.load(this);
+  LOG_DEBUG("Generating joint message of type topic");
+  data.load(*this);
   return msg.init(this->getMessageType(), CommTypes::TOPIC, ReplyTypes::INVALID, data);
 }
 
 bool JointMessage::load(ByteArray *buffer)
 {
   bool rtn = false;
-
+  LOG_DEBUG("Executing joint message load");
   if (buffer->load(this->getSequence()))
   {
 
@@ -142,6 +144,7 @@ bool JointMessage::load(ByteArray *buffer)
 bool JointMessage::unload(ByteArray *buffer)
 {
   bool rtn = false;
+  LOG_DEBUG("Executing joint message unload");
 
   if (buffer->unload(this->joints_))
   {
