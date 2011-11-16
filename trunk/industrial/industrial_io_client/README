@@ -4,11 +4,11 @@ Simple demo:
 roscore
 
 * Terminal 2:
-src/industrial_io_client/mock_server.py src/industrial_io_client/foo.yaml
+./test/mock_server.py test/example.yaml
 <watch here for output>
 
 * Terminal 3:
-python src/industrial_io_client/client.py src/industrial_io_client/foo.yaml
+python src/industrial_io_client/client.py test/example.yaml
 
 * Terminal 4:
 rostopic pub foobar std_msgs/Int32 49 --once
