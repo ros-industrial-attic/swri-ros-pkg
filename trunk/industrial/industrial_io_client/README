@@ -1,0 +1,11 @@
+Simple demo:
+
+* Terminal 1:
+roscore
+
+* Terminal 2:
+python src/industrial_io_client/client.py src/industrial_io_client/foo.yaml
+
+* Terminal 3:
+rostopic pub foobar std_msgs/Int32 49 --once
+rostopic pub barfoo std_msgs/Int16 10 --once

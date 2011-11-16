@@ -9,9 +9,9 @@ inputs:
   - barfoo:
       type: "std_msgs/Int16"
       transformation:
-          network_data_table: 10
-          device_offset: 20
-          bit_byte_offset: 30
-          value: 40
+          network_data_table: "10"
+          device_offset: "20"
+          bit_byte_offset: "30"
+          value: "m.data ** 2"
 
 #outputs:
