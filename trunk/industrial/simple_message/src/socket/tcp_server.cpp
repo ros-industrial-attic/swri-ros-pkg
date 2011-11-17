@@ -60,6 +60,7 @@ bool TcpServer::init(int port_num)
 {
   int rc;
   bool rtn;
+  const int reuse_addr = 1;
   //int err;
   SOCKLEN_T addrSize = 0;
 
@@ -69,6 +70,9 @@ bool TcpServer::init(int port_num)
     this->setSrvrHandle(rc);
     LOG_DEBUG("Socket created, rc: %d", rc);
     LOG_DEBUG("Socket handle: %d", this->getSrvrHandle());
+
+    
+    SET_REUSE_ADDR(this->getSrvrHandle(), reuse_addr);
 
     // Initialize address data structure
     memset(&this->sockaddr_, 0, sizeof(this->sockaddr_));
