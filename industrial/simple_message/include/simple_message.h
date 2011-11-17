@@ -53,7 +53,8 @@ namespace StandardMsgTypes
   {
  INVALID = 0,
  PING = 1,
- JOINT = 10
+ JOINT = 10,
+ IO = 20
   };
 }
 typedef StandardMsgTypes::StandardMsgType StandardMsgType;
