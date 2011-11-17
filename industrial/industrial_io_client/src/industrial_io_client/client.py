@@ -34,10 +34,9 @@
 # Revision $Id$
 
 import roslib
-roslib.load_manifest('rospy')
+roslib.load_manifest('industrial_io_client')
 import rospy
 import yaml
-import sys
 # TODO:Factor out custom serialization over socket as one of multiple
 # possible back-ends.
 import socket
@@ -212,16 +211,3 @@ class Client:
             mod = __import__(module, globals(), locals(), [message])
             print("Subscribing to %s (%s)"%(inp.name, inp.type))
             self.subscribers.append(rospy.Subscriber(inp.name, getattr(mod, message), self.handle_ros_message))
-
-USAGE = 'Usage: client.py <config.yaml>'
-
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print(USAGE)
-        sys.exit(1)
-    c = Client(sys.argv[1])
-    c.initialize_device()
-    c.initialize_ros()
-
-    rospy.init_node('industrial_io_client')
-    rospy.spin()
