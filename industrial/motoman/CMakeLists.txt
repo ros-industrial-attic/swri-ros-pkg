@@ -35,6 +35,10 @@ rosbuild_add_executable(system_inferface src/system_interface.cpp)
 rosbuild_add_executable(robot_state 
 						src/robot_state.cpp
 						src/joint_relay_handler.cpp)
+rosbuild_add_executable(motion_interface
+						src/motion_interface.cpp
+						src/joint_trajectory_handler.cpp)
+						
 #target_link_libraries(example ${PROJECT_NAME})
 #rosbuild_add_executable(traj_pub src/traj_pub.cpp)
 #rosbuild_add_executable(motion_interface src/motion_interface.cpp src/moto_socket.cpp src/utils.cpp src/p_var_q.cpp)

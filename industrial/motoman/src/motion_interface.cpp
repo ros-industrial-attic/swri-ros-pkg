@@ -29,36 +29,17 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-#include "ros/ros.h"
-#include "trajectory_msgs/JointTrajectory.h"
-#include "moto_socket.h"
-#include "utils.h"
-#include "p_var_q.h"
-#include "definitions.h"
-#include <fstream>
-
-using std::cout;
-using std::cin;
-using std::endl;
-using std::ofstream;
+#include "joint_trajectory_handler.h"
+#include "socket/tcp_client.h"
 
 int main(int argc, char** argv)
-// Connects to robot, subscribes to joint_cmd topic to receive trajectories
 {
-  char buff[1024] = "192.168.10.20"; // Robot IP address
+  ros::init(argc, argv, "joint_trajectory_handler");
+  industrial::tcp_client::TcpClient robot;
+  ros::NodeHandle node;
+  motoman::joint_trajectory_handler::JointTrajectoryHandler jtHandler(node, &robot);
 
-  ros::init(argc, argv, "motion_interface");
-  ros::NodeHandle n;
-  ros::Rate loop_rate(2);
-
-  MotoSocket sock(buff, MOTION_PORT);
-  ofstream* log_file = new ofstream;
-  log_file->open("comm_log_motion.txt");
-  PVarQ pvq(&sock, log_file);
-
-  ros::Subscriber sub = n.subscribe("joint_cmd", 1000, &PVarQ::addTraj, &pvq);
-  cout << "subscription started" << endl;
   ros::spin();
-  delete log_file;
+
   return 0;
 }
