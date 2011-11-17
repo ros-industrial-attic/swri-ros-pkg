@@ -68,6 +68,7 @@
 #define SOCKET(domain, type, protocol) mpSocket(domain, type, protocol)
 #define BIND(sockfd, addr, addrlen) mpBind(sockfd, addr, addrlen)
 #define SET_NO_DELAY(sockfd, val) -1 //MOTOPLUS does not allow for setting the "no delay" socket option
+#define SET_REUSE_ADDR(sockfd, val) -1 //MOTOPLUS does not support this function.
 #define LISTEN(sockfd, n) mpListen(sockfd, n)
 #define ACCEPT(sockfd, addr, addrlen) mpAccept(sockfd, addr, addrlen)
 #define CONNECT(sockfd, dest_addr ,addrlen) mpConnect(sockfd, dest_addr, addrlen)

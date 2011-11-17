@@ -62,11 +62,11 @@ T	Resolution (pulse/deg)	-580.2667	pulses/deg	-33246.8329	    rad/deg
 ---------------------------------------------------------------------------
 */
 const float S_PULSE_TO_RAD	= 58670.87822;	    // pulses/rad
-const float L_PULSE_TO_RAD	= -58670.87822;	    // pulses/rad
+const float L_PULSE_TO_RAD	= 58670.87822;	    // pulses/rad
 const float U_PULSE_TO_RAD	= 65841.76588;	    // pulses/rad
-const float R_PULSE_TO_RAD = -65841.76588;	    // pulses/rad
+const float R_PULSE_TO_RAD  = 65841.76588;	    // pulses/rad
 const float B_PULSE_TO_RAD	= 65841.76588;     	// pulses/rad
-const float T_PULSE_TO_RAD	= -33246.8329;	    // pulses/rad
+const float T_PULSE_TO_RAD	= 33246.8329;	    // pulses/rad
 const float E_PULSE_TO_RAD	= 65841.76588;	    // pulses/rad
 
 #endif //SIA_10D
@@ -106,7 +106,7 @@ float toPulses(float radians, int joint)
          break;
          
       default:
-         LOG_ERROR("Failed to convert to pulses, joint: %d", joint);
+        rtn = radians;
     }
         return rtn;
 }
@@ -145,7 +145,7 @@ float toRadians(float pulses, int joint)
          break;
          
       default:
-         LOG_ERROR("Failed to convert to radians, joint: %d", joint);
+        rtn = pulses;
     }
         return rtn;
 }
@@ -232,7 +232,7 @@ void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, JointPosition & dest)
     
     for(int i = 0; i < minJointSize; i++)
     {
-          dest.setJoint(i, src.lPos[i]);
+          dest.setJoint(i, toRadians(src.lPos[i], i));
     }
     
 }

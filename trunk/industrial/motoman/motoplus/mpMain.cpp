@@ -43,6 +43,7 @@
 #include "log_wrapper.h"
 #include "tcp_server.h"
 #include "message_manager.h"
+#include "input_handler.h"
 
 #include "udp_server.h"
 #include "ros_conversion.h"
@@ -60,6 +61,7 @@ using utils::arrayCharToInt;
 int motion_server_task_ID;
 int system_server_task_ID;
 int state_server_task_ID;
+int io_server_task_ID;
 bool motion_allowed_var = true;
 bool* motion_allowed = &motion_allowed_var;
 
@@ -67,7 +69,8 @@ bool* motion_allowed = &motion_allowed_var;
 void motionServer();
 void parseMotionMessage(LONG recv_message[], ROSSocket *sock);
 void systemServer();
-void stateServer(void);
+void stateServer();
+void ioServer();
 
 // Function definitions
 extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)
@@ -78,11 +81,14 @@ extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int 
 						
   system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-  */
   
   state_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)stateServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+  */
   
+  io_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)ioServer,
+						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+						
   mpExitUsrRoot; //Ends the initialization task.
 }
 /*
@@ -189,69 +195,69 @@ void stateServer(void)
 
     using namespace industrial::simple_socket;
     using namespace industrial::udp_server;
+    using namespace industrial::tcp_server;
     using namespace industrial::joint_message;
     using namespace industrial::joint_position;
     using namespace industrial::simple_message;
     using namespace motoman::ros_conversion;
     
-    UdpServer connection;
+    // Using TPC server for debugging (this should really be UDP)
+    TcpServer connection;
     JointPosition rosJoints;
     JointMessage msg;
     SimpleMessage simpMsg;
     
     void* stopWatchID = NULL;
-    const int period = 10000; //ms (publish once/second)
+    const int period = 1000; //ms (publish once/second)
     float msecPerTick = mpGetRtc();
-    float processTime = 0;
-    float sleepTime = 0;
-    int delayTicks = 0;
+    int delayTicks = period/msecPerTick;;
     
-    connection.init(StandardSocketPorts::STATE);
-    
-    // Creating a stop watch with a single lap timer.  This will be used
-    // to calculate the thread sleep period between message sending.
-    stopWatchID = mpStopWatchCreate(1);
-    LOG_DEBUG("Created stop watch: %d", stopWatchID);
-    mpStopWatchStart(stopWatchID);
-    
+    connection.init(StandardSocketPorts::STATE);  
     
     FOREVER
     {
       connection.makeConnect();
       while(connection.isConnected())
       {
-        mpStopWatchLap(stopWatchID);
         getRosFbPos(rosJoints);
         msg.init(0, rosJoints);
         msg.toTopic(simpMsg);
         LOG_DEBUG("Sending joint state message");
         connection.sendMsg(simpMsg);
         
-        processTime = mpStopWatchGetTime(stopWatchID);
-        sleepTime = period - processTime;
-        mpStopWatchReset(stopWatchID);
-        /*
-        if (sleepTime > 0)
-        {
-            delayTicks = sleepTime/msecPerTick
-            mpTaskDelay(delayTicks);
-        }
-        else
-        {
-            LOG_WARN("Process time: %f, exceeded period time: %d", processTime,
-                period);
-        }
-        */
-        // DEBUG CODE
-        delayTicks = sleepTime/msecPerTick;
-        LOG_DEBUG("msec/tick: %f, processTime: %f, sleepTime: %f, delayTicks: %d", 
-            msecPerTick, processTime, sleepTime, delayTicks);
+        LOG_DEBUG("msec/tick: %f, delayTicks: %d", 
+            msecPerTick, delayTicks);
         mpTaskDelay(period);
-        // END DEBUG
         
         
       }
 
     }
+    
+}
+
+
+void ioServer(void)
+{
+
+    using namespace industrial::simple_socket;
+    using namespace industrial::tcp_server;
+    using namespace industrial::message_manager;
+    using namespace industrial::simple_message;
+    using namespace motoman::input_handler;
+    
+    TcpServer connection;
+    InputHandler iHandler;
+    MessageManager manager;
+    
+    connection.init(StandardSocketPorts::IO);
+    connection.makeConnect();
+    
+    manager.init(&connection);
+    
+    iHandler.init(StandardMsgTypes::WRITE_OUTPUT, &connection);
+    manager.add(&iHandler);
+    manager.spin();
+
     
 }
