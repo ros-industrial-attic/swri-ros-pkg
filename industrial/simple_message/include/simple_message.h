@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -54,7 +54,9 @@ namespace StandardMsgTypes
  INVALID = 0,
  PING = 1,
  JOINT = 10,
- IO = 20
+ CART = 11,
+ READ_INPUT = 21,
+ WRITE_OUTPUT = 20
   };
 }
 typedef StandardMsgTypes::StandardMsgType StandardMsgType;

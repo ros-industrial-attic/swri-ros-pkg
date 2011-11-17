@@ -61,12 +61,12 @@ public:
   TcpSocket();
   virtual ~TcpSocket();
 
-protected:
-
   bool isConnected()
   {
     return connected_;
   }
+
+protected:
 
   void setConnected(bool connected_)
   {
