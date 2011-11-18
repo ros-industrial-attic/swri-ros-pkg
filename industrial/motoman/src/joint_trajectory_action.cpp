@@ -7,14 +7,14 @@
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted provided that the following conditions are met:
 *
-* 	* Redistributions of source code must retain the above copyright
-* 	notice, this list of conditions and the following disclaimer.
-* 	* Redistributions in binary form must reproduce the above copyright
-* 	notice, this list of conditions and the following disclaimer in the
-* 	documentation and/or other materials provided with the distribution.
-* 	* Neither the name of the Southwest Research Institute, nor the names
-*	of its contributors may be used to endorse or promote products derived
-*	from this software without specific prior written permission.
+*       * Redistributions of source code must retain the above copyright
+*       notice, this list of conditions and the following disclaimer.
+*       * Redistributions in binary form must reproduce the above copyright
+*       notice, this list of conditions and the following disclaimer in the
+*       documentation and/or other materials provided with the distribution.
+*       * Neither the name of the Southwest Research Institute, nor the names
+*       of its contributors may be used to endorse or promote products derived
+*       from this software without specific prior written permission.
 *
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -32,21 +32,25 @@
 
 #include <ros/ros.h>
 #include <actionlib/server/action_server.h>
+
+#include <trajectory_msgs/JointTrajectory.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
+#include <control_msgs/FollowJointTrajectoryFeedback.h>
 
 const double DEFAULT_GOAL_THRESHOLD = 0.1;
 
-class JointTrajectoryAction
+class JointTrajectoryExecuter
 {
 private:
-  typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction> FJTAServer;
-  typedef FJTAServer::GoalHandle GoalHandle;
+  //typedef actionlib::ActionServer<pr2_controllers_msgs::JointTrajectoryAction> JTAS;
+  typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction> JTAS;
+  typedef JTAS::GoalHandle GoalHandle;
 public:
-  JointTrajectoryAction(ros::NodeHandle &n) :
+  JointTrajectoryExecuter(ros::NodeHandle &n) :
     node_(n),
     action_server_(node_, "joint_trajectory_action",
-                   boost::bind(&JointTrajectoryAction::goalCB, this, _1),
-                   boost::bind(&JointTrajectoryAction::cancelCB, this, _1),
+                   boost::bind(&JointTrajectoryExecuter::goalCB, this, _1),
+                   boost::bind(&JointTrajectoryExecuter::cancelCB, this, _1),
                    false),
     has_active_goal_(false)
   {
@@ -55,6 +59,18 @@ public:
 
     // Gets all of the joints
     XmlRpc::XmlRpcValue joint_names;
+
+    //TODO: Make joint setting joint names more generic
+    joint_names.setSize(7);
+    joint_names[0] = "joint_s";
+    joint_names[0] = "joint_l";
+    joint_names[0] = "joint_e";
+    joint_names[0] = "joint_u";
+    joint_names[0] = "joint_r";
+    joint_names[0] = "joint_b";
+    joint_names[0] = "joint_t";
+
+    /*  TODO: Figure out how the joint_names parameter needs to be set
     if (!pn.getParam("joints", joint_names))
     {
       ROS_FATAL("No joints given. (namespace: %s)", pn.getNamespace().c_str());
@@ -65,6 +81,8 @@ public:
       ROS_FATAL("Malformed joint specification.  (namespace: %s)", pn.getNamespace().c_str());
       exit(1);
     }
+    */
+
     for (int i = 0; i < joint_names.size(); ++i)
     {
       XmlRpcValue &name_value = joint_names[i];
@@ -95,36 +113,31 @@ public:
 
     pub_controller_command_ =
       node_.advertise<trajectory_msgs::JointTrajectory>("command", 1);
-    /* DISABLING JOINT CONTROLLER STATE TOPIC
     sub_controller_state_ =
       node_.subscribe("state", 1, &JointTrajectoryExecuter::controllerStateCB, this);
 
+    sub_controller_state_ =
+      node_.subscribe("state", 1, &JointTrajectoryExecuter::controllerStateCB, this);
 
     watchdog_timer_ = node_.createTimer(ros::Duration(1.0), &JointTrajectoryExecuter::watchdog, this);
-     */
 
-    /* DISABLING CONTROLLER POLLING
     ros::Time started_waiting_for_controller = ros::Time::now();
     while (ros::ok() && !last_controller_state_)
     {
-      ros::spinOnce();
-      if (started_waiting_for_controller != ros::Time(0) &&
-          ros::Time::now() > started_waiting_for_controller + ros::Duration(30.0))
       {
         ROS_WARN("Waited for the controller for 30 seconds, but it never showed up.");
         started_waiting_for_controller = ros::Time(0);
       }
       ros::Duration(0.1).sleep();
     }
-    */
 
     action_server_.start();
   }
 
-  ~JointTrajectoryAction()
+  ~JointTrajectoryExecuter()
   {
    pub_controller_command_.shutdown();
-    //sub_controller_state_.shutdown();
+    sub_controller_state_.shutdown();
     watchdog_timer_.stop();
   }
 
@@ -151,7 +164,6 @@ private:
 
   void watchdog(const ros::TimerEvent &e)
   {
-    /* DISABLING WATCHDOG
     ros::Time now = ros::Time::now();
 
     // Aborts the active goal if the controller does not appear to be active.
@@ -172,12 +184,16 @@ private:
 
       if (should_abort)
       {
+        // Stops the controller.
+        trajectory_msgs::JointTrajectory empty;
+        empty.joint_names = joint_names_;
+        pub_controller_command_.publish(empty);
+
         // Marks the current goal as aborted.
         active_goal_.setAborted();
         has_active_goal_ = false;
       }
     }
-    */
   }
 
   void goalCB(GoalHandle gh)
@@ -229,7 +245,7 @@ private:
 
 
   ros::NodeHandle node_;
-  FJTAServer action_server_;
+  JTAS action_server_;
   ros::Publisher pub_controller_command_;
   ros::Subscriber sub_controller_state_;
   ros::Timer watchdog_timer_;
@@ -245,9 +261,10 @@ private:
   double goal_time_constraint_;
   double stopped_velocity_tolerance_;
 
-  /* DISABLING CONTROLLER STATE CALLBACK FOR NOW
-  pr2_controllers_msgs::JointTrajectoryControllerStateConstPtr last_controller_state_;
-  void controllerStateCB(const pr2_controllers_msgs::JointTrajectoryControllerStateConstPtr &msg)
+  control_msgs::FollowJointTrajectoryFeedbackConstPtr last_controller_state_;
+  //pr2_controllers_msgs::JointTrajectoryControllerStateConstPtr last_controller_state_;
+  //void controllerStateCB(const pr2_controllers_msgs::JointTrajectoryControllerStateConstPtr &msg)
+  void controllerStateCB(const control_msgs::FollowJointTrajectoryFeedbackConstPtr &msg)
   {
     last_controller_state_ = msg;
     ros::Time now = ros::Time::now();
@@ -328,7 +345,6 @@ private:
 
     }
   }
-  */
 };
 
 
@@ -336,7 +352,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "joint_trajectory_action_node");
   ros::NodeHandle node;//("~");
-  JointTrajectoryAction jte(node);
+  JointTrajectoryExecuter jte(node);
 
   ros::spin();
 
