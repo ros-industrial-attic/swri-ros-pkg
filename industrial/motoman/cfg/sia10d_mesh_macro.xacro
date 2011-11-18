@@ -108,7 +108,7 @@
 		<link name="${prefix}link_t">
 			<visual>
 				<geometry>
-					<mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_T.stl" />
+					<mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_T.stl" />
 				</geometry>
 				<material name="silver"/>
 			</visual>
