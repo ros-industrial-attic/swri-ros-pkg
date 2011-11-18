@@ -45,26 +45,30 @@ namespace joint_relay_handler
 
 JointRelayHandler::JointRelayHandler(ros::NodeHandle &n) :
         node_(n),
-        joint_state_()
+        joint_control_state_()
 {
 
-  this->pub_joint_state_ =
-        this->node_.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>("joint_control_state", 1);
+  this->pub_joint_control_state_ =
+        this->node_.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>("control_state", 1);
+  this->pub_joint_sensor_state_ = this->node_.advertise<sensor_msgs::JointState>("sensor_state",1);
 
   // Set up the default joint names (TODO: This should be made more generic.  The
   // joint names can have an arbitrary prefix that isn't accounted for here.  This
   // info can be found in the URDF, but I don't know how to get it here.
-  this->joint_state_.joint_names.push_back("joint_s");
-  this->joint_state_.joint_names.push_back("joint_l");
-  this->joint_state_.joint_names.push_back("joint_e");
-  this->joint_state_.joint_names.push_back("joint_u");
-  this->joint_state_.joint_names.push_back("joint_r");
-  this->joint_state_.joint_names.push_back("joint_b");
-  this->joint_state_.joint_names.push_back("joint_t");
+  this->joint_control_state_.joint_names.push_back("joint_s");
+  this->joint_control_state_.joint_names.push_back("joint_l");
+  this->joint_control_state_.joint_names.push_back("joint_e");
+  this->joint_control_state_.joint_names.push_back("joint_u");
+  this->joint_control_state_.joint_names.push_back("joint_r");
+  this->joint_control_state_.joint_names.push_back("joint_b");
+  this->joint_control_state_.joint_names.push_back("joint_t");
   // TODO: Again, this should be more generic.
-  this->joint_state_.actual.set_positions_size(NUM_OF_JOINTS_);
-  this->joint_state_.desired.set_positions_size(NUM_OF_JOINTS_);
-  this->joint_state_.error.set_positions_size(NUM_OF_JOINTS_);
+  this->joint_control_state_.actual.set_positions_size(NUM_OF_JOINTS_);
+  this->joint_control_state_.desired.set_positions_size(NUM_OF_JOINTS_);
+  this->joint_control_state_.error.set_positions_size(NUM_OF_JOINTS_);
+
+  // Copy from control state to sensor state
+  this->joint_sensor_state_.name = this->joint_control_state_.joint_names;
 }
 
 bool JointRelayHandler::init(industrial::smpl_msg_connection::SmplMsgConnection* connection)
@@ -87,19 +91,23 @@ bool JointRelayHandler::internalCB(industrial::simple_message::SimpleMessage & i
     {
       if (joint.getJoints().getJoint(i, value))
       {
-        this->joint_state_.actual.positions[i] = value;
+        this->joint_control_state_.actual.positions[i] = value;
+        this->joint_sensor_state_.position[i] = value;
       }
       else
       {
-        this->joint_state_.actual.positions[i] = 0.0;
+        this->joint_control_state_.actual.positions[i] = 0.0;
         LOG_ERROR("Failed to populate ith(%d) of controller state message", i);
       }
       // TODO: For now these values are not populated
-      this->joint_state_.desired.positions[i] = 0.0;
-      this->joint_state_.error.positions[i] = 0.0;
+      this->joint_control_state_.desired.positions[i] = 0.0;
+      this->joint_control_state_.error.positions[i] = 0.0;
     }
-    this->joint_state_.header.stamp = ros::Time::now();
-    this->pub_joint_state_.publish(this->joint_state_);
+    this->joint_control_state_.header.stamp = ros::Time::now();
+    this->pub_joint_control_state_.publish(this->joint_control_state_);
+
+    this->joint_sensor_state_.header.stamp = ros::Time::now();
+    this->pub_joint_sensor_state_.publish(this->joint_sensor_state_);
 
     // Reply back to the controller if the sender requested it.
     if (CommTypes::SERVICE_REQUEST == in.getMessageType())
