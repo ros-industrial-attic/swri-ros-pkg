@@ -44,6 +44,7 @@
 #include "tcp_server.h"
 #include "message_manager.h"
 #include "input_handler.h"
+#include "joint_motion_handler.h"
 
 #include "udp_server.h"
 #include "ros_conversion.h"
@@ -75,53 +76,47 @@ void ioServer();
 // Function definitions
 extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)
 {	
-    /*
+    
   motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-						
+	/*					
   system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
   
   state_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)stateServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-  */
   
   io_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)ioServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-						
+	*/					
   mpExitUsrRoot; //Ends the initialization task.
 }
-/*
+
 void motionServer(void)
 // Persistent UDP server that receives motion messages from Motoros node (ROS interface) and relays to parseMotionMessage
 {
-  LONG bytes_recv;
-  LONG recv_message[11];
+    using namespace industrial::simple_socket;
+    using namespace industrial::tcp_server;
+    using namespace industrial::message_manager;
+    using namespace industrial::simple_message;
+    using namespace motoman::joint_motion_handler;
+    
+    TcpServer connection;
+    JointMotionHandler jmHandler;
+    MessageManager manager;
+    
+    connection.init(StandardSocketPorts::MOTION);
+    connection.makeConnect();
+    
+    manager.init(&connection);
+    
+    jmHandler.init(StandardMsgTypes::JOINT, &connection);
+    manager.add(&jmHandler);
+    manager.spin();
 	
-  FOREVER
-  {
-    ROSSocket *sock = new ROSSocket(MOTION_PORT); // Socket object
-	printf("Motion socket created");
-	printf("\n");
-		
-	FOREVER
-	{
-	  memset(recv_message, 0, sizeof(recv_message));
-	  bytes_recv = sock->recvMessage(recv_message);
-	  if (bytes_recv == ERROR)
-	  {
-        printf("Motion socket receive error");
-		printf("\n");
-		break;
-	  }
-	  parseMotionMessage(recv_message, sock);
-	}
-	delete sock;
-	printf("Motion socket deleted");
-	printf("\n");
-  }
-}
 
+}
+/*
 void parseMotionMessage(LONG recv_message[], ROSSocket *sock)
 // Receives messages from motion UDP server and decides next action based on command ID of message
 {

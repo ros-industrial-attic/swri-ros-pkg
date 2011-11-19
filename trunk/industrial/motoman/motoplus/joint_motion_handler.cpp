@@ -29,66 +29,87 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-#include "ping_handler.h"
-#include "ping_message.h"
+#include "joint_motion_handler.h"
+#include "joint_message.h"
 #include "log_wrapper.h"
 
 
-using namespace industrial::ping_message;
+using namespace industrial::joint_message;
+using namespace industrial::joint_position;
 using namespace industrial::simple_message;
 
-namespace industrial
+namespace motoman
 {
-namespace ping_handler
+namespace joint_motion_handler
 {
 
-
-bool PingHandler::init(industrial::smpl_msg_connection::SmplMsgConnection* connection)
+JointMotionHandler::JointMotionHandler() :
+  pVarQ(NULL, &motion_allowed_)
 {
-  return this->init(StandardMsgTypes::PING, connection);
+    
+}
+bool JointMotionHandler::init(industrial::smpl_msg_connection::SmplMsgConnection* connection)
+{
+  return this->init(StandardMsgTypes::JOINT, connection);
 }
 
-bool PingHandler::internalCB(industrial::simple_message::SimpleMessage & in)
+bool JointMotionHandler::internalCB(industrial::simple_message::SimpleMessage & in)
 {
   bool rtn = false;
-  PingMessage ping;
-  SimpleMessage msg;
+  JointPosition joints;
+  JointMessage jMsg;
+  SimpleMessage reply;
 
-  if (ping.init(in))
-  {
-    if (ping.toReply(msg))
+    if (jMsg.init(in))
     {
-      if(this->getConnection()->sendMsg(msg))
-      {
-        LOG_INFO("Ping return sent");
-        rtn = true;
-      }
-      else
-      {
-        LOG_ERROR("Failed to send ping return");
-        rtn = false;
-      }
+        if(jMsg.getSequence() < 0 )
+        {
+            LOG_ERROR("Received end of joint motion, not sure what to do");
+            pVarQ.holdMotion();
+        }
+        else
+        {
+            joints.copyFrom(jMsg.getJoints());
+            if (RC_SUCCESS == pVarQ.addPointPVQ(joints))
+            {
+                if (jMsg.toReply(reply))
+                {
+                    if(this->getConnection()->sendMsg(reply))
+                    {
+                        LOG_INFO("Joint ack sent");
+                        rtn = true;
+                    }
+                    else
+                    {
+                        LOG_ERROR("Failed to send joint ack");
+                        rtn = false;
+                    }
+                }
+                else
+                {
+                    LOG_ERROR("Failed to generate joint ack message");
+                    rtn = false;
+                }
+            }
+            else
+            {
+                LOG_ERROR("Failed add point to queue");
+                rtn = false;
+            }
+        }
     }
     else
     {
-      LOG_ERROR("Failed to generate ping reply message");
-      rtn = false;
-    }
-  }
-  else
-  {
-    LOG_ERROR("Failed to initialize ping message");
+    LOG_ERROR("Failed to initialize joint message");
     rtn = false;
-  }
-
-
+    }
+    
   return rtn;
 }
 
 
 
-}//namespace ping_handler
+}//namespace joint_motion_handler
 }//namespace industrial
-
 
 

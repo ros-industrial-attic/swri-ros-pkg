@@ -72,7 +72,7 @@ const float E_PULSE_TO_RAD	= 65841.76588;	    // pulses/rad
 #endif //SIA_10D
 
 
-float toPulses(float radians, int joint)
+float toPulses(float radians, MotomanJointIndex joint)
 {
     float rtn = 0.0;
     switch (joint)
@@ -111,7 +111,7 @@ float toPulses(float radians, int joint)
         return rtn;
 }
 
-float toRadians(float pulses, int joint)
+float toRadians(float pulses, MotomanJointIndex joint)
 {
     float rtn = 0.0;
     switch (joint)
@@ -232,7 +232,7 @@ void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, JointPosition & dest)
     
     for(int i = 0; i < minJointSize; i++)
     {
-          dest.setJoint(i, toRadians(src.lPos[i], i));
+          dest.setJoint(i, toRadians(src.lPos[i], (MotomanJointIndex)i));
     }
     
 }

@@ -30,9 +30,15 @@
 */ 
 
 #include "p_var_q.h"
+#include "joint_position.h"
+#include "joint_motion_handler.h"
+#include "ros_conversion.h"
 
 using utils::arrayIntToChar;
 using utils::arrayCharToInt;
+using motoman::joint_motion_handler;
+using motoman::ros_conversion;
+using industrial::joint_position;
 
 PVarQ::PVarQ(ROSSocket* sock, bool* motion_allowed)
 // Initializes position variable queue motion
@@ -62,7 +68,7 @@ PVarQ::PVarQ(ROSSocket* sock, bool* motion_allowed)
   task_data.sTaskNo = 0;
 	
   // Set up socket
-  this->sock = sock;
+  // this->sock = sock;
 
   // Set up motion allowed flag
   this->motion_allowed = motion_allowed;
@@ -81,18 +87,28 @@ PVarQ::~PVarQ(void)
   //this->sock->sendMessage(CMD_ACK, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED);
 }
 
-LONG PVarQ::addPointPVQ(LONG* message)
+
+// LONG PVarQ::addPointPVQ(LONG* message)
 // Handles addition of new trajectory point. Adds to end of starting queue if it isn't full yet; else adds it to moving queue.
+LONG PVarQ::addPointPVQ(industrial::joint_position::JointPosition & joints)
 {
   LONG pulse_coords[8];
   LONG velocity;
 	
   // Extract position data from message
-  for (SHORT i = 0; i < 8; i++)
-    pulse_coords[i] = message[i+2];
+  // for (SHORT i = 0; i < 8; i++)
+  // pulse_coords[i] = message[i+2];
+  
+  motoman::ros_conversion::toMotomanJointOrder(joints);
+  for (int i = 0; i < 8; i++)
+  {
+    pulse_coords[i] = motoman::ros_conversion::toPulses(joints.getJoint(i), 
+        (motoman::ros_conversion::MotomanJointIndex)i);
+  }
    
   // Extract velocity from message
-  velocity = message[10];
+  // velocity = message[10];
+  velocity = VELOCITY;
 	
   // If starting queue isn't full yet, add point to end of it
   if (start_counter < (QSIZE-1))
@@ -204,4 +220,11 @@ void PVarQ::startJob(void)
     if (mpStartJob(&job_data, &job_error) == OK)
 	  break;
   }
+}
+
+void PVarQ::holdMotion(void)
+// Puts robot on Hold status
+{
+  hold_data.sHold = ON;
+  mpHold(&hold_data, &hold_error);
 }
