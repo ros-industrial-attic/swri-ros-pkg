@@ -38,7 +38,7 @@
 #define BUFF_MAX 1023
 #define QSIZE 20
 #define JOBNAME "PVARQ20VV"
-#define VELOCITY 100
+#define VELOCITY 50
 
 // Commands
 #define UNUSED 0
