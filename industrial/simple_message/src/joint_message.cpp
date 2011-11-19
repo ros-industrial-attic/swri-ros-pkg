@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -104,7 +104,7 @@ bool JointMessage::toReply(industrial::simple_message::SimpleMessage & msg)
 
   ByteArray data;
   data.load(*this);
-  return msg.init(this->getMessageType(), CommTypes::SERVICE_REPLY, ReplyTypes::INVALID, data);
+  return msg.init(this->getMessageType(), CommTypes::SERVICE_REPLY, ReplyTypes::SUCCESS, data);
 
 }
 

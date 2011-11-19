@@ -36,6 +36,7 @@
 #include "definitions.h"
 #include "ros_socket.h"
 #include "utils.h"
+#include "joint_position.h"
 
 class PVarQ
 // Holds data and functions for executing position variable queue motion
@@ -43,7 +44,9 @@ class PVarQ
   public:
     PVarQ(ROSSocket* sock, bool* motion_allowed);
     ~PVarQ(void);
-	LONG addPointPVQ(LONG *message);
+    LONG PVarQ::addPointPVQ(industrial::joint_position::JointPosition & joints);
+	//LONG addPointPVQ(LONG *message);
+	void holdMotion(void);
 		
   protected:
     // Functions
@@ -78,7 +81,7 @@ class PVarQ
 	USHORT cur_iter, next_iter; // Current iteration; next iteration at which to add point
 		
 	// Socket
-	ROSSocket* sock;
+	//ROSSocket* sock;
 		
 	// Motion allowed flag
 	bool* motion_allowed;

@@ -2,22 +2,24 @@
 <MotoPlusProject>
   <ProjectName>motoros_server</ProjectName>
   <FilesInProject>
-    <FileForProject>input_handler.cpp</FileForProject>
-    <FileForProject>input_handler.h</FileForProject>
-    <FileForProject>mpMain.cpp</FileForProject>
-    <FileForProject>message_manager.h</FileForProject>
-    <FileForProject>message_manager.cpp</FileForProject>
-    <FileForProject>message_handler.h</FileForProject>
-    <FileForProject>message_handler.cpp</FileForProject>
-    <FileForProject>log_wrapper.h</FileForProject>
-    <FileForProject>joint_position.h</FileForProject>
-    <FileForProject>joint_position.cpp</FileForProject>
     <FileForProject>joint_message.h</FileForProject>
     <FileForProject>joint_message.cpp</FileForProject>
-    <FileForProject>comms_fault_handler.h</FileForProject>
     <FileForProject>definitions.h</FileForProject>
-    <FileForProject>byte_array.cpp</FileForProject>
     <FileForProject>byte_array.h</FileForProject>
+    <FileForProject>byte_array.cpp</FileForProject>
+    <FileForProject>comms_fault_handler.h</FileForProject>
+    <FileForProject>input_handler.cpp</FileForProject>
+    <FileForProject>input_handler.h</FileForProject>
+    <FileForProject>joint_motion_handler.cpp</FileForProject>
+    <FileForProject>joint_motion_handler.h</FileForProject>
+    <FileForProject>joint_position.cpp</FileForProject>
+    <FileForProject>joint_position.h</FileForProject>
+    <FileForProject>log_wrapper.h</FileForProject>
+    <FileForProject>message_handler.cpp</FileForProject>
+    <FileForProject>message_handler.h</FileForProject>
+    <FileForProject>message_manager.cpp</FileForProject>
+    <FileForProject>message_manager.h</FileForProject>
+    <FileForProject>mpMain.cpp</FileForProject>
     <FileForProject>p_var_q.cpp</FileForProject>
     <FileForProject>p_var_q.h</FileForProject>
     <FileForProject>ping_handler.cpp</FileForProject>
@@ -56,7 +58,7 @@
     <FileForProject>utils.cpp</FileForProject>
     <FileForProject>utils.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>input_handler.cpp</LastFileOpened>
+  <LastFileOpened>definitions.h</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
