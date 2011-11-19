@@ -30,13 +30,18 @@
 */ 
 
 #include "joint_trajectory_handler.h"
+#include "socket/simple_socket.h"
 #include "socket/tcp_client.h"
+
+using namespace industrial::simple_socket;
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "joint_trajectory_handler");
   industrial::tcp_client::TcpClient robot;
   ros::NodeHandle node;
+
+  robot.init("192.168.10.3", StandardSocketPorts::MOTION);
   motoman::joint_trajectory_handler::JointTrajectoryHandler jtHandler(node, &robot);
 
   ros::spin();

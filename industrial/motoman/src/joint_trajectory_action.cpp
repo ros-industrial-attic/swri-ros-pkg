@@ -56,21 +56,21 @@ public:
   {
     using namespace XmlRpc;
     ros::NodeHandle pn("~");
-
+    /*
     // Gets all of the joints
     XmlRpc::XmlRpcValue joint_names;
 
     //TODO: Make joint setting joint names more generic
     joint_names.setSize(7);
     joint_names[0] = "joint_s";
-    joint_names[0] = "joint_l";
-    joint_names[0] = "joint_e";
-    joint_names[0] = "joint_u";
-    joint_names[0] = "joint_r";
-    joint_names[0] = "joint_b";
-    joint_names[0] = "joint_t";
+    joint_names[1] = "joint_l";
+    joint_names[2] = "joint_e";
+    joint_names[3] = "joint_u";
+    joint_names[4] = "joint_r";
+    joint_names[5] = "joint_b";
+    joint_names[6] = "joint_t";
 
-    /*  TODO: Figure out how the joint_names parameter needs to be set
+    //  TODO: Figure out how the joint_names parameter needs to be set
     if (!pn.getParam("joints", joint_names))
     {
       ROS_FATAL("No joints given. (namespace: %s)", pn.getNamespace().c_str());
@@ -81,7 +81,7 @@ public:
       ROS_FATAL("Malformed joint specification.  (namespace: %s)", pn.getNamespace().c_str());
       exit(1);
     }
-    */
+    
 
     for (int i = 0; i < joint_names.size(); ++i)
     {
@@ -95,6 +95,14 @@ public:
 
       joint_names_.push_back((std::string)name_value);
     }
+    */
+    joint_names_.push_back("joint_s");
+    joint_names_.push_back("joint_l");
+    joint_names_.push_back("joint_e");
+    joint_names_.push_back("joint_u");
+    joint_names_.push_back("joint_r");
+    joint_names_.push_back("joint_b");
+    joint_names_.push_back("joint_t");
 
     pn.param("constraints/goal_time", goal_time_constraint_, 0.0);
 
@@ -113,15 +121,13 @@ public:
 
     pub_controller_command_ =
       node_.advertise<trajectory_msgs::JointTrajectory>("command", 1);
-    sub_controller_state_ =
-      node_.subscribe("state", 1, &JointTrajectoryExecuter::controllerStateCB, this);
+    //sub_controller_state_ =
+    //  node_.subscribe("feedback_states", 1, &JointTrajectoryExecuter::controllerStateCB, this);
 
-    sub_controller_state_ =
-      node_.subscribe("state", 1, &JointTrajectoryExecuter::controllerStateCB, this);
+    //watchdog_timer_ = node_.createTimer(ros::Duration(1.0), &JointTrajectoryExecuter::watchdog, this);
 
-    watchdog_timer_ = node_.createTimer(ros::Duration(1.0), &JointTrajectoryExecuter::watchdog, this);
-
-    ros::Time started_waiting_for_controller = ros::Time::now();
+    //ros::Time started_waiting_for_controller = ros::Time::now();
+    /*
     while (ros::ok() && !last_controller_state_)
     {
       {
@@ -130,7 +136,7 @@ public:
       }
       ros::Duration(0.1).sleep();
     }
-
+    */
     action_server_.start();
   }
 
@@ -199,6 +205,7 @@ private:
   void goalCB(GoalHandle gh)
   {
     // Ensures that the joints in the goal match the joints we are commanding.
+    ROS_DEBUG("Received goal: goalCB");
     if (!setsEqual(joint_names_, gh.getGoal()->trajectory.joint_names))
     {
       ROS_ERROR("Joints on incoming goal don't match our joints");
@@ -209,6 +216,7 @@ private:
     // Cancels the currently active goal.
     if (has_active_goal_)
     {
+      ROS_DEBUG("Received new goal, canceling current goal");
       // Stops the controller.
       trajectory_msgs::JointTrajectory empty;
       empty.joint_names = joint_names_;
@@ -224,12 +232,14 @@ private:
     has_active_goal_ = true;
 
     // Sends the trajectory along to the controller
+    ROS_DEBUG("Publishing trajectory");
     current_traj_ = active_goal_.getGoal()->trajectory;
     pub_controller_command_.publish(current_traj_);
   }
 
   void cancelCB(GoalHandle gh)
   {
+    ROS_DEBUG("Received action cancel request");
     if (active_goal_ == gh)
     {
       // Stops the controller.
