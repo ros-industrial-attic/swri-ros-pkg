@@ -51,14 +51,15 @@ JointTrajectoryHandler::JointTrajectoryHandler(ros::NodeHandle &n, SmplMsgConnec
   ROS_INFO("Constructor joint trajectory handler node");
 
   this->mutex_.lock();
-  this->sub_joint_tranectory_ = this->node_.subscribe("command", 1000, &JointTrajectoryHandler::jointTrajectoryCB,
+  this->sub_joint_tranectory_ = this->node_.subscribe("command", 0, &JointTrajectoryHandler::jointTrajectoryCB,
                                                       this);
   this->robot_ = robotConnecton;
   this->currentPoint = 0;
   this->state_ = JointTrajectoryStates::IDLE;
   this->trajectoryHandler_ =
       new boost::thread(boost::bind(&JointTrajectoryHandler::trajectoryHandler, this));
-  this->trajectoryHandler_->join();
+  //this->trajectoryHandler_->join();
+  ROS_INFO("Unlocking mutex");
   this->mutex_.unlock();
 }
 
@@ -70,6 +71,7 @@ JointTrajectoryHandler::~JointTrajectoryHandler()
 
 void JointTrajectoryHandler::jointTrajectoryCB(const trajectory_msgs::JointTrajectoryConstPtr &msg)
 {
+  ROS_INFO("Receiving joint trajctory message");
   this->mutex_.lock();
   if (JointTrajectoryStates::IDLE != this->state_)
   {
@@ -97,18 +99,28 @@ void JointTrajectoryHandler::trajectoryHandler()
 {
   JointMessage jMsg;
   SimpleMessage msg;
+  SimpleMessage reply;
   trajectory_msgs::JointTrajectoryPoint pt;
   ROS_INFO("Starting joint trajectory handler state");
   while (ros::ok())
   {
-
+    ROS_INFO("Acquiring mutex lock");
     this->mutex_.lock();
+    ROS_INFO("Acquired mutex");
+
     if (this->robot_->isConnected())
     {
-
+      
+      //TODO: These variables should be moved outside of this loop
+      //so that we aren't contantly reinitializing them.
+      JointMessage jMsg;
+      SimpleMessage msg;
+      SimpleMessage reply;
+      trajectory_msgs::JointTrajectoryPoint pt;
       switch (this->state_)
       {
         case JointTrajectoryStates::IDLE:
+          ros::Duration(1).sleep();
           break;
 
         case JointTrajectoryStates::STARTING:
@@ -120,17 +132,26 @@ void JointTrajectoryHandler::trajectoryHandler()
         case JointTrajectoryStates::STREAMING:
           if (this->currentPoint < this->current_traj_.points.size())
           {
+	    ROS_INFO("Streaming joints point[%d]", this->currentPoint);
             pt = this->current_traj_.points[this->currentPoint];
+            
+            jMsg.setSequence(this->currentPoint);
+
             for (int i = 0; i < this->current_traj_.joint_names.size(); i++)
             {
               jMsg.getJoints().setJoint(i, pt.positions[i]);
-              jMsg.setSequence(this->currentPoint);
-              jMsg.toRequest(msg);
             }
-            if (this->robot_->sendMsg(msg))
+            
+            jMsg.toRequest(msg);
+            ROS_DEBUG("Sending joint point");
+            if (this->robot_->sendAndReceiveMsg(msg, reply))
             {
               ROS_INFO("Point[%d] sent to controller", this->currentPoint);
               this->currentPoint++;
+            }
+            else
+            {
+	      ROS_WARN("Failed sent joint point, will try again");
             }
           }
           else
@@ -144,24 +165,28 @@ void JointTrajectoryHandler::trajectoryHandler()
           ROS_INFO("Joint trajectory handler: entering stopping state");
           jMsg.setSequence(-1);
           jMsg.toRequest(msg);
-          this->robot_->sendMsg(msg);
+          this->robot_->sendAndReceiveMsg(msg, reply);
           this->state_ = JointTrajectoryStates::IDLE;
           break;
 
         default:
           ROS_ERROR("Joint trajectory handler: unknown state");
           this->state_ = JointTrajectoryStates::IDLE;
+          break;
       }
 
     }
     else
     {
+      ROS_INFO("Connecting to robot motion server");
       this->robot_->makeConnect();
     }
 
     this->mutex_.unlock();
-    sleep(10);
+    ros::Duration(0.005).sleep();
   }
+
+  ROS_WARN("Exiting trajectory handler thread");
 }
 
 } //joint_trajectory_handler
