@@ -145,6 +145,8 @@ void JointTrajectoryHandler::trajectoryHandler()
             jMsg.toRequest(msg);
             ROS_DEBUG("Sending joint point");
             if (this->robot_->sendAndReceiveMsg(msg, reply))
+	    //Trying async messages to see how well it works.
+	    //if (this->robot_->sendMsg(msg))
             {
               ROS_INFO("Point[%d] sent to controller", this->currentPoint);
               this->currentPoint++;
@@ -166,6 +168,8 @@ void JointTrajectoryHandler::trajectoryHandler()
           jMsg.setSequence(-1);
           jMsg.toRequest(msg);
           this->robot_->sendAndReceiveMsg(msg, reply);
+	  //Trying async messages to see how well it works.
+          //this->robot_->sendMsg(msg);
           this->state_ = JointTrajectoryStates::IDLE;
           break;
 
