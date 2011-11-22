@@ -83,6 +83,8 @@
 
 #endif
 
+#include "errno.h"
+#include "log_wrapper.h"
 #include "shared_types.h"
 #include "smpl_msg_connection.h"
 
@@ -149,7 +151,7 @@ protected:
    */
   char buffer_[MAX_BUFFER_SIZE + 1];
 
-int  getSockHandle() const
+  int  getSockHandle() const
   {
     return sock_handle_;
   }
@@ -157,6 +159,11 @@ int  getSockHandle() const
   void setSockHandle(int sock_handle_)
   {
     this->sock_handle_ = sock_handle_;
+  }
+
+  void logSocketError(char* msg, int rc)
+  {
+    LOG_ERROR("%s, rc: %d, errno: %d", msg, rc, errno);
   }
 
 };
