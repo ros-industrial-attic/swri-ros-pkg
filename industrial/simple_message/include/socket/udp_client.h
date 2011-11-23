@@ -53,6 +53,7 @@ public:
   UdpClient();
   ~UdpClient();
 
+  bool makeConnect();
 /*
    * \brief initializes UDP client socket
    *

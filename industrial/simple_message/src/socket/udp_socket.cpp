@@ -106,74 +106,28 @@ bool UdpSocket::receiveMsg(SimpleMessage & message)
   return rtn;
 }
 
-bool UdpSocket::sendBytes(ByteArray & buffer)
+int UdpSocket::rawSendBytes(ByteArray & buffer)
 {
   int rc = this->SOCKET_FAIL;
-  bool rtn = false;
-
-  // Nothing restricts the ByteArray from being larger than the what the socket
-  // can handle.
-  if (this->MAX_BUFFER_SIZE > (int)buffer.getBufferSize())
-  {
-    rc = SEND_TO(this->getSockHandle(), buffer.getRawDataPtr(),
+  
+  rc = SEND_TO(this->getSockHandle(), buffer.getRawDataPtr(),
         buffer.getBufferSize(), 0, (sockaddr *)&this->sockaddr_,
         sizeof(this->sockaddr_));
-    if (this->SOCKET_FAIL != rc)
-    {
-      rtn = true;
-    }
-    else
-    {
-      LOG_ERROR("Socket send failed, rc: %d", rc);
-    }
-  }
-  else
-  {
-    LOG_ERROR("Buffer size: %u, is greater than max socket size: %u", buffer.getBufferSize(), this->MAX_BUFFER_SIZE);
-    rtn = false;
-  }
-
-  return rtn;
+    
+  return rc;
 }
 
-bool UdpSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
+int UdpSocket::rawReceiveBytes(ByteArray & buffer, shared_int num_bytes)
 {
   int rc = this->SOCKET_FAIL;
-  bool rtn = false;
   SOCKLEN_T addrSize = 0;
-
-  // Reset the buffer (this is not required since the buffer length should
-  // ensure that we don't read any of the garbage that may be left over from
-  // a previous read), but it is good practice.
-
-  memset(&this->buffer_, 0, sizeof(this->buffer_));
-
-  // Doing a sanity check to determine if the byte array buffer is larger than
-  // what can be sent in the socket.  This should not happen and might be indicative
-  // of some code synchronization issues between the client and server base.
-  if (this->MAX_BUFFER_SIZE < (int)buffer.getMaxBufferSize())
-  {
-    LOG_WARN("Socket buffer max size: %u, is larger than byte array buffer: %u",
-             this->MAX_BUFFER_SIZE, buffer.getMaxBufferSize());
-  }
 
   addrSize = sizeof(this->sockaddr_);
 
   rc = RECV_FROM(this->getSockHandle(), &this->buffer_[0], this->MAX_BUFFER_SIZE,
       0, (sockaddr *)&this->sockaddr_, &addrSize);
 
-  if (this->SOCKET_FAIL != rc)
-  {
-    LOG_DEBUG("Byte array receive, bytes read: %u", rc);
-    buffer.init(&this->buffer_[0], rc);
-    rtn = true;
-  }
-  else
-  {
-    LOG_ERROR("Socket receive failed, rc: %d", rc);
-    rtn = false;
-  }
-  return rtn;
+  return rc;
 }
 
 } //udp_socket

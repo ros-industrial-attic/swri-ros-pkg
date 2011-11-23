@@ -53,6 +53,7 @@ public:
   UdpServer();
   ~UdpServer();
 
+  bool makeConnect();
   /**
    * \brief initializes UDP server socket.
    *

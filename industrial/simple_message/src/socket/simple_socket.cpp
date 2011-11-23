@@ -39,10 +39,117 @@
 
 #include "log_wrapper.h"
 
+using namespace industrial::byte_array;
+using namespace industrial::shared_types;
+
 namespace industrial
 {
 namespace simple_socket
 {
+
+
+bool SimpleSocket::sendBytes(ByteArray & buffer)
+{
+  int rc = this->SOCKET_FAIL;
+  bool rtn = false;
+
+  if (this->isConnected())
+  {
+    // Nothing restricts the ByteArray from being larger than the what the socket
+    // can handle.
+    if (this->MAX_BUFFER_SIZE > (int)buffer.getBufferSize())
+    {
+    
+      rc = rawSendBytes(buffer);
+      if (this->SOCKET_FAIL != rc)
+      {
+        rtn = true;
+      }
+      else
+      {
+        rtn = false;
+        logSocketError("Socket sendBytes failed", rc);
+      }
+      
+      }
+    else
+    {
+      LOG_ERROR("Buffer size: %u, is greater than max socket size: %u", buffer.getBufferSize(), this->MAX_BUFFER_SIZE);
+      rtn = false;
+    }
+
+  }
+  else
+  {
+    rtn = false;
+    LOG_WARN("Not connected, bytes not sent");
+  }
+
+  if (!rtn)
+    {
+      this->setConnected(false);
+    }
+
+  return rtn;
+  
+}
+
+bool SimpleSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
+{
+  int rc = this->SOCKET_FAIL;
+  bool rtn = false;
+
+  // Reset the buffer (this is not required since the buffer length should
+  // ensure that we don't read any of the garbage that may be left over from
+  // a previous read), but it is good practice.
+
+  memset(&this->buffer_, 0, sizeof(this->buffer_));
+
+  // Doing a sanity check to determine if the byte array buffer is larger than
+  // what can be sent in the socket.  This should not happen and might be indicative
+  // of some code synchronization issues between the client and server base.
+  if (this->MAX_BUFFER_SIZE < (int)buffer.getMaxBufferSize())
+  {
+    LOG_WARN("Socket buffer max size: %u, is larger than byte array buffer: %u",
+             this->MAX_BUFFER_SIZE, buffer.getMaxBufferSize());
+  }
+  if (this->isConnected())
+  {
+    rc = receiveBytes(buffer, num_bytes);
+
+    if (this->SOCKET_FAIL != rc)
+    {
+      if (rc > 0)
+      {
+        LOG_DEBUG("Byte array receive, bytes read: %u", rc);
+        buffer.init(&this->buffer_[0], rc);
+        rtn = true;
+      }
+      else
+      {
+        LOG_WARN("Recieved zero bytes: %u", rc);
+        rtn = false;
+      }
+    }
+    else
+    {
+      this->logSocketError("Socket received failed", rc);
+      rtn = false;
+    }
+  }
+  else
+  {
+    rtn = false;
+    LOG_WARN("Not connected, bytes not sent");
+  }
+
+  if (!rtn)
+  {
+    this->setConnected(false);
+  }
+  return rtn;
+}
+
 
 } //simple_socket
 } //industrial

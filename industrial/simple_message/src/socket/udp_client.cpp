@@ -38,6 +38,9 @@
 
 #include "log_wrapper.h"
 
+using namespace industrial::byte_array;
+using namespace industrial::shared_types;
+
 namespace industrial
 {
 namespace udp_client
@@ -84,6 +87,37 @@ bool UdpClient::init(char *buff, int port_num)
   return rtn;
 }
 
+
+bool UdpClient::makeConnect()
+{
+  ByteArray send, recv;
+  char sendHS = this->CONNECT_HANDSHAKE;
+  char recvHS = 0;
+  bool rtn = false;
+  
+  if (!this->isConnected())
+  {
+    this->setConnected(false);
+    send.load((void*)&sendHS, sizeof(sendHS));
+  
+    do
+    {
+      this->rawSendBytes(send);
+      this->rawReceiveBytes(recv, 0);
+      recv.unload((void*)&recvHS, sizeof(recvHS));
+    }
+    while(recvHS != sendHS);
+    rtn = true;
+    this->setConnected(true);
+    
+  }
+  else
+  {
+    LOG_WARN("Tried to connect when socket already in connected state");
+  }
+
+  return rtn;
+}
 } //udp_client
 } //industrial
 

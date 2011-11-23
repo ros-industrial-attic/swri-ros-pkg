@@ -39,6 +39,8 @@
 
 #include "log_wrapper.h"
 
+using namespace industrial::byte_array;
+
 namespace industrial
 {
 namespace udp_server
@@ -52,9 +54,11 @@ UdpServer::~UdpServer()
 {
 }
 
+
+
 bool UdpServer::init(int port_num)
 {
-  int rc;
+  int rc = this->SOCKET_FAIL;
   bool rtn;
   SOCKLEN_T addrSize = 0;
 
@@ -101,6 +105,40 @@ bool UdpServer::init(int port_num)
   }
   return rtn;
 }
+
+
+bool UdpServer::makeConnect()
+{
+  ByteArray send, recv;
+  char sendHS = this->CONNECT_HANDSHAKE;
+  char recvHS = 0;
+  bool rtn = false;
+  
+  send.load((void*)&sendHS, sizeof(sendHS));
+    
+  if (!this->isConnected())
+  {
+    this->setConnected(false);
+  
+    do
+    {
+      this->rawReceiveBytes(recv, 0);
+      recv.unload((void*)&recvHS, sizeof(recvHS));
+      
+    }
+    while(recvHS != sendHS);
+    
+    this->rawSendBytes(send);  
+    
+  }
+  else
+  {
+    LOG_WARN("Tried to connect when socket already in connected state");
+  }
+
+  return rtn;
+}
+
 
 } //udp_server
 } //industrial
