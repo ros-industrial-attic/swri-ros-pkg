@@ -69,6 +69,12 @@ public:
   // only a portion of it is read.  For that reason this receive method
   // reads the entire data stream (assumed to be a single message).
   bool  receiveMsg(industrial::simple_message::SimpleMessage & message);
+  
+  // Override
+  // UDP sockets are connectionless.  The only reason a makeConnect call
+  // is required is to establish the client IP with the server (so the
+  // server doesn't have to be configured with the client IP ahead of time).
+  void setConnected(bool connected);
 
 protected:
 

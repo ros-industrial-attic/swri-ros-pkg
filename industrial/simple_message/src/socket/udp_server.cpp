@@ -109,9 +109,10 @@ bool UdpServer::init(int port_num)
 
 bool UdpServer::makeConnect()
 {
-  ByteArray send, recv;
+  ByteArray send;
   char sendHS = this->CONNECT_HANDSHAKE;
   char recvHS = 0;
+  int bytesRcvd = 0;
   bool rtn = false;
   
   send.load((void*)&sendHS, sizeof(sendHS));
@@ -119,21 +120,33 @@ bool UdpServer::makeConnect()
   if (!this->isConnected())
   {
     this->setConnected(false);
-  
+    
+    // Listen for handshake.  Once received, break
+    // listen loop.
     do
     {
-      this->rawReceiveBytes(recv, 0);
-      recv.unload((void*)&recvHS, sizeof(recvHS));
+      ByteArray recv;
+      recvHS = 0;
+      bytesRcvd = this->rawReceiveBytes(recv, 0);
+      
+      if (bytesRcvd >= 0)
+      {
+        recv.unload((void*)&recvHS, sizeof(recvHS));
+      }
       
     }
     while(recvHS != sendHS);
     
+    // Send a reply handshake
     this->rawSendBytes(send);  
+    this->setConnected(false);
+    rtn = true;
     
   }
   else
   {
     LOG_WARN("Tried to connect when socket already in connected state");
+    rtn = true;
   }
 
   return rtn;

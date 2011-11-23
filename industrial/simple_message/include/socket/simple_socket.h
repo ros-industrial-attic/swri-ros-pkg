@@ -52,6 +52,7 @@
 #define SEND(sockfd, buf, len, flags) send(sockfd, buf, len, flags)
 #define RECV_FROM(sockfd, buf, len, flags, src_addr, addrlen) recvfrom(sockfd, buf, len, flags, src_addr, addrlen)
 #define RECV(sockfd, buf, len, flags) recv(sockfd, buf, len, flags)
+#define SELECT(n, readfds, writefds, exceptfds, timeval) select(n, readfds, writefds, exceptfds, timeval)
 #define CLOSE(fd) close(fd)
 #ifndef HTONS // OSX defines HTONS
 #define HTONS(num) htons(num)
@@ -76,6 +77,7 @@
 #define SEND(sockfd, buf, len, flags) mpSend(sockfd, buf, len, flags)
 #define RECV_FROM(sockfd, buf, len, flags, src_addr, addrlen) mpRecvFrom(sockfd, buf, len, flags, src_addr, (int*)addrlen)
 #define RECV(sockfd, buf, len, flags) mpRecv(sockfd, buf, len, flags)
+#define SELECT(n, readfds, writefds, exceptfds, timeval) mpSelect(n, readfds, writefds, exceptfds, timeval)
 #define CLOSE(fd) mpClose(fd)
 #define HTONS(num) mpHtons(num)
 #define INET_ADDR(str) mpInetAddr(str)
@@ -171,15 +173,24 @@ protected:
     this->sock_handle_ = sock_handle_;
   }
   
-  void setConnected(bool connected_)
+  virtual void setConnected(bool connected)
   {
-    this->connected_ = connected_;
+    this->connected_ = connected;
   }
 
   void logSocketError(char* msg, int rc)
   {
     LOG_ERROR("%s, rc: %d, errno: %d", msg, rc, errno);
   }
+  
+  /**
+   * \brief returns true if socket data is ready to receive
+   *
+   * \param timeout (ms) negative or zero values result in blocking
+   *
+   * \return true if data is ready to recieve
+   */
+  bool isReadyReceive(int timeout);
   
   // Send/Receive functions (inherited classes should override raw methods
   // Virtual
