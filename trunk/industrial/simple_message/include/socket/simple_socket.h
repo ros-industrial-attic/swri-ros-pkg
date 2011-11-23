@@ -124,6 +124,11 @@ public:
      */
   virtual ~SimpleSocket(){}
 
+  bool isConnected()
+  {
+    return connected_;
+  }
+
 protected:
 
   /**
@@ -135,6 +140,11 @@ protected:
    * \brief address/port of remote socket
    */
   sockaddr_in sockaddr_;
+  
+  /**
+   * \brief flag indicating socket connection status
+   */
+  bool connected_;
 
   /**
    * \brief socket fail return value
@@ -160,11 +170,26 @@ protected:
   {
     this->sock_handle_ = sock_handle_;
   }
+  
+  void setConnected(bool connected_)
+  {
+    this->connected_ = connected_;
+  }
 
   void logSocketError(char* msg, int rc)
   {
     LOG_ERROR("%s, rc: %d, errno: %d", msg, rc, errno);
   }
+  
+  // Send/Receive functions (inherited classes should override raw methods
+  // Virtual
+  bool sendBytes(industrial::byte_array::ByteArray & buffer);
+  bool receiveBytes(industrial::byte_array::ByteArray & buffer,
+      industrial::shared_types::shared_int num_bytes);
+  // Virtual
+  virtual int rawSendBytes(industrial::byte_array::ByteArray & buffer)=0;
+  virtual int rawReceiveBytes(industrial::byte_array::ByteArray & buffer,
+      industrial::shared_types::shared_int num_bytes)=0;
 
 };
 

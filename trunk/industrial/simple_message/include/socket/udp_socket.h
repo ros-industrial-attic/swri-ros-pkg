@@ -63,9 +63,6 @@ public:
   UdpSocket();
   ~UdpSocket();
 
-  bool isConnected(){return true;}
-  bool makeConnect() {return true;};
-
   // Override
   // receive is overridden because the base class implementation assumed
   // socket data could be read partially.  UDP socket data is lost when
@@ -73,11 +70,16 @@ public:
   // reads the entire data stream (assumed to be a single message).
   bool  receiveMsg(industrial::simple_message::SimpleMessage & message);
 
-private:
+protected:
+
+  /**
+   * \brief udp socket connect handshake value
+   */
+  static const char CONNECT_HANDSHAKE = 255;
 
   // Virtual
-  bool sendBytes(industrial::byte_array::ByteArray & buffer);
-  bool receiveBytes(industrial::byte_array::ByteArray & buffer,
+  int rawSendBytes(industrial::byte_array::ByteArray & buffer);
+  int rawReceiveBytes(industrial::byte_array::ByteArray & buffer,
       industrial::shared_types::shared_int num_bytes);
 
 };

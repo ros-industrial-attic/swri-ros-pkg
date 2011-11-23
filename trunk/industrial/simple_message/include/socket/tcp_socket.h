@@ -61,29 +61,12 @@ public:
   TcpSocket();
   virtual ~TcpSocket();
 
-  bool isConnected()
-  {
-    return connected_;
-  }
-
-protected:
-
-  void setConnected(bool connected_)
-  {
-    this->connected_ = connected_;
-  }
-
 private:
 
-  /**
-   * \brief flag indicating socket connection status
-   */
-  bool connected_;
-
   // Virtual
-  bool sendBytes(industrial::byte_array::ByteArray & buffer);
-  bool receiveBytes(industrial::byte_array::ByteArray & buffer,
-                    industrial::shared_types::shared_int num_bytes);
+  int rawSendBytes(industrial::byte_array::ByteArray & buffer);
+  int rawReceiveBytes(industrial::byte_array::ByteArray & buffer,
+      industrial::shared_types::shared_int num_bytes);
 
 };
 
