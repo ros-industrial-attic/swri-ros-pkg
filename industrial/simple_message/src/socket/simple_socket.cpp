@@ -60,7 +60,7 @@ bool SimpleSocket::sendBytes(ByteArray & buffer)
     if (this->MAX_BUFFER_SIZE > (int)buffer.getBufferSize())
     {
     
-      rc = rawSendBytes(buffer);
+      rc = rawSendBytes(buffer.getRawDataPtr(), buffer.getBufferSize());
       if (this->SOCKET_FAIL != rc)
       {
         rtn = true;
@@ -115,7 +115,7 @@ bool SimpleSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
   }
   if (this->isConnected())
   {
-    rc = receiveBytes(buffer, num_bytes);
+    rc = rawReceiveBytes(this->buffer_, num_bytes);
 
     if (this->SOCKET_FAIL != rc)
     {

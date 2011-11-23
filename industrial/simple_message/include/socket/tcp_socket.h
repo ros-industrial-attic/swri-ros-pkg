@@ -64,8 +64,9 @@ public:
 private:
 
   // Virtual
-  int rawSendBytes(industrial::byte_array::ByteArray & buffer);
-  int rawReceiveBytes(industrial::byte_array::ByteArray & buffer,
+  int rawSendBytes(char *buffer,
+      industrial::shared_types::shared_int num_bytes);
+  int rawReceiveBytes(char *buffer,
       industrial::shared_types::shared_int num_bytes);
 
 };

@@ -107,7 +107,7 @@ bool TcpClient::makeConnect()
     }
     else
     {
-      LOG_ERROR("Failed to connect to server");
+      this->logSocketError("Failed to connect to server", rc);
       rtn = false;
     }
   }
