@@ -77,18 +77,18 @@ void ioServer();
 extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)
 {	
     
-  motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionServer,
-						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-	/*					
-  system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer,
-						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+  //motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionServer,
+	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+						
+  //system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer,
+	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
   
   state_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)stateServer,
 						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
   
-  io_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)ioServer,
-						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-	*/					
+  //io_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)ioServer,
+	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+						
   mpExitUsrRoot; //Ends the initialization task.
 }
 
@@ -197,7 +197,7 @@ void stateServer(void)
     using namespace motoman::ros_conversion;
     
     // Using TPC server for debugging (this should really be UDP)
-    TcpServer connection;
+    UdpServer connection;
     JointPosition rosJoints;
     JointMessage msg;
     SimpleMessage simpMsg;
@@ -207,11 +207,12 @@ void stateServer(void)
     float msecPerTick = mpGetRtc();
     int delayTicks = period/msecPerTick;;
     
-    connection.init(StandardSocketPorts::STATE);  
+    connection.init(StandardSocketPorts::STATE);
     
     FOREVER
     {
       connection.makeConnect();
+      
       while(connection.isConnected())
       {
         getRosFbPos(rosJoints);
@@ -226,9 +227,9 @@ void stateServer(void)
         
         
       }
+      
 
     }
-    
 }
 
 
