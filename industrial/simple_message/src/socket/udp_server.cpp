@@ -48,6 +48,7 @@ namespace udp_server
 
 UdpServer::UdpServer()
 {
+  this->setConnected(false);
 }
 
 UdpServer::~UdpServer()

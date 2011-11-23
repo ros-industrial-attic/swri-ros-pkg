@@ -2,14 +2,14 @@
 <MotoPlusProject>
   <ProjectName>motoros_server</ProjectName>
   <FilesInProject>
-    <FileForProject>joint_message.h</FileForProject>
-    <FileForProject>joint_message.cpp</FileForProject>
     <FileForProject>definitions.h</FileForProject>
     <FileForProject>byte_array.h</FileForProject>
     <FileForProject>byte_array.cpp</FileForProject>
     <FileForProject>comms_fault_handler.h</FileForProject>
     <FileForProject>input_handler.cpp</FileForProject>
     <FileForProject>input_handler.h</FileForProject>
+    <FileForProject>joint_message.cpp</FileForProject>
+    <FileForProject>joint_message.h</FileForProject>
     <FileForProject>joint_motion_handler.cpp</FileForProject>
     <FileForProject>joint_motion_handler.h</FileForProject>
     <FileForProject>joint_position.cpp</FileForProject>
@@ -58,11 +58,11 @@
     <FileForProject>utils.cpp</FileForProject>
     <FileForProject>utils.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>definitions.h</LastFileOpened>
+  <LastFileOpened>mpMain.cpp</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
-    <DebugIP>192.168.10.3</DebugIP>
+    <DebugIP>192.168.32.3</DebugIP>
     <DebugUser>Net_Maint_Mng</DebugUser>
     <DebugPass>99999999</DebugPass>
   </Debug>
