@@ -90,10 +90,11 @@ bool UdpClient::init(char *buff, int port_num)
 
 bool UdpClient::makeConnect()
 {
-  ByteArray send, recv;
+  ByteArray send;
   char sendHS = this->CONNECT_HANDSHAKE;
   char recvHS = 0;
   bool rtn = false;
+  const int timeout = 1000;  // Time (ms) between handshake sends
   
   if (!this->isConnected())
   {
@@ -102,9 +103,14 @@ bool UdpClient::makeConnect()
   
     do
     {
+      ByteArray recv;
+      recvHS = 0;
       this->rawSendBytes(send);
-      this->rawReceiveBytes(recv, 0);
-      recv.unload((void*)&recvHS, sizeof(recvHS));
+      if (this->isReadyReceive(timeout))
+      {
+        this->rawReceiveBytes(recv, 0);
+        recv.unload((void*)&recvHS, sizeof(recvHS));
+      }
     }
     while(recvHS != sendHS);
     rtn = true;
@@ -113,6 +119,7 @@ bool UdpClient::makeConnect()
   }
   else
   {
+    rtn = true;
     LOG_WARN("Tried to connect when socket already in connected state");
   }
 

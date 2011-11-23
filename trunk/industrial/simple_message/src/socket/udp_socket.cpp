@@ -106,6 +106,17 @@ bool UdpSocket::receiveMsg(SimpleMessage & message)
   return rtn;
 }
 
+void UdpSocket::setConnected(bool connected)
+{
+  // Only set the connected flag if we are
+  // establishing the connection (i.e. the
+  // connection is never lost).
+  if(connected)
+  {
+    this->connected_ = connected;
+  }
+}
+
 int UdpSocket::rawSendBytes(ByteArray & buffer)
 {
   int rc = this->SOCKET_FAIL;
