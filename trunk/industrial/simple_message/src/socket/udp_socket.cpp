@@ -76,25 +76,35 @@ bool UdpSocket::receiveMsg(SimpleMessage & message)
 
   if (rtn)
   {
-    LOG_DEBUG("Recieve message bytes: %u", msgBuffer.getBufferSize());
-    LOG_DEBUG("Unloading message length from front of the buffer");
-    size = msgBuffer.unloadFront((void*)(&size), sizeof(shared_int));
+    LOG_DEBUG("Receive message bytes: %u", msgBuffer.getBufferSize());
+    if (msgBuffer.getBufferSize() >= sizeof(shared_int))
+    {
+	    LOG_DEBUG("Unloading message length from front of the buffer");
+	    msgBuffer.unloadFront((void*)(&size), sizeof(shared_int));
 
-    if ( size != (shared_int)( msgBuffer.getBufferSize() - message.getLengthSize() ) )
-    {
-      LOG_WARN("readBytes returned a message larger than the expect size");
-    }
-    rtn = message.init(msgBuffer);
+	    if ( size != (shared_int) msgBuffer.getBufferSize() )
+	    {
+	      LOG_WARN("readBytes returned a message other than the expected size");
+	    }
+	    rtn = message.init(msgBuffer);
 
-    if (rtn)
-    {
-      rtn = true;
-    }
-    else
-    {
-      LOG_ERROR("Failed to initialize message");
-      rtn = false;
-    }
+	    if (rtn)
+	    {
+	      rtn = true;
+	    }
+	    else
+	    {
+	      LOG_ERROR("Failed to initialize message");
+	      rtn = false;
+	    }
+     }
+     else
+     {
+        LOG_ERROR("Receive bytes returned small: %d message", rtn);
+        LOG_ERROR("Possible handshake or other connection issue, setting disconnected");
+        this->setConnected(false);
+        rtn = false;
+     }
 
   }
   else
@@ -111,24 +121,28 @@ void UdpSocket::setConnected(bool connected)
   // Only set the connected flag if we are
   // establishing the connection (i.e. the
   // connection is never lost).
+  /*
   if(connected)
   {
-    this->connected_ = connected;
+    LOG_INFO("UDP Socket connected");
+    this->connected_ = true;
   }
+  */
+  this->connected_ = connected;
 }
 
-int UdpSocket::rawSendBytes(ByteArray & buffer)
+int UdpSocket::rawSendBytes(char *buffer, shared_int num_bytes)
 {
   int rc = this->SOCKET_FAIL;
-  
-  rc = SEND_TO(this->getSockHandle(), buffer.getRawDataPtr(),
-        buffer.getBufferSize(), 0, (sockaddr *)&this->sockaddr_,
+
+  rc = SEND_TO(this->getSockHandle(), buffer,
+        num_bytes, 0, (sockaddr *)&this->sockaddr_,
         sizeof(this->sockaddr_));
-    
+  
   return rc;
 }
 
-int UdpSocket::rawReceiveBytes(ByteArray & buffer, shared_int num_bytes)
+int UdpSocket::rawReceiveBytes(char *buffer, shared_int num_bytes)
 {
   int rc = this->SOCKET_FAIL;
   SOCKLEN_T addrSize = 0;
@@ -137,9 +151,10 @@ int UdpSocket::rawReceiveBytes(ByteArray & buffer, shared_int num_bytes)
 
   rc = RECV_FROM(this->getSockHandle(), &this->buffer_[0], this->MAX_BUFFER_SIZE,
       0, (sockaddr *)&this->sockaddr_, &addrSize);
-
+  
   return rc;
 }
+
 
 } //udp_socket
 } //industrial

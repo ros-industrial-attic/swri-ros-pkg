@@ -70,7 +70,7 @@ namespace log_wrapper
   ROS_ERROR(format, ##__VA_ARGS__)
 
 #define LOG_FATAL(format, ...)  \
-  ROS_DEBUG(FATAL, ##__VA_ARGS__)
+  ROS_FATAL(FATAL, ##__VA_ARGS__)
 
 #endif //ROS
 

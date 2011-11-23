@@ -384,7 +384,8 @@ char* ByteArray::getUnloadPtr(shared_int byteSize)
   }
   else
   {
-    LOG_ERROR("Get unload pointer failed, buffer too small");
+    LOG_ERROR("Get unload pointer failed, buffer size: %d, smaller than byte size: %d",
+      this->getBufferSize(), byteSize);
     rtn = NULL;
   }
 

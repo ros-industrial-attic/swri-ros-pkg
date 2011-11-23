@@ -68,20 +68,20 @@ TcpSocket::~TcpSocket()
   CLOSE(this->getSockHandle());
 }
 
-int TcpSocket::rawSendBytes(ByteArray & buffer)
+int TcpSocket::rawSendBytes(char *buffer, shared_int num_bytes)
 {
   int rc = this->SOCKET_FAIL;
 
-  rc = SEND(this->getSockHandle(), buffer.getRawDataPtr(), buffer.getBufferSize(), 0);
+  rc = SEND(this->getSockHandle(), buffer, num_bytes, 0);
   
   return rc;
 }
 
-int TcpSocket::rawReceiveBytes(ByteArray & buffer, industrial::shared_types::shared_int num_bytes)
+int TcpSocket::rawReceiveBytes(char *buffer, shared_int num_bytes)
 {
   int rc = this->SOCKET_FAIL;
   
-  rc = RECV(this->getSockHandle(), &this->buffer_[0], num_bytes, 0);
+  rc = RECV(this->getSockHandle(), buffer, num_bytes, 0);
   
   return rc;
 }

@@ -127,10 +127,12 @@ bool UdpServer::makeConnect()
     {
       ByteArray recv;
       recvHS = 0;
-      bytesRcvd = this->rawReceiveBytes(recv, 0);
+      bytesRcvd = this->rawReceiveBytes(this->buffer_, 0);
       
-      if (bytesRcvd >= 0)
+      if (bytesRcvd > 0)
       {
+        LOG_DEBUG("UDP server received %d bytes while waiting for handshake", bytesRcvd);
+        recv.init(&this->buffer_[0], bytesRcvd);
         recv.unload((void*)&recvHS, sizeof(recvHS));
       }
       
@@ -138,8 +140,8 @@ bool UdpServer::makeConnect()
     while(recvHS != sendHS);
     
     // Send a reply handshake
-    this->rawSendBytes(send);  
-    this->setConnected(false);
+    this->rawSendBytes(send.getRawDataPtr(), send.getBufferSize());
+    this->setConnected(true);
     rtn = true;
     
   }

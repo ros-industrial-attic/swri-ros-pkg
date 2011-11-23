@@ -95,6 +95,7 @@ bool UdpClient::makeConnect()
   char recvHS = 0;
   bool rtn = false;
   const int timeout = 1000;  // Time (ms) between handshake sends
+  int bytesRcvd = 0;
   
   if (!this->isConnected())
   {
@@ -105,14 +106,18 @@ bool UdpClient::makeConnect()
     {
       ByteArray recv;
       recvHS = 0;
-      this->rawSendBytes(send);
+      LOG_DEBUG("UDP client sending handshake");
+      this->rawSendBytes(send.getRawDataPtr(), send.getBufferSize());
       if (this->isReadyReceive(timeout))
       {
-        this->rawReceiveBytes(recv, 0);
+        bytesRcvd = this->rawReceiveBytes(this->buffer_, 0);
+ 	LOG_DEBUG("UDP client received possible handshake");	
+        recv.init(&this->buffer_[0], bytesRcvd);
         recv.unload((void*)&recvHS, sizeof(recvHS));
       }
     }
     while(recvHS != sendHS);
+    LOG_INFO("UDP client connected");
     rtn = true;
     this->setConnected(true);
     

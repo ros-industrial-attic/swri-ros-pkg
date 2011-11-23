@@ -289,6 +289,7 @@ TEST(MessageManagerSuite, udp)
 
   // Construct a client and try to ping the server
   ASSERT_TRUE(udpClient->init(&ipAddr[0], udpPort));
+  ASSERT_TRUE(udpClient->makeConnect());
   ASSERT_TRUE(udpClient->sendMsg(pingRequest));
   ASSERT_TRUE(udpClient->receiveMsg(pingReply));
   ASSERT_TRUE(udpClient->sendAndReceiveMsg(pingRequest, pingReply));
@@ -297,6 +298,7 @@ TEST(MessageManagerSuite, udp)
   delete udpClient;
   udpClient = new UdpClient();
   ASSERT_TRUE(udpClient->init(&ipAddr[0], udpPort));
+  ASSERT_TRUE(udpClient->makeConnect());
   ASSERT_TRUE(udpClient->sendAndReceiveMsg(pingRequest, pingReply));
 
   pthread_cancel(udpSrvThrd);
