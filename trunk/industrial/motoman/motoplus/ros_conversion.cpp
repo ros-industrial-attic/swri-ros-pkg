@@ -237,5 +237,27 @@ void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, JointPosition & dest)
     
 }
 
+void toMpPosVarData(USHORT posVarIndex, JointPosition & src, MP_POSVAR_DATA & dest)
+{
+  const int MOTOMAN_AXIS_SIZE = 8;
+  LONG pulse_coords[MOTOMAN_AXIS_SIZE];
+  
+  motoman::ros_conversion::toMotomanJointOrder(src);
+  for (int i = 0; i < MOTOMAN_AXIS_SIZE; i++)
+  {
+    pulse_coords[i] = motoman::ros_conversion::toPulses(src.getJoint(i), 
+        (motoman::ros_conversion::MotomanJointIndex)i);
+  }
+  
+  dest.usType = MP_RESTYPE_VAR_ROBOT;  // All joint positions are robot positions
+  dest.usIndex = posVarIndex;          // Index within motoman position variable data table
+  dest.ulValue[0] = 0;                 // Position is in pulse counts
+  
+  for (SHORT i = 0; i < MOTOMAN_AXIS_SIZE; i++)
+  {
+	dest.ulValue[i+2] = pulse_coords[i];  // First two values in ulValue reserved
+  }
+}
+
 } //ros_conversion
 } //motoman

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -50,6 +50,23 @@ namespace industrial
 {
 namespace joint_message
 {
+
+// TODO: The JointPosition is currently overloaded (i.e. a single message means multiple
+// things).  This is not ideal and seperate messages should be considered.
+/**
+ * \brief Enumeration of special sequence values that signal the end of trajectory
+ * or an immediate stop.
+ */
+namespace SpecialSeqValues
+{
+enum SpecialSeqValue
+{
+  END_TRAJECTORY = -1, STOP_TRAJECTORY = -2
+};
+}
+typedef SpecialSeqValues::SpecialSeqValue SpecialSeqValue;
+
+
 
 /**
  * \brief Class encapsulated joint message generation methods (either to or

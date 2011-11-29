@@ -43,11 +43,23 @@ namespace motoman
 namespace joint_motion_handler
 {
 
-JointMotionHandler::JointMotionHandler() :
-  pVarQ(NULL, &motion_allowed_)
-{
-    
+JointMotionHandler::JointMotionHandler()
+{	
+  // Set up job variables
+  // start task
+  job_start_data.sTaskNo = 0;
+  strcpy(job_start_data.cJobName, JOBNAME);
+ 
+  // delete task
+  strcpy(job_delete_data.cJobName, JOBNAME);
 }
+
+JointMotionHandler::~JointMotionHandler()
+{
+  this->disableMotion();
+  this->stopMotionJob();
+}
+
 bool JointMotionHandler::init(industrial::smpl_msg_connection::SmplMsgConnection* connection)
 {
   return this->init(StandardMsgTypes::JOINT, connection);
@@ -56,58 +68,160 @@ bool JointMotionHandler::init(industrial::smpl_msg_connection::SmplMsgConnection
 bool JointMotionHandler::internalCB(industrial::simple_message::SimpleMessage & in)
 {
   bool rtn = false;
-  JointPosition joints;
   JointMessage jMsg;
   SimpleMessage reply;
 
     if (jMsg.init(in))
     {
-        if(jMsg.getSequence() < 0 )
-        {
-            LOG_ERROR("Received end of joint motion, not sure what to do");
-            pVarQ.holdMotion();
-        }
-        else
-        {
-            joints.copyFrom(jMsg.getJoints());
-            if (RC_SUCCESS == pVarQ.addPointPVQ(joints))
-            {
-                if (jMsg.toReply(reply))
-                {
-                    if(this->getConnection()->sendMsg(reply))
-                    {
-                        LOG_INFO("Joint ack sent");
-                        rtn = true;
-                    }
-                    else
-                    {
-                        LOG_ERROR("Failed to send joint ack");
-                        rtn = false;
-                    }
-                }
-                else
-                {
-                    LOG_ERROR("Failed to generate joint ack message");
-                    rtn = false;
-                }
-            }
-            else
-            {
-                LOG_ERROR("Failed add point to queue");
-                rtn = false;
-            }
-        }
+        this->motionInterface(jMsg);
     }
     else
     {
     LOG_ERROR("Failed to initialize joint message");
     rtn = false;
     }
+
+    // Send response if requested
+    if (CommTypes::SERVICE_REQUEST == in.getCommType())
+        if (jMsg.toReply(reply))
+        {
+            if(this->getConnection()->sendMsg(reply))
+            {
+                LOG_INFO("Joint ack sent");
+                rtn = true;
+            }
+            else
+            {
+                LOG_ERROR("Failed to send joint ack");
+                rtn = false;
+            }
+        }
+        else
+        {
+            LOG_ERROR("Failed to generate joint ack message");
+            rtn = false;
+        }
     
   return rtn;
 }
 
 
+ void JointMotionHandler::motionInterface(JointMessage & jMsg)
+ {
+ /*
+ Upon receiving...
+1st point - enable motion, start job, add point (increment buffer index), 
+Nth point - add point (increment buffer index)
+end of trajectory - wait until buffer size = 0, disable motion, stop job, reset buffer indicies
+motion stop - disable motion, stop job
+*/
+  JointPosition joints;
+  
+   switch (jMsg.getSequence())
+    {
+      case SpecialSeqValues::END_TRAJECTORY:
+         while(!pVarQ.bufferEmpty())
+         {
+           LOG_DEBUG("Waiting for motion buffer to empty");
+           mpTaskDelay(this->BUFFER_POLL_TICK_DELAY);
+         }
+         this->stopMotionJob();
+           
+         break;
+         
+      case SpecialSeqValues::STOP_TRAJECTORY:
+         LOG_WARN("Received stop command, stopping motion immediately");
+         this->stopMotionJob();
+         break;
+         
+      default:
+        if (!(this->isJobStarted()))
+        {
+          this->startMotionJob();
+        }
+        
+        joints.copyFrom(jMsg.getJoints());
+        pVarQ.addPoint(joints);
+    }
+ }
+ 
+ 
+void JointMotionHandler::enableMotion(void)
+{
+
+  this->motionEnabled = false;
+
+  servo_power_data.sServoPower = ON;
+  while(mpSetServoPower(&servo_power_data, &servo_power_error) == ERROR)
+  {
+    LOG_ERROR("Failed to turn on servo power, error: %d, retrying...", servo_power_error.err_no);
+    mpTaskDelay(this->MP_POLL_TICK_DELAY);
+  };
+  
+  hold_data.sHold = OFF;
+  while(mpHold(&hold_data, &hold_error) == ERROR)
+  {
+    LOG_ERROR("Failed to turn off hold, error: %d, retrying...", hold_error.err_no);
+    mpTaskDelay(this->MP_POLL_TICK_DELAY);
+  };
+  
+  this->motionEnabled = true;
+}
+
+
+void JointMotionHandler::disableMotion(void)
+{
+  servo_power_data.sServoPower = OFF;
+  while(mpSetServoPower(&servo_power_data, &servo_power_error) == ERROR)
+  {
+    LOG_ERROR("Failed to turn off servo power, error: %d, retrying...", servo_power_error.err_no);
+    mpTaskDelay(this->MP_POLL_TICK_DELAY);
+  };
+  
+  hold_data.sHold = ON;
+  while(mpHold(&hold_data, &hold_error) == ERROR)
+  {
+    LOG_ERROR("Failed to turn on hold, error: %d, retrying...", hold_error.err_no);
+    mpTaskDelay(this->MP_POLL_TICK_DELAY);
+  };
+  
+  this->motionEnabled = false;
+}
+
+void JointMotionHandler::startMotionJob(void)
+{
+
+  this->jobStarted = false;
+  
+  this->enableMotion();
+  
+  while(mpStartJob(&job_start_data, &job_error) == ERROR)
+  {
+    LOG_ERROR("Failed to start job, error: %d, retrying...", job_error.err_no);
+    mpTaskDelay(this->MP_POLL_TICK_DELAY);
+  }
+  
+  // The INFORM job should reset the index counters 
+  while( (pVarQ.getMotionPosIndex() != 0) && ( pVarQ.getBufferPosIndex() != 0))
+  {
+    LOG_ERROR("Waiting for indexes to reset, retying...");
+    mpTaskDelay(this->MP_POLL_TICK_DELAY);
+  };
+  
+  this->jobStarted = true;
+}
+void JointMotionHandler::stopMotionJob(void)
+{  
+  this->disableMotion();
+  
+  while(mpDeleteJob(&job_delete_data, &job_error) == ERROR)
+  {
+    LOG_ERROR("Failed to delete job, error: %d, retrying...", job_error.err_no);
+    mpTaskDelay(this->MP_POLL_TICK_DELAY);
+  };
+  
+  this->jobStarted = false;
+}	
 
 }//namespace joint_motion_handler
 }//namespace industrial

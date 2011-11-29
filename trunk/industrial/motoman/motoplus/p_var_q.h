@@ -38,53 +38,205 @@
 #include "utils.h"
 #include "joint_position.h"
 
+/*
+Point variable queue
+
+The point variable queue class encapsulates the point variable buffer
+used to buffer robot motion points.  The robot controller requires a
+point buffer in order to do it's own path interpolation and 
+ensure smooth motion between points.  This buffer exists between the
+motoplus application and the INFORM motion program.  (An INFORM motion
+program is used because it can perform smooth motion through several
+points, motoplus cannot).  The following section describes the structure
+and function of the point variable queue.
+
+Variables:
+
+Position variables (joint type)
+(NOTE: The max number of P variables is limited by the controller)
+P000 - PXXX(see QSIZE) units in pulses
+
+Velocity variables (integer type)
+When specifying a VJ speed in percentage, the controller calculates the 
+time it takes for each motor to travel that its distance (in pulse) at 
+specified speed. After it finds the motor that will take the longest time, 
+it will adjust down the speed of all the other motors so they will take the 
+same time.
+
+I000 - IXXX(see QSIZE) (percent 0.01%-100% -> 1-10000)
+
+Buffer Management
+The following variables are used to manage the buffer.  Two variables are used.
+The current Motion pointer is the index of the point currently being exectuted as
+part of the MOVJ (NOTE: Depending on how the controller performs it's look ahead,
+this may not be the point that it is currently executing motion on)  
+The current buffer pointer is the last point was populated with a valid joint point.
+
+NOTE: These variables are hard-codes in INFORM.  If their indexes change than the
+INFORM program must also be updated.
+
+IXXX(MOTION_POINTER) index of current point being executed in MOVJ
+IXXX(BUFFER_POINTER) index of the last populated point.
+
+Given these two variables the following can be determined.
+
+BUFFER_SIZE = BUFFER_POINTER - MOTION_POINTER
+
+POSITION VARIABLE INEXES:
+MOTION_POS_INDEX        = MOTION_POINTER % QSIZE
+BUFFER_POS_INDEX        = BUFFER_POINTER % QSIZE
+NEXT_BUFFER_POS_INDEX   = (BUFFER_POINTER + 1) % QSIZE
+
+MAX_BUFFER_SIZE <= QSIZE - 1 (or less, if desired)
+
+The INFORM program should only execute MOVJ on those points when the
+BUFFER_POINTER >=  MOTION_POINTER.
+
+TODO: WHAT TO DO WITH INTEGER ROLL OVERS ON MOTION/BUFFER POINTERS.
+
+*/
+
+
+
+
 class PVarQ
 // Holds data and functions for executing position variable queue motion
 {
   public:
-    PVarQ(ROSSocket* sock, bool* motion_allowed);
+    PVarQ();
     ~PVarQ(void);
-    LONG PVarQ::addPointPVQ(industrial::joint_position::JointPosition & joints);
-	//LONG addPointPVQ(LONG *message);
-	void holdMotion(void);
+    
+    /**
+  * \brief Adds point to the queue (will block until point can be added)
+  *
+  * \param joint position to add
+  */
+    void addPoint(industrial::joint_position::JointPosition & joints);
+    
+      /**
+  * \brief Return current buffer size (number of remaining points)  
+  * Should be used to determine if more points can be added.
+  *
+  * \return current buffer size
+  */
+    int bufferSize();
+    
+    
+          /**
+  * \brief Return number of position variables available in the queue.
+  * The number will be greater than or equal to the max buffer size + 1.
+  *
+  * \return number of position variables in queue
+  */
+    int posVarQueueSize() {return QSIZE;};
+    
+    
+        /**
+  * \brief Return maximum buffer size (Queue size - 1)
+  *
+  * \return max buffer size
+  */
+    int maxBufferSize() {return (posVarQueueSize() - 1);};
+    
+    
+        /**
+  * \brief Return motion pointer index
+  *
+  * \return motion pointer index
+  */
+    int getMotionIndex();
+    
+          /**
+  * \brief Return buffer pointer index
+  *
+  * \return buffer pointer index
+  */
+    int getBufferIndex();
+  
+             /**
+  * \brief Return motion position variable index
+  *
+  * \return motion position variable index
+  */
+    int getMotionPosIndex();
+  
+  
+           /**
+  * \brief Return buffer position variable index
+  *
+  * \return buffer position variable index
+  */
+    int getBufferPosIndex();
+    
+             /**
+  * \brief Return next buffer position variable index
+  *
+  * \return next buffer position variable index
+  */
+    int getNextBufferPosIndex();
+    
+              /**
+  * \brief Return true if buffer is full (points cannot be added)
+  *
+  * \return true if buffer is full
+  */
+    bool bufferFull();
+    
+        
+              /**
+  * \brief Return true if buffer is empty
+  *
+  * \return true if buffer is empty
+  */
+    bool bufferEmpty();
+  
 		
   protected:
-    // Functions
-	void startJob(void);
+    /**
+   * \brief motion point
+   */
+	MP_POSVAR_DATA pointData_;
 		
-	// Servo power variables
-	MP_SERVO_POWER_RSP_DATA servo_power_info;
-	MP_SERVO_POWER_SEND_DATA servo_power_on;
-	MP_STD_RSP_DATA servo_power_error;
+	/**
+   * \brief joint speed integer data (for writing) (0.01%-100% -> 0 - 10000)
+   */
+	MP_VAR_DATA jointSpeedData_;
 		
-	// Command point variables
-	MP_POSVAR_DATA start_point; // Point to be added to starting queue
-	LONG start_counter; // Keeps track of how many intitial points have been added
-		
-	// Joint speed variable
-	MP_VAR_DATA joint_speed;
-		
-	// Next point variable
-	MP_POSVAR_DATA next_point;
-		
-	// Job variables
-	MP_START_JOB_SEND_DATA job_data;
-	MP_STD_RSP_DATA job_error;
-		
-	// Hold variables
-	MP_HOLD_SEND_DATA hold_data;
-	MP_STD_RSP_DATA hold_error;
-		
-	// Declarations necessary for loop
-	MP_TASK_SEND_DATA task_data;
-	MP_CUR_JOB_RSP_DATA cur_job_data;
-	USHORT cur_iter, next_iter; // Current iteration; next iteration at which to add point
-		
-	// Socket
-	//ROSSocket* sock;
-		
-	// Motion allowed flag
-	bool* motion_allowed;
+  /**
+   * \brief buffer pointer index data (for writing)
+   */
+	MP_VAR_DATA bufferIndexData_;	
+	
+	
+  /**
+   * \brief buffer pointer index info (for reading)
+   */
+	MP_VAR_INFO bufferIndexInfo_;
+	
+  /**
+   * \brief motion pointer index info (for reading data)
+   */
+	MP_VAR_INFO motionIndexInfo_;
+	 /**
+   * \brief number of ticks to delay between variable polling
+   */
+	static const int VAR_POLL_TICK_DELAY = 10;
+	
+	        /**
+  * \brief Increments buffer index
+  *
+  */
+    void incBufferIndex();
+   
+  /**
+  * \brief Set position variable that is next in the queue
+  *
+  * \param value to set joint position to (IN ROS JOINT ORDER)
+  * \param percent velocity (will be converted to appropriate integer (see note for jointSpeedData_)
+  *
+  */
+    void setNextPosition(industrial::joint_position::JointPosition & point, double velocity_percent);
+			
 };
 
 #endif

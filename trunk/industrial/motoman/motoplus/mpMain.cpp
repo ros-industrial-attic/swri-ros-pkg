@@ -77,8 +77,8 @@ void ioServer();
 extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)
 {	
     
-  //motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionServer,
-	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+  motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionServer,
+						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 						
   //system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer,
 	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
@@ -197,7 +197,7 @@ void stateServer(void)
     using namespace motoman::ros_conversion;
     
     // Using TPC server for debugging (this should really be UDP)
-    UdpServer connection;
+    TcpServer connection;
     JointPosition rosJoints;
     JointMessage msg;
     SimpleMessage simpMsg;
