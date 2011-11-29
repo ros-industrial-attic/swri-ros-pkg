@@ -2,10 +2,10 @@
 <MotoPlusProject>
   <ProjectName>motoros_server</ProjectName>
   <FilesInProject>
-    <FileForProject>definitions.h</FileForProject>
     <FileForProject>byte_array.h</FileForProject>
     <FileForProject>byte_array.cpp</FileForProject>
     <FileForProject>comms_fault_handler.h</FileForProject>
+    <FileForProject>definitions.h</FileForProject>
     <FileForProject>input_handler.cpp</FileForProject>
     <FileForProject>input_handler.h</FileForProject>
     <FileForProject>joint_message.cpp</FileForProject>
@@ -58,7 +58,7 @@
     <FileForProject>utils.cpp</FileForProject>
     <FileForProject>utils.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>mpMain.cpp</LastFileOpened>
+  <LastFileOpened>ros_conversion.cpp</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>

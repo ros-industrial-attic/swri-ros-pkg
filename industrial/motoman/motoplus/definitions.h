@@ -37,8 +37,11 @@
 #define SYSTEM_PORT 11001
 #define BUFF_MAX 1023
 #define QSIZE 20
+// Motion and buffer pointer indicies cannot be less than QSIZE
+#define MOTION_POINTER 101
+#define BUFFER_POINTER 102
 #define JOBNAME "PVARQ20VV"
-#define VELOCITY 50
+#define VELOCITY 0.5
 
 // Commands
 #define UNUSED 0
