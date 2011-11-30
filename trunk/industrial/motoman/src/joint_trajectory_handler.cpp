@@ -158,18 +158,26 @@ void JointTrajectoryHandler::trajectoryHandler()
           }
           else
           {
-            ROS_INFO("Trajectory streaming complete, sending stop command");
-            this->state_ = JointTrajectoryStates::STOPPING;
+            ROS_INFO("Trajectory streaming complete, sending end command");
+	        jMsg.setSequence(SpecialSeqValues::END_TRAJECTORY);
+            jMsg.toRequest(msg);
+            ROS_DEBUG("Sending end trajectory point");
+            if (this->robot_->sendAndReceiveMsg(msg, reply))
+            {
+              this->state_ = JointTrajectoryStates::IDLE;
+            }
+            else
+            {
+	      ROS_WARN("Failed sent joint point, will try again");
+            }
           }
           break;
 
         case JointTrajectoryStates::STOPPING:
           ROS_INFO("Joint trajectory handler: entering stopping state");
-          jMsg.setSequence(-1);
+          jMsg.setSequence(SpecialSeqValues::STOP_TRAJECTORY);
           jMsg.toRequest(msg);
           this->robot_->sendAndReceiveMsg(msg, reply);
-	  //Trying async messages to see how well it works.
-          //this->robot_->sendMsg(msg);
           this->state_ = JointTrajectoryStates::IDLE;
           break;
 
