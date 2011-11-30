@@ -38,8 +38,8 @@
 #define BUFF_MAX 1023
 #define QSIZE 20
 // Motion and buffer pointer indicies cannot be less than QSIZE
-#define MOTION_POINTER 101
-#define BUFFER_POINTER 102
+#define MOTION_POINTER 91
+#define BUFFER_POINTER 92
 #define JOBNAME "PVARQ20VV"
 #define VELOCITY 0.5
 
