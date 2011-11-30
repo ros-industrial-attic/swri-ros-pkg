@@ -52,6 +52,9 @@ JointMotionHandler::JointMotionHandler()
  
   // delete task
   strcpy(job_delete_data.cJobName, JOBNAME);
+  
+  this->jobStarted = false;
+  this->motionEnabled = false;
 }
 
 JointMotionHandler::~JointMotionHandler()
@@ -120,6 +123,7 @@ motion stop - disable motion, stop job
    switch (jMsg.getSequence())
     {
       case SpecialSeqValues::END_TRAJECTORY:
+         LOG_INFO("Received end trajectory command");
          while(!pVarQ.bufferEmpty())
          {
            LOG_DEBUG("Waiting for motion buffer to empty");
@@ -148,7 +152,8 @@ motion stop - disable motion, stop job
  
 void JointMotionHandler::enableMotion(void)
 {
-
+  
+  LOG_INFO("Enabling motion");
   this->motionEnabled = false;
 
   servo_power_data.sServoPower = ON;
@@ -171,6 +176,7 @@ void JointMotionHandler::enableMotion(void)
 
 void JointMotionHandler::disableMotion(void)
 {
+  LOG_INFO("Disabling motion");
   servo_power_data.sServoPower = OFF;
   while(mpSetServoPower(&servo_power_data, &servo_power_error) == ERROR)
   {
@@ -195,12 +201,14 @@ void JointMotionHandler::startMotionJob(void)
   
   this->enableMotion();
   
+  LOG_INFO("Starting motion job");
   while(mpStartJob(&job_start_data, &job_error) == ERROR)
   {
     LOG_ERROR("Failed to start job, error: %d, retrying...", job_error.err_no);
     mpTaskDelay(this->MP_POLL_TICK_DELAY);
   }
   
+  LOG_DEBUG("Waiting for indexes to reset");
   // The INFORM job should reset the index counters 
   while( (pVarQ.getMotionPosIndex() != 0) && ( pVarQ.getBufferPosIndex() != 0))
   {
@@ -208,10 +216,13 @@ void JointMotionHandler::startMotionJob(void)
     mpTaskDelay(this->MP_POLL_TICK_DELAY);
   };
   
+  LOG_DEBUG("Reset indexes, motion: %d, buffer: %d", pVarQ.getMotionPosIndex(),
+    pVarQ.getBufferPosIndex());
   this->jobStarted = true;
 }
 void JointMotionHandler::stopMotionJob(void)
 {  
+  LOG_INFO("Stopping motion job");
   this->disableMotion();
   
   while(mpDeleteJob(&job_delete_data, &job_error) == ERROR)

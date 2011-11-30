@@ -222,6 +222,11 @@ class PVarQ
    */
 	static const int VAR_POLL_TICK_DELAY = 10;
 	
+	 /**
+   * \brief number of ticks to delay between buffer polling
+   */
+	static const int BUFFER_POLL_TICK_DELAY = 100;
+	
 	        /**
   * \brief Increments buffer index
   *

@@ -71,7 +71,7 @@ void PVarQ::addPoint(industrial::joint_position::JointPosition & joints)
   // Wait until buffer is not full
   while(this->bufferFull()) {
       LOG_DEBUG("Waiting for buffer to not be full, retrying...");
-      mpTaskDelay(this->VAR_POLL_TICK_DELAY);
+      mpTaskDelay(this->BUFFER_POLL_TICK_DELAY);
   };
   
   setNextPosition(joints, VELOCITY);
@@ -93,6 +93,8 @@ int PVarQ::bufferSize()
   {
     rtn = bufferIdx - motionIdx;
   }
+  
+  LOG_DEBUG("Buffer size: %d, buffer idx: %d, motion idx: %d", rtn, bufferIdx, motionIdx);
   return rtn;  
 }
     
@@ -137,10 +139,14 @@ int PVarQ::getNextBufferPosIndex()
     
 bool PVarQ::bufferFull()
 {
-  bool rtn = true;
-  if (this->bufferSize() < this->maxBufferSize())
+  bool rtn = false;
+  int bufferSize = this->bufferSize();
+  int maxBufferSize = this->maxBufferSize();
+  if (bufferSize >= maxBufferSize)
   {
-    rtn = false;
+    LOG_DEBUG("Buffer is full, size: %d, max size: %d",
+        bufferSize, maxBufferSize);
+    rtn = true;
   }
   return rtn;
 }
@@ -150,6 +156,7 @@ bool PVarQ::bufferEmpty()
   bool rtn = false;
   if (this->bufferSize() <= 0)
   {
+    LOG_DEBUG("Buffer is empty");
     rtn = true;
   }
   return rtn;
