@@ -106,6 +106,16 @@ class PVarQ
     PVarQ();
     ~PVarQ(void);
     
+    
+  /**
+  * \brief Initializes the queue (sets the initial joint position)
+  *
+  * \param value to set joint position to (IN ROS JOINT ORDER)
+  * \param percent velocity (will be converted to appropriate integer (see note for jointSpeedData_)
+  *
+  */
+    void init(industrial::joint_position::JointPosition & point, double velocity_percent);
+    
     /**
   * \brief Adds point to the queue (will block until point can be added)
   *
@@ -132,11 +142,12 @@ class PVarQ
     
     
         /**
-  * \brief Return maximum buffer size (Queue size - 1)
+  * \brief Return maximum buffer size (Queue size - 1)  The max buffer size
+  * should be less than the QSIZE minus whatver the motoman look-ahead is.
   *
   * \return max buffer size
   */
-    int maxBufferSize() {return (posVarQueueSize() - 1);};
+    int maxBufferSize() {return (posVarQueueSize() - 10);};
     
     
         /**
@@ -241,6 +252,17 @@ class PVarQ
   *
   */
     void setNextPosition(industrial::joint_position::JointPosition & point, double velocity_percent);
+    
+  /**
+  * \brief Set position variable in the queue position(index)
+  *
+  * \param position index
+  * \param value to set joint position to (IN ROS JOINT ORDER)
+  * \param percent velocity (will be converted to appropriate integer (see note for jointSpeedData_)
+  *
+  */
+    void setPosition(int index, industrial::joint_position::JointPosition & point, 
+    double velocity_percent);
 			
 };
 

@@ -113,7 +113,7 @@ bool JointMotionHandler::internalCB(industrial::simple_message::SimpleMessage & 
  {
  /*
  Upon receiving...
-1st point - enable motion, start job, add point (increment buffer index), 
+1st point - initialize buffer, enable motion, start job, add point (increment buffer index), 
 Nth point - add point (increment buffer index)
 end of trajectory - wait until buffer size = 0, disable motion, stop job, reset buffer indicies
 motion stop - disable motion, stop job
@@ -139,12 +139,15 @@ motion stop - disable motion, stop job
          break;
          
       default:
+        
+        joints.copyFrom(jMsg.getJoints());
         if (!(this->isJobStarted()))
         {
+          //TODO: The velocity should be set from the message in the future.
+          pVarQ.init(joints, VELOCITY);
           this->startMotionJob();
         }
         
-        joints.copyFrom(jMsg.getJoints());
         pVarQ.addPoint(joints);
     }
  }
