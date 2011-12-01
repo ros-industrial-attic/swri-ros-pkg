@@ -28,8 +28,6 @@
     <FileForProject>ping_message.h</FileForProject>
     <FileForProject>ros_conversion.cpp</FileForProject>
     <FileForProject>ros_conversion.h</FileForProject>
-    <FileForProject>ros_socket.cpp</FileForProject>
-    <FileForProject>ros_socket.h</FileForProject>
     <FileForProject>shared_types.h</FileForProject>
     <FileForProject>simple_comms_fault_handler.cpp</FileForProject>
     <FileForProject>simple_comms_fault_handler.h</FileForProject>
@@ -55,10 +53,8 @@
     <FileForProject>udp_server.h</FileForProject>
     <FileForProject>udp_socket.cpp</FileForProject>
     <FileForProject>udp_socket.h</FileForProject>
-    <FileForProject>utils.cpp</FileForProject>
-    <FileForProject>utils.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>joint_motion_handler.cpp</LastFileOpened>
+  <LastFileOpened>mpMain.cpp</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>

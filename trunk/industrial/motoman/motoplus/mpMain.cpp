@@ -36,8 +36,6 @@
 #include "motoPlus.h"
 #include "definitions.h"
 #include "p_var_q.h"
-#include "ros_socket.h"
-#include "utils.h"
 #include "system.h"
 
 #include "log_wrapper.h"
@@ -52,23 +50,14 @@
 #include "joint_message.h"
 #include "simple_message.h"
 
-
-
-// Using directives
-using utils::arrayIntToChar;
-using utils::arrayCharToInt;
-
 // Global data
 int motion_server_task_ID;
 int system_server_task_ID;
 int state_server_task_ID;
 int io_server_task_ID;
-bool motion_allowed_var = true;
-bool* motion_allowed = &motion_allowed_var;
 
 // Function prototypes
 void motionServer();
-void parseMotionMessage(LONG recv_message[], ROSSocket *sock);
 void systemServer();
 void stateServer();
 void ioServer();
@@ -116,54 +105,6 @@ void motionServer(void)
 	
 
 }
-/*
-void parseMotionMessage(LONG recv_message[], ROSSocket *sock)
-// Receives messages from motion UDP server and decides next action based on command ID of message
-{
-  LONG command_ID = recv_message[0];
-  static PVarQ *pvq = NULL;
-  LONG reply_code;
-	
-  switch(command_ID) // Decide response based on command ID of message
-  {
-    case CMD_INIT_PVQ:
-	  if (pvq == NULL)
-	  {
-	    *motion_allowed = true;
-		pvq = new PVarQ(sock, motion_allowed); // Initialize new position variable queue motion
-		sock->sendMessage(CMD_INIT_PVQ, RC_SUCCESS, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED);
-		printf("New PVQ");
-		printf("\n");
-	  }
-	  else
-		sock->sendMessage(CMD_INIT_PVQ, RC_AE, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED);
-	  break;
-    case CMD_ADD_POINT_PVQ:
-	  if (pvq != NULL)
-	  {
-		reply_code = pvq->addPointPVQ(recv_message); // Add new point to position variable queue
-		sock->sendMessage(CMD_ADD_POINT_PVQ, reply_code, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED);
-	  }
-	  else
-		sock->sendMessage(CMD_ADD_POINT_PVQ, RC_NOT_INIT, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED);
-	  break;
-    case CMD_END_PVQ:
-	  if (pvq != NULL)
-	  {
-		delete pvq; // End position variable queue motion
-		//printf("%d ",*pvq);
-		pvq = NULL;
-		sock->sendMessage(CMD_END_PVQ, RC_SUCCESS, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED);
-		printf("PVQ Deleted");
-		printf("\n");
-		printf("%d",pvq);
-		printf("\n");
-	  }
-	  break;
-  }
-}
-*/
-
 
 void systemServer(void)
 // Persistent UDP server that receives system messages from Motoros node (ROS interface) and relays to parseSystemMessage
@@ -203,9 +144,7 @@ void stateServer(void)
     SimpleMessage simpMsg;
     
     void* stopWatchID = NULL;
-    const int period = 1000; //ms (publish once/second)
-    float msecPerTick = mpGetRtc();
-    int delayTicks = period/msecPerTick;;
+    const int period = 100; //ticks
     
     connection.init(StandardSocketPorts::STATE);
     
@@ -218,11 +157,8 @@ void stateServer(void)
         getRosFbPos(rosJoints);
         msg.init(0, rosJoints);
         msg.toTopic(simpMsg);
-        LOG_DEBUG("Sending joint state message");
         connection.sendMsg(simpMsg);
         
-        LOG_DEBUG("msec/tick: %f, delayTicks: %d", 
-            msecPerTick, delayTicks);
         mpTaskDelay(period);
         
         
