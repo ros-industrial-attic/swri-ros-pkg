@@ -73,6 +73,7 @@ void JointTrajectoryHandler::jointTrajectoryCB(const trajectory_msgs::JointTraje
 {
   ROS_INFO("Receiving joint trajctory message");
   this->mutex_.lock();
+  ROS_INFO("Processing joint trajctory message (mutex acquired)");
   if (JointTrajectoryStates::IDLE != this->state_)
   {
     if (msg->points.empty())
@@ -88,6 +89,7 @@ void JointTrajectoryHandler::jointTrajectoryCB(const trajectory_msgs::JointTraje
   }
   else
   {
+    ROS_INFO("Loading trajectory, setting state to starting");
     this->current_traj_ = *msg;
     this->currentPoint = 0;
     this->state_ = JointTrajectoryStates::STARTING;
@@ -104,9 +106,7 @@ void JointTrajectoryHandler::trajectoryHandler()
   ROS_INFO("Starting joint trajectory handler state");
   while (ros::ok())
   {
-    ROS_INFO("Acquiring mutex lock");
     this->mutex_.lock();
-    ROS_INFO("Acquired mutex");
 
     if (this->robot_->isConnected())
     {
@@ -158,6 +158,15 @@ void JointTrajectoryHandler::trajectoryHandler()
           }
           else
           {
+            ROS_INFO("Trajectory streaming complete, not sending end command, queue remains active.");
+            this->state_ = JointTrajectoryStates::IDLE;
+            
+	  /*  
+	      TODO: COMMENTING OUT THE STOP TRAJECTORY FOR NOW.  When the stop
+              trajectory signal is caught by the controller it immediately
+              stops instead of waiting until it reaches it's goal.  For now
+              we will ingnore this.  This shouldn't cause an issue until the
+              buffer indexes roll over.
             ROS_INFO("Trajectory streaming complete, sending end command");
 	        jMsg.setSequence(SpecialSeqValues::END_TRAJECTORY);
             jMsg.toRequest(msg);
@@ -170,6 +179,7 @@ void JointTrajectoryHandler::trajectoryHandler()
             {
 	      ROS_WARN("Failed sent joint point, will try again");
             }
+            */
           }
           break;
 
@@ -177,7 +187,9 @@ void JointTrajectoryHandler::trajectoryHandler()
           ROS_INFO("Joint trajectory handler: entering stopping state");
           jMsg.setSequence(SpecialSeqValues::STOP_TRAJECTORY);
           jMsg.toRequest(msg);
+          ROS_DEBUG("Sending stop command");
           this->robot_->sendAndReceiveMsg(msg, reply);
+          ROS_DEBUG("Stop command sent, entring idle mode");
           this->state_ = JointTrajectoryStates::IDLE;
           break;
 
