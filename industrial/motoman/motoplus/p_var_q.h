@@ -33,8 +33,8 @@
 #define __p_var_q_h
 
 #include "motoPlus.h"
-#include "definitions.h"
 #include "joint_position.h"
+#include "mp_wrapper.h"
 
 /*
 Point variable queue
@@ -95,6 +95,13 @@ TODO: WHAT TO DO WITH INTEGER ROLL OVERS ON MOTION/BUFFER POINTERS.
 */
 
 
+namespace motoman
+{
+namespace p_var_q
+{
+
+// Utility macro for some compile time checking.
+#define STATIC_ASSERT(COND,MSG) typedef char static_assertion_##MSG[(COND)?1:-1]
 
 
 class PVarQ
@@ -136,7 +143,7 @@ class PVarQ
   *
   * \return number of position variables in queue
   */
-    int posVarQueueSize() {return QSIZE;};
+    int posVarQueueSize() {return QSIZE_;};
     
     
         /**
@@ -145,7 +152,7 @@ class PVarQ
   *
   * \return max buffer size
   */
-    int maxBufferSize() {return (posVarQueueSize() - 10);};
+    int maxBufferSize() {return (posVarQueueSize() - PT_LOOK_AHEAD_);};
     
     
         /**
@@ -153,21 +160,23 @@ class PVarQ
   *
   * \return motion pointer index
   */
-    int getMotionIndex();
+    int getMotionIndex()
+    {return motoman::mp_wrapper::getInteger(MOTION_POINTER_);};
     
           /**
   * \brief Return buffer pointer index
   *
   * \return buffer pointer index
   */
-    int getBufferIndex();
+    int getBufferIndex()
+    {return motoman::mp_wrapper::getInteger(BUFFER_POINTER_);};
   
              /**
   * \brief Return motion position variable index
   *
   * \return motion position variable index
   */
-    int getMotionPosIndex();
+    int getMotionPosIndex() ;
   
   
            /**
@@ -206,35 +215,56 @@ class PVarQ
    */
 	MP_POSVAR_DATA pointData_;
 		
-	/**
-   * \brief joint speed integer data (for writing) (0.01%-100% -> 0 - 10000)
-   */
-	MP_VAR_DATA jointSpeedData_;
-		
-  /**
-   * \brief buffer pointer index data (for writing)
-   */
-	MP_VAR_DATA bufferIndexData_;	
-	
-	
-  /**
-   * \brief buffer pointer index info (for reading)
-   */
-	MP_VAR_INFO bufferIndexInfo_;
-	
-  /**
-   * \brief motion pointer index info (for reading data)
-   */
-	MP_VAR_INFO motionIndexInfo_;
-	 /**
-   * \brief number of ticks to delay between variable polling
-   */
-	static const int VAR_POLL_TICK_DELAY = 10;
+	static const int VAR_POLL_TICK_DELAY_ = 10;
 	
 	 /**
    * \brief number of ticks to delay between buffer polling
    */
-	static const int BUFFER_POLL_TICK_DELAY = 100;
+	static const int BUFFER_POLL_TICK_DELAY_ = 100;
+	
+	 /**
+   * \brief Size of the INFORM motion queue (i.e. the number of
+   * position variables in the MOTION_JOB_NAME_.
+   */
+    static const int QSIZE_ = 20;
+    
+     /**
+   * \brief Number of points the INFORM motion planner looks
+   * ahead.
+   */
+    static const int PT_LOOK_AHEAD_ = 5;
+    
+     /**
+   * \brief Integer index in INFORM integer variable table where
+   * motion pointer is stored (INDEX MUST BE GREATER THAN QSIZE,
+   * INTEGERS ALIGNED WITH POSITION VARIABLES ARE USED TO SET
+   * MOTION SPEED)
+   */
+    static const int MOTION_POINTER_ = 91;
+    
+      /**
+   * \brief Integer index in INFORM integer variable table where
+   * buffer pointer is stored (INDEX MUST BE GREATER THAN QSIZE,
+   * INTEGERS ALIGNED WITH POSITION VARIABLES ARE USED TO SET
+   * MOTION SPEED)
+   */
+    static const int BUFFER_POINTER_ = 92;
+    
+    
+      /**
+   * \brief Integer index in INFORM integer variable table where the
+   * minimum buffer size for starting motion is.  (INDEX MUST BE GREATER THAN QSIZE,
+   * INTEGERS ALIGNED WITH POSITION VARIABLES ARE USED TO SET
+   * MOTION SPEED)
+   */
+    static const int MIN_BUF_START_POINTER_ = 93;
+    
+      /**
+   * \brief Temporary variable that is used to set all motion
+   * speeds (this will be removed once the ROS generated velocities
+   * are integrated
+   */
+    static const double VELOCITY_ = 2.5;
 	
 	        /**
   * \brief Increments buffer index
@@ -263,5 +293,11 @@ class PVarQ
     double velocity_percent);
 			
 };
+
+
+}//namespace p_var_q
+}//namespace motoman
+
+
 
 #endif

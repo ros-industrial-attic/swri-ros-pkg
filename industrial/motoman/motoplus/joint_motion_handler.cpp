@@ -43,6 +43,8 @@ namespace motoman
 namespace joint_motion_handler
 {
 
+#define JOBNAME "PVARQ20VV"
+
 JointMotionHandler::JointMotionHandler()
 {	
   // Set up job variables
@@ -144,7 +146,7 @@ motion stop - disable motion, stop job
         if (!(this->isJobStarted()))
         {
           //TODO: The velocity should be set from the message in the future.
-          pVarQ.init(joints, VELOCITY);
+          pVarQ.init(joints, 0.01);
           this->startMotionJob();
         }
         

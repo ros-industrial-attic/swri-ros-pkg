@@ -121,7 +121,7 @@ MP_STD_RSP_DATA job_error;
 MP_HOLD_SEND_DATA hold_data;
 MP_STD_RSP_DATA hold_error;
 	
- PVarQ pVarQ; 
+motoman::p_var_q::PVarQ pVarQ; 
  
  /**
   * \brief Poll delay (in ticks) when querying the motoplus api.

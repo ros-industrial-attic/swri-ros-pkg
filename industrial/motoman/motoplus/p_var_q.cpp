@@ -34,10 +34,18 @@
 #include "joint_motion_handler.h"
 #include "ros_conversion.h"
 #include "log_wrapper.h"
+#include "mp_wrapper.h"
 
 using motoman::joint_motion_handler;
 using motoman::ros_conversion;
 using industrial::joint_position;
+
+
+namespace motoman
+{
+namespace p_var_q
+{
+
 
 PVarQ::PVarQ()
 {	
@@ -45,20 +53,15 @@ PVarQ::PVarQ()
   // Set up point variable
   pointData_.usType = MP_RESTYPE_VAR_ROBOT;
   
-  // Set integer variables
-  jointSpeedData_.usType = MP_RESTYPE_VAR_I;
-  
-  motionIndexInfo_.usType = MP_RESTYPE_VAR_I;
-  motionIndexInfo_.usIndex = MOTION_POINTER;
-  
-  bufferIndexInfo_.usType = MP_RESTYPE_VAR_I;
-  bufferIndexInfo_.usIndex = BUFFER_POINTER;
-  bufferIndexData_.usType = MP_RESTYPE_VAR_I;
-  bufferIndexData_.usIndex = BUFFER_POINTER;
-  
   // TODO: Should check constants such as Q_SIZE, MOTION_POINTER & BUFFER_POINTER for
   // consitency
-	
+  
+  // Checking class constants for consistancy
+  STATIC_ASSERT(QSIZE_ > PT_LOOK_AHEAD_, QSIZE_NOT_GREATER_THAN_LOOK_AHEAD);
+  STATIC_ASSERT(MOTION_POINTER_ > QSIZE_, MOTION_PONTER_NOT_GREATER_THAN_QSIZE);
+  STATIC_ASSERT(BUFFER_POINTER_ > QSIZE_, BUFFER_PONTER_NOT_GREATER_THAN_QSIZE);
+  STATIC_ASSERT(MIN_BUF_START_POINTER_ > QSIZE_, MIN_BUFF_START_PONTER_NOT_GREATER_THAN_QSIZE);
+  
 }
 
 PVarQ::~PVarQ(void)
@@ -71,6 +74,9 @@ void PVarQ::init(industrial::joint_position::JointPosition & point, double veloc
   // Seed the intial point - this is required because upon startup, the indexes are zero and
   // therefore the intial point never gets set.
   setPosition(0, point, velocity_percent);
+  
+  // Set the minium buffer size
+  motoman::mp_wrapper::setInteger(MIN_BUF_START_POINTER_, PT_LOOK_AHEAD_);
 }
 
 void PVarQ::addPoint(industrial::joint_position::JointPosition & joints)
@@ -79,10 +85,10 @@ void PVarQ::addPoint(industrial::joint_position::JointPosition & joints)
   // Wait until buffer is not full
   while(this->bufferFull()) {
       LOG_DEBUG("Waiting for buffer to not be full, retrying...");
-      mpTaskDelay(this->BUFFER_POLL_TICK_DELAY);
+      mpTaskDelay(this->BUFFER_POLL_TICK_DELAY_);
   };
   
-  setNextPosition(joints, VELOCITY);
+  setNextPosition(joints, VELOCITY_);
   incBufferIndex();
 	
 }
@@ -107,28 +113,6 @@ int PVarQ::bufferSize()
   return rtn;  
 }
     
-    
-int PVarQ::getMotionIndex()
-{
-  LONG val = 0;
-  
-  while (mpGetVarData ( &(this->motionIndexInfo_), &val, 1 ) == ERROR) {
-    LOG_ERROR("Failed to retreive motion index, retrying...");
-    mpTaskDelay(this->VAR_POLL_TICK_DELAY);
-  };
-  return val;
-}
-    
-int PVarQ::getBufferIndex()
-{
-  LONG val = 0;
-  
-  while (mpGetVarData ( &(this->bufferIndexInfo_), &val, 1 ) == ERROR) {
-    LOG_ERROR("Failed to retreive buffer index, retrying...");
-    mpTaskDelay(this->VAR_POLL_TICK_DELAY);
-  };
-  return val;
-}
 
   
 int PVarQ::getMotionPosIndex()
@@ -174,14 +158,9 @@ bool PVarQ::bufferEmpty()
 void PVarQ::incBufferIndex()
 {
   int bufferIdx = this->getBufferIndex();
-  this->bufferIndexData_.ulValue = bufferIdx + 1;
   
-  LOG_DEBUG("Incrementing buffer index from %d to %d", bufferIdx, this->bufferIndexData_.ulValue);
-  
-  while (mpPutVarData ( &(this->bufferIndexData_), 1 ) == ERROR) {
-    LOG_ERROR("Failed to increment buffer index, retrying...");
-    mpTaskDelay(this->VAR_POLL_TICK_DELAY);
-  };
+  LOG_DEBUG("Incrementing buffer index from %d to %d", bufferIdx, bufferIdx + 1); 
+  motoman::mp_wrapper::setInteger(BUFFER_POINTER_, bufferIdx + 1);
 }
 
 
@@ -202,20 +181,17 @@ void PVarQ::setPosition(int index, industrial::joint_position::JointPosition & p
   
   while (mpPutPosVarData ( &(this->pointData_), 1 ) == ERROR) {
     LOG_ERROR("Failed set position variable, index: %d, retrying...", index);
-    mpTaskDelay(this->VAR_POLL_TICK_DELAY);
+    mpTaskDelay(this->VAR_POLL_TICK_DELAY_);
   };
   
   convertedVelocity = (int)(velocity_percent * VELOCITY_CONVERSION);
   LOG_DEBUG("Converting percent velocity: %g to motoman integer value: %d", 
-    velocity_percent, convertedVelocity);
-  this->jointSpeedData_.ulValue = convertedVelocity;
-  this->jointSpeedData_.usIndex = index;
-  
-  LOG_DEBUG("Setting velocity, index: %d, value: %d", this->jointSpeedData_.usIndex, 
-    this->jointSpeedData_.ulValue);
-    
-  while (mpPutVarData ( &(this->jointSpeedData_), 1 ) == ERROR) {
-    LOG_ERROR("Failed to set position varaible, index: %d, retrying...", this->jointSpeedData_.usIndex);
-    mpTaskDelay(this->VAR_POLL_TICK_DELAY);
-  };
+    velocity_percent, convertedVelocity);  
+  LOG_DEBUG("Setting velocity, index: %d, value: %d", index, convertedVelocity);
+  motoman::mp_wrapper::setInteger(index, convertedVelocity);
 }
+
+
+
+}//namespace p_var_q
+}//namespace motoman

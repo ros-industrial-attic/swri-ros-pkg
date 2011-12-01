@@ -34,7 +34,6 @@
 //This contains mpUsrRoot which is the entry point for your MotoPlus application
 
 #include "motoPlus.h"
-#include "definitions.h"
 #include "p_var_q.h"
 #include "system.h"
 
@@ -143,7 +142,6 @@ void stateServer(void)
     JointMessage msg;
     SimpleMessage simpMsg;
     
-    void* stopWatchID = NULL;
     const int period = 100; //ticks
     
     connection.init(StandardSocketPorts::STATE);
