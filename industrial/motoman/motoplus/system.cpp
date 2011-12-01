@@ -29,6 +29,7 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
+/*
 #include "system.h"
 
 System::System(ROSSocket* sock, bool* motion_allowed)
@@ -124,3 +125,5 @@ void System::getTorque(LONG reply_message[])
     reply_message[10] = UNUSED;
   }
 }
+
+*/

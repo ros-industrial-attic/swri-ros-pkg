@@ -32,32 +32,11 @@
 #ifndef __definitions_h
 #define __definitions_h
 
-// Definitions
-#define MOTION_PORT 11000
-#define SYSTEM_PORT 11001
-#define BUFF_MAX 1023
 #define QSIZE 20
 // Motion and buffer pointer indicies cannot be less than QSIZE
 #define MOTION_POINTER 91
 #define BUFFER_POINTER 92
 #define JOBNAME "PVARQ20VV"
 #define VELOCITY 0.5
-
-// Commands
-#define UNUSED 0
-#define CMD_INIT_PVQ 1
-#define CMD_ADD_POINT_PVQ 2
-#define CMD_END_PVQ 3
-#define CMD_HOLD 4
-#define CMD_GET_FB_PULSE 5
-#define CMD_GET_FB_SPEED 6
-#define CMD_GET_TORQUE 7
-
-// Reply Codes
-#define RC_SUCCESS 1
-#define RC_MP_ERROR 2
-#define RC_AE 3 // already exists
-#define RC_NOT_INIT 4
-#define RC_MOTION_INTERRUPT 5
 
 #endif

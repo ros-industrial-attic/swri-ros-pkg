@@ -34,9 +34,10 @@
 
 #include "motoPlus.h"
 #include "definitions.h"
-#include "ros_socket.h"
-#include "utils.h"
+//#include "ros_socket.h"
+//#include "utils.h"
 
+/*
 class System
 {
   public:
@@ -70,5 +71,6 @@ class System
 	// Motion allowed flag
 	bool* motion_allowed;
 };
+*/
 
 #endif

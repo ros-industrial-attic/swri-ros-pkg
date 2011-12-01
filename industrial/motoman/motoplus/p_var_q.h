@@ -34,8 +34,6 @@
 
 #include "motoPlus.h"
 #include "definitions.h"
-#include "ros_socket.h"
-#include "utils.h"
 #include "joint_position.h"
 
 /*
