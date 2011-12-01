@@ -65,6 +65,14 @@ PVarQ::~PVarQ(void)
 {
 }
 
+
+void PVarQ::init(industrial::joint_position::JointPosition & point, double velocity_percent)
+{
+  // Seed the intial point - this is required because upon startup, the indexes are zero and
+  // therefore the intial point never gets set.
+  setPosition(0, point, velocity_percent);
+}
+
 void PVarQ::addPoint(industrial::joint_position::JointPosition & joints)
 {
 
@@ -83,11 +91,12 @@ int PVarQ::bufferSize()
 {
   int motionIdx = this->getMotionIndex();
   int bufferIdx = this->getBufferIndex();
-  int rtn = maxBufferSize();
+  int rtn = 0;
   
   if (motionIdx > bufferIdx)
   {
-    LOG_ERROR("Motion index: %d is greater than Buffer index: %d, returning full buffer size", motionIdx, bufferIdx);
+    LOG_ERROR("Motion index: %d is greater than Buffer index: %d, returning empty buffer size", motionIdx, bufferIdx);
+    rtn = 0;
   }
   else
   {
@@ -178,15 +187,21 @@ void PVarQ::incBufferIndex()
 
 void PVarQ::setNextPosition(industrial::joint_position::JointPosition & point, double velocity_percent)
 {
+  setPosition(this->getNextBufferPosIndex(), point, velocity_percent); 
+}
+
+
+void PVarQ::setPosition(int index, industrial::joint_position::JointPosition & point, 
+    double velocity_percent)
+{
   const double VELOCITY_CONVERSION = 100.0;
   int convertedVelocity = 0;
-  int nextBufferPosIndex = this->getNextBufferPosIndex();
   
-  LOG_DEBUG("Setting next joint position, index: %d", nextBufferPosIndex);
-  motoman::ros_conversion::toMpPosVarData(nextBufferPosIndex, point, this->pointData_);
+  LOG_DEBUG("Setting joint position, index: %d", index);
+  motoman::ros_conversion::toMpPosVarData(index, point, this->pointData_);
   
   while (mpPutPosVarData ( &(this->pointData_), 1 ) == ERROR) {
-    LOG_ERROR("Failed set position variable, index: %d, retrying...", nextBufferPosIndex);
+    LOG_ERROR("Failed set position variable, index: %d, retrying...", index);
     mpTaskDelay(this->VAR_POLL_TICK_DELAY);
   };
   
@@ -194,7 +209,7 @@ void PVarQ::setNextPosition(industrial::joint_position::JointPosition & point, d
   LOG_DEBUG("Converting percent velocity: %g to motoman integer value: %d", 
     velocity_percent, convertedVelocity);
   this->jointSpeedData_.ulValue = convertedVelocity;
-  this->jointSpeedData_.usIndex = nextBufferPosIndex;
+  this->jointSpeedData_.usIndex = index;
   
   LOG_DEBUG("Setting velocity, index: %d, value: %d", this->jointSpeedData_.usIndex, 
     this->jointSpeedData_.ulValue);
