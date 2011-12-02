@@ -142,7 +142,7 @@ void stateServer(void)
     JointMessage msg;
     SimpleMessage simpMsg;
     
-    const int period = 100; //ticks
+    const int period = 500; //ticks
     
     connection.init(StandardSocketPorts::STATE);
     

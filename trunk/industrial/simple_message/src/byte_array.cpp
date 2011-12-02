@@ -69,7 +69,7 @@ bool ByteArray::init(const char* buffer, const shared_int byte_size)
 
   if (this->MAX_SIZE >= byte_size)
   {
-    LOG_DEBUG("Initializing buffer to size: %d", byte_size);
+    LOG_COMM("Initializing buffer to size: %d", byte_size);
     this->load((void*)buffer, byte_size);
     rtn = true;
   }
@@ -123,13 +123,13 @@ bool ByteArray::load(shared_int value)
 
 bool ByteArray::load(simple_serialize::SimpleSerialize &value)
 {
-  LOG_DEBUG("Executing byte array load through simple serialize");
+  LOG_COMM("Executing byte array load through simple serialize");
   return value.load(this);
 }
 
 bool ByteArray::load(ByteArray &value)
 {
-  LOG_DEBUG("Executing byte array load through byte array");
+  LOG_COMM("Executing byte array load through byte array");
   return this->load(value.getRawDataPtr(), value.getBufferSize());
 }
 
@@ -140,7 +140,7 @@ bool ByteArray::load(void* value, const shared_int byte_size)
   // Get the load pointer before extending the buffer.
   char* loadPtr;
 
-  LOG_DEBUG("Executing byte array load through void*, size: %d", byte_size);
+  LOG_COMM("Executing byte array load through void*, size: %d", byte_size);
   // Check inputs
   if (NULL == value)
   {
@@ -189,13 +189,13 @@ bool ByteArray::unload(shared_int &value)
 
 bool ByteArray::unload(simple_serialize::SimpleSerialize &value)
 {
-  LOG_DEBUG("Executing byte array unload through simple serialize");
+  LOG_COMM("Executing byte array unload through simple serialize");
   return value.unload(this);
 }
 
 bool ByteArray::unload(ByteArray &value, const shared_int byte_size)
 {
-  LOG_DEBUG("Executing byte array unload through byte array");
+  LOG_COMM("Executing byte array unload through byte array");
   char* unloadPtr = this->getUnloadPtr(byte_size);
   bool rtn;
 
@@ -227,7 +227,7 @@ bool ByteArray::unload(void* value, shared_int byteSize)
   bool rtn;
   char* unloadPtr;
 
-  LOG_DEBUG("Executing byte array unload through void*, size: %d", byteSize);
+  LOG_COMM("Executing byte array unload through void*, size: %d", byteSize);
   // Check inputs
   if (NULL == value)
   {
@@ -284,11 +284,11 @@ bool ByteArray::unloadFront(void* value, const industrial::shared_types::shared_
     LOG_DEBUG("Unloading: %d bytes, %d bytes remain", byteSize, sizeRemain);
     if (this->shortenBufferSize(byteSize))
     {
-      LOG_DEBUG("Preparing to copy value");
+      LOG_COMM("Preparing to copy value");
       memcpy(value, unloadPtr, byteSize);
-      LOG_DEBUG("Value is unloaded, performing move");
+      LOG_COMM("Value is unloaded, performing move");
       memmove(unloadPtr, nextPtr, sizeRemain);
-      LOG_DEBUG("Move operation completed");
+      LOG_COMM("Move operation completed");
       rtn = true;
     }
     else

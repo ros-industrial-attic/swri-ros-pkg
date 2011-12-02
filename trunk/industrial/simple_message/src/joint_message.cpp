@@ -111,7 +111,7 @@ bool JointMessage::toReply(industrial::simple_message::SimpleMessage & msg)
 bool JointMessage::toTopic(industrial::simple_message::SimpleMessage & msg)
 {
   ByteArray data;
-  LOG_DEBUG("Generating joint message of type topic");
+  LOG_COMM("Generating joint message of type topic");
   data.load(*this);
   return msg.init(this->getMessageType(), CommTypes::TOPIC, ReplyTypes::INVALID, data);
 }
@@ -119,7 +119,7 @@ bool JointMessage::toTopic(industrial::simple_message::SimpleMessage & msg)
 bool JointMessage::load(ByteArray *buffer)
 {
   bool rtn = false;
-  LOG_DEBUG("Executing joint message load");
+  LOG_COMM("Executing joint message load");
   if (buffer->load(this->getSequence()))
   {
 
@@ -144,7 +144,7 @@ bool JointMessage::load(ByteArray *buffer)
 bool JointMessage::unload(ByteArray *buffer)
 {
   bool rtn = false;
-  LOG_DEBUG("Executing joint message unload");
+  LOG_COMM("Executing joint message unload");
 
   if (buffer->unload(this->joints_))
   {

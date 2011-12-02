@@ -146,11 +146,11 @@ motion stop - disable motion, stop job
         if (!(this->isJobStarted()))
         {
           //TODO: The velocity should be set from the message in the future.
-          pVarQ.init(joints, 0.01);
+          pVarQ.init(joints, 0.0);
           this->startMotionJob();
         }
         
-        pVarQ.addPoint(joints);
+        pVarQ.addPoint(joints, 0.0);
     }
  }
  
@@ -189,13 +189,16 @@ void JointMotionHandler::disableMotion(void)
     mpTaskDelay(this->MP_POLL_TICK_DELAY);
   };
   
+  /*
+  // DISABLING THE HOLD STATUS FOR NOW.  PUTTING THE ROBOT IN HOLD STOPS THE PROGRAM EXECUTION
+  // BUT ALSO PREVENTS THE USER FROM RUNNING THE ROBOT MANUALLY FROM THE PENDANT.
   hold_data.sHold = ON;
   while(mpHold(&hold_data, &hold_error) == ERROR)
   {
     LOG_ERROR("Failed to turn on hold, error: %d, retrying...", hold_error.err_no);
     mpTaskDelay(this->MP_POLL_TICK_DELAY);
   };
-  
+  */
   this->motionEnabled = false;
 }
 
@@ -222,7 +225,8 @@ void JointMotionHandler::startMotionJob(void)
   };
   
   LOG_DEBUG("Reset indexes, motion: %d, buffer: %d", pVarQ.getMotionPosIndex(),
-    pVarQ.getBufferPosIndex());
+    pVarQ.getBufferPosIndex());  
+  
   this->jobStarted = true;
 }
 void JointMotionHandler::stopMotionJob(void)

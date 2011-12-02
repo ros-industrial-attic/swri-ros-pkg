@@ -142,7 +142,7 @@ bool JointPosition::load(industrial::byte_array::ByteArray *buffer)
   bool rtn = false;
   shared_real value = 0.0;
 
-  LOG_DEBUG("Executing joint position load");
+  LOG_COMM("Executing joint position load");
   for (int i = 0; i < this->getMaxNumJoints(); i++)
   {
     this->getJoint(i, value);
@@ -161,7 +161,7 @@ bool JointPosition::unload(industrial::byte_array::ByteArray *buffer)
   bool rtn = false;
   shared_real value = 0.0;
 
-  LOG_DEBUG("Executing joint position unload");
+  LOG_COMM("Executing joint position unload");
   for (int i = this->getMaxNumJoints() - 1; i >= 0; i--)
   {
     rtn = buffer->unload(value);
