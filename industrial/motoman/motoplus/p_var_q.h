@@ -126,7 +126,7 @@ class PVarQ
   *
   * \param joint position to add
   */
-    void addPoint(industrial::joint_position::JointPosition & joints);
+    void addPoint(industrial::joint_position::JointPosition & joints, double velocity_percent);
     
       /**
   * \brief Return current buffer size (number of remaining points)  
@@ -207,6 +207,16 @@ class PVarQ
   * \return true if buffer is empty
   */
     bool bufferEmpty();
+    
+    
+               /**
+  * \brief Get temporary velocity variable (Will be removed in the future)
+  *
+  * \return velocity percent
+  */
+    double TEMP_getVelocityPercent()
+    {return (double) motoman::mp_wrapper::getInteger(TEMP_VELOCITY_POINTER);};
+  
   
 		
   protected:
@@ -259,12 +269,12 @@ class PVarQ
    */
     static const int MIN_BUF_START_POINTER_ = 93;
     
-      /**
-   * \brief Temporary variable that is used to set all motion
-   * speeds (this will be removed once the ROS generated velocities
-   * are integrated
+       /**
+   * \brief Temporary integer value for holding move velocity (WILL BE REMOVED
+   * WHEN TRAJECTORY VELOCITY IS USED)
    */
-    static const double VELOCITY_ = 2.5;
+    static const int TEMP_VELOCITY_POINTER = 94;
+    
 	
 	        /**
   * \brief Increments buffer index

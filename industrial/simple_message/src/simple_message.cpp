@@ -63,7 +63,7 @@ bool SimpleMessage::init(int msgType, int commType, int replyCode)
 
 bool SimpleMessage::init(int msgType, int commType, int replyCode, ByteArray & data )
 {
-  LOG_DEBUG("SimpleMessage::init(type: %d, comm: %d, reply: %d, data[%d]...)",
+  LOG_COMM("SimpleMessage::init(type: %d, comm: %d, reply: %d, data[%d]...)",
             msgType, commType, replyCode, data.getBufferSize());
   this->setMessageType(msgType);
   this->setCommType(commType);
@@ -85,14 +85,14 @@ bool SimpleMessage::init(ByteArray & msg)
     if (msg.getBufferSize() > this->getHeaderSize())
     {
       dataSize = msg.getBufferSize() - this->getHeaderSize();
-      LOG_DEBUG("Unloading data portion of message: %d bytes", dataSize);
+      LOG_COMM("Unloading data portion of message: %d bytes", dataSize);
       msg.unload(this->data_, dataSize);
     }
-    LOG_DEBUG("Unloading header data");
+    LOG_COMM("Unloading header data");
     msg.unload(this->reply_code_);
     msg.unload(this->comm_type_);
     msg.unload(this->message_type_);
-    LOG_DEBUG("SimpleMessage::init(type: %d, comm: %d, reply: %d, data[%d]...)",
+    LOG_COMM("SimpleMessage::init(type: %d, comm: %d, reply: %d, data[%d]...)",
               this->message_type_, this->comm_type_, this->reply_code_, this->data_.getBufferSize());
     rtn = this->validateMessage();
   }

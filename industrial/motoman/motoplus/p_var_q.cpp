@@ -71,24 +71,34 @@ PVarQ::~PVarQ(void)
 
 void PVarQ::init(industrial::joint_position::JointPosition & point, double velocity_percent)
 {
+  // Reseting the position buffer.  This should make it eaiser to catch any bugs on the
+  // motoman side.
+  industrial::joint_position::JointPosition empty;
+  for(int i = 0; i < this->posVarQueueSize(); i++)
+  {
+    this->setPosition(i, empty, 0);
+  }
+  
   // Seed the intial point - this is required because upon startup, the indexes are zero and
   // therefore the intial point never gets set.
-  setPosition(0, point, velocity_percent);
+  setPosition(0, point, this->TEMP_getVelocityPercent());
   
   // Set the minium buffer size
   motoman::mp_wrapper::setInteger(MIN_BUF_START_POINTER_, PT_LOOK_AHEAD_);
 }
 
-void PVarQ::addPoint(industrial::joint_position::JointPosition & joints)
+void PVarQ::addPoint(industrial::joint_position::JointPosition & joints, double velocity_percent)
 {
 
   // Wait until buffer is not full
+  
+  LOG_DEBUG("Checking for buffer full");
   while(this->bufferFull()) {
-      LOG_DEBUG("Waiting for buffer to not be full, retrying...");
       mpTaskDelay(this->BUFFER_POLL_TICK_DELAY_);
   };
+  LOG_DEBUG("Buffer ready to accept new points");
   
-  setNextPosition(joints, VELOCITY_);
+  setNextPosition(joints, this->TEMP_getVelocityPercent());
   incBufferIndex();
 	
 }
@@ -109,7 +119,6 @@ int PVarQ::bufferSize()
     rtn = bufferIdx - motionIdx;
   }
   
-  LOG_DEBUG("Buffer size: %d, buffer idx: %d, motion idx: %d", rtn, bufferIdx, motionIdx);
   return rtn;  
 }
     
@@ -137,8 +146,6 @@ bool PVarQ::bufferFull()
   int maxBufferSize = this->maxBufferSize();
   if (bufferSize >= maxBufferSize)
   {
-    LOG_DEBUG("Buffer is full, size: %d, max size: %d",
-        bufferSize, maxBufferSize);
     rtn = true;
   }
   return rtn;
