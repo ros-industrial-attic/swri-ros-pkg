@@ -1,0 +1,9 @@
+<stack>
+  <description brief="industrial">industrial</description>
+  <author>Shaun Edwards/sedwards@swri.org</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/industrial</url>
+  <depend stack="ros" />
+
+</stack>
