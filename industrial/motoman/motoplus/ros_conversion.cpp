@@ -51,15 +51,15 @@ namespace ros_conversion
 // joint markings on the robot.
 
 /*  CONVERSION FACTORS SENT FROM MOTOMAN
----------------------------------------------------------------------------
-S	Resolution (pulse/deg)	1024	    pulses/deg	58670.87822	    rad/deg
-L	Resolution (pulse/deg)	-1024	    pulses/deg	-58670.87822	rad/deg
-U	Resolution (pulse/deg)	1149.1556	pulses/deg	65841.76588	    rad/deg
-R	Resolution (pulse/deg)	-1149.1556	pulses/deg	-65841.76588	rad/deg
-B	Resolution (pulse/deg)	1149.1556	pulses/deg	65841.76588	    rad/deg
-T	Resolution (pulse/deg)	-580.2667	pulses/deg	-33246.8329	    rad/deg
-7	Resolution (pulse/deg)	1149.1556	pulses/deg	65841.76588	    rad/deg
----------------------------------------------------------------------------
+------------------------------------------------------------------------------
+S	Resolution (pulse/deg)	1024	    pulses/deg	58670.87822	    pulses/rad
+L	Resolution (pulse/deg)	-1024	    pulses/deg	-58670.87822	pulses/rad
+U	Resolution (pulse/deg)	1149.1556	pulses/deg	65841.76588	    pulses/rad
+R	Resolution (pulse/deg)	-1149.1556	pulses/deg	-65841.76588	pulses/rad
+B	Resolution (pulse/deg)	1149.1556	pulses/deg	65841.76588	    pulses/rad
+T	Resolution (pulse/deg)	-580.2667	pulses/deg	-33246.8329	    pulses/rad
+7	Resolution (pulse/deg)	1149.1556	pulses/deg	65841.76588	    pulses/rad
+------------------------------------------------------------------------------
 */
 const float S_PULSE_TO_RAD	= 58670.87822;	    // pulses/rad
 const float L_PULSE_TO_RAD	= 58670.87822;	    // pulses/rad
@@ -153,6 +153,7 @@ float toRadians(float pulses, MotomanJointIndex joint)
 
 void toRosJointOrder(JointPosition & joints)
 {
+    LOG_DEBUG("Swapping to ROS joint order");
     JointPosition swap;
     swap.setJoint(RosJointIndexes::S, joints.getJoint(MotomanJointIndexes::S));
     swap.setJoint(RosJointIndexes::L, joints.getJoint(MotomanJointIndexes::L));
@@ -166,6 +167,7 @@ void toRosJointOrder(JointPosition & joints)
 
 void toMotomanJointOrder(JointPosition & joints)
 {
+    LOG_DEBUG("Swapping to motoman joint order");
     JointPosition swap;
     swap.setJoint(MotomanJointIndexes::S, joints.getJoint(RosJointIndexes::S));
     swap.setJoint(MotomanJointIndexes::L, joints.getJoint(RosJointIndexes::L));
