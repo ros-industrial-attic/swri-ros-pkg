@@ -149,8 +149,10 @@ motion stop - disable motion, stop job
           pVarQ.init(joints, 0.0);
           this->startMotionJob();
         }
-        
-        pVarQ.addPoint(joints, 0.0);
+        else
+        {
+          pVarQ.addPoint(joints, 0.0);
+        }
     }
  }
  
