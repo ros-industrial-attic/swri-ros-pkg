@@ -74,6 +74,7 @@ void JointTrajectoryHandler::jointTrajectoryCB(const trajectory_msgs::JointTraje
   ROS_INFO("Receiving joint trajctory message");
   this->mutex_.lock();
   ROS_INFO("Processing joint trajctory message (mutex acquired)");
+  ROS_DEBUG("Current state is: %d", this->state_);
   if (JointTrajectoryStates::IDLE != this->state_)
   {
     if (msg->points.empty())
@@ -84,15 +85,22 @@ void JointTrajectoryHandler::jointTrajectoryCB(const trajectory_msgs::JointTraje
     {
       ROS_ERROR("Trajectory splicing not yet implemented, stopping current motion.");
     }
-
-    this->state_ = JointTrajectoryStates::STOPPING;
+    trajectoryStop();
   }
   else
   {
-    ROS_INFO("Loading trajectory, setting state to starting");
-    this->current_traj_ = *msg;
-    this->currentPoint = 0;
-    this->state_ = JointTrajectoryStates::STARTING;
+    if (msg->points.empty())
+    {
+      ROS_INFO("Empty trajectory received while in IDLE state, nothing is done");
+    }
+    else
+    {
+      ROS_INFO("Loading trajectory, setting state to streaming");
+      this->current_traj_ = *msg;
+      ROS_INFO("Executing trajectory of size: %d", this->current_traj_.points.size());
+      this->currentPoint = 0;
+      this->state_ = JointTrajectoryStates::STREAMING;
+    }
   }
   this->mutex_.unlock();
 }
@@ -120,19 +128,14 @@ void JointTrajectoryHandler::trajectoryHandler()
       switch (this->state_)
       {
         case JointTrajectoryStates::IDLE:
-          ros::Duration(1).sleep();
+          ros::Duration(0.250).sleep();
           break;
 
-        case JointTrajectoryStates::STARTING:
-          ROS_INFO("Joint trajectory handler: entering starting state");
-          this->currentPoint = 0;
-          this->state_ = JointTrajectoryStates::STREAMING;
-          break;
 
         case JointTrajectoryStates::STREAMING:
           if (this->currentPoint < this->current_traj_.points.size())
           {
-	    ROS_INFO("Streaming joints point[%d]", this->currentPoint);
+	          ROS_INFO("Streaming joints point[%d]", this->currentPoint);
             pt = this->current_traj_.points[this->currentPoint];
             
             jMsg.setSequence(this->currentPoint);
@@ -153,12 +156,15 @@ void JointTrajectoryHandler::trajectoryHandler()
             }
             else
             {
-	      ROS_WARN("Failed sent joint point, will try again");
+	           ROS_WARN("Failed sent joint point, will try again");
             }
           }
           else
           {
-            ROS_INFO("Trajectory streaming complete, not sending end command, queue remains active.");
+            //ROS_INFO("Trajectory streaming complete, not sending end command, queue remains active.");
+            ROS_INFO("Trajectory streaming complete, delaying and then sending stop command");
+            ros::Duration(10).sleep();
+            trajectoryStop();
             this->state_ = JointTrajectoryStates::IDLE;
             
 	  /*  
@@ -183,6 +189,8 @@ void JointTrajectoryHandler::trajectoryHandler()
           }
           break;
 
+/*  COMMENTING THE STOP STATE FOR NOW: 
+
         case JointTrajectoryStates::STOPPING:
           ROS_INFO("Joint trajectory handler: entering stopping state");
           jMsg.setSequence(SpecialSeqValues::STOP_TRAJECTORY);
@@ -192,7 +200,7 @@ void JointTrajectoryHandler::trajectoryHandler()
           ROS_DEBUG("Stop command sent, entring idle mode");
           this->state_ = JointTrajectoryStates::IDLE;
           break;
-
+*/
         default:
           ROS_ERROR("Joint trajectory handler: unknown state");
           this->state_ = JointTrajectoryStates::IDLE;
@@ -212,6 +220,27 @@ void JointTrajectoryHandler::trajectoryHandler()
 
   ROS_WARN("Exiting trajectory handler thread");
 }
+
+
+
+void JointTrajectoryHandler::trajectoryStop()
+{
+  JointMessage jMsg;
+  SimpleMessage msg;
+  SimpleMessage reply;
+
+  ROS_INFO("Joint trajectory handler: entering stopping state");
+  jMsg.setSequence(SpecialSeqValues::STOP_TRAJECTORY);
+  jMsg.toRequest(msg);
+  ROS_DEBUG("Sending stop command");
+  this->robot_->sendAndReceiveMsg(msg, reply);
+  ROS_DEBUG("Stop command sent, entring idle mode");
+  this->state_ = JointTrajectoryStates::IDLE;
+}
+
+
+
+
 
 } //joint_trajectory_handler
 } //motoman

@@ -47,7 +47,7 @@ namespace JointTrajectoryStates
 {
 enum JointTrajectoryState
 {
-  IDLE = 0, STARTING, STREAMING, STOPPING
+  IDLE = 0, STREAMING =1 //,STARTING, //, STOPPING
 };
 }
 typedef JointTrajectoryStates::JointTrajectoryState JointTrajectoryState;
@@ -83,6 +83,8 @@ public:
   void trajectoryHandler();
 
 private:
+
+  void trajectoryStop();
 
   industrial::smpl_msg_connection::SmplMsgConnection* robot_;
   ros::Subscriber sub_joint_tranectory_; //subscribe to "command"
