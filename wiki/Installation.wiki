@@ -1,0 +1,9 @@
+=Installation=
+
+ROS-Industrial is only supported on the Ubuntu platform with ROS-Electric release
+
+ROS-Industrial is not currently part of the ROS build system.  As a result, it can only be downloaded and installed from source.  The latest stable source release can be downloaded from the ROS-Industrial [http://code.google.com/p/swri-ros-pkg/downloads/list download page].  The latest unstable software revision can be directly checked out from the subversion [http://code.google.com/p/swri-ros-pkg/source/checkout repositiory].
+
+The source code must be placed in a 
+
+

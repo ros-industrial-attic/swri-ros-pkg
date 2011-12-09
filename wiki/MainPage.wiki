@@ -1,0 +1,13 @@
+=ROS-Industrial=
+
+ROS-Industrial is a BSD licensced ROS stack the contains libraries, tools and drivers for industrial hardware.  The goals of ROS-Industrial include:
+
+  * Creating a community supported by industrial robotics professionals
+  * Provide a one stop location for industrial related ROS software
+  * Develop robust and reliable software that meets the needs of industrial applications
+  * Does not replace any one technology entirely, rather it combines the relative strengths of ROS and existing technology (i.e. combining ROS high level functionality with the low level reliability and safety of an industrial robot controller).
+  * Stimulates the development of hardware agnostic software by standardizing interfaces (mostly through the use of standardized ROS messages, see Standard Messages)
+  * Provides an “easy” path to apply cutting edge research to industrial applications by using a common ROS architecture
+  * Provides simple, easy to use, well documented APIs
+
+[Installation]
