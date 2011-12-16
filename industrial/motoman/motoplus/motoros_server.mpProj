@@ -2,22 +2,22 @@
 <MotoPlusProject>
   <ProjectName>motoros_server</ProjectName>
   <FilesInProject>
-    <FileForProject>message_manager.h</FileForProject>
-    <FileForProject>message_manager.cpp</FileForProject>
-    <FileForProject>message_handler.h</FileForProject>
-    <FileForProject>message_handler.cpp</FileForProject>
-    <FileForProject>log_wrapper.h</FileForProject>
-    <FileForProject>joint_position.h</FileForProject>
-    <FileForProject>joint_position.cpp</FileForProject>
-    <FileForProject>joint_motion_handler.h</FileForProject>
-    <FileForProject>joint_motion_handler.cpp</FileForProject>
-    <FileForProject>joint_message.h</FileForProject>
-    <FileForProject>joint_message.cpp</FileForProject>
-    <FileForProject>input_handler.h</FileForProject>
-    <FileForProject>input_handler.cpp</FileForProject>
-    <FileForProject>comms_fault_handler.h</FileForProject>
-    <FileForProject>byte_array.h</FileForProject>
     <FileForProject>byte_array.cpp</FileForProject>
+    <FileForProject>byte_array.h</FileForProject>
+    <FileForProject>comms_fault_handler.h</FileForProject>
+    <FileForProject>input_handler.cpp</FileForProject>
+    <FileForProject>input_handler.h</FileForProject>
+    <FileForProject>joint_message.cpp</FileForProject>
+    <FileForProject>joint_message.h</FileForProject>
+    <FileForProject>joint_motion_handler.cpp</FileForProject>
+    <FileForProject>joint_motion_handler.h</FileForProject>
+    <FileForProject>joint_position.cpp</FileForProject>
+    <FileForProject>joint_position.h</FileForProject>
+    <FileForProject>log_wrapper.h</FileForProject>
+    <FileForProject>message_handler.cpp</FileForProject>
+    <FileForProject>message_handler.h</FileForProject>
+    <FileForProject>message_manager.cpp</FileForProject>
+    <FileForProject>message_manager.h</FileForProject>
     <FileForProject>mp_wrapper.cpp</FileForProject>
     <FileForProject>mp_wrapper.h</FileForProject>
     <FileForProject>mpMain.cpp</FileForProject>
@@ -55,7 +55,7 @@
     <FileForProject>udp_socket.cpp</FileForProject>
     <FileForProject>udp_socket.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>joint_motion_handler.cpp</LastFileOpened>
+  <LastFileOpened>byte_array.cpp</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
