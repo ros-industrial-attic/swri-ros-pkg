@@ -2,7 +2,7 @@
 
 ==Vision==
 
-  * Supported by a community of industrial robotics professionals
+  * Supported by a community of industrial robotics researchers and professionals
   * Provides a one stop location for industrial related ROS software
   * Software robustness and reliability meet the needs of industrial applications
   * Does not replace any one technology entirely, rather it combines the relative strengths of ROS and existing technology (i.e. combining ROS high level functionality with the low level reliability and safety of an industrial robot controller).
