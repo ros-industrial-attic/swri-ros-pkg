@@ -1,5 +1,5 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-	<xacro:macro name="sia20d_mesh" params="prefix">
+	<xacro:macro name="sia10d_mesh" params="prefix">
 		<!-- link list -->
 		<link name="${prefix}base_link">
 			<visual>

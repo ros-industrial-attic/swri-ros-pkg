@@ -56,7 +56,7 @@
 			</visual>
 			<collision>
 				<geometry>
-					<mesh filename="package://robotiq/meshes/s-model/collision/GRIPPER_FINGER_3.stl" />
+					<mesh filename="package://robotiq/meshes/s-model/collision/GRIPPER_OPEN_FINGER_3.stl" />
 				</geometry>
 				<material name="yellow"/>
 			</collision>
