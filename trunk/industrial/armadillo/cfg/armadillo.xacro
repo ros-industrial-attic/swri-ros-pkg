@@ -1,0 +1,105 @@
+<?xml version="1.0" ?>
+
+<robot name="armadillo" xmlns:xacro="http://ros.org/wiki/xacro">
+	<include filename="$(find motoman)/cfg/sia10d_mesh_macro.xacro" />
+	<include filename="$(find robotiq)/cfg/s-model_mesh_macro.xacro" />
+	<xacro:sia10d_mesh prefix=""/>
+	<xacro:s-model_mesh prefix=""/>
+  <!-- link list -->
+		<link name="coupler">
+			<visual>
+				<geometry>
+					<mesh filename="package://armadillo/meshes/coupler/visual/COUPLER.stl" />
+				</geometry>
+				<material name="orange">
+					<color rgba="1 0.5 0 1"/>
+				</material>
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://armadillo/meshes/coupler/collision/COUPLER.stl" />
+				</geometry>
+				<material name="yellow">
+					<color rgba="0 1 1 1"/>
+				</material>
+			</collision>
+		</link>
+  <!-- end link list -->
+  <!-- joint list -->
+		<joint name="tool-coupler" type="fixed">
+			<parent link="link_t"/>
+			<child link="coupler"/>
+			<origin xyz="0 0 0" rpy="1.570 0 0"/>
+		</joint>
+		<joint name="coupler-hand" type="fixed">
+			<parent link="coupler"/>
+			<child link="palm"/>
+			<origin xyz="0 0.240 0" rpy="-1.570 2.665 0"/>
+		</joint>
+  <!-- end of joint list -->
+
+
+  <!-- environment list -->
+		<link name="pallet">
+			<visual>
+				<geometry>
+					<box size="1.61 1.16 0.213"/>
+				</geometry>
+				<material name="">
+					<color rgba="1 0 1 1"/>
+				</material>
+			</visual>
+		</link>
+		<link name="controller">
+			<visual>
+				<geometry>
+					<box size="0.80 0.65 1.00"/>
+				</geometry>
+				<material name="">
+					<color rgba="1 0.2 1 1"/>
+				</material>
+			</visual>
+		</link>
+    <link name="filter">
+			<visual>
+				<geometry>
+					<box size="0.36 0.36 0.36"/>
+				</geometry>
+				<material name="">
+					<color rgba="1 0.4 1 1"/>
+				</material>
+			</visual>
+		</link>
+    <link name="floor">
+			<visual>
+				<geometry>
+					<box size="6 6 0.010"/>
+				</geometry>
+				<material name="">
+					<color rgba="1 0.6 1 0.5"/>
+				</material>
+			</visual>
+		</link>
+		<joint name="base-pallet" type="fixed">
+			<parent link="base_link"/>
+			<child link="pallet"/>
+			<origin xyz="-0.52 -0.34 -0.11" rpy="0 0 0"/>
+		</joint>
+		<joint name="base-controller" type="fixed">
+			<parent link="base_link"/>
+			<child link="controller"/>
+			<origin xyz="-0.75 -0.50 0.50" rpy="0 0 0"/>
+		</joint>
+		<joint name="base-filter" type="fixed">
+			<parent link="base_link"/>
+			<child link="filter"/>
+			<origin xyz="-0.17 -0.50 0.63" rpy="0 0 0"/>
+		</joint>
+		<joint name="pallet-floor" type="fixed">
+			<parent link="pallet"/>
+			<child link="floor"/>
+			<origin xyz="0 0 -0.11" rpy="0 0 0"/>
+		</joint>
+  <!-- end environment list -->
+</robot>
+

@@ -1,0 +1,4 @@
+<launch>
+    <param name="robot_description" textfile="$(find armadillo)/cfg/armadillo.xml" />
+    <rosparam command="load" ns="robot_description_planning" file="$(find armadillo_arm_navigation)/config/armadillo_planning_description.yaml" />
+</launch>
