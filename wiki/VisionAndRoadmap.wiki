@@ -70,7 +70,7 @@ The high level interface node simply executes pre-planned (by ROS) joint-interpo
 
 ======Published Topics======
 
-[http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html] (&lt;=10 hz. publish frequency)
+[http://ros.org/doc/electric/api/control_msgs/html/msg/FollowJointTrajectoryFeedback.html http://ros.org/doc/electric/api/control_msgs/html/msg/FollowJointTrajectoryFeedback.html] (&lt;=10 hz. publish frequency)
 
 ======Safety Implications======
 
@@ -88,7 +88,7 @@ The mid level interface steams joint points to the controller as they are execut
 
 ======Published Topics======
 
-[http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html] (rate should be &gt;= to the required subscription rate so that dynamic path planning can have an accurate estimation of current position)
+[http://ros.org/doc/electric/api/control_msgs/html/msg/FollowJointTrajectoryFeedback.html  http://ros.org/doc/electric/api/control_msgs/html/msg/FollowJointTrajectoryFeedback.html] (rate should be &gt;= to the required subscription rate so that dynamic path planning can have an accurate estimation of current position)
 
 ======Safety Implications======
 
@@ -117,9 +117,7 @@ An appropriate ROS topic (or even similar) does not appear to exist.  A custom m
   * Error Code (Current error)
   * Motion Status (IN_MOTION, STOPPED, BRAKED, etc)
   * E-Stop Status (OK, E_STOPPED)
-  * Current Position
-  * Current Velocity
-  * TBD…
+  * [http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html]  * TBD…
 
 ====Robot IO Interface====
 
