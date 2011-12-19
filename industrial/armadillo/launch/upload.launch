@@ -1,0 +1,3 @@
+<launch>
+    <param name="robot_description" textfile="$(find armadillo)/cfg/armadillo_w_kinect.xml" />
+</launch>
