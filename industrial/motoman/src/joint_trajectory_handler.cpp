@@ -58,13 +58,13 @@ JointTrajectoryHandler::JointTrajectoryHandler(ros::NodeHandle &n, SmplMsgConnec
   this->state_ = JointTrajectoryStates::IDLE;
   this->trajectoryHandler_ =
       new boost::thread(boost::bind(&JointTrajectoryHandler::trajectoryHandler, this));
-  //this->trajectoryHandler_->join();
   ROS_INFO("Unlocking mutex");
   this->mutex_.unlock();
 }
 
 JointTrajectoryHandler::~JointTrajectoryHandler()
-{
+{  
+  trajectoryStop();
   this->sub_joint_tranectory_.shutdown();
   delete this->trajectoryHandler_;
 }
@@ -148,8 +148,6 @@ void JointTrajectoryHandler::trajectoryHandler()
             jMsg.toRequest(msg);
             ROS_DEBUG("Sending joint point");
             if (this->robot_->sendAndReceiveMsg(msg, reply))
-	    //Trying async messages to see how well it works.
-	    //if (this->robot_->sendMsg(msg))
             {
               ROS_INFO("Point[%d] sent to controller", this->currentPoint);
               this->currentPoint++;
@@ -161,46 +159,11 @@ void JointTrajectoryHandler::trajectoryHandler()
           }
           else
           {
-            //ROS_INFO("Trajectory streaming complete, not sending end command, queue remains active.");
-            ROS_INFO("Trajectory streaming complete, delaying and then sending stop command");
-            ros::Duration(10).sleep();
-            trajectoryStop();
+            ROS_INFO("Trajectory streaming complete, setting state to IDLE");
             this->state_ = JointTrajectoryStates::IDLE;
-            
-	  /*  
-	      TODO: COMMENTING OUT THE STOP TRAJECTORY FOR NOW.  When the stop
-              trajectory signal is caught by the controller it immediately
-              stops instead of waiting until it reaches it's goal.  For now
-              we will ingnore this.  This shouldn't cause an issue until the
-              buffer indexes roll over.
-            ROS_INFO("Trajectory streaming complete, sending end command");
-	        jMsg.setSequence(SpecialSeqValues::END_TRAJECTORY);
-            jMsg.toRequest(msg);
-            ROS_DEBUG("Sending end trajectory point");
-            if (this->robot_->sendAndReceiveMsg(msg, reply))
-            {
-              this->state_ = JointTrajectoryStates::IDLE;
-            }
-            else
-            {
-	      ROS_WARN("Failed sent joint point, will try again");
-            }
-            */
           }
           break;
 
-/*  COMMENTING THE STOP STATE FOR NOW: 
-
-        case JointTrajectoryStates::STOPPING:
-          ROS_INFO("Joint trajectory handler: entering stopping state");
-          jMsg.setSequence(SpecialSeqValues::STOP_TRAJECTORY);
-          jMsg.toRequest(msg);
-          ROS_DEBUG("Sending stop command");
-          this->robot_->sendAndReceiveMsg(msg, reply);
-          ROS_DEBUG("Stop command sent, entring idle mode");
-          this->state_ = JointTrajectoryStates::IDLE;
-          break;
-*/
         default:
           ROS_ERROR("Joint trajectory handler: unknown state");
           this->state_ = JointTrajectoryStates::IDLE;

@@ -42,7 +42,6 @@ const double DEFAULT_GOAL_THRESHOLD = 0.1;
 class JointTrajectoryExecuter
 {
 private:
-  //typedef actionlib::ActionServer<pr2_controllers_msgs::JointTrajectoryAction> JTAS;
   typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction> JTAS;
   typedef JTAS::GoalHandle GoalHandle;
 public:
@@ -56,46 +55,7 @@ public:
   {
     using namespace XmlRpc;
     ros::NodeHandle pn("~");
-    /*
-    // Gets all of the joints
-    XmlRpc::XmlRpcValue joint_names;
 
-    //TODO: Make joint setting joint names more generic
-    joint_names.setSize(7);
-    joint_names[0] = "joint_s";
-    joint_names[1] = "joint_l";
-    joint_names[2] = "joint_e";
-    joint_names[3] = "joint_u";
-    joint_names[4] = "joint_r";
-    joint_names[5] = "joint_b";
-    joint_names[6] = "joint_t";
-
-    //  TODO: Figure out how the joint_names parameter needs to be set
-    if (!pn.getParam("joints", joint_names))
-    {
-      ROS_FATAL("No joints given. (namespace: %s)", pn.getNamespace().c_str());
-      exit(1);
-    }
-    if (joint_names.getType() != XmlRpc::XmlRpcValue::TypeArray)
-    {
-      ROS_FATAL("Malformed joint specification.  (namespace: %s)", pn.getNamespace().c_str());
-      exit(1);
-    }
-    
-
-    for (int i = 0; i < joint_names.size(); ++i)
-    {
-      XmlRpcValue &name_value = joint_names[i];
-      if (name_value.getType() != XmlRpcValue::TypeString)
-      {
-        ROS_FATAL("Array of joint names should contain all strings.  (namespace: %s)",
-                  pn.getNamespace().c_str());
-        exit(1);
-      }
-
-      joint_names_.push_back((std::string)name_value);
-    }
-    */
     joint_names_.push_back("joint_s");
     joint_names_.push_back("joint_l");
     joint_names_.push_back("joint_e");
@@ -111,7 +71,7 @@ public:
     {
       std::string ns = std::string("constraints/") + joint_names_[i];
       double g, t;
-      pn.param(ns + "/goal", g, -1.0);
+      pn.param(ns + "/goal", g, DEFAULT_GOAL_THRESHOLD);
       pn.param(ns + "/trajectory", t, -1.0);
       goal_constraints_[joint_names_[i]] = g;
       trajectory_constraints_[joint_names_[i]] = t;
@@ -121,22 +81,9 @@ public:
 
     pub_controller_command_ =
       node_.advertise<trajectory_msgs::JointTrajectory>("command", 1);
-    //sub_controller_state_ =
-    //  node_.subscribe("feedback_states", 1, &JointTrajectoryExecuter::controllerStateCB, this);
-
-    //watchdog_timer_ = node_.createTimer(ros::Duration(1.0), &JointTrajectoryExecuter::watchdog, this);
-
-    //ros::Time started_waiting_for_controller = ros::Time::now();
-    /*
-    while (ros::ok() && !last_controller_state_)
-    {
-      {
-        ROS_WARN("Waited for the controller for 30 seconds, but it never showed up.");
-        started_waiting_for_controller = ros::Time(0);
-      }
-      ros::Duration(0.1).sleep();
-    }
-    */
+    sub_controller_state_ =
+      node_.subscribe("feedback_states", 1, &JointTrajectoryExecuter::controllerStateCB, this);
+    
     action_server_.start();
   }
 
@@ -272,19 +219,27 @@ private:
   double stopped_velocity_tolerance_;
 
   control_msgs::FollowJointTrajectoryFeedbackConstPtr last_controller_state_;
-  //pr2_controllers_msgs::JointTrajectoryControllerStateConstPtr last_controller_state_;
-  //void controllerStateCB(const pr2_controllers_msgs::JointTrajectoryControllerStateConstPtr &msg)
+
   void controllerStateCB(const control_msgs::FollowJointTrajectoryFeedbackConstPtr &msg)
   {
+    ROS_DEBUG("Checking controller state feedback");
     last_controller_state_ = msg;
     ros::Time now = ros::Time::now();
 
     if (!has_active_goal_)
+    {
+      ROS_DEBUG("No active goal, ignoring feedback");
       return;
+    }
     if (current_traj_.points.empty())
+    {
+      ROS_DEBUG("Current trajecotry is empty, ignoring feedback");
       return;
+    }
+    /* NOT CONCERNED ABOUT TRAJECTORY TIMING AT THIS POINT
     if (now < current_traj_.header.stamp + current_traj_.points[0].time_from_start)
       return;
+    */
 
     if (!setsEqual(joint_names_, msg->joint_names))
     {
@@ -292,11 +247,35 @@ private:
       return;
     }
 
+    // Checking for goal constraints
+    // Checks that we have ended inside the goal constraints
+
+    ROS_DEBUG("Checking goal contraints");
+    bool inside_goal_constraints = true;
+    int last = current_traj_.points.size() - 1;
+    for (size_t i = 0; i < msg->joint_names.size() && inside_goal_constraints; ++i)
+    {
+      double abs_error = fabs(msg->actual.positions[i]-current_traj_.points[last].positions[i]);
+      double goal_constraint = goal_constraints_[msg->joint_names[i]];
+      if (goal_constraint >= 0 && abs_error > goal_constraint)
+      {
+        inside_goal_constraints = false;
+      }
+      ROS_DEBUG("Checking constraint: %f, abs_errs: %f", goal_constraint, abs_error);
+    }
+
+    if (inside_goal_constraints)
+    {
+      ROS_INFO("Inside goal contraints, return success for action");
+      active_goal_.setSucceeded();
+      has_active_goal_ = false;
+    }
+    // Verifies that the controller has stayed within the trajectory constraints.
+    /*  DISABLING THIS MORE COMPLICATED GOAL CHECKING AND ERROR DETECTION
+
+
     int last = current_traj_.points.size() - 1;
     ros::Time end_time = current_traj_.header.stamp + current_traj_.points[last].time_from_start;
-
-    // Verifies that the controller has stayed within the trajectory constraints.
-
     if (now < end_time)
     {
       // Checks that the controller is inside the trajectory constraints.
@@ -354,6 +333,7 @@ private:
       }
 
     }
+    */
   }
 };
 
