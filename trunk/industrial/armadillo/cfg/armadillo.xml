@@ -275,7 +275,7 @@
   <joint name="coupler-hand" type="fixed">
     <parent link="coupler"/>
     <child link="palm"/>
-    <origin rpy="-1.570 2.665 0" xyz="0 0.240 0"/>
+    <origin rpy="-1.570 -0.478 0" xyz="0 0.240 0"/>
   </joint>
   <!-- end of joint list -->
   <!-- environment list -->
