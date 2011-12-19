@@ -48,8 +48,6 @@ JointRelayHandler::JointRelayHandler(ros::NodeHandle &n) :
         joint_control_state_()
 {
 
-  //this->pub_joint_control_state_ =
-  //      this->node_.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>("control_state", 1);
   this->pub_joint_control_state_ =
           this->node_.advertise<control_msgs::FollowJointTrajectoryFeedback>("feedback_states", 1);
 
