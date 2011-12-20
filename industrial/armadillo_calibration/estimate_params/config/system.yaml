@@ -12,7 +12,6 @@ sensors:
 
   rectified_cams:
     kinect_camera:
-      chain_id: NULL
       frame_id: kinect_rgb_optical_frame
       baseline_shift: 0.0
       f_shift: 0.0

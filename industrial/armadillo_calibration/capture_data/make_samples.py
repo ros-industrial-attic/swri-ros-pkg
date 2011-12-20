@@ -32,7 +32,7 @@ class SampleMaker:
         rospy.init_node("make_samples")
         rospy.Subscriber("joint_states", JointState, self.callback)
 
-        self.arm_joints = ['joint_'+j for j in ['s','l','e'.'u','r','b','t']]
+        self.arm_joints = ['joint_'+j for j in ['s','l','e','u','r','b','t']]
         self.arm_state = [0.0 for joint in self.arm_joints]
         self.count = 0
         
@@ -50,6 +50,7 @@ class SampleMaker:
                 f.write(header3)
                 print>>f, count
                 f.write(header4)
+                f.close()
             self.count += 1
 
     def callback(self, msg):
