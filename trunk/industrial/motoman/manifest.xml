@@ -17,8 +17,7 @@
   <depend package="control_msgs" />
   <depend package="sensor_msgs" />
   <depend package="simple_message" />
-  <!-- TODO: The dependence on pr2_controller_messages is needed for joint states -->
-  <depend package="pr2_controllers_msgs" />
+  <depend package="urdf" />
 
 </package>
 

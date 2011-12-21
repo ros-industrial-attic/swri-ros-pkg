@@ -30,62 +30,195 @@
 */ 
 
 #include "utils.h"
+#include "definitions.h"
+#include "ros/ros.h"
+#include "urdf/model.h"
 
-char* utils::arrayIntToChar(int* message, int sizeof_data)
-// Converts int (4-byte element) array to char (1-byte element) array
-// Receives and returns array pointers
-// Might not work with 64-bit system
+using namespace trajectory_msgs;
+using namespace std;
+
+namespace motoman
 {
-  char *raw_message = new char[sizeof_data];
-  int int_array_length = sizeof_data/4;
+namespace utils
+{
 
-  memset(raw_message, 0, sizeof_data);
-  for (int i = 0; i < int_array_length; i++)
+  bool checkTrajectory(JointTrajectory &trajectory)
   {
-    int j = 4*i;
-    int array_element = message[i];
-    raw_message[j+3] = ((array_element >> 24) & 0xFF);
-    raw_message[j+2] = ((array_element >> 16) & 0xFF);
-    raw_message[j+1] = ((array_element >> 8) & 0xFF);
-    raw_message[j] = (array_element & 0xFF);
+    bool rtn = false;
+    rtn = checkJointNames(trajectory.joint_names);
+    if (!rtn)
+    {
+      ROS_WARN("Joint trajectory name check failed");
+    }
+    return rtn;
   }
-  return raw_message;
-}
 
-int* utils::arrayCharToInt(char* raw_message, int sizeof_data)
-// Converts char (1-byte element) array to int (4-byte element in 32-bit system) array
-// Receives and returns array pointers
-{
-  int int_array_length = sizeof_data/4;
-  int *message = new int[int_array_length];
 
-  memset(message, 0, sizeof_data);
-  memcpy(message, raw_message, sizeof_data);
-  return message;
-}
-
-void utils::arrayIntToChar(int message[], char raw_message[], int sizeof_data)
-// Converts int (4-byte element) array to char (1-byte element) array
-// Reads and writes to array pointers
-// Might not work with 64-bit system
-{
-  memset(raw_message, 0, sizeof_data);
-  int int_array_length = sizeof_data / 4;
-  for (int i = 0; i < int_array_length; i++)
+  bool checkJointNames(vector<string> &joint_names)
   {
-    int j = 4*i;
-    int array_element = message[i];
-    raw_message[j+3] = ((array_element >> 24) & 0xFF);
-    raw_message[j+2] = ((array_element >> 16) & 0xFF);
-    raw_message[j+1] = ((array_element >> 8) & 0xFF);
-    raw_message[j] = (array_element & 0xFF);
-  }
-}
+    bool rtn = false;
 
-void utils::arrayCharToInt(char raw_message[], int message[], int sizeof_data)
-// Converts char (1-byte element) array to int (4-byte element in 32-bit Linux) array
-// Reads and writes to array pointers
-{
-  memset(message, 0, sizeof_data);
-  memcpy(message, raw_message, sizeof_data);
-}
+    // The maximum number of joints in the motoman controller is fixed
+    if (joint_names.size() <= motoman::parameters::Parameters::JOINT_SUFFIXES_SIZE)
+    {
+      rtn = true;
+    }
+    else
+    {
+      rtn = false;
+      ROS_WARN("Size of joint names: %d, exceeds motoman size: %d",
+               joint_names.size(), motoman::parameters::Parameters::JOINT_SUFFIXES_SIZE);
+    }
+
+    if (rtn)
+    {
+      for(int i = 0; i<joint_names.size(); i++)
+      {
+        string suffix(motoman::parameters::Parameters::JOINT_SUFFIXES[i]);
+        if ( hasSuffix(joint_names[i], suffix ) )
+        {
+          rtn = true;
+        }
+        else
+        {
+          rtn = false;
+          break;
+        }
+
+      }
+    }
+
+    return rtn;
+  }
+
+
+  bool hasSuffix(string &str, string &suffix)
+  {
+    bool rtn = false;
+    int result;
+
+    // If an empty suffix is passed to the function it returns true (which is
+    // to be expected).  This warning as a little help when this occurs.
+    if (0 == suffix.size() )
+    {
+      ROS_WARN("Suffix of size zero passed to hasSuffix, continuing");
+    }
+    result = str.rfind(suffix);
+
+    ROS_DEBUG("Checking string: %s for suffix: %s, result %d", str.c_str(), suffix.c_str(), result);
+    if ( result == str.size()-suffix.size())
+    {
+      rtn = true;
+      ROS_DEBUG("%s has the suffix: %s", str.c_str(), suffix.c_str());
+    }
+    else
+    {
+      rtn = false;
+      ROS_DEBUG("%s does not have the suffix: %s", str.c_str(), suffix.c_str());
+    }
+
+    return rtn;
+  }
+
+
+  bool getVelocityLimits(std::string param_name,
+                         std::vector<std::string> &joint_names,
+                         std::vector<double> &joint_velocity_limits)
+  {
+    bool rtn = false;
+    string urdf;
+
+    joint_velocity_limits.clear();
+    joint_velocity_limits.resize(joint_names.size(), 0.0);
+
+    if (ros::param::get(param_name, urdf))
+    {
+      urdf::Model urdf_model;
+      if (urdf_model.initString(urdf))
+      {
+
+        for(int i = 0; i<joint_names.size(); i++)
+        {
+          double limit;
+          boost::shared_ptr<const urdf::Joint> joint = urdf_model.getJoint(joint_names[i]);
+          limit = joint->limits->velocity;
+          ROS_DEBUG("Found joint velocity limit: %e for joint: %s", limit, joint_names[i].c_str());
+        }
+      }
+      else
+      {
+        ROS_ERROR("Failed to parse urdf xml string");
+      }
+    }
+    else
+    {
+      ROS_ERROR("Failed to get urdf from parameter: %s", param_name.c_str());
+      rtn = false;
+    }
+
+    if (!rtn)
+    {
+      ROS_ERROR("Failed to get velocity limits for parameter: %s", param_name.c_str());
+    }
+
+    return rtn;
+
+
+
+  }
+
+
+  double toMotomanVelocity(std::vector<double> &joint_velocity_limits,
+                           std::vector<double> &joint_velocities)
+  {
+    double maxVelPct = 0.0;
+
+    if (joint_velocity_limits.size() == joint_velocities.size())
+    {
+      for(int i = 0; i<joint_velocity_limits.size(); i++)
+      {
+        if (joint_velocity_limits[i] > 0.0 && joint_velocities[i] > 0.0)
+        {
+          double velPct = joint_velocities[i]/joint_velocity_limits[i];
+
+          ROS_DEBUG("Calculating velocity percent, velocity: %e, limit: %e, percetn: %e",
+                    joint_velocities[i], joint_velocity_limits[i], velPct);
+          if (velPct > maxVelPct)
+          {
+            ROS_DEBUG("Calculated velocity: %e, greater than current max: %e",
+                      velPct, maxVelPct);
+            maxVelPct = velPct;
+          }
+        }
+        else
+        {
+          ROS_ERROR("Invalid joint velocity: %e or limit: %e", joint_velocities[i],
+                    joint_velocity_limits[i]);
+        }
+      }
+    }
+    else
+    {
+      ROS_ERROR("Failed to calculate a velocity (joint velocity and limit vectors different size");
+    }
+
+
+    if (maxVelPct > 1.0)
+    {
+      ROS_WARN("Max velocity percent: %e, exceed 1.0, setting to 1.0", maxVelPct);
+      maxVelPct = 1.0;
+    }
+    else if (maxVelPct < 0.0)
+    {
+      ROS_WARN("Max velocity percent: %e, is less than 0.0, setting to 0.0", maxVelPct);
+      maxVelPct = 0.0;
+    }
+
+    ROS_DEBUG("Returning a motoman velocity of: %e", maxVelPct);
+
+    return maxVelPct;
+  }
+
+
+} //utils
+} //motoman

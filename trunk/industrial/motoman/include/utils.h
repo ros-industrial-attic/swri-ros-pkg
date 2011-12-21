@@ -29,18 +29,80 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-#ifndef __utils_h
-#define __utils_h
+#ifndef UTILS_H
+#define UTILS_H
 
-#include "ros/ros.h"
+#include <vector>
+#include <string>
+#include <trajectory_msgs/JointTrajectory.h>
+#include <trajectory_msgs/JointTrajectoryPoint.h>
 
-namespace utils
-// Various utility functions; add more as needed
+
+namespace motoman
 {
-  char* arrayIntToChar(int* message, int sizeof_data);
-  int* arrayCharToInt(char* raw_message, int sizeof_data);
-  void arrayIntToChar(int message[], char raw_message[], int sizeof_data);
-  void arrayCharToInt(char raw_message[], int message[], int sizeof_data);
-}
+namespace utils
+{
+
+  /**
+ * \brief Checks that the trajectory meets the assumptions and requirements
+ * of the motoman controller interface.
+ *
+ * \param trajectory to check
+ *
+ * \return True if trajectory is valid and meets requirements
+ */
+  bool checkTrajectory(trajectory_msgs::JointTrajectory &trajectory);
+
+  /**
+ * \brief Checks that the joint names match the assumptions made by the motoman
+ * controller interface.
+ *
+ * \param joint names to check
+ *
+ * \return True if joint names and order match the expected motoman order
+ */
+  bool checkJointNames(std::vector<std::string> &joint_names);
+
+  /**
+  * \brief Checks a string a the suffix
+  *
+  * \param string to check
+  * \param suffix to check for
+  *
+  * \return True if str has the suffix
+  */
+   bool hasSuffix(std::string &str, std::string &suffix);
+
+  /**
+  * \brief Queries the URDF parameter server to determine what the velocity limits
+  * are for the joint names that are pased in.  The order of the velocity limits
+  * returned (by reference) matches the joint name order.  NOTE: This process is
+  * an expensive one.  The results of this call should be cached for future needs.
+  *
+  * \param parameter name to query (typically \robot_description)
+  * \param joint names to query
+  * \param joint velocity limits returned by URDQ query
+  *
+  * \return True if all velocities were found
+  */
+   bool getVelocityLimits(std::string param_name,
+                           std::vector<std::string> &joint_names,
+                          std::vector<double> &joint_velocity_limits);
+
+  /**
+ * \brief Converts the ROS trajectory velocity (individual joint velocities to
+ * the combined motoman velocity which is highest joint velocity required as a
+ * fraction of the joint velocity limit.
+ *
+ * \param joint velocity limits (order should match joint velocities)
+ * \param joint velocities (order should match limits)
+ *
+ * \return Combined velocity
+ */
+  double toMotomanVelocity(std::vector<double> &joint_velocity_limits,
+                         std::vector<double> &joint_velocities);
+
+} // utils
+} // motoman
 
 #endif
