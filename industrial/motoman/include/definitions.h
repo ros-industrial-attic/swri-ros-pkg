@@ -57,4 +57,52 @@
 #define RC_NOT_INIT 4
 #define RC_MOTION_INTERRUPT 5
 
+#include <vector>
+#include <string>
+
+namespace motoman
+{
+namespace parameters
+{
+
+
+/**
+ * \brief This is a static class that is meant to capture controller level and
+ * global constants related to the motoman interface.  Capturing the data in a
+ * single place makes sense for now given that this information is needed in
+ * multiple places.
+ */
+class Parameters
+{
+
+public:
+
+  /**
+     * \brief Size of the joint suffixes array.  NOTE: This size must be less
+     * than or equal to the limit imposed by the motoman controller.  Under motoplus
+     * this is defined by MAX_NO_OF_AXES
+     */
+      static const int JOINT_SUFFIXES_SIZE = 12;
+
+  /**
+   * \brief Ordered list of joint suffixes expected by the motoman interface.
+   * Suffixes are used in order to allow the joints to be prefixed by another
+   * string.  Such ability is often desired in multi-robot systems where the
+   * joint and link names are prefixed with the robot that they belong to.
+   */
+    static const std::string JOINT_SUFFIXES[JOINT_SUFFIXES_SIZE];
+
+
+
+};
+
+const std::string Parameters::JOINT_SUFFIXES[] = {"joint_s", "joint_l", "joint_e", "joint_u",
+                                             "joint_r", "joint_b", "joint_t", "joint_8",
+                                             "unused", "unused", "unused", "unused"};
+
+
+
+} // parameters
+} // motoman
+
 #endif
