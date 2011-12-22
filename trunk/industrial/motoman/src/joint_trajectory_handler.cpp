@@ -97,6 +97,16 @@ void JointTrajectoryHandler::jointTrajectoryCB(const trajectory_msgs::JointTraje
     {
       ROS_INFO("Loading trajectory, setting state to streaming");
       this->current_traj_ = *msg;
+
+      // TODO: This section pads any trajectory below the minimum size with the same
+      // end point.  This is required because the motoman side requires a minimum buffer
+      // size before it start motion.
+      while (current_traj_.points.size() < 6)
+      {
+        ROS_DEBUG("Padding trajectory, current size: %d", current_traj_.points.size());
+        current_traj_.points.push_back(current_traj_.points[current_traj_.points.size()-1]);
+      };
+
       ROS_INFO("Executing trajectory of size: %d", this->current_traj_.points.size());
       this->currentPoint = 0;
       this->state_ = JointTrajectoryStates::STREAMING;
