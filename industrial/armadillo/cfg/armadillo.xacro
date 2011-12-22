@@ -1,5 +1,4 @@
 <?xml version="1.0" ?>
-
 <robot name="armadillo" xmlns:xacro="http://ros.org/wiki/xacro">
 	<include filename="$(find motoman)/cfg/sia10d_mesh_macro.xacro" />
 	<include filename="$(find robotiq)/cfg/s-model_mesh_macro.xacro" />
@@ -131,5 +130,66 @@
 			<origin xyz="0.84 0 0" rpy="0 0 0"/>
 		</joint>
   <!-- end environment list -->
-</robot>
 
+  <!-- kinect -->
+		<joint name="kinect_frame_joint" type="fixed">
+			<parent link="kinect"/>
+			<child link="kinect_frame"/>
+			<origin rpy="0.075 0.351422870712 0.396594014755" xyz="-0.12481258247 0.064659133914 -0.022541275619"/>
+		</joint>
+		<link name="kinect_frame">
+			<visual>
+				<origin rpy="0 0 0" xyz="0 0 0"/>
+				<geometry>
+					<box size="0.064 0.28 0.04"/>
+				</geometry>
+				<material name="silver"/>
+			</visual>
+			<collision>
+				<origin rpy="0 0 0" xyz="0 0 0"/>
+				<geometry>
+					<box size="0.064 0.28 0.04"/>
+				</geometry>
+			</collision>
+		</link>
+		<joint name="kinect_ir_joint" type="fixed">
+			<parent link="kinect_frame"/>
+			<child link="kinect_ir_link"/>
+			<origin rpy="0 0 0" xyz="0 0 0"/>
+		</joint>
+		<link name="kinect_ir_link">
+			<visual>
+				<origin rpy="0 0 0" xyz="0 0 0"/>
+				<geometry>
+					<sphere radius="0.0005"/>
+				</geometry>
+			</visual>
+		</link>
+		<joint name="kinect_ir_optical_frame_joint" type="fixed">
+			<parent link="kinect_ir_link"/>
+			<child link="kinect_ir_optical_frame"/>
+			<origin rpy="-1.57 0 -1.57" xyz="0 0 0"/>
+		</joint>
+		<link name="kinect_ir_optical_frame"/>
+		<joint name="kinect_rgb_joint" type="fixed">
+			<parent link="kinect_ir_link"/>
+			<child link="kinect_rgb_link"/>
+			<origin rpy="0 0 0" xyz="0 -0.03 0"/>
+		</joint>
+		<link name="kinect_rgb_link">
+			<visual>
+				<origin rpy="0 0 0" xyz="0 0 0"/>
+				<geometry>
+					<sphere radius="0.0005"/>
+				</geometry>
+			</visual>
+		</link>
+		<joint name="kinect_rgb_optical_frame_joint" type="fixed">
+			<parent link="kinect_rgb_link"/>
+			<child link="kinect_rgb_optical_frame"/>
+			<origin rpy="-1.57 0 -1.57" xyz="0 0 0"/>
+		</joint>
+		<link name="kinect_rgb_optical_frame"/>
+  <!-- end kinect -->
+
+</robot>
