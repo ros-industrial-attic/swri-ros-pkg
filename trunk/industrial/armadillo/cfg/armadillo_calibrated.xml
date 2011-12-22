@@ -163,7 +163,7 @@
   <joint name="joint_t" type="revolute">
     <parent link="link_b"/>
     <child link="link_t"/>
-    <origin rpy="0 0 0" xyz="0 0 0.155"/>
+    <origin rpy="0 0 -0.219197638659" xyz="0 0 0.155"/>
     <axis xyz="0 0 -1"/>
     <limit effort="100" lower="-3.1416" upper="3.1416" velocity="6.97"/>
   </joint>
@@ -345,7 +345,7 @@
   <joint name="kinect_frame_joint" type="fixed">
     <parent link="kinect"/>
     <child link="kinect_frame"/>
-    <origin rpy="0 0.35 0.5" xyz="0 0 0"/>
+    <origin rpy="0.075295641383 0.351422870712 0.396594014755" xyz="-0.12481258247 0.064659133914 -0.022541275619"/>
   </joint>
   <link name="kinect_frame">
     <visual>
@@ -384,7 +384,7 @@
   <joint name="kinect_rgb_joint" type="fixed">
     <parent link="kinect_ir_link"/>
     <child link="kinect_rgb_link"/>
-    <origin rpy="0.063486589917 0.013167017557 -0.045967491158" xyz="-0.066201837886 0.037212251149 0.031254947961"/>
+    <origin rpy="0 0 0" xyz="0 -0.03 0"/>
   </joint>
   <link name="kinect_rgb_link">
     <visual>
