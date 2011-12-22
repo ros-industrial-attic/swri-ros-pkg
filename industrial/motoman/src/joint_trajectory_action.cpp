@@ -222,13 +222,13 @@ private:
 
   void controllerStateCB(const control_msgs::FollowJointTrajectoryFeedbackConstPtr &msg)
   {
-    ROS_DEBUG("Checking controller state feedback");
+    //ROS_DEBUG("Checking controller state feedback");
     last_controller_state_ = msg;
     ros::Time now = ros::Time::now();
 
     if (!has_active_goal_)
     {
-      ROS_DEBUG("No active goal, ignoring feedback");
+      //ROS_DEBUG("No active goal, ignoring feedback");
       return;
     }
     if (current_traj_.points.empty())

@@ -1,0 +1,6 @@
+<launch>
+  <!-- Start Motoman specific nodes -->
+  <node pkg="motoman" type="robot_state" name="robot_state"/>
+  <node pkg="motoman" type="motion_interface" name="motion_interface"/>
+
+</launch>
