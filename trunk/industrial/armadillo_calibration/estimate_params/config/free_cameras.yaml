@@ -1,6 +1,6 @@
 
   transforms:
-    kinect_rgb_joint: [1, 1, 1, 1, 1, 1]
+    kinect_frame_joint: [1, 1, 1, 1, 1, 1]
   
   chains:
     arm_chain:

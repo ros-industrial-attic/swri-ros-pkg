@@ -5,7 +5,7 @@ sensors:
   chains:
     arm_chain:
       root: base_link
-      tip: link_t
+      tip: palm
       cov:
        joint_angles: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
       gearing: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
@@ -29,5 +29,5 @@ checkerboards:
     spacing_y: 0.0245
 
 transforms:
-  arm_chain_cb:   [ .25, 0, 0, pi/2, 0, 0]
+  arm_chain_cb:   [ 0, 0, 0.125, 0, -pi/2, 0]
 
