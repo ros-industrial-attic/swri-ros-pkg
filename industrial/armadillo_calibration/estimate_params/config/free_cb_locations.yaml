@@ -1,6 +1,7 @@
 
   transforms:
-    arm_chain_cb: [1, 1, 1, 1, 1, 1]
+    arm_chain_cb: [1, 1, 1, 1, 1, 0]
+    joint_t: [0, 0, 0, 0, 0, 1]
 
   chains:
     arm_chain:
