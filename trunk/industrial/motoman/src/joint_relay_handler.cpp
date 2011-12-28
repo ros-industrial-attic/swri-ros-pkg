@@ -30,8 +30,8 @@
 */ 
 
 #include "joint_relay_handler.h"
-#include "joint_message.h"
-#include "log_wrapper.h"
+#include "simple_message/messages/joint_message.h"
+#include "simple_message/log_wrapper.h"
 
 
 using namespace industrial::joint_message;

@@ -30,8 +30,8 @@
 */ 
 
 #include "joint_trajectory_handler.h"
-#include "socket/simple_socket.h"
-#include "socket/tcp_client.h"
+#include "simple_message/socket/simple_socket.h"
+#include "simple_message/socket/tcp_client.h"
 
 using namespace industrial::simple_socket;
 

@@ -32,7 +32,7 @@
 #ifndef JOINT_TRAJECTORY_HANDLER_H
 #define JOINT_TRAJECTORY_HANDLER_H
 
-#include "smpl_msg_connection.h"
+#include "simple_message/smpl_msg_connection.h"
 #include "ros/ros.h"
 #include <boost/thread/thread.hpp>
 #include <sensor_msgs/JointState.h>
