@@ -28,10 +28,18 @@
 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
+#ifdef ROS
+#include "simple_message/ping_message.h"
+#include "simple_message/log_wrapper.h"
+#include "simple_message/byte_array.h"
+#endif
 
+#ifdef MOTOPLUS
 #include "ping_message.h"
 #include "log_wrapper.h"
 #include "byte_array.h"
+#endif
+
 
 using namespace industrial::simple_message;
 using namespace industrial::byte_array;

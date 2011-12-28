@@ -32,10 +32,10 @@
 #ifndef JOINT_MESSAGE_H
 #define JOINT_MESSAGE_H
 
-#include "typed_message.h"
-#include "simple_message.h"
-#include "shared_types.h"
-#include "joint_position.h"
+#include "simple_message/typed_message.h"
+#include "simple_message/simple_message.h"
+#include "simple_message/shared_types.h"
+#include "simple_message/joint_position.h"
 
 namespace industrial
 {

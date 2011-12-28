@@ -28,10 +28,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifdef ROS
+#include "simple_message/message_manager.h"
+#include "simple_message/log_wrapper.h"
+#include "simple_message/simple_message.h"
+#endif
 
+#ifdef MOTOPLUS
 #include "message_manager.h"
 #include "log_wrapper.h"
 #include "simple_message.h"
+#endif
+
 
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::message_handler;

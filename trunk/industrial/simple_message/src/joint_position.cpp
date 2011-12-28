@@ -28,10 +28,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifdef ROS
+#include "simple_message/joint_position.h"
+#include "simple_message/shared_types.h"
+#include "simple_message/log_wrapper.h"
+#endif
 
+#ifdef MOTOPLUS
 #include "joint_position.h"
 #include "shared_types.h"
 #include "log_wrapper.h"
+#endif
 
 using namespace industrial::shared_types;
 

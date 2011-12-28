@@ -32,7 +32,18 @@
 #ifndef TYPED_MESSAGE_H
 #define TYPED_MESSAGE_H
 
+#ifdef ROS
+
+#include "simple_message/simple_message.h"
+
+#endif
+
+#ifdef MOTOPLUS
+
 #include "simple_message.h"
+
+#endif
+
 
 namespace industrial
 {

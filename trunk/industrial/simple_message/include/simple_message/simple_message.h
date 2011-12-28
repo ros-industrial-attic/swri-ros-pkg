@@ -32,10 +32,22 @@
 #ifndef SIMPLE_MSG_H
 #define SIMPLE_MSG_H
 
+#ifdef ROS
+
+#include "simple_message/simple_serialize.h"
+#include "simple_message/byte_array.h"
+#include "simple_message/shared_types.h"
+
+#endif
+
+#ifdef MOTOPLUS
 
 #include "simple_serialize.h"
 #include "byte_array.h"
 #include "shared_types.h"
+
+#endif
+
 
 namespace industrial
 {

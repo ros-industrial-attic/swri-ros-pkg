@@ -32,10 +32,22 @@
 #ifndef DEFAULT_COMMS_FAULT_HANDLER_H
 #define DEFAULT_COMMS_FAULT_HANDLER_H
 
+#ifdef ROS
+
+#include "simple_message/comms_fault_handler.h"
+#include "simple_message/smpl_msg_connection.h"
+#include "simple_message/log_wrapper.h"
+
+#endif
+
+#ifdef MOTOPLUS
+
 #include "comms_fault_handler.h"
 #include "smpl_msg_connection.h"
-
 #include "log_wrapper.h"
+
+#endif
+
 
 namespace industrial
 {

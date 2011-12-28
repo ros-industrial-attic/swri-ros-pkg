@@ -33,7 +33,7 @@
 #define UDP_SERVER_H
 
 #ifdef ROS
-#include "socket/udp_socket.h"
+#include "simple_message/socket/udp_socket.h"
 #endif
 
 #ifdef MOTOPLUS

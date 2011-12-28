@@ -32,7 +32,18 @@
 #ifndef SIMPLE_SERIALIZE_H
 #define SIMPLE_SERIALIZE_H
 
+#ifdef ROS
+
+#include "simple_message/byte_array.h"
+
+#endif
+
+#ifdef MOTOPLUS
+
 #include "byte_array.h"
+
+#endif
+
 #include "string.h"
 
 namespace industrial

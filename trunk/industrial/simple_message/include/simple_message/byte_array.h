@@ -32,8 +32,19 @@
 #ifndef BYTE_ARRAY_H
 #define BYTE_ARRAY_H
 
-#include "string.h"
+#ifdef ROS
+
+#include "simple_message/shared_types.h"
+
+#endif
+
+#ifdef MOTOPLUS
+
 #include "shared_types.h"
+
+#endif
+
+#include "string.h"
 
 namespace industrial
 {

@@ -32,8 +32,20 @@
 #ifndef PING_MESSAGE_H
 #define PING_MESSAGE_H
 
+#ifdef ROS
+
+#include "simple_message/typed_message.h"
+#include "simple_message/simple_message.h"
+
+#endif
+
+#ifdef MOTOPLUS
+
 #include "typed_message.h"
 #include "simple_message.h"
+
+#endif
+
 
 namespace industrial
 {

@@ -30,15 +30,17 @@
  */
 
 #ifdef ROS
-#include "socket/udp_socket.h"
+#include "simple_message/socket/udp_socket.h"
+#include "simple_message/log_wrapper.h"
+#include "simple_message/simple_message.h"
 #endif
 
 #ifdef MOTOPLUS
 #include "udp_socket.h"
-#endif
-
 #include "log_wrapper.h"
 #include "simple_message.h"
+#endif
+
 
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::byte_array;
