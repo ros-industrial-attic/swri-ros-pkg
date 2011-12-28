@@ -33,7 +33,18 @@
 #ifndef PING_HANDLER_H
 #define PING_HANDLER_H
 
+#ifdef ROS
+
+#include "simple_message/message_handler.h"
+
+#endif
+
+#ifdef MOTOPLUS
+
 #include "message_handler.h"
+
+#endif
+
 
 namespace industrial
 {

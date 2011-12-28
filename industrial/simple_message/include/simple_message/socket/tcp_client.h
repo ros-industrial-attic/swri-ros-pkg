@@ -33,7 +33,7 @@
 #define TCP_CLIENT_H
 
 #ifdef ROS
-#include "socket/tcp_socket.h"
+#include "simple_message/socket/tcp_socket.h"
 #endif
 
 #ifdef MOTOPLUS

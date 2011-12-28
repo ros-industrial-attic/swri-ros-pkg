@@ -30,14 +30,14 @@
  */
 
 #ifdef ROS
-#include "socket/udp_server.h"
+#include "simple_message/socket/udp_server.h"
+#include "simple_message/log_wrapper.h"
 #endif
 
 #ifdef MOTOPLUS
 #include "udp_server.h"
-#endif
-
 #include "log_wrapper.h"
+#endif
 
 using namespace industrial::byte_array;
 

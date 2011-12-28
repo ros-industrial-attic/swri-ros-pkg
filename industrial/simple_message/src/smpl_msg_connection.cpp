@@ -29,14 +29,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef ROS
 
-#ifdef MOTOPLUS //motoPlus header must be first
-#include "motoPlus.h"
+#include "simple_message/log_wrapper.h"
+#include "simple_message/smpl_msg_connection.h"
+#include "simple_message/byte_array.h"
 #endif
 
+#ifdef MOTOPLUS
+#include "motoPlus.h"
 #include "log_wrapper.h"
 #include "smpl_msg_connection.h"
 #include "byte_array.h"
+#endif
 
 using namespace industrial::simple_message;
 using namespace industrial::byte_array;

@@ -32,8 +32,20 @@
 #ifndef MESSAGE_HANDLER_H
 #define MESSAGE_HANDLER_H
 
+#ifdef ROS
+
+#include "simple_message/simple_message.h"
+#include "simple_message/smpl_msg_connection.h"
+
+#endif
+
+#ifdef MOTOPLUS
+
 #include "simple_message.h"
 #include "smpl_msg_connection.h"
+
+#endif
+
 
 namespace industrial
 {

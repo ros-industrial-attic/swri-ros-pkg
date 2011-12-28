@@ -41,6 +41,10 @@
 #include "netinet/tcp.h"
 #include "errno.h"
 
+#include "simple_message/log_wrapper.h"
+#include "simple_message/shared_types.h"
+#include "simple_message/smpl_msg_connection.h"
+
 #define SOCKET(domain, type, protocol) socket(domain, type, protocol)
 #define BIND(sockfd, addr, addrlen) bind(sockfd, addr, addrlen)
 #define SET_NO_DELAY(sockfd, val) setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))
@@ -66,6 +70,11 @@
 
 #include "motoPlus.h"
 
+#include "errno.h"
+#include "log_wrapper.h"
+#include "shared_types.h"
+#include "smpl_msg_connection.h"
+
 #define SOCKET(domain, type, protocol) mpSocket(domain, type, protocol)
 #define BIND(sockfd, addr, addrlen) mpBind(sockfd, addr, addrlen)
 #define SET_NO_DELAY(sockfd, val) -1 //MOTOPLUS does not allow for setting the "no delay" socket option
@@ -84,11 +93,6 @@
 #define SOCKLEN_T unsigned int
 
 #endif
-
-#include "errno.h"
-#include "log_wrapper.h"
-#include "shared_types.h"
-#include "smpl_msg_connection.h"
 
 namespace industrial
 {

@@ -29,14 +29,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #ifdef ROS
-#include "socket/udp_client.h"
+#include "simple_message/socket/udp_client.h"
+#include "simple_message/log_wrapper.h"
 #endif
 
 #ifdef MOTOPLUS
 #include "udp_client.h"
+#include "log_wrapper.h"
 #endif
 
-#include "log_wrapper.h"
 
 using namespace industrial::byte_array;
 using namespace industrial::shared_types;

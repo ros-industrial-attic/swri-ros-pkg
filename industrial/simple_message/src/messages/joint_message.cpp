@@ -29,10 +29,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef ROS
+#include "simple_message/messages/joint_message.h"
+#include "simple_message/joint_position.h"
+#include "simple_message/byte_array.h"
+#include "simple_message/log_wrapper.h"
+#endif
+
+#ifdef MOTOPLUS
 #include "joint_message.h"
 #include "joint_position.h"
 #include "byte_array.h"
 #include "log_wrapper.h"
+#endif
 
 using namespace industrial::shared_types;
 using namespace industrial::byte_array;

@@ -32,20 +32,23 @@
 #ifndef JOINT_POSITION_H
 #define JOINT_POSITION_H
 
+#ifdef ROS
+
+#include "simple_message/simple_message.h"
+#include "simple_message/simple_serialize.h"
+#include "simple_message/shared_types.h"
+
+#endif
+
+#ifdef MOTOPLUS
+
 #include "simple_message.h"
 #include "simple_serialize.h"
 #include "shared_types.h"
-//#include "joint_message.h"
-/*
-namespace industrial
-{
-namespace joint_message
-{
-// Class declaration required for function prototypes below
-class JointMessage;
-}
-}
-*/
+
+#endif
+
+
 
 namespace industrial
 {

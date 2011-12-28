@@ -38,16 +38,17 @@
 #include "string.h"
 #include "unistd.h"
 
-#include "socket/simple_socket.h"
+#include "simple_message/socket/simple_socket.h"
+#include "simple_message/shared_types.h"
 #endif
 
 #ifdef MOTOPLUS
 #include "motoPlus.h"
 
 #include "simple_socket.h"
+#include "shared_types.h"
 #endif
 
-#include "shared_types.h"
 
 namespace industrial
 {
