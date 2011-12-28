@@ -1,9 +1,49 @@
+#sidebar SidebarNav
+
 =Installation=
 
-ROS-Industrial is only supported on the Ubuntu platform with ROS-Electric release
+ROS-Industrial has only been tested on Ubuntu with the ROS-Electric release
 
-ROS-Industrial is not currently part of the ROS build system.  As a result, it can only be downloaded and installed from source.  The latest stable source release can be downloaded from the ROS-Industrial [http://code.google.com/p/swri-ros-pkg/downloads/list download page].  The latest unstable software revision can be directly checked out from the subversion [http://code.google.com/p/swri-ros-pkg/source/checkout repositiory].
+==Dependencies==
 
-The source code must be placed in a 
+===All Installations===
 
+The software dependencies below are needed for all uses.  These dependencies are not included in the basic ROS-Electric install.
 
+ * *Arm Navigation Stack* See [http://www.ros.org/wiki/arm_navigation Arm Navigation Installation] for detailed install instructions.
+
+===Motoman Hardware (Not required for robot visualization/simulation)===
+
+The software/hardware dependencies below are only needed for controlling physical hardware.  Physical hardware is not required in order to demonstrate the path planning and collision avoidance capabilities of ROS-Industrial.
+
+The options below must be specially order from Motoman.  Email [swri-ros-pkg-dev@googlegroups.com] for more detailed information.
+
+ * *Motoplus Development Software* required for Motoman hardware integration (Requires a PC with Windows)
+ * *MotoROS Parameters* provided by Motoman
+
+==Source Download
+
+Currently, ROS-Industrial can only be downloaded and installed from source.  
+
+# Download the desired repository version:
+
+ * The latest stable source release can be is tagged in the software repository here: https://swri-ros-pkg.googlecode.com/svn/tags/ros_org_video_rc1 repository.  
+
+ * The latest unstable software revision can be directly checked out from the subversion [http://code.google.com/p/swri-ros-pkg/source/checkout repository].
+
+# Add the ROS-Industrial stack location to the ROS_PACKAGE_PATH system variable.
+
+# Run “rosmake” from the industrial stack directory.  The source should build with no errors.
+
+==Motoman DX100 Installation & Configuration==
+
+The following steps are required in order to enable ROS-Industrial control of a motoman robot.
+
+# Open the MotoPlus project (motoman/motoplus/motoros_server.mpProj) with the Motoplus Development Software.
+# Build the motoplus application.  This should complete without any errors
+# Load the MotoPlus output file (motoman\motoplus\output\ motoros_server.out) on the DX 100 controller (see the motoplus user’s manual for more detailed instructions)
+# Load the Motoman provided parameters file onto the controller (see the motoman user’s manual for more detailed instructions)
+# Set the move velocity (Integer data[93]).  NOTE: The current implementation of the motoman interface ignores the ROS velocity and instead sets a single velocity for an entire motion.  The move velocity is currently limited to <15% for smooth motion.  Setting higher values will result in stop/start motion.
+# Connect the DX100 control to a local Ethernet network with the ROS PC.  WARNING: The DX100 connection is achieved using multiple TCP socket connections over Ethernet.  It is recommended that a small local network (i.e. the ROS PC and the DX100 controller) be used.
+
+Get Started with ROS-Industrial by going through the [Tutorials Tutorials].
