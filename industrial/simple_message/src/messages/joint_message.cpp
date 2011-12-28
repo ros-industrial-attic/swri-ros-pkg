@@ -31,7 +31,7 @@
 
 #ifdef ROS
 #include "simple_message/messages/joint_message.h"
-#include "simple_message/joint_position.h"
+#include "simple_message/joint_data.h"
 #include "simple_message/byte_array.h"
 #include "simple_message/log_wrapper.h"
 #endif
@@ -46,7 +46,7 @@
 using namespace industrial::shared_types;
 using namespace industrial::byte_array;
 using namespace industrial::simple_message;
-using namespace industrial::joint_position;
+using namespace industrial::joint_data;
 
 namespace industrial
 {
@@ -90,7 +90,7 @@ bool JointMessage::init(industrial::simple_message::SimpleMessage & msg)
   return rtn;
 }
 
-void JointMessage::init(shared_int seq, JointPosition& joints)
+void JointMessage::init(shared_int seq, JointData& joints)
 {
   this->setSequence(seq);
   this->joints_.copyFrom(joints);

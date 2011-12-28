@@ -35,16 +35,7 @@
 #include "simple_message/typed_message.h"
 #include "simple_message/simple_message.h"
 #include "simple_message/shared_types.h"
-#include "simple_message/joint_position.h"
-
-namespace industrial
-{
-namespace joint_position
-{
-// Class declaration required for function prototypes below
-class JointPosition;
-}
-}
+#include "simple_message/joint_data.h"
 
 namespace industrial
 {
@@ -120,7 +111,7 @@ public:
    * \param joints
    *
    */
-  void init(industrial::shared_types::shared_int seq, industrial::joint_position::JointPosition & joints);
+  void init(industrial::shared_types::shared_int seq, industrial::joint_data::JointData & joints);
 
   /**
    * \brief Initializes a new joint message
@@ -171,7 +162,7 @@ public:
    *
    * \return reference to joint class
    */
-  industrial::joint_position::JointPosition& getJoints()
+  industrial::joint_data::JointData& getJoints()
   {
     return this->joints_;
   }
@@ -193,7 +184,7 @@ private:
   /**
    * \brief maximum number of joints positions that can be held in the message.
    */
-  industrial::joint_position::JointPosition joints_;
+  industrial::joint_data::JointData joints_;
 
 };
 

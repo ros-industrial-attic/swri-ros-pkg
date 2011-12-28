@@ -29,20 +29,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "simple_message.h"
-#include "byte_array.h"
-#include "shared_types.h"
-#include "smpl_msg_connection.h"
-#include "socket/udp_client.h"
-#include "socket/udp_server.h"
-#include "socket/tcp_client.h"
-#include "socket/tcp_server.h"
-#include "ping_message.h"
-#include "ping_handler.h"
-#include "joint_message.h"
-#include "joint_position.h"
-#include "message_manager.h"
-#include "simple_comms_fault_handler.h"
+#include "simple_message/simple_message.h"
+#include "simple_message/byte_array.h"
+#include "simple_message/shared_types.h"
+#include "simple_message/smpl_msg_connection.h"
+#include "simple_message/socket/udp_client.h"
+#include "simple_message/socket/udp_server.h"
+#include "simple_message/socket/tcp_client.h"
+#include "simple_message/socket/tcp_server.h"
+#include "simple_message/ping_message.h"
+#include "simple_message/ping_handler.h"
+#include "simple_message/messages/joint_message.h"
+#include "simple_message/joint_data.h"
+#include "simple_message/message_manager.h"
+#include "simple_message/simple_comms_fault_handler.h"
 
 #include <gtest/gtest.h>
 // Use pthread instead of boost::thread so we can cancel the TCP/UDP server
@@ -62,7 +62,7 @@ using namespace industrial::tcp_client;
 using namespace industrial::tcp_server;
 using namespace industrial::ping_message;
 using namespace industrial::ping_handler;
-using namespace industrial::joint_position;
+using namespace industrial::joint_data;
 using namespace industrial::joint_message;
 using namespace industrial::message_manager;
 using namespace industrial::simple_comms_fault_handler;
@@ -357,7 +357,7 @@ TEST(MessageManagerSuite, tcp)
 
 TEST(JointMessage, init)
 {
-  JointPosition joint;
+  JointData joint;
 
   joint.init();
   EXPECT_TRUE(joint.setJoint(0, 1.0));
@@ -377,7 +377,7 @@ TEST(JointMessage, init)
 
 TEST(JointMessage, equal)
 {
-  JointPosition jointlhs, jointrhs;
+  JointData jointlhs, jointrhs;
 
   jointrhs.init();
   jointlhs.init();
@@ -395,7 +395,7 @@ TEST(JointMessage, equal)
 
 TEST(JointMessage, toMessage)
 {
-  JointPosition toMessage, fromMessage;
+  JointData toMessage, fromMessage;
   JointMessage msg;
 
   toMessage.init();
@@ -418,7 +418,7 @@ TEST(JointMessageComms, tcp)
   TcpServer tcpServer;
   SimpleMessage msgSend, msgRecv;
   JointMessage jointSend, jointRecv;
-  JointPosition posSend, posRecv;
+  JointData posSend, posRecv;
 
   posSend.init();
   posSend.setJoint(0,1.0);

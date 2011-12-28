@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #ifdef ROS
-#include "simple_message/joint_position.h"
+#include "simple_message/joint_data.h"
 #include "simple_message/shared_types.h"
 #include "simple_message/log_wrapper.h"
 #endif
@@ -44,19 +44,19 @@ using namespace industrial::shared_types;
 
 namespace industrial
 {
-namespace joint_position
+namespace joint_data
 {
 
-JointPosition::JointPosition(void)
+JointData::JointData(void)
 {
   this->init();
 }
-JointPosition::~JointPosition(void)
+JointData::~JointData(void)
 {
 
 }
 
-void JointPosition::init()
+void JointData::init()
 {
   for (int i = 0; i < this->getMaxNumJoints(); i++)
   {
@@ -64,14 +64,7 @@ void JointPosition::init()
   }
 }
 
-/*
-void JointPosition::init(industrial::joint_message::JointMessage& joint_msg)
-{
-  this->init();
-  this->copyFrom(joint_msg.getJoints());
-}
-*/
-bool JointPosition::setJoint(shared_int index, shared_real value)
+bool JointData::setJoint(shared_int index, shared_real value)
 {
   bool rtn = false;
 
@@ -88,7 +81,7 @@ bool JointPosition::setJoint(shared_int index, shared_real value)
   return rtn;
 }
 
-bool JointPosition::getJoint(shared_int index, shared_real & value)
+bool JointData::getJoint(shared_int index, shared_real & value)
 {
   bool rtn = false;
 
@@ -105,7 +98,7 @@ bool JointPosition::getJoint(shared_int index, shared_real & value)
   return rtn;
 }
 
-shared_real JointPosition::getJoint(shared_int index)
+shared_real JointData::getJoint(shared_int index)
 {
   shared_real rtn = 0.0;
   this->getJoint(index, rtn);
@@ -113,7 +106,7 @@ shared_real JointPosition::getJoint(shared_int index)
 }
   
 
-void JointPosition::copyFrom(JointPosition &src)
+void JointData::copyFrom(JointData &src)
 {
   shared_real value = 0.0;
 
@@ -124,7 +117,7 @@ void JointPosition::copyFrom(JointPosition &src)
   }
 }
 
-bool JointPosition::operator==(JointPosition &rhs)
+bool JointData::operator==(JointData &rhs)
 {
   bool rtn = true;
 
@@ -144,7 +137,7 @@ bool JointPosition::operator==(JointPosition &rhs)
 
 }
 
-bool JointPosition::load(industrial::byte_array::ByteArray *buffer)
+bool JointData::load(industrial::byte_array::ByteArray *buffer)
 {
   bool rtn = false;
   shared_real value = 0.0;
@@ -163,7 +156,7 @@ bool JointPosition::load(industrial::byte_array::ByteArray *buffer)
   return rtn;
 }
 
-bool JointPosition::unload(industrial::byte_array::ByteArray *buffer)
+bool JointData::unload(industrial::byte_array::ByteArray *buffer)
 {
   bool rtn = false;
   shared_real value = 0.0;
