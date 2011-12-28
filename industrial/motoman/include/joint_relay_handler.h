@@ -33,7 +33,7 @@
 #ifndef JOINT_HANDLER_H
 #define JOINT_HANDLER_H
 
-#include "message_handler.h"
+#include "simple_message/message_handler.h"
 #include "ros/ros.h"
 //#include <pr2_controllers_msgs/JointTrajectoryControllerState.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>

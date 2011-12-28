@@ -31,9 +31,9 @@
 
 
 #include "ros/ros.h"
-#include "socket/tcp_client.h"
-#include "simple_message.h"
-#include "ping_message.h"
+#include "simple_message/socket/tcp_client.h"
+#include "simple_message/simple_message.h"
+#include "simple_message/ping_message.h"
 #include <iostream>
 
 using namespace industrial::simple_socket;

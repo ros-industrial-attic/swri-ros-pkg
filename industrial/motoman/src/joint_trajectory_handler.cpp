@@ -30,8 +30,8 @@
  */
 
 #include "joint_trajectory_handler.h"
-#include "joint_message.h"
-#include "smpl_msg_connection.h"
+#include "simple_message/messages/joint_message.h"
+#include "simple_message/smpl_msg_connection.h"
 
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::joint_message;
