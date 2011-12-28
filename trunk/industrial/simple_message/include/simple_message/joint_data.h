@@ -29,8 +29,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef JOINT_POSITION_H
-#define JOINT_POSITION_H
+#ifndef JOINT_DATA_H
+#define JOINT_DATA_H
 
 #ifdef ROS
 
@@ -52,21 +52,23 @@
 
 namespace industrial
 {
-namespace joint_position
+namespace joint_data
 {
 
 /**
- * \brief Class encapsulated joint position data.  For simplicity and cross platform
- * compliance, this is implemented as a fixed size array.
+ * \brief Class encapsulated joint data (positions, accelerations, velocity,
+ * torque, and/or effort).
+ * For simplicity and cross platform compliance, this is implemented as a
+ * fixed size array.
  */
-//* JointMessage
+//* JointData
 /**
  *
  * THIS CLASS IS NOT THREAD-SAFE
  *
  */
 
-class JointPosition : public industrial::simple_serialize::SimpleSerialize
+class JointData : public industrial::simple_serialize::SimpleSerialize
 {
 public:
   /**
@@ -75,24 +77,18 @@ public:
    * This method creates empty data.
    *
    */
-  JointPosition(void);
+	JointData(void);
   /**
    * \brief Destructor
    *
    */
-  ~JointPosition(void);
+  ~JointData(void);
 
   /**
    * \brief Initializes a empty joint data
    *
    */
   void init();
-
-  /**
-   * \brief Initializes joint position from joint message
-   *
-   */
-  //void init(industrial::joint_message::JointMessage& joint_msg);
 
   /**
    * \brief Sets a joint value within the buffer
@@ -130,7 +126,7 @@ public:
    *
    * \param src (value to copy)
    */
-  void copyFrom(JointPosition &src);
+  void copyFrom(JointData &src);
 
   /**
    * \brief returns the maximum number of joints the message holds
@@ -147,7 +143,7 @@ public:
      *
      * \return true if equal
      */
-  bool operator==(JointPosition &rhs);
+  bool operator==(JointData &rhs);
 
   // Overrides - SimpleSerialize
   bool load(industrial::byte_array::ByteArray *buffer);
@@ -173,4 +169,4 @@ private:
 }
 }
 
-#endif /* JOINT_POSITION_H */
+#endif /* JOINT_DATA_H */

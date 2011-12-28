@@ -47,7 +47,7 @@ rosbuild_add_library(simple_message
 					src/message_manager.cpp
 					src/ping_handler.cpp
 					src/ping_message.cpp
-					src/joint_position.cpp
+					src/joint_data.cpp
 
 					src/messages/joint_message.cpp
 					
