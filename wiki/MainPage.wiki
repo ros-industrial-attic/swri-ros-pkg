@@ -1,4 +1,5 @@
-﻿#sidebar SidebarNav
+﻿#labels Featured
+#sidebar SidebarNav
 
 =ROS-Industrial= 
 <g:plusone size="medium"></g:plusone>
