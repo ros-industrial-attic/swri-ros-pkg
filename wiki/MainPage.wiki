@@ -15,10 +15,8 @@ Check out a video of our progress so far (VIDEO LINK - TBD).
 
 ROS-Industrial is at pre-1.0-experimental release level.  It currently supports ROS control (arm navigation with collision free path planning) for the Motoman [http://motoman.com/products/robots/models/sia10d.php SIA10D] and [http://motoman.com/products/controllers/default.php DX100] controller.  The software works with actual hardware or a simulated robot in rviz.  
 
-For [Installation Installation] instructions.  
-For [Tutorials Tutorials].
+Click on the following links for [Installation Installation] instructions and [Tutorials Tutorials].
 
 We’d like to invite others to use this software and contribute new applications and interfaces, particularly ROS drivers for different industrial robot platforms.  If you are interested in integrating a new platform or otherwise contributing to ROS-Industrial, please send an email to swri-ros-pkg-dev@googlegroups.com
 
 <g:plusone size="medium"></g:plusone>
-
