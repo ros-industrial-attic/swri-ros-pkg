@@ -18,4 +18,4 @@ ROS-Industrial is at pre-1.0-experimental release level.  It currently supports 
 
 Click on the following links for [Installation Installation] instructions and [Tutorials Tutorials].
 
-We’d like to invite others to use this software and contribute new applications and interfaces, particularly ROS drivers for different industrial robot platforms.  If you are interested in integrating a new platform or otherwise contributing to ROS-Industrial, please send an email to swri-ros-pkg-dev@googlegroups.com
+We’d like to invite others to use this software and contribute new applications and interfaces, particularly ROS drivers for different industrial robot platforms.  If you are interested in integrating a new platform or otherwise contributing to ROS-Industrial, please send an email to [mailto:swri-ros-pkg-dev@googlegroups.com]
