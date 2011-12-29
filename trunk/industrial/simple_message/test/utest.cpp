@@ -43,6 +43,9 @@
 #include "simple_message/joint_data.h"
 #include "simple_message/message_manager.h"
 #include "simple_message/simple_comms_fault_handler.h"
+#include "simple_message/joint_traj_pt.h"
+#include "simple_message/messages/joint_traj_pt_message.h"
+#include "simple_message/typed_message.h"
 
 #include <gtest/gtest.h>
 // Use pthread instead of boost::thread so we can cancel the TCP/UDP server
@@ -66,6 +69,9 @@ using namespace industrial::joint_data;
 using namespace industrial::joint_message;
 using namespace industrial::message_manager;
 using namespace industrial::simple_comms_fault_handler;
+using namespace industrial::joint_traj_pt;
+using namespace industrial::joint_traj_pt_message;
+using namespace industrial::typed_message;
 
 TEST(ByteArraySuite, init)
 {
@@ -205,7 +211,7 @@ TEST(PingMessageSuite, toMessage)
 
   ping.init();
 
-  ASSERT_TRUE(ping.toReply(msg));
+  ASSERT_TRUE(ping.toReply(msg, ReplyTypes::SUCCESS));
   EXPECT_EQ(StandardMsgTypes::PING, msg.getMessageType());
   EXPECT_EQ(CommTypes::SERVICE_REPLY, msg.getCommType());
   EXPECT_EQ(ReplyTypes::SUCCESS, msg.getReplyCode());
@@ -409,14 +415,37 @@ TEST(JointMessage, toMessage)
 
 }
 
-TEST(JointMessageComms, tcp)
+// Message passing routine, used to send and receive a typed message
+// Useful for checking the packing and unpacking of message data.
+void messagePassing(TypedMessage &send, TypedMessage &recv)
 {
-  const int tcpPort = 11010;
-  char ipAddr[] = "127.0.0.1";
+	const int tcpPort = 11010;
+	  char ipAddr[] = "127.0.0.1";
 
-  TcpClient tcpClient;
-  TcpServer tcpServer;
-  SimpleMessage msgSend, msgRecv;
+	  TcpClient tcpClient;
+	  TcpServer tcpServer;
+	  SimpleMessage msgSend, msgRecv;
+
+	  ASSERT_TRUE(send.toTopic(msgSend));
+
+	  // Construct server
+
+	  ASSERT_TRUE(tcpServer.init(tcpPort));
+
+	  // Construct a client
+	  ASSERT_TRUE(tcpClient.init(&ipAddr[0], tcpPort));
+	  ASSERT_TRUE(tcpClient.makeConnect());
+
+	  ASSERT_TRUE(tcpServer.makeConnect());
+
+	  ASSERT_TRUE(tcpClient.sendMsg(msgSend));
+	  ASSERT_TRUE(tcpServer.receiveMsg(msgRecv));
+	  ASSERT_TRUE(recv.init(msgRecv));
+}
+
+TEST(JointMessage, Comms)
+{
+
   JointMessage jointSend, jointRecv;
   JointData posSend, posRecv;
 
@@ -433,25 +462,86 @@ TEST(JointMessageComms, tcp)
   posSend.setJoint(9,10.0);
 
   jointSend.init(1, posSend);
-  ASSERT_TRUE(jointSend.toTopic(msgSend));
 
-  // Construct server
+  messagePassing(jointSend, jointRecv);
 
-  ASSERT_TRUE(tcpServer.init(tcpPort));
-
-  // Construct a client
-  ASSERT_TRUE(tcpClient.init(&ipAddr[0], tcpPort));
-  ASSERT_TRUE(tcpClient.makeConnect());
-
-  // Listen for client connection, init manager and start thread
-  ASSERT_TRUE(tcpServer.makeConnect());
-
-  ASSERT_TRUE(tcpClient.sendMsg(msgSend));
-  ASSERT_TRUE(tcpServer.receiveMsg(msgRecv));
-  ASSERT_TRUE(jointRecv.init(msgRecv));
   posRecv.copyFrom(jointRecv.getJoints());
   ASSERT_TRUE(posRecv==posSend);
 }
+
+
+TEST(JointTrajPt, equal)
+{
+	JointTrajPt lhs, rhs;
+	JointData joint;
+
+  joint.init();
+  ASSERT_TRUE(joint.setJoint(0, 1.0));
+  ASSERT_TRUE(joint.setJoint(1, 2.0));
+  ASSERT_TRUE(joint.setJoint(2, 3.0));
+  ASSERT_TRUE(joint.setJoint(3, 4.0));
+  ASSERT_TRUE(joint.setJoint(4, 5.0));
+  ASSERT_TRUE(joint.setJoint(5, 6.0));
+  ASSERT_TRUE(joint.setJoint(6, 7.0));
+  ASSERT_TRUE(joint.setJoint(7, 8.0));
+  ASSERT_TRUE(joint.setJoint(8, 9.0));
+  ASSERT_TRUE(joint.setJoint(9, 10.0));
+
+  rhs.init(1.0, joint, 50.0);
+  EXPECT_FALSE(lhs==rhs);
+
+  lhs.init(0, joint, 0);
+  EXPECT_FALSE(lhs==rhs);
+
+  lhs.copyFrom(rhs);
+  EXPECT_TRUE(lhs==rhs);
+
+}
+
+TEST(JointTrajPt, toMessage)
+{
+	JointTrajPt toMessage, fromMessage;
+	JointTrajPtMessage msg;
+
+  toMessage.init();
+  toMessage.setSequence(99);
+  msg.init(toMessage);
+
+  fromMessage.copyFrom(msg.point_);
+
+  EXPECT_TRUE(toMessage==fromMessage);
+
+}
+
+
+TEST(JointTrajPt, Comms)
+{
+
+	JointTrajPtMessage jointSend, jointRecv;
+	JointData data;
+	JointTrajPt posSend, posRecv;
+
+	data.init();
+	data.setJoint(0,1.0);
+	data.setJoint(1,2.0);
+	data.setJoint(2,3.0);
+	data.setJoint(3,4.0);
+	data.setJoint(4,5.0);
+	data.setJoint(5,6.0);
+	data.setJoint(6,7.0);
+	data.setJoint(7,8.0);
+	data.setJoint(8,9.0);
+	data.setJoint(9,10.0);
+	posSend.init(1, data, 99);
+
+  jointSend.init(posSend);
+
+  messagePassing(jointSend, jointRecv);
+
+  posRecv.copyFrom(jointRecv.point_);
+  ASSERT_TRUE(posRecv==posSend);
+}
+
 
 // Run all the tests that were declared with TEST()
 int main(int argc, char **argv)

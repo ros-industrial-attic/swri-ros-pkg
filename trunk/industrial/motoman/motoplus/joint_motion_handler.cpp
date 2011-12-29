@@ -67,7 +67,7 @@ JointMotionHandler::~JointMotionHandler()
 
 bool JointMotionHandler::init(industrial::smpl_msg_connection::SmplMsgConnection* connection)
 {
-  return this->init(StandardMsgTypes::JOINT, connection);
+  return this->init(StandardMsgTypes::JOINT_POSITION, connection);
 }
 
 bool JointMotionHandler::internalCB(industrial::simple_message::SimpleMessage & in)

@@ -79,8 +79,7 @@ typedef SpecialSeqValues::SpecialSeqValue SpecialSeqValue;
  *
  */
 
-class JointMessage : public industrial::typed_message::TypedMessage,
-                     public industrial::simple_serialize::SimpleSerialize
+class JointMessage : public industrial::typed_message::TypedMessage
 {
 public:
   /**
@@ -118,24 +117,6 @@ public:
    *
    */
   void init();
-  /**
-   * \brief creates a simple_message request
-   *
-   * \return true if message successfully initialized, otherwise false
-   */
-  bool toRequest(industrial::simple_message::SimpleMessage & msg);
-  /**
-   * \brief creates a simple_message reply
-   *
-   * \return true if message successfully initialized, otherwise false
-   */
-  bool toReply(industrial::simple_message::SimpleMessage & msg);
-  /**
-   * \brief creates a simple_message topic
-   *
-   * \return true if message successfully initialized, otherwise false
-   */
-  bool toTopic(industrial::simple_message::SimpleMessage & msg);
 
   /**
    * \brief Sets message sequence number

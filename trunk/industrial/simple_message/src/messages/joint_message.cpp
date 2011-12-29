@@ -55,7 +55,7 @@ namespace joint_message
 
 JointMessage::JointMessage(void)
 {
-  this->setMessageType(StandardMsgTypes::JOINT);
+  this->setMessageType(StandardMsgTypes::JOINT_POSITION);
   this->init();
 }
 
@@ -69,7 +69,7 @@ bool JointMessage::init(industrial::simple_message::SimpleMessage & msg)
   bool rtn = false;
   ByteArray data = msg.getData();
 
-  this->setMessageType(StandardMsgTypes::JOINT);
+  this->setMessageType(StandardMsgTypes::JOINT_POSITION);
 
   if (data.unload(this->joints_))
   {
@@ -100,29 +100,6 @@ void JointMessage::init()
 {
   this->setSequence(0);
   this->joints_.init();
-}
-bool JointMessage::toRequest(industrial::simple_message::SimpleMessage & msg)
-{
-  ByteArray data;
-  data.load(*this);
-  return msg.init(this->getMessageType(), CommTypes::SERVICE_REQUEST, ReplyTypes::INVALID, data);
-}
-
-bool JointMessage::toReply(industrial::simple_message::SimpleMessage & msg)
-{
-
-  ByteArray data;
-  data.load(*this);
-  return msg.init(this->getMessageType(), CommTypes::SERVICE_REPLY, ReplyTypes::SUCCESS, data);
-
-}
-
-bool JointMessage::toTopic(industrial::simple_message::SimpleMessage & msg)
-{
-  ByteArray data;
-  LOG_COMM("Generating joint message of type topic");
-  data.load(*this);
-  return msg.init(this->getMessageType(), CommTypes::TOPIC, ReplyTypes::INVALID, data);
 }
 
 bool JointMessage::load(ByteArray *buffer)

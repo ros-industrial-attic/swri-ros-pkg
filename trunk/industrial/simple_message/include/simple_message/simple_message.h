@@ -65,10 +65,12 @@ namespace StandardMsgTypes
   {
  INVALID = 0,
  PING = 1,
- JOINT = 10,
- CART = 11,
- READ_INPUT = 21,
- WRITE_OUTPUT = 20
+
+ JOINT_POSITION = 10, //TODO: Keeping this message for the time being.  Refactoring
+					  //the messages should remove the need for this message.
+
+ JOINT_TRAJ_PT = 11,  //Joint trajectory point message (typcially for streaming)
+ JOINT_TRAJ = 12	  //Joint trajectory message (typcially for trajectory downloading)
   };
 }
 typedef StandardMsgTypes::StandardMsgType StandardMsgType;
