@@ -5,7 +5,7 @@
 ==ROS-Industrial Software Installation==
 All of the following ROS Industrial software must be installed.
   # ROS Electric Install - ROS-Industrial has only been tested on Ubuntu with the ROS-Electric release.  The instructions for installing ROS-Electric can be found [http://www.ros.org/wiki/electric/Installation/Ubuntu here].
-  # Arm Navigation Stack - The arm navigation stack is not installed with the basic ROS-Electric install.  The instructions for installing ROS-Electric can be found [http://www.ros.org/wiki/arm_navigation Arm Navigation here].
+  # Arm Navigation Stack - The arm navigation stack is not installed with the basic ROS-Electric install.  The instructions for installing ROS-Electric can be found [http://www.ros.org/wiki/arm_navigation here].
   # Currently, ROS-Industrial can only be downloaded and installed from source.  
     # Download the desired repository version:
       * The latest stable source release can be is tagged in the software repository here: [https://swri-ros-pkg.googlecode.com/svn/tags/ros_org_video_rc1] *(Recommended)*.  
@@ -24,11 +24,11 @@ The options below must be specially ordered from Motoman.  Email [mailto:swri-ro
 
 
   # Motoman DX100 Installation & Configuration - The following steps are required in order to enable ROS-Industrial control of a motoman robot.
-    # Open the MotoPlus project (motoman/motoplus/motoros_server.mpProj) with the Motoplus Development Software.
+    # Open the MotoPlus project [http://code.google.com/p/swri-ros-pkg/source/browse/trunk/industrial/motoman/motoplus/motoros_server.mpProj motoros_server.mpProj] with the Motoplus Development Software.
     # Build the motoplus application.  This should complete without any errors
-    # Load the MotoPlus output file (motoman\motoplus\output\ motoros_server.out) on the DX 100 controller (see the motoplus user's manual for more detailed instructions)
+    # Load the MotoPlus output file [http://code.google.com/p/swri-ros-pkg/source/browse/#svn%2Ftrunk%2Findustrial%2Fmotoman%2Fmotoplus%2Foutput motoros_server.out] on the DX 100 controller (see the motoplus user's manual for more detailed instructions)
     # Load the Motoman provided parameters file onto the controller (see the motoman user's manual for more detailed instructions)
-    # Set the move velocity limit (Integer data[93]).  NOTE: The current implementation of the motoman interface ignores the ROS velocity and instead sets a single velocity for an entire motion.  The move velocity is currently limited to <15% for smooth motion.  Setting higher values will result in stop/start motion.
+    # Set the move velocity limit (Integer data{{{[93]}}}).  NOTE: The current implementation of the motoman interface ignores the ROS velocity and instead sets a single velocity for an entire motion.  The move velocity is currently limited to <15% for smooth motion.  Setting higher values will result in stop/start motion.
     # Connect the DX100 control to a local Ethernet network with the ROS PC.  WARNING: The DX100 connection is achieved using multiple TCP socket connections over Ethernet.  It is recommended that a small local network (i.e. the ROS PC and the DX100 controller) be used.
 ----
 ==Next Step: Get Started with ROS-Industrial by going through the [Tutorials Tutorials]==
