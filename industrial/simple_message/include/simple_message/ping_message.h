@@ -95,25 +95,19 @@ public:
   void init();
 
   /**
-   * \brief creates a simple_message request
-   *
-   * \return true if message successfully initialized, otherwise false
-   */
-  bool toRequest(industrial::simple_message::SimpleMessage & msg);
+     * \brief The ping message overrides the base method toTopic to always
+     * return false.  A ping cannot be sent as a topic.
+     *
+     */
+  bool toTopic(industrial::simple_message::SimpleMessage & msg)
+    {
+  	  return false;
+    }
 
-  /**
-   * \brief creates a simple_message reply
-   *
-   * \return true if message successfully initialized, otherwise false
-   */
-  bool toReply(industrial::simple_message::SimpleMessage & msg);
-
-  /**
-   * \brief creates a simple_message topic
-   *
-   * \return true if message successfully initialized, otherwise false
-   */
-  bool toTopic(industrial::simple_message::SimpleMessage & msg);
+  // Overrides - SimpleSerialize
+    bool load(industrial::byte_array::ByteArray *buffer){return true;}
+    bool unload(industrial::byte_array::ByteArray *buffer){return true;}
+    unsigned int byteLength(){return 0;}
 
 private:
 

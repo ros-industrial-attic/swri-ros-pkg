@@ -64,7 +64,7 @@ bool PingHandler::internalCB(industrial::simple_message::SimpleMessage & in)
 
   if (ping.init(in))
   {
-    if (ping.toReply(msg))
+    if (ping.toReply(msg, ReplyTypes::SUCCESS))
     {
       if(this->getConnection()->sendMsg(msg))
       {

@@ -85,23 +85,6 @@ void PingMessage::init()
   this->setMessageType(StandardMsgTypes::PING);
 }
 
-bool PingMessage::toRequest(industrial::simple_message::SimpleMessage & msg)
-{
-  return msg.init(this->getMessageType(),CommTypes::SERVICE_REQUEST,ReplyTypes::INVALID);
-}
-
-bool PingMessage::toReply(industrial::simple_message::SimpleMessage & msg)
-{
-  return msg.init(this->getMessageType(),CommTypes::SERVICE_REPLY,ReplyTypes::SUCCESS);
-}
-
-
-bool PingMessage::toTopic(industrial::simple_message::SimpleMessage & msg)
-{
-  // A ping is exclusively a service, it cannot be made into a topic.
-  return false;
-}
-
 
 }// ping_message
 }// industrial

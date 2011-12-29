@@ -35,12 +35,14 @@
 #ifdef ROS
 
 #include "simple_message/simple_message.h"
+#include "simple_message/byte_array.h"
 
 #endif
 
 #ifdef MOTOPLUS
 
 #include "simple_message.h"
+#include "byte_array.h"
 
 #endif
 
@@ -60,7 +62,7 @@ namespace typed_message
  *
  */
 
-class TypedMessage
+class TypedMessage : public industrial::simple_serialize::SimpleSerialize
 {
 
   /*
@@ -87,22 +89,42 @@ public:
    *
    * \return true if message successfully initialized, otherwise false
    */
-  virtual bool toRequest(industrial::simple_message::SimpleMessage & msg)=0;
+  virtual bool toRequest(industrial::simple_message::SimpleMessage & msg)
+  {
+	  industrial::byte_array::ByteArray data;
+	  data.load(*this);
+	  return msg.init(this->getMessageType(),
+			  industrial::simple_message::CommTypes::SERVICE_REQUEST,
+			  industrial::simple_message::ReplyTypes::INVALID, data);
+  }
 
   /**
    * \brief creates a simple_message reply
    *
    * \return true if message successfully initialized, otherwise false
    */
-  virtual bool toReply(industrial::simple_message::SimpleMessage & msg)=0;
-
+  virtual bool toReply(industrial::simple_message::SimpleMessage & msg,
+		  industrial::simple_message::ReplyType reply)
+  {
+	  industrial::byte_array::ByteArray data;
+	data.load(*this);
+	return msg.init(this->getMessageType(),
+			industrial::simple_message::CommTypes::SERVICE_REPLY,
+			reply, data);
+  }
   /**
    * \brief creates a simple_message topic
    *
    * \return true if message successfully initialized, otherwise false
    */
-  virtual bool toTopic(industrial::simple_message::SimpleMessage & msg)=0;
-
+  virtual bool toTopic(industrial::simple_message::SimpleMessage & msg)
+  {
+	  industrial::byte_array::ByteArray data;
+    data.load(*this);
+    return msg.init(this->getMessageType(),
+    		industrial::simple_message::CommTypes::TOPIC,
+    		industrial::simple_message::ReplyTypes::INVALID, data);
+  }
   /**
      * \brief gets message type (enumeration)
      *
