@@ -55,11 +55,23 @@ namespace industrial
 namespace joint_traj_pt
 {
 
+namespace SpecialSeqValues
+{
+enum SpecialSeqValue
+{
+  START_TRAJECTORY_DOWNLOAD = -1,
+  START_TRAJECOTRY_STREAMING = -2,
+  END_TRAJECTORY = -3,
+  STOP_TRAJECTORY = -4
+};
+}
+typedef SpecialSeqValues::SpecialSeqValue SpecialSeqValue;
+
 /**
  * \brief Class encapsulated joint trajectory point data.  The point data
  * serves as a waypoint along a trajectory.  This point differs from the ROS
- * trajectory point in that is specifies the joint velocity in a robot standard
- * way (as a single value).
+ * trajectory point in that is specifies the joint velocity in an industrial
+ * robot standard way (as a single value).
  */
 //* JointTrajPt
 /**
