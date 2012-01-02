@@ -1,10 +1,10 @@
 ﻿#labels Featured
 #sidebar SidebarNav
 
-=ROS-Industrial= 
+=ROS-Industrial=
 <g:plusone size="medium"></g:plusone>
 
-[http://code.google.com/p/swri-ros-pkg/source/browse/wiki/images/arm_warehouse_viewer.png]
+https://swri-ros-pkg.googlecode.com/svn/wiki/images/arm_warehouse_viewer.png
 
 ROS-Industrial is a BSD-licensed ROS stack that contains libraries, tools and drivers for industrial hardware. The goals of ROS-Industrial are to: 
  * Create a community supported by industrial robotics researchers and professionals 
