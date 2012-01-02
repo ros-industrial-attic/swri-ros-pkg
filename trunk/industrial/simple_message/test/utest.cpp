@@ -46,6 +46,7 @@
 #include "simple_message/joint_traj_pt.h"
 #include "simple_message/messages/joint_traj_pt_message.h"
 #include "simple_message/typed_message.h"
+#include "simple_message/joint_traj.h"
 
 #include <gtest/gtest.h>
 // Use pthread instead of boost::thread so we can cancel the TCP/UDP server
@@ -72,14 +73,15 @@ using namespace industrial::simple_comms_fault_handler;
 using namespace industrial::joint_traj_pt;
 using namespace industrial::joint_traj_pt_message;
 using namespace industrial::typed_message;
+using namespace industrial::joint_traj;
 
 TEST(ByteArraySuite, init)
 {
 
   const shared_int SIZE = 100;
-  const shared_int TOO_BIG = 5000;
 
   ByteArray bytes;
+  shared_int TOO_BIG = bytes.getMaxBufferSize()+1;
 
   char bigBuffer[TOO_BIG];
   char buffer[SIZE];
@@ -540,6 +542,39 @@ TEST(JointTrajPt, Comms)
 
   posRecv.copyFrom(jointRecv.point_);
   ASSERT_TRUE(posRecv==posSend);
+}
+
+TEST(JointTraj, equal)
+{
+	JointTraj lhs, rhs;
+	JointData joint;
+	JointTrajPt point;
+
+  joint.init();
+  ASSERT_TRUE(joint.setJoint(0, 1.0));
+  ASSERT_TRUE(joint.setJoint(1, 2.0));
+  ASSERT_TRUE(joint.setJoint(2, 3.0));
+  ASSERT_TRUE(joint.setJoint(3, 4.0));
+  ASSERT_TRUE(joint.setJoint(4, 5.0));
+  ASSERT_TRUE(joint.setJoint(5, 6.0));
+  ASSERT_TRUE(joint.setJoint(6, 7.0));
+  ASSERT_TRUE(joint.setJoint(7, 8.0));
+  ASSERT_TRUE(joint.setJoint(8, 9.0));
+  ASSERT_TRUE(joint.setJoint(9, 10.0));
+
+  point.init(1.0, joint, 50.0);
+  rhs.addPoint(point);
+  EXPECT_FALSE(lhs==rhs);
+
+  lhs.addPoint(point);
+  EXPECT_TRUE(lhs==rhs);
+
+  lhs.addPoint(point);
+  EXPECT_FALSE(lhs==rhs);
+
+  lhs.copyFrom(rhs);
+  EXPECT_TRUE(lhs==rhs);
+
 }
 
 
