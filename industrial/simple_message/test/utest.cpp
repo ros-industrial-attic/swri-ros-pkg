@@ -160,6 +160,11 @@ TEST(ByteArraySuite, copy)
   // Copy
   ByteArray copyFrom;
   ByteArray copyTo;
+  ByteArray tooBig;
+
+
+  shared_int TOO_BIG = tooBig.getMaxBufferSize()-1;
+  char bigBuffer[TOO_BIG];
 
   EXPECT_TRUE(copyFrom.init(&buffer[0], SIZE));
   EXPECT_TRUE(copyTo.load(copyFrom));
@@ -167,8 +172,10 @@ TEST(ByteArraySuite, copy)
   EXPECT_TRUE(copyTo.load(copyFrom));
   EXPECT_EQ((shared_int)copyTo.getBufferSize(), 2*SIZE);
 
-  //Copy too large
-  EXPECT_FALSE(copyTo.load(copyFrom));
+  // Copy too large
+  EXPECT_TRUE(tooBig.init(&bigBuffer[0], TOO_BIG));
+  EXPECT_FALSE(copyTo.load(tooBig));
+  // A failed load should not change the buffer.
   EXPECT_EQ((shared_int)copyTo.getBufferSize(), 2*SIZE);
 }
 
@@ -275,7 +282,7 @@ spinFunc(void* arg)
   return NULL;
 }
 
-TEST(MessageManagerSuite, udp)
+TEST(DISABLED_MessageManagerSuite, udp)
 {
   const int udpPort = 11000;
   char ipAddr[] = "127.0.0.1";
