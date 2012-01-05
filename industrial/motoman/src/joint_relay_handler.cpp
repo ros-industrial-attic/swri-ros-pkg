@@ -116,7 +116,7 @@ bool JointRelayHandler::internalCB(industrial::simple_message::SimpleMessage & i
     // Reply back to the controller if the sender requested it.
     if (CommTypes::SERVICE_REQUEST == in.getMessageType())
     {
-      joint.toReply(msg);
+      joint.toReply(msg, ReplyTypes::SUCCESS);
     }
   }
   else

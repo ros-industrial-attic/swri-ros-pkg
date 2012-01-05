@@ -66,8 +66,10 @@ namespace StandardMsgTypes
  INVALID = 0,
  PING = 1,
 
- JOINT_POSITION = 10, //TODO: Keeping this message for the time being.  Refactoring
-					  //the messages should remove the need for this message.
+ //TODO: Keeping this message type for the time being.  Refactoring
+ // the messages should remove the need for this message.
+ JOINT_POSITION = 10,
+ JOINT = 10, 
 
  JOINT_TRAJ_PT = 11,  //Joint trajectory point message (typcially for streaming)
  JOINT_TRAJ = 12	  //Joint trajectory message (typcially for trajectory downloading)

@@ -32,6 +32,14 @@
 #ifndef TRAJECOTRY_JOB_H
 #define TRAJECTORY_JOB_H
 
+#ifdef ROS
+#include "simple_message/joint_traj.h"
+#endif
+
+#ifdef MOTOPLUS
+#include "joint_traj.h"
+#endif
+
 namespace motoman
 {
 namespace trajectory_job
@@ -77,7 +85,7 @@ public:
 *
 * \return true on success, false otherwise (invalid name or trajectory)
 */
-bool init(char* name); // TODO: joint trajectory type, );
+bool init(char* name, industrial::joint_traj::JointTraj joint_traj);
 
 /**
 * \brief Generates a job string that can be written to a file
@@ -100,19 +108,38 @@ private:
 static const int LINE_BUFFER_SIZE_ = 128;
 
 /**
- * \brief Name of the job file
- */
-char name_[LINE_BUFFER_SIZE_];
-
-/**
  * \brief Temporary line buffer used when generating a job file test string
  */
-char line_buffer_[LINE_BUFFER_SIZE_];
+char line_buffer_[LINE_BUFFER_SIZE_+1];
+
+/**
+ * \brief Size of fixed buffer that holds the job file name.  This is set by the
+ * motoman job name size limit
+ */
+static const int NAME_BUFFER_SIZE_ = 20;
+/**
+ * \brief Name of the job file
+ */
+char name_[NAME_BUFFER_SIZE_+1];
+
+
 
 /**
  * \brief Joint trajectory
  */
-//TODO: joint trajectory type trajectory_;
+industrial::joint_traj::JointTraj trajectory_;
+
+/**
+* \brief Appends a line to the job buffer.  The function checks that the job
+* buffer is large enough before this is done.
+*
+* \param job buffer
+* \param job buffer size
+* \param line buffer
+*
+* \return true on success, false if te job buffer is not big enough
+*/
+bool appendLine(char* job_buffer, size_t job_buffer_size, char* line_buffer);
 
 };
 

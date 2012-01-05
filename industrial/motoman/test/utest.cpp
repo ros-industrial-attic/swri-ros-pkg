@@ -31,11 +31,18 @@
 
 #include "utils.h"
 #include "definitions.h"
+#include "trajectory_job.h"
+#include "simple_message/joint_traj.h"
+#include "simple_message/log_wrapper.h"
 
 #include <vector>
+#include <iostream>
 #include <gtest/gtest.h>
 
 using namespace motoman::utils;
+using namespace motoman::trajectory_job;
+using namespace industrial::joint_traj;
+
 
 TEST(Utils, hasSuffix)
 {
@@ -99,6 +106,25 @@ TEST(Utils, toMotomanVelocity)
   EXPECT_FLOAT_EQ(toMotomanVelocity(lim, vel), 0.0);
 
 }
+
+TEST(TrajectoryJob, init)
+{
+  TrajectoryJob job;
+  JointTraj traj;
+  const int BIG_JOB_BUFFER_SIZE = 5000;
+  char bigJobBuffer[BIG_JOB_BUFFER_SIZE];
+  const int SMALL_JOB_BUFFER_SIZE = 10;
+  char smallJobBuffer[SMALL_JOB_BUFFER_SIZE];
+
+  EXPECT_FALSE(job.init("this name is way too long to be the name of a file and this should fail", traj));
+  ASSERT_TRUE(job.init("JOB_NAME", traj));
+  EXPECT_TRUE(job.toJobString(&bigJobBuffer[0], BIG_JOB_BUFFER_SIZE));
+  LOG_INFO("Big Job String: %s", bigJobBuffer);
+  EXPECT_FALSE(job.toJobString(&smallJobBuffer[0], SMALL_JOB_BUFFER_SIZE));
+  LOG_INFO("Small Job String: %s", smallJobBuffer);
+
+}
+
 
 
 // Run all the tests that were declared with TEST()
