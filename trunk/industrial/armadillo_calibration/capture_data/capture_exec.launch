@@ -1,9 +1,9 @@
 <launch>
 
-  <node type="armadillo_exec.py"
-        pkg="armadillo_calibration"
+  <node type="capture_exec.py"
+        pkg="calibration_launch"
         name="calibration_exec"
-        args="$(find armadillo_calibration)/capture_data/samples/ $(find armadillo_calibration)/capture_data/hardware_config"
+        args="$(find armadillo_calibration)/capture_data/samples/ $(find armadillo_calibration)/capture_data/hardware_config $(find armadillo_calibration)/estimate_params/config/system.yaml"
         output="screen" >
 
     <remap from="kinect_camera/camera_info" to="camera/rgb/camera_info"/>
