@@ -33,7 +33,7 @@
 #define __p_var_q_h
 
 #include "motoPlus.h"
-#include "joint_position.h"
+#include "joint_data.h"
 #include "mp_wrapper.h"
 
 /*
@@ -119,14 +119,14 @@ class PVarQ
   * \param percent velocity (will be converted to appropriate integer (see note for jointSpeedData_)
   *
   */
-    void init(industrial::joint_position::JointPosition & point, double velocity_percent);
+    void init(industrial::joint_data::JointData & point, double velocity_percent);
     
     /**
   * \brief Adds point to the queue (will block until point can be added)
   *
   * \param joint position to add
   */
-    void addPoint(industrial::joint_position::JointPosition & joints, double velocity_percent);
+    void addPoint(industrial::joint_data::JointData & joints, double velocity_percent);
     
       /**
   * \brief Return current buffer size (number of remaining points)  
@@ -289,7 +289,7 @@ class PVarQ
   * \param percent velocity (will be converted to appropriate integer (see note for jointSpeedData_)
   *
   */
-    void setNextPosition(industrial::joint_position::JointPosition & point, double velocity_percent);
+    void setNextPosition(industrial::joint_data::JointData & point, double velocity_percent);
     
   /**
   * \brief Set position variable in the queue position(index)
@@ -299,7 +299,7 @@ class PVarQ
   * \param percent velocity (will be converted to appropriate integer (see note for jointSpeedData_)
   *
   */
-    void setPosition(int index, industrial::joint_position::JointPosition & point, 
+    void setPosition(int index, industrial::joint_data::JointData & point, 
     double velocity_percent);
 			
 };

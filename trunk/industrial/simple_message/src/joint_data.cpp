@@ -35,7 +35,7 @@
 #endif
 
 #ifdef MOTOPLUS
-#include "joint_position.h"
+#include "joint_data.h"
 #include "shared_types.h"
 #include "log_wrapper.h"
 #endif
