@@ -2,11 +2,11 @@
 <MotoPlusProject>
   <ProjectName>motoros_server</ProjectName>
   <FilesInProject>
-    <FileForProject>input_handler.h</FileForProject>
-    <FileForProject>input_handler.cpp</FileForProject>
-    <FileForProject>comms_fault_handler.h</FileForProject>
-    <FileForProject>byte_array.h</FileForProject>
     <FileForProject>byte_array.cpp</FileForProject>
+    <FileForProject>byte_array.h</FileForProject>
+    <FileForProject>comms_fault_handler.h</FileForProject>
+    <FileForProject>input_handler.cpp</FileForProject>
+    <FileForProject>input_handler.h</FileForProject>
     <FileForProject>joint_data.cpp</FileForProject>
     <FileForProject>joint_data.h</FileForProject>
     <FileForProject>joint_message.cpp</FileForProject>
@@ -40,7 +40,6 @@
     <FileForProject>smpl_msg_connection.cpp</FileForProject>
     <FileForProject>smpl_msg_connection.h</FileForProject>
     <FileForProject>system.cpp</FileForProject>
-    <FileForProject>system.h</FileForProject>
     <FileForProject>tcp_client.cpp</FileForProject>
     <FileForProject>tcp_client.h</FileForProject>
     <FileForProject>tcp_server.cpp</FileForProject>
@@ -55,7 +54,7 @@
     <FileForProject>udp_socket.cpp</FileForProject>
     <FileForProject>udp_socket.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>ping_message.h</LastFileOpened>
+  <LastFileOpened>mpMain.cpp</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
