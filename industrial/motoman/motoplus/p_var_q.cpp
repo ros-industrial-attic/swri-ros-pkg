@@ -30,7 +30,7 @@
 */ 
 
 #include "p_var_q.h"
-#include "joint_position.h"
+#include "joint_data.h"
 #include "joint_motion_handler.h"
 #include "ros_conversion.h"
 #include "log_wrapper.h"
@@ -38,7 +38,7 @@
 
 using motoman::joint_motion_handler;
 using motoman::ros_conversion;
-using industrial::joint_position;
+using industrial::joint_data;
 
 
 namespace motoman
@@ -69,11 +69,11 @@ PVarQ::~PVarQ(void)
 }
 
 
-void PVarQ::init(industrial::joint_position::JointPosition & point, double velocity_percent)
+void PVarQ::init(industrial::joint_data::JointData & point, double velocity_percent)
 {
   // Reseting the position buffer.  This should make it eaiser to catch any bugs on the
   // motoman side.
-  industrial::joint_position::JointPosition empty;
+  industrial::joint_data::JointData empty;
   for(int i = 0; i < this->posVarQueueSize(); i++)
   {
     this->setPosition(i, empty, 0);
@@ -87,7 +87,7 @@ void PVarQ::init(industrial::joint_position::JointPosition & point, double veloc
   motoman::mp_wrapper::setInteger(MIN_BUF_START_POINTER_, PT_LOOK_AHEAD_);
 }
 
-void PVarQ::addPoint(industrial::joint_position::JointPosition & joints, double velocity_percent)
+void PVarQ::addPoint(industrial::joint_data::JointData & joints, double velocity_percent)
 {
 
   // Wait until buffer is not full
@@ -171,13 +171,13 @@ void PVarQ::incBufferIndex()
 }
 
 
-void PVarQ::setNextPosition(industrial::joint_position::JointPosition & point, double velocity_percent)
+void PVarQ::setNextPosition(industrial::joint_data::JointData & point, double velocity_percent)
 {
   setPosition(this->getNextBufferPosIndex(), point, velocity_percent); 
 }
 
 
-void PVarQ::setPosition(int index, industrial::joint_position::JointPosition & point, 
+void PVarQ::setPosition(int index, industrial::joint_data::JointData & point, 
     double velocity_percent)
 {
   const double VELOCITY_CONVERSION = 100.0;

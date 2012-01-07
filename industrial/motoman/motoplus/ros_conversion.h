@@ -32,7 +32,7 @@
 #ifndef ROS_CONVERSION_H
 #define ROS_CONVERSION_H
 
-#include "joint_position.h"
+#include "joint_data.h"
 #include "motoPlus.h"
 
 namespace motoman
@@ -82,25 +82,25 @@ enum RosJointIndex
 }
 typedef RosJointIndexes::RosJointIndex RosJointIndex;
 
-//TODO: Standardize function calls such that JointPositions are always in ROS
+//TODO: Standardize function calls such that JointDatas are always in ROS
 //      order and MP types are always in motoman order.  The order of the
-//      JointPosition type can change within a function, but when a variable
+//      JointData type can change within a function, but when a variable
 //      of that type enters or leaves a function is should always be in ROS
 //      order.  Move the appropriate function prototypes below to the src
 //      file in order to hide the ordering details (essentially make them private)
 float toPulses(float radians, MotomanJointIndex joint);
 float toRadians(float pulses, MotomanJointIndex joint);
 
-void toRosJointOrder(industrial::joint_position::JointPosition & joints);
-void toMotomanJointOrder(industrial::joint_position::JointPosition & joints);
+void toRosJointOrder(industrial::joint_data::JointData & joints);
+void toMotomanJointOrder(industrial::joint_data::JointData & joints);
 
-void getMotomanFbPos(industrial::joint_position::JointPosition & pos);
-void getRosFbPos(industrial::joint_position::JointPosition & pos);
+void getMotomanFbPos(industrial::joint_data::JointData & pos);
+void getRosFbPos(industrial::joint_data::JointData & pos);
 
-void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, 
-    industrial::joint_position::JointPosition & dest);
+void toJointData(MP_FB_PULSE_POS_RSP_DATA & src, 
+    industrial::joint_data::JointData & dest);
     
-void toMpPosVarData(USHORT posVarIndex, industrial::joint_position::JointPosition & src, 
+void toMpPosVarData(USHORT posVarIndex, industrial::joint_data::JointData & src, 
     MP_POSVAR_DATA & dest);
     
     

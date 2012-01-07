@@ -35,7 +35,7 @@
 
 
 using namespace industrial::joint_message;
-using namespace industrial::joint_position;
+using namespace industrial::joint_data;
 using namespace industrial::simple_message;
 
 namespace motoman
@@ -88,7 +88,7 @@ bool JointMotionHandler::internalCB(industrial::simple_message::SimpleMessage & 
 
     // Send response if requested
     if (CommTypes::SERVICE_REQUEST == in.getCommType())
-        if (jMsg.toReply(reply))
+        if (jMsg.toReply(reply, ReplyTypes::SUCCESS))
         {
             if(this->getConnection()->sendMsg(reply))
             {
@@ -120,7 +120,7 @@ Nth point - add point (increment buffer index)
 end of trajectory - wait until buffer size = 0, disable motion, stop job, reset buffer indicies
 motion stop - disable motion, stop job
 */
-  JointPosition joints;
+  JointData joints;
   
    switch (jMsg.getSequence())
     {

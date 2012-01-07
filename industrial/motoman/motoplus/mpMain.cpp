@@ -45,7 +45,7 @@
 
 #include "udp_server.h"
 #include "ros_conversion.h"
-#include "joint_position.h"
+#include "joint_data.h"
 #include "joint_message.h"
 #include "simple_message.h"
 
@@ -132,13 +132,13 @@ void stateServer(void)
     using namespace industrial::udp_server;
     using namespace industrial::tcp_server;
     using namespace industrial::joint_message;
-    using namespace industrial::joint_position;
+    using namespace industrial::joint_data;
     using namespace industrial::simple_message;
     using namespace motoman::ros_conversion;
     
     // Using TPC server for debugging (this should really be UDP)
     TcpServer connection;
-    JointPosition rosJoints;
+    JointData rosJoints;
     JointMessage msg;
     SimpleMessage simpMsg;
     
@@ -169,6 +169,7 @@ void stateServer(void)
 
 void ioServer(void)
 {
+/*
 
     using namespace industrial::simple_socket;
     using namespace industrial::tcp_server;
@@ -188,6 +189,7 @@ void ioServer(void)
     iHandler.init(StandardMsgTypes::WRITE_OUTPUT, &connection);
     manager.add(&iHandler);
     manager.spin();
+ */
 
     
 }

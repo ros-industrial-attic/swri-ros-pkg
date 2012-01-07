@@ -32,17 +32,26 @@
 #ifndef JOINT_MESSAGE_H
 #define JOINT_MESSAGE_H
 
+#ifdef ROS
 #include "simple_message/typed_message.h"
 #include "simple_message/simple_message.h"
 #include "simple_message/shared_types.h"
 #include "simple_message/joint_data.h"
+#endif
+
+#ifdef MOTOPLUS
+#include "typed_message.h"
+#include "simple_message.h"
+#include "shared_types.h"
+#include "joint_data.h"
+#endif
 
 namespace industrial
 {
 namespace joint_message
 {
 
-// TODO: The JointPosition is currently overloaded (i.e. a single message means multiple
+// TODO: The JointMessage is currently overloaded (i.e. a single message means multiple
 // things).  This is not ideal and seperate messages should be considered.
 /**
  * \brief Enumeration of special sequence values that signal the end of trajectory

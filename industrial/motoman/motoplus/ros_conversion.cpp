@@ -35,7 +35,7 @@
  // method of supporting multiple robots.
  #define SIA_10D
 
-using namespace industrial::joint_position;
+using namespace industrial::joint_data;
 
 namespace motoman
 {
@@ -151,10 +151,10 @@ float toRadians(float pulses, MotomanJointIndex joint)
 }
 
 
-void toRosJointOrder(JointPosition & joints)
+void toRosJointOrder(JointData & joints)
 {
     LOG_DEBUG("Swapping to ROS joint order");
-    JointPosition swap;
+    JointData swap;
     swap.setJoint(RosJointIndexes::S, joints.getJoint(MotomanJointIndexes::S));
     swap.setJoint(RosJointIndexes::L, joints.getJoint(MotomanJointIndexes::L));
     swap.setJoint(RosJointIndexes::U, joints.getJoint(MotomanJointIndexes::U));
@@ -165,10 +165,10 @@ void toRosJointOrder(JointPosition & joints)
     joints.copyFrom(swap);
 }
 
-void toMotomanJointOrder(JointPosition & joints)
+void toMotomanJointOrder(JointData & joints)
 {
     LOG_DEBUG("Swapping to motoman joint order");
-    JointPosition swap;
+    JointData swap;
     swap.setJoint(MotomanJointIndexes::S, joints.getJoint(RosJointIndexes::S));
     swap.setJoint(MotomanJointIndexes::L, joints.getJoint(RosJointIndexes::L));
     swap.setJoint(MotomanJointIndexes::U, joints.getJoint(RosJointIndexes::U));
@@ -179,7 +179,7 @@ void toMotomanJointOrder(JointPosition & joints)
     joints.copyFrom(swap);
 }
 
-void getMotomanFbPos(JointPosition & pos)
+void getMotomanFbPos(JointData & pos)
 {
     LONG getPulseRtn = 0;
     
@@ -194,7 +194,7 @@ void getMotomanFbPos(JointPosition & pos)
     
     if (0 == getPulseRtn)
     {
-        toJointPosition(rData, pos);
+        toJointData(rData, pos);
     }
     else
     {
@@ -203,13 +203,13 @@ void getMotomanFbPos(JointPosition & pos)
 }
 
 
-void getRosFbPos(JointPosition & pos)
+void getRosFbPos(JointData & pos)
 {
     getMotomanFbPos(pos);
     toRosJointOrder(pos);
 }
 
-void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, JointPosition & dest)
+void toJointData(MP_FB_PULSE_POS_RSP_DATA & src, JointData & dest)
 {    
 
     int minJointSize = 0;
@@ -239,7 +239,7 @@ void toJointPosition(MP_FB_PULSE_POS_RSP_DATA & src, JointPosition & dest)
     
 }
 
-void toMpPosVarData(USHORT posVarIndex, JointPosition & src, MP_POSVAR_DATA & dest)
+void toMpPosVarData(USHORT posVarIndex, JointData & src, MP_POSVAR_DATA & dest)
 {
   const int MOTOMAN_AXIS_SIZE = 8;
   LONG pulse_coords[MOTOMAN_AXIS_SIZE];
