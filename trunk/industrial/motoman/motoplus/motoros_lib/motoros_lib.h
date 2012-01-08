@@ -38,48 +38,29 @@ namespace motoman
 namespace motoros_lib
 {
 
-/**
- * \brief Enumeration of Motoman robot types (models).  Initially these are
- * being used to initialize joint rads->count conversion factors.
- */
-namespace MotomanRobotModels
-{
-enum MotomanRobotModel
-{
-  SIA_10D
-};
-}
-typedef MotomanRobotModels::MotomanRobotModel MotomanRobotModel;
 
-//TODO: Add additional function prototypes
+//#define DEFAULT_MAIN_MACRO(model) \
+//\
+//int motion_server_task_ID; \
+//int system_server_task_ID; \
+//int state_server_task_ID; \
+//int io_server_task_ID; \
+//extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)  \
+//{  \
+//  motoman::ros_conversion::initJointConversion( model ); \
+//  motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionServer, \
+//						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
+//  //system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer, \
+//	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
+//  state_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)stateServer, \
+//						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
+//  //io_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)ioServer, \
+//	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
+//  mpExitUsrRoot; //Ends the initialization task. \
+//} \
 
-extern void initJointConversion(MotomanRobotModel model_number);
-extern void motionServer();
-extern void systemServer();
-extern void stateServer();
-extern void ioServer();
 
 } //motoros_lib
 } //motoman
-
-#define DEFAULT_MAIN_MACRO(model) \
-\
-int motion_server_task_ID; \
-int system_server_task_ID; \
-int state_server_task_ID; \
-int io_server_task_ID; \
-extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)  \
-{  \
-  motoman::ros_conversion::initJointConversion( model ); \
-  motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionServer, \
-						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
-  //system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer, \
-	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
-  state_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)stateServer, \
-						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
-  //io_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)ioServer, \
-	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
-  mpExitUsrRoot; //Ends the initialization task. \
-} \
 
 #endif MOTOROS_LIB_H

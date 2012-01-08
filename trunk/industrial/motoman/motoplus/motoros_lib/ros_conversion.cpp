@@ -30,7 +30,6 @@
  */
  
  #include "ros_conversion.h"
- #include "mp_default_main.h"
  #include "log_wrapper.h"
 
 using namespace industrial::joint_data;
@@ -42,37 +41,74 @@ namespace ros_conversion
 {
 
 
+// Pulse to radian conversion factors (initialized on startup)
+float S_PULSE_TO_RAD	= 0;	    // pulses/rad
+float L_PULSE_TO_RAD	= 0;	    // pulses/rad
+float U_PULSE_TO_RAD	= 0;	    // pulses/rad
+float R_PULSE_TO_RAD    = 0;	    // pulses/rad
+float B_PULSE_TO_RAD	= 0;     	// pulses/rad
+float T_PULSE_TO_RAD	= 0;	    // pulses/rad
+float E_PULSE_TO_RAD	= 0;	    // pulses/rad
+
+
+
+
+void initJointConversion(MotomanRobotModel model_number)
+{
+    
+    LOG_INFO("Initializing joint conversion factors for: ");
+    switch (model_number)
+    {
+    case MotomanRobotModels::SIA_10D:
+        LOG_INFO("SIA_10D: %d", model_number);
+        S_PULSE_TO_RAD	= 58670.87822;	    
+        L_PULSE_TO_RAD	= 58670.87822;	 
+        U_PULSE_TO_RAD	= 65841.76588;	    
+        R_PULSE_TO_RAD  = 65841.76588;	  
+        B_PULSE_TO_RAD	= 65841.76588;    
+        T_PULSE_TO_RAD	= 33246.8329;	  
+        E_PULSE_TO_RAD	= 65841.76588;	
+        break;
+    
+    default:
+        LOG_ERROR("Failed to initialize conversion factors for model: %d", model_number);
+        break;
+    }
+}
+
+
+
 float toPulses(float radians, MotomanJointIndex joint)
 {
     float rtn = 0.0;
     switch (joint)
     {
       case MotomanJointIndexes::S:
-         rtn = radians * motoman::mp_default_main::S_PULSE_TO_RAD;
+         rtn = radians * S_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::L:
-         rtn = radians * motoman::mp_default_main::L_PULSE_TO_RAD;
+         rtn = radians * L_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::U:
-         rtn = radians * motoman::mp_default_main::U_PULSE_TO_RAD;
+         rtn = radians * U_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::R:
-         rtn = radians * motoman::mp_default_main::R_PULSE_TO_RAD;
+         rtn = radians * R_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::B:
-         rtn = radians * motoman::mp_default_main::B_PULSE_TO_RAD;
+         rtn = radians * B_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::T:
-         rtn = radians * motoman::mp_default_main::T_PULSE_TO_RAD;
+         rtn = radians * T_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::E:
-         rtn = radians * motoman::mp_default_main::E_PULSE_TO_RAD;
+         rtn = radians * E_PULSE_TO_RAD;
          break;
          
       default:
@@ -87,31 +123,31 @@ float toRadians(float pulses, MotomanJointIndex joint)
     switch (joint)
     {
       case MotomanJointIndexes::S:
-         rtn = pulses / motoman::mp_default_main::S_PULSE_TO_RAD;
+         rtn = pulses / S_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::L:
-         rtn = pulses / motoman::mp_default_main::L_PULSE_TO_RAD;
+         rtn = pulses / L_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::U:
-         rtn = pulses / motoman::mp_default_main::U_PULSE_TO_RAD;
+         rtn = pulses / U_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::R:
-         rtn = pulses / motoman::mp_default_main::R_PULSE_TO_RAD;
+         rtn = pulses / R_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::B:
-         rtn = pulses / motoman::mp_default_main::B_PULSE_TO_RAD;
+         rtn = pulses / B_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::T:
-         rtn = pulses / motoman::mp_default_main::T_PULSE_TO_RAD;
+         rtn = pulses / T_PULSE_TO_RAD;
          break;
          
       case MotomanJointIndexes::E:
-         rtn = pulses / motoman::mp_default_main::E_PULSE_TO_RAD;
+         rtn = pulses / E_PULSE_TO_RAD;
          break;
          
       default:
