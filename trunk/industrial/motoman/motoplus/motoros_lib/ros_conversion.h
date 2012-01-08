@@ -83,17 +83,6 @@ enum RosJointIndex
 }
 typedef RosJointIndexes::RosJointIndex RosJointIndex;
 
-
-/**
- * \brief Initializes joint rads->enocder count conversion factors
- * This function must be manually called from within mpUsrRoot.
- * Failure to call this function results in conversion factors of
- * zero.
- *
- * \param robot model (@see MotomanRobotModels)
- */
-void initJointConversion(motoman::motoros_lib::MotomanRobotModel model_number);
-
 //TODO: Standardize function calls such that JointDatas are always in ROS
 //      order and MP types are always in motoman order.  The order of the
 //      JointData type can change within a function, but when a variable

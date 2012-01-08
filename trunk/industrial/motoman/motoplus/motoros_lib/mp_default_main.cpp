@@ -53,6 +53,44 @@ namespace mp_default_main
 #include "joint_message.h"
 #include "simple_message.h"
 
+
+// Pulse to radian conversion factors (initialized on startup)
+float S_PULSE_TO_RAD	= 0;	    // pulses/rad
+float L_PULSE_TO_RAD	= 0;	    // pulses/rad
+float U_PULSE_TO_RAD	= 0;	    // pulses/rad
+float R_PULSE_TO_RAD    = 0;	    // pulses/rad
+float B_PULSE_TO_RAD	= 0;     	// pulses/rad
+float T_PULSE_TO_RAD	= 0;	    // pulses/rad
+float E_PULSE_TO_RAD	= 0;	    // pulses/rad
+
+
+
+
+void initJointConversion(MotomanRobotModel model_number)
+{
+    
+    LOG_INFO("Initializing joint conversion factors for: ");
+    switch (model_number)
+    {
+    case MotomanRobotModels::SIA_10D:
+        LOG_INFO("SIA_10D: %d", model_number);
+        S_PULSE_TO_RAD	= 58670.87822;	    
+        L_PULSE_TO_RAD	= 58670.87822;	 
+        U_PULSE_TO_RAD	= 65841.76588;	    
+        R_PULSE_TO_RAD  = 65841.76588;	  
+        B_PULSE_TO_RAD	= 65841.76588;    
+        T_PULSE_TO_RAD	= 33246.8329;	  
+        E_PULSE_TO_RAD	= 65841.76588;	
+        break;
+    
+    default:
+        LOG_ERROR("Failed to initialize conversion factors for model: %d", model_number);
+        break;
+    }
+}
+
+
+
 void motionServer(void)
 // Persistent UDP server that receives motion messages from Motoros node (ROS interface) and relays to parseMotionMessage
 {
