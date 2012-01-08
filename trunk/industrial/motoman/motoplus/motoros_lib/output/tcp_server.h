@@ -29,38 +29,72 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef TCP_SERVER_H
+#define TCP_SERVER_H
 
-#ifndef MOTOROS_LIB_H
-#define MOTOROS_LIB_H
+#ifdef ROS
+#include "simple_message/socket/tcp_socket.h"
+#endif
 
-namespace motoman
+#ifdef MOTOPLUS
+#include "tcp_socket.h"
+#endif
+
+namespace industrial
 {
-namespace motoros_lib
+namespace tcp_server
 {
 
+/**
+ * \brief Defines TCP server functions.
+ */
+class TcpServer : public industrial::tcp_socket::TcpSocket
+{
+public:
 
-//#define DEFAULT_MAIN_MACRO(model) \
-//\
-//int motion_server_task_ID; \
-//int system_server_task_ID; \
-//int state_server_task_ID; \
-//int io_server_task_ID; \
-//extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)  \
-//{  \
-//  motoman::ros_conversion::initJointConversion( model ); \
-//  motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionServer, \
-//						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
-//  //system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer, \
-//	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
-//  state_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)stateServer, \
-//						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
-//  //io_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)ioServer, \
-//	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
-//  mpExitUsrRoot; //Ends the initialization task. \
-//} \
+  /**
+   * \brief Constructor
+   */
+  TcpServer();
 
+  /**
+   * \brief Destructor
+   */
+  ~TcpServer();
 
-} //motoros_lib
-} //motoman
+  /**
+   * \brief initializes TCP server socket.  The connect method must be called
+   * following initialization in order to communicate with the remote host.
+   *
+   * \param port_num port number (server & client port number must match)
+   *
+   * \return true on success, false otherwise (socket is invalid)
+   */
+  bool init(int port_num);
 
-#endif MOTOROS_LIB_H
+  // Overrides
+  bool makeConnect();
+
+protected:
+  /**
+   * \brief server handle.  Every time a connection is made, the class generates
+   * a new handle for sending/receiving.  The server handle is saved off to a
+   * separate variable so that recoving a lost connection is possible.
+   */
+  int srvr_handle_;
+
+  int getSrvrHandle() const
+  {
+    return srvr_handle_;
+  }
+
+  void setSrvrHandle(int srvr_handle_)
+  {
+    this->srvr_handle_ = srvr_handle_;
+  }
+};
+
+} //simple_socket
+} //industrial
+
+#endif /* TCP_SERVER_H */
