@@ -43,39 +43,6 @@ namespace motoman
 namespace mp_default_main
 {
 
-// Pulse to radian conversion factors (initialized on startup, variables stored
-// in mp_default_main.cpp)
-extern float S_PULSE_TO_RAD;	    // pulses/rad
-extern float L_PULSE_TO_RAD;	    // pulses/rad
-extern float U_PULSE_TO_RAD;	    // pulses/rad
-extern float R_PULSE_TO_RAD;	    // pulses/rad
-extern float B_PULSE_TO_RAD;     	// pulses/rad
-extern float T_PULSE_TO_RAD;	    // pulses/rad
-extern float E_PULSE_TO_RAD;	    // pulses/rad
-
-/**
- * \brief Enumeration of Motoman robot types (models).  Initially these are
- * being used to initialize joint rads->count conversion factors.
- */
-namespace MotomanRobotModels
-{
-enum MotomanRobotModel
-{
-  SIA_10D
-};
-}
-typedef MotomanRobotModels::MotomanRobotModel MotomanRobotModel;
-
-/**
- * \brief Initializes joint rads->enocder count conversion factors
- * This function must be manually called from within mpUsrRoot.
- * Failure to call this function results in conversion factors of
- * zero.
- *
- * \param robot model (@see MotomanRobotModels)
- */
-void initJointConversion(MotomanRobotModel model_number);
-
 void motionServer();
 void systemServer();
 void stateServer();

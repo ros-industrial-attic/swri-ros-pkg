@@ -33,7 +33,6 @@
 #define ROS_CONVERSION_H
 
 #include "joint_data.h"
-#include "motoros_lib.h"
 #include "motoPlus.h"
 
 namespace motoman
@@ -82,6 +81,30 @@ enum RosJointIndex
 };
 }
 typedef RosJointIndexes::RosJointIndex RosJointIndex;
+
+
+/**
+ * \brief Enumeration of Motoman robot types (models).  Initially these are
+ * being used to initialize joint rads->count conversion factors.
+ */
+namespace MotomanRobotModels
+{
+enum MotomanRobotModel
+{
+  SIA_10D
+};
+}
+typedef MotomanRobotModels::MotomanRobotModel MotomanRobotModel;
+
+/**
+ * \brief Initializes joint rads->enocder count conversion factors
+ * This function must be manually called from within mpUsrRoot.
+ * Failure to call this function results in conversion factors of
+ * zero.
+ *
+ * \param robot model (@see MotomanRobotModels)
+ */
+void initJointConversion(MotomanRobotModel model_number);
 
 //TODO: Standardize function calls such that JointDatas are always in ROS
 //      order and MP types are always in motoman order.  The order of the
