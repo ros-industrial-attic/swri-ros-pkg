@@ -2,6 +2,7 @@
 <MotoPlusProject>
   <ProjectName>motoros_lib</ProjectName>
   <FilesInProject>
+    <FileForProject>motoros_lib.h</FileForProject>
     <FileForProject>byte_array.cpp</FileForProject>
     <FileForProject>byte_array.h</FileForProject>
     <FileForProject>comms_fault_handler.h</FileForProject>
@@ -51,8 +52,10 @@
     <FileForProject>udp_server.h</FileForProject>
     <FileForProject>udp_socket.cpp</FileForProject>
     <FileForProject>udp_socket.h</FileForProject>
+    <FileForProject>mp_default_main.cpp</FileForProject>
+    <FileForProject>mp_default_main.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>joint_motion_handler.h</LastFileOpened>
+  <LastFileOpened>motoros_lib.h</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Library</ProjectType>
   <Debug>
