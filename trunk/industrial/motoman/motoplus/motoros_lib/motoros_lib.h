@@ -29,10 +29,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros_conversion.h"
 
 #ifndef MOTOROS_LIB_H
 #define MOTOROS_LIB_H
+
+namespace motoman
+{
+namespace motoros_lib
+{
+
+/**
+ * \brief Enumeration of Motoman robot types (models).  Initially these are
+ * being used to initialize joint rads->count conversion factors.
+ */
+namespace MotomanRobotModels
+{
+enum MotomanRobotModel
+{
+  SIA_10D
+};
+}
+typedef MotomanRobotModels::MotomanRobotModel MotomanRobotModel;
+
+//TODO: Add additional function prototypes
+
+extern void initJointConversion(MotomanRobotModel model_number);
+extern void motionServer();
+extern void systemServer();
+extern void stateServer();
+extern void ioServer();
+
+} //motoros_lib
+} //motoman
 
 #define DEFAULT_MAIN_MACRO(model) \
 \
@@ -53,12 +81,5 @@ extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int 
 	//					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); \
   mpExitUsrRoot; //Ends the initialization task. \
 } \
-
-//TODO: Add additional function prototypes
-
-extern void motionServer();
-extern void systemServer();
-extern void stateServer();
-extern void ioServer();
 
 #endif MOTOROS_LIB_H

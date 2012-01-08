@@ -33,6 +33,7 @@
  #include "log_wrapper.h"
 
 using namespace industrial::joint_data;
+using namespace motoman::motoros_lib;
 
 namespace motoman
 {
