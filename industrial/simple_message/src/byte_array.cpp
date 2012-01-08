@@ -41,13 +41,12 @@
 #include "log_wrapper.h"
 #endif
 
-
 #include "string.h"
 
-//namespace industrial
-//{
-//namespace byte_array
-//{
+namespace industrial
+{
+namespace byte_array
+{
 
 using namespace industrial::simple_serialize;
 using namespace industrial::shared_types;
@@ -397,5 +396,5 @@ char* ByteArray::getUnloadPtr(shared_int byteSize)
   return rtn;
 }
 
-//} // namespace byte_array
-//} // namespace industrial
+} // namespace byte_array
+} // namespace industrial

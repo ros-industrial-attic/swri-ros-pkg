@@ -132,17 +132,14 @@ public:
    *
    * \param message sequence number
    */
-  void setSequence(industrial::shared_types::shared_int sequence_)
-  {
-    this->sequence_ = sequence_;
-  }
+  void setSequence(industrial::shared_types::shared_int sequence);
 
   /**
    * \brief returns the maximum message sequence number
    *
    * \return message sequence number
    */
-  industrial::shared_types::shared_int getSequence() const
+  industrial::shared_types::shared_int getSequence()
   {
     return sequence_;
   }
@@ -160,6 +157,7 @@ public:
   // Overrides - SimpleSerialize
   bool load(industrial::byte_array::ByteArray *buffer);
   bool unload(industrial::byte_array::ByteArray *buffer);
+
 
   unsigned int byteLength()
   {

@@ -90,6 +90,11 @@ bool JointMessage::init(industrial::simple_message::SimpleMessage & msg)
   return rtn;
 }
 
+void JointMessage::setSequence(shared_int sequence)
+{
+  this->sequence_ = sequence;
+}
+
 void JointMessage::init(shared_int seq, JointData& joints)
 {
   this->setSequence(seq);
