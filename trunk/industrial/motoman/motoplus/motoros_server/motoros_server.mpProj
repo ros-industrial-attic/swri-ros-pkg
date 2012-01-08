@@ -2,11 +2,11 @@
 <MotoPlusProject>
   <ProjectName>motoros_server</ProjectName>
   <FilesInProject>
-    <FileForProject>mpMain.cpp</FileForProject>
-    <FileForProject>motoros_lib.mpLib</FileForProject>
     <FileForProject>motoros_lib.h</FileForProject>
+    <FileForProject>motoros_lib.mpLib</FileForProject>
+    <FileForProject>mpMain.cpp</FileForProject>
   </FilesInProject>
-  <LastFileOpened>mpMain.cpp</LastFileOpened>
+  <LastFileOpened>motoros_lib.h</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
