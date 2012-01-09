@@ -1,0 +1,20 @@
+<package>
+  <description brief="adept_common">
+
+     adept_common
+
+  </description>
+  <author>root</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/adept_common</url>
+  <depend package="urdf_tutorial"/>
+  <depend package="urdf"/>
+  <depend package="sensor_msgs"/>
+  <depend package="arm_navigation_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="rospy"/>
+
+</package>
+
+
