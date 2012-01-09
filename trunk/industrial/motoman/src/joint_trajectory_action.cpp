@@ -37,7 +37,7 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <control_msgs/FollowJointTrajectoryFeedback.h>
 
-const double DEFAULT_GOAL_THRESHOLD = 0.1;
+const double DEFAULT_GOAL_THRESHOLD = 0.01;
 
 class JointTrajectoryExecuter
 {
