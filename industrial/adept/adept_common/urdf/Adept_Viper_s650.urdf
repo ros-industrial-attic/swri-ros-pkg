@@ -1,5 +1,4 @@
 <robot name="ADEPT_VIPER_S650">
-
 	<link name="Adept_Viper_s650_Link1">
 		<visual>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -120,6 +119,27 @@
 			</material>
 		</collision>
 	</link>
+	
+	<link name="Adept_Viper_650_Interface_Plate">
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="package://adept_common/meshes/visual/STL/binary/Adept_Viper_650_Interface_Plate.stl"/>
+			</geometry>
+			<material name="Gray">
+				<color rgba="100 100 100 1.0"/>
+			</material>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="package://adept_common/meshes/collision/STL/binary/Adept_Viper_650_Interface_Plate.stl"/>
+			</geometry>
+			<material name="Gray">
+				<color rgba="100 100 100 1.0"/>
+			</material>
+		</collision>
+	</link>
 	<joint name="joint_1" type="revolute">
 		<origin xyz="0 0 0.203"/>
 		<parent link="Adept_Viper_s650_Link1"/>
@@ -155,4 +175,11 @@
 		<axis xyz="0 1 0"/>
 		<limit effort="100" velocity="1.0" lower="-2.0944" upper="2.0944"/>
 	</joint>	
+	<joint name="joint_6" type="revolute">
+		<origin xyz="0.08 0 0"/>
+		<parent link="Adept_Viper_s650_Link6"/>
+		<child link="Adept_Viper_650_Interface_Plate"/>
+		<axis xyz="1 0 0"/>
+		<limit effort="100" velocity="1.0" lower="-3.1416" upper="3.1416"/>
+	</joint>
 </robot>
