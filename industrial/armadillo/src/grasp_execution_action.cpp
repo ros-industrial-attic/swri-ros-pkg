@@ -65,7 +65,30 @@ public:
     robot_ = robot;
     robot_->makeConnect();
     action_server_.start();
+    
     ROS_INFO("Grasp execution action node started");
+
+    /*
+    //A little bit of debug
+    GripperMessage gMsg;
+    SimpleMessage request;
+    SimpleMessage reply;
+
+    gMsg.init(GripperOperationTypes::INIT);
+    gMsg.toRequest(request);
+    this->robot_->sendAndReceiveMsg(request, reply);
+    ROS_INFO("Gripper initialized");
+
+    gMsg.init(GripperOperationTypes::CLOSE);
+    gMsg.toRequest(request);
+    this->robot_->sendAndReceiveMsg(request, reply);
+    ROS_INFO("Gripper closed");
+
+    gMsg.init(GripperOperationTypes::OPEN);
+    gMsg.toRequest(request);
+    this->robot_->sendAndReceiveMsg(request, reply);
+    ROS_INFO("Gripper opened");
+    */
   }
 
   ~GraspExecutionAction()
@@ -82,6 +105,13 @@ private:
     SimpleMessage reply;
 
     ROS_DEBUG("Received grasping goal");
+
+    while (!(robot_->isConnected()))
+    {
+      ROS_DEBUG("Reconnecting");
+      robot_->makeConnect();
+    }
+      
 
     switch(gh.getGoal()->goal)
     {
@@ -148,7 +178,7 @@ int main(int argc, char** argv)
   ros::NodeHandle node;
   industrial::tcp_client::TcpClient robot;
 
-  robot.init("192.168.10.3", industrial::simple_socket::StandardSocketPorts::MOTION);
+  robot.init("192.168.10.3", industrial::simple_socket::StandardSocketPorts::IO);
   GraspExecutionAction ge(node, &robot);
 
   ros::spin();
