@@ -1,0 +1,27 @@
+hand_description:
+  right_arm:
+    hand_frame: link_t
+    robot_frame: base_link
+    attached_objects_name: attached
+    attach_link: palm
+    hand_group_name: r_end_effector
+    arm_group_name: right_arm
+    hand_database_name: ROBOTIQ
+    hand_joints: []
+    hand_touch_links: [palm,finger_1,finger_2,finger_3]
+    hand_fingertip_links: []
+    hand_approach_direction: [1.0,0.0,0.0]
+    arm_joints: [joint_s,joint_l,joint_e,joint_u,joint_r,joint_b,joint_t]
+  left_arm:
+    hand_frame: link_t
+    robot_frame: base_link
+    attached_objects_name: attached
+    attach_link: palm
+    hand_group_name: l_end_effector
+    arm_group_name: left_arm
+    hand_database_name: ROBOTIQ
+    hand_joints: []
+    hand_touch_links: [palm,finger_1,finger_2,finger_3]
+    hand_fingertip_links: []
+    hand_approach_direction: [1.0,0.0,0.0]
+    arm_joints: [joint_s,joint_l,joint_e,joint_u,joint_r,joint_b,joint_t]
