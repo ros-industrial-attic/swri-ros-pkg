@@ -11,6 +11,10 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rosbuild_init()
 
+# The definition is copied from the CMakeList for the simple_message package.
+# TODO: Figure out how to export this definition from simple_message
+add_definitions(-DROS=1)  #build using ROS libraries
+
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
@@ -28,3 +32,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
+
+rosbuild_add_executable(robot_state 
+						src/robot_state.cpp
+						src/joint_relay_handler.cpp)
+rosbuild_add_executable(motion_interface
+						src/motion_interface.cpp
+						src/joint_trajectory_handler.cpp)

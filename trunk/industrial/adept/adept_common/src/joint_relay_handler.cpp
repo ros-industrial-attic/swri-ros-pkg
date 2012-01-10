@@ -29,7 +29,7 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-#include "joint_relay_handler.h"
+#include "adept/joint_relay_handler.h"
 #include "simple_message/messages/joint_message.h"
 #include "simple_message/log_wrapper.h"
 
@@ -38,7 +38,7 @@ using namespace industrial::joint_message;
 using namespace industrial::simple_message;
 using namespace industrial::shared_types;
 
-namespace motoman
+namespace adept
 {
 namespace joint_relay_handler
 {
@@ -56,13 +56,12 @@ JointRelayHandler::JointRelayHandler(ros::NodeHandle &n) :
   // Set up the default joint names (TODO: This should be made more generic.  The
   // joint names can have an arbitrary prefix that isn't accounted for here.  This
   // info can be found in the URDF, but I don't know how to get it here.
-  this->joint_control_state_.joint_names.push_back("joint_s");
-  this->joint_control_state_.joint_names.push_back("joint_l");
-  this->joint_control_state_.joint_names.push_back("joint_e");
-  this->joint_control_state_.joint_names.push_back("joint_u");
-  this->joint_control_state_.joint_names.push_back("joint_r");
-  this->joint_control_state_.joint_names.push_back("joint_b");
-  this->joint_control_state_.joint_names.push_back("joint_t");
+  this->joint_control_state_.joint_names.push_back("joint_1");
+  this->joint_control_state_.joint_names.push_back("joint_2");
+  this->joint_control_state_.joint_names.push_back("joint_3");
+  this->joint_control_state_.joint_names.push_back("joint_4");
+  this->joint_control_state_.joint_names.push_back("joint_5");
+  this->joint_control_state_.joint_names.push_back("joint_6");
   // TODO: Again, this should be more generic.
   this->joint_control_state_.actual.set_positions_size(NUM_OF_JOINTS_);
   this->joint_control_state_.desired.set_positions_size(NUM_OF_JOINTS_);

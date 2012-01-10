@@ -41,7 +41,7 @@
 #include <sensor_msgs/JointState.h>
 
 
-namespace motoman
+namespace adept
 {
 namespace joint_relay_handler
 {
@@ -99,7 +99,7 @@ private:
   ros::Publisher pub_joint_sensor_state_;
   ros::NodeHandle node_;
 
-  static const int NUM_OF_JOINTS_ = 7;
+  static const int NUM_OF_JOINTS_ = 6;
 
  /**
   * \brief Callback executed upon receiving a ping message

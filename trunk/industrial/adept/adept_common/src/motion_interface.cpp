@@ -29,7 +29,7 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-#include "joint_trajectory_handler.h"
+#include "adept/joint_trajectory_handler.h"
 #include "simple_message/socket/simple_socket.h"
 #include "simple_message/socket/tcp_client.h"
 
