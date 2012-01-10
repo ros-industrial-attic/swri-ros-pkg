@@ -85,7 +85,7 @@ public:
 *
 * \return true on success, false otherwise (invalid name or trajectory)
 */
-bool init(char* name, industrial::joint_traj::JointTraj joint_traj);
+bool init(const char* name, industrial::joint_traj::JointTraj joint_traj);
 
 /**
 * \brief Generates a job string that can be written to a file
@@ -96,6 +96,13 @@ bool init(char* name, industrial::joint_traj::JointTraj joint_traj);
 * \return true on success, otherwise false
 */
 bool toJobString(char* str_buffer, size_t buffer_size);
+
+/**
+* \brief Returns job name
+*
+* \returns job name (string is empty if it has not been initialized)
+*/
+char* getName() { return & this->name_[0];};
 
 
 

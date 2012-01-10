@@ -47,6 +47,7 @@
 using namespace industrial::shared_types;
 using namespace industrial::joint_traj;
 using namespace industrial::joint_traj_pt;
+using namespace industrial::joint_data;
 
 namespace motoman
 {
@@ -103,7 +104,7 @@ TrajectoryJob::~TrajectoryJob(void)
 {
 }
 
-bool TrajectoryJob::init(char* name, JointTraj joint_traj)
+bool TrajectoryJob::init(const char* name, JointTraj joint_traj)
 {
   bool rtn = false;
   if( strlen(name) <= this->NAME_BUFFER_SIZE_ )
@@ -127,12 +128,68 @@ bool TrajectoryJob::toJobString(char* str_buffer, size_t buffer_size)
   bool rtn = false;
   if (0 < buffer_size)
   {
+
+    // Header begin
+    // ----------------------------------------------------------------------------
     strcpy(str_buffer, "");
     APPEND_LINE(str_buffer, buffer_size, "/JOB");
-    SAFE_STRCAT(str_buffer, buffer_size, "//NAME ");
-    SAFE_STRCAT(str_buffer, buffer_size, &(this->name_[0]));
-    APPEND_LINEFEED(str_buffer, buffer_size);
+
+    sprintf(this->line_buffer_, "//NAME %s", this->name_);
+    APPEND_LINE(str_buffer, buffer_size, this->line_buffer_);
+
     APPEND_LINE(str_buffer, buffer_size, "//POS");
+
+    sprintf(this->line_buffer_, "///NPOS %d,0,0,0,0,0", this->trajectory_.size());
+    APPEND_LINE(str_buffer, buffer_size, this->line_buffer_);
+
+    APPEND_LINE(str_buffer, buffer_size, "///TOOL 0");
+    APPEND_LINE(str_buffer, buffer_size, "///POSTYPE PULSE");
+    APPEND_LINE(str_buffer, buffer_size, "///PULSE");
+
+    // Point declaration and initialization
+    // ----------------------------------------------------------------------------
+    JointTrajPt pt;
+    JointData data;
+
+    for(int i = 0; i < this->trajectory_.size(); i++)
+    {
+      sprintf(this->line_buffer_, "C%05d=", i);
+      SAFE_STRCAT(str_buffer, buffer_size, this->line_buffer_);
+      this->trajectory_.getPoint(i, pt);
+      pt.getJointPosition(data);
+      for(int j = 0; j < data.getMaxNumJoints(); j++)
+      {
+        // Don't append comma to last position, instead line-feed.
+        if (j < (data.getMaxNumJoints() - 1))
+        {
+          sprintf(this->line_buffer_, "%d,", (int)data.getJoint(j));
+          SAFE_STRCAT(str_buffer, buffer_size, this->line_buffer_);
+        }
+        else
+        {
+          sprintf(this->line_buffer_, "%d", (int)data.getJoint(j));
+          APPEND_LINE(str_buffer, buffer_size, this->line_buffer_);
+        }
+      }
+    }
+
+    // Header end
+    // ----------------------------------------------------------------------------
+    APPEND_LINE(str_buffer, buffer_size, "//INST");
+    APPEND_LINE(str_buffer, buffer_size, "///DATE 1979/10/01 00:00");
+    APPEND_LINE(str_buffer, buffer_size, "///ATTR SC,RW");
+    APPEND_LINE(str_buffer, buffer_size, "///GROUP1 RB1");
+
+    // Program
+    APPEND_LINE(str_buffer, buffer_size, "NOP");
+    for(int i = 0; i < this->trajectory_.size(); i++)
+    {
+      this->trajectory_.getPoint(i, pt);
+      sprintf(this->line_buffer_, "MOVJ C%05d VJ=%.2f", i, pt.getVelocity());
+      APPEND_LINE(str_buffer, buffer_size, this->line_buffer_);
+    }
+    APPEND_LINE(str_buffer, buffer_size, "END");
+
     rtn = true;
   }
   else

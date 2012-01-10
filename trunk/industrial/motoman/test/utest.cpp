@@ -37,11 +37,14 @@
 
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <gtest/gtest.h>
 
 using namespace motoman::utils;
 using namespace motoman::trajectory_job;
 using namespace industrial::joint_traj;
+using namespace industrial::joint_traj_pt;
+using namespace industrial::joint_data;
 
 
 TEST(Utils, hasSuffix)
@@ -109,19 +112,47 @@ TEST(Utils, toMotomanVelocity)
 
 TEST(TrajectoryJob, init)
 {
+
+  using namespace std;
+
   TrajectoryJob job;
   JointTraj traj;
-  const int BIG_JOB_BUFFER_SIZE = 5000;
+  JointTrajPt pt;
+  JointData init;
+  string job_name = "JOB_NAME";
+  string job_ext = ".JBI";
+
+  const int TRAJ_SIZE = 50;
+  const int BIG_JOB_BUFFER_SIZE = 500000;
   char bigJobBuffer[BIG_JOB_BUFFER_SIZE];
   const int SMALL_JOB_BUFFER_SIZE = 10;
   char smallJobBuffer[SMALL_JOB_BUFFER_SIZE];
 
+  for (int i = 1; i <= TRAJ_SIZE; i++)
+  {
+    //ROS_DEBUG("Initializing joint: %d", i);
+    for (int j = 0; j < init.getMaxNumJoints(); j++)
+    {
+      //ROS_DEBUG("Initializing point: %d.%d", i, j);
+      ASSERT_TRUE(init.setJoint(j, (i*(j+1))));
+    }
+    pt.init(i, init, 11.1111);
+    ASSERT_TRUE(traj.addPoint(pt));
+  }
+
   EXPECT_FALSE(job.init("this name is way too long to be the name of a file and this should fail", traj));
-  ASSERT_TRUE(job.init("JOB_NAME", traj));
-  EXPECT_TRUE(job.toJobString(&bigJobBuffer[0], BIG_JOB_BUFFER_SIZE));
-  LOG_INFO("Big Job String: %s", bigJobBuffer);
+  ASSERT_TRUE(job.init((char*)job_name.c_str(), traj));
+
   EXPECT_FALSE(job.toJobString(&smallJobBuffer[0], SMALL_JOB_BUFFER_SIZE));
-  LOG_INFO("Small Job String: %s", smallJobBuffer);
+
+  EXPECT_TRUE(job.toJobString(&bigJobBuffer[0], BIG_JOB_BUFFER_SIZE));
+  ofstream file;
+  job_name.append(job_ext);
+  file.open(job_name.c_str());
+  ASSERT_TRUE(file.is_open());
+  file << bigJobBuffer;
+  file.close();
+
 
 }
 
