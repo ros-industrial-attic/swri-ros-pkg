@@ -8,6 +8,7 @@ NOTES:
 (4) need to start database grasp planning separately
 (5) need to add hand description and arm configurations yaml files
 (6) Figure out if trajectory normalization is needed - I think not
+(7) If a "default...planner" is left empty, does that imply planner won't be looked for
 -->
 
   <arg name="use_task_cartesian" default="false" />		
