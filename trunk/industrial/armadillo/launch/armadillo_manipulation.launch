@@ -1,9 +1,24 @@
 <launch>
 
+<!-- 
+NOTES:
+(1) Need to fix controller references in object manipulator
+(2) Need to fix grasp posture controller reference in object manipulator
+(3) Need to fix references to interpolated ik
+(4) need to start database grasp planning separately
+(5) need to add hand description and arm configurations yaml files
+(6) Figure out if trajectory normalization is needed - I think not
+-->
+
   <arg name="use_task_cartesian" default="false" />		
   <arg name="sim" default="false" />
   <arg name="use_right_arm" default="true"/>
   <arg name="use_left_arm"  default="false"/>
+
+  <arg name="stereo" default="false"/>
+  <arg name="do_preplan_scan" default="false" />
+  <arg name="do_monitoring" default="false" />
+  <arg name="log_to_warehouse" default="false" />
 
   <!-- hand descriptions -->
   <rosparam command="load" file="$(find armadillo)/config/armadillo_hand_descriptions.yaml"/>
@@ -18,21 +33,18 @@
   
   <include file="$(find pr2_gripper_grasp_planner_cluster)/launch/pr2_gripper_grasp_planner_cluster_server.launch"/>
 
-
   <!--gripper grasp posture controllers-->
-
   <include file="$(find armadillo)/launch/grasp_posture_action.launch" />
 
   <!--object manipulator-->
-
   <node name="object_manipulator" pkg="object_manipulator"
     type="object_manipulator_node" respawn="false" output="screen">
 
-      <remap from="right_arm/constraint_aware_ik" to="/armadillo_right_arm_kinematics/get_constraint_aware_ik" />    
-      <remap from="left_arm/constraint_aware_ik" to="/armadillo_left_arm_kinematics/get_constraint_aware_ik" />    
+      <remap from="right_arm/constraint_aware_ik" to="/armadillo_manipulator_kinematics/get_constraint_aware_ik" />    
+      <remap from="left_arm/constraint_aware_ik" to="/armadillo_manipulator_kinematics/get_constraint_aware_ik" />    
 
-      <remap from="right_arm/get_fk" to="/armadillo_right_arm_kinematics/get_fk" />    
-      <remap from="left_arm/get_fk" to="/armadillo_left_arm_kinematics/get_fk" />    
+      <remap from="right_arm/get_fk" to="/armadillo_manipulator_kinematics/get_fk" />    
+      <remap from="left_arm/get_fk" to="/armadillo_manipulator_kinematics/get_fk" />    
 
       <remap from="right_arm/interpolated_ik" to="/r_interpolated_ik_motion_plan" />    
       <remap from="left_arm/interpolated_ik" to="/l_interpolated_ik_motion_plan" />    
@@ -40,8 +52,8 @@
       <remap from="right_arm/interpolated_ik_set_params" to="/r_interpolated_ik_motion_plan_set_params" />    
       <remap from="left_arm/interpolated_ik_set_params" to="/l_interpolated_ik_motion_plan_set_params" />    
 
-      <remap from="right_arm/get_ik_solver_info" to="/armadillo_right_arm_kinematics/get_ik_solver_info" />    
-      <remap from="left_arm/get_ik_solver_info" to="/armadillo_left_arm_kinematics/get_ik_solver_info" />    
+      <remap from="right_arm/get_ik_solver_info" to="/armadillo_manipulator_kinematics/get_ik_solver_info" />    
+      <remap from="left_arm/get_ik_solver_info" to="/armadillo_manipulator_kinematics/get_ik_solver_info" />    
 
       <remap from="right_arm/reactive_grasp" to="/reactive_grasp/right" />    
       <remap from="left_arm/reactive_grasp" to="/reactive_grasp/left" />    
@@ -86,7 +98,21 @@
 
       <param name="randomize_grasps" value="false" />
 
-  </node>
+  </node>	
 
-	
+  <!-- load planning, ik, environment server, move_arm, filters -->
+  <include file="$(find armadillo_arm_navigation)/launch/armadillo_arm_navigation.launch"/>
+  <param name="trajectory_filter/object_padd" value="0.04"/>
+
+
+  <!-- interpolated IK -->
+  <node  if="$(arg use_right_arm)" name="interpolated_ik_node_right" pkg="interpolated_ik_motion_planner" 
+    type="interpolated_ik_motion_planner.py" args="r" respawn="false" machine="c2"/>
+  <node if="$(arg use_left_arm)" name="interpolated_ik_node_left" pkg="interpolated_ik_motion_planner" 
+    type="interpolated_ik_motion_planner.py" args="l" respawn="false" machine="c2"/>
+
+  <!-- joint trajectory normalization -->
+  <include file="$(find trajectory_filter_server)/launch/trajectory_unnormalize.launch"/>
+
+
 </launch>
