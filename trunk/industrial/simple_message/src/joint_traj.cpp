@@ -76,6 +76,7 @@ bool JointTraj::addPoint(JointTrajPt & point)
 	{
 		this->points_[this->size()].copyFrom(point);
 		this->size_++;
+		rtn = true;
 	}
 	else
 	{
