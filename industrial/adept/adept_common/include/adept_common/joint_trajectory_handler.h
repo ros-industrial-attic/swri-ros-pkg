@@ -38,7 +38,7 @@
 #include <sensor_msgs/JointState.h>
 #include <trajectory_msgs/JointTrajectory.h>
 
-namespace motoman
+namespace adept
 {
 namespace joint_trajectory_handler
 {
@@ -95,7 +95,7 @@ private:
   trajectory_msgs::JointTrajectory current_traj_;
   JointTrajectoryState state_;
 
-  static const int NUM_OF_JOINTS_ = 7;
+  static const int NUM_OF_JOINTS_ = 6;
 };
 
 } //joint_trajectory_handler

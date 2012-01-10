@@ -37,7 +37,7 @@ using namespace industrial::smpl_msg_connection;
 using namespace industrial::joint_message;
 using namespace industrial::simple_message;
 
-namespace motoman
+namespace adept
 {
 namespace joint_trajectory_handler
 {

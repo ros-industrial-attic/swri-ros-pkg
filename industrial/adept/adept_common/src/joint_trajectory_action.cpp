@@ -56,13 +56,12 @@ public:
     using namespace XmlRpc;
     ros::NodeHandle pn("~");
 
-    joint_names_.push_back("joint_s");
-    joint_names_.push_back("joint_l");
-    joint_names_.push_back("joint_e");
-    joint_names_.push_back("joint_u");
-    joint_names_.push_back("joint_r");
-    joint_names_.push_back("joint_b");
-    joint_names_.push_back("joint_t");
+    joint_names_.push_back("joint_1");
+    joint_names_.push_back("joint_2");
+    joint_names_.push_back("joint_3");
+    joint_names_.push_back("joint_4");
+    joint_names_.push_back("joint_5");
+    joint_names_.push_back("joint_6");
 
     pn.param("constraints/goal_time", goal_time_constraint_, 0.0);
 
