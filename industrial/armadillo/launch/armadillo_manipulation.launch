@@ -9,6 +9,12 @@ NOTES:
 (5) need to add hand description and arm configurations yaml files
 (6) Figure out if trajectory normalization is needed - I think not
 (7) If a "default...planner" is left empty, does that imply planner won't be looked for
+(8) In hand_descriptions.yaml
+   (a) Can hand_joints be left empty?
+   (b) Can hand fingertip links be left empty?
+   (c) why are arm_joints listed here and not coming from the arm group name?
+   (d) what is the hand_database_name?
+(9) Change arm configurations in armadillo_arm_configurations.yaml
 -->
 
   <arg name="use_task_cartesian" default="false" />		
@@ -22,10 +28,10 @@ NOTES:
   <arg name="log_to_warehouse" default="false" />
 
   <!-- hand descriptions -->
-  <rosparam command="load" file="$(find armadillo)/config/armadillo_hand_descriptions.yaml"/>
+  <rosparam command="load" file="$(find armadillo)/cfg/armadillo_hand_descriptions.yaml"/>
 
   <!-- arm configurations -->
-  <rosparam command="load" file="$(find armadillo)/config/armadillo_arm_configurations.yaml"/>
+  <rosparam command="load" file="$(find armadillo)/cfg/armadillo_arm_configurations.yaml"/>
 
   <!--grasp planners-->
 
