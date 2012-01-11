@@ -17,7 +17,7 @@ ROS-Industrial is a BSD-licensed ROS stack that contains libraries, tools and dr
  * Provide an easy path to apply cutting-edge research in industrial applications, using a common ROS architecture 
  * Provide simple, easy-to-use, well-documented APIs
  
-Check out a video of our progress so far:
+Check out a [http://www.youtube.com/watch?v=qd76wAywZos video] of our progress so far:
 
 <wiki:video url="http://www.youtube.com/watch?v=qd76wAywZos"/>
 
