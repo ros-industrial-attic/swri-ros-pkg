@@ -29,7 +29,7 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-#include "adept/joint_relay_handler.h"
+#include "adept_common/joint_relay_handler.h"
 #include "simple_message/messages/joint_message.h"
 #include "simple_message/log_wrapper.h"
 

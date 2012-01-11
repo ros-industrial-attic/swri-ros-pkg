@@ -38,4 +38,5 @@ rosbuild_add_executable(robot_state
 						src/joint_relay_handler.cpp)
 rosbuild_add_executable(motion_interface
 						src/motion_interface.cpp
-						src/joint_trajectory_handler.cpp)
+						src/joint_trajectory_handler.cpp
+            src/joint_trajectory_downloader.cpp)

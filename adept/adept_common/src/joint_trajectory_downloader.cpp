@@ -29,21 +29,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "joint_trajectory_downloader.h"
+#include "adept_common/joint_trajectory_downloader.h"
 #include "simple_message/joint_traj_pt.h"
 #include "simple_message/messages/joint_traj_pt_message.h"
 #include "simple_message/smpl_msg_connection.h"
-#include "utils.h"
 
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::joint_data;
 using namespace industrial::joint_traj_pt;
 using namespace industrial::joint_traj_pt_message;
 using namespace industrial::simple_message;
-using namespace motoman::utils;
 
 
-namespace motoman
+namespace adept
 {
 namespace joint_trajectory_downloader
 {
@@ -57,15 +55,15 @@ JointTrajectoryDownloader::JointTrajectoryDownloader(ros::NodeHandle &n,
 	ROS_INFO("Constructor joint trajectory downloader node");
 
 	this->sub_joint_trajectory_ = this->node_.subscribe("command",
-			0, &JointTrajectoryHandler::jointTrajectoryCB, this);
+			0, &JointTrajectoryDownloader::jointTrajectoryCB, this);
 	this->robot_ = robotConnecton;
 	ROS_INFO("Joint trajectory downloader node initialized");
 }
 
 JointTrajectoryDownloader::~JointTrajectoryDownloader()
 {  
-	trajectoryStop();
-	this->sub_joint_tranectory_.shutdown();
+	//trajectoryStop();
+	this->sub_joint_trajectory_.shutdown();
 }
 
 void JointTrajectoryDownloader::jointTrajectoryCB(
@@ -73,6 +71,7 @@ void JointTrajectoryDownloader::jointTrajectoryCB(
 {
 	ROS_INFO("Receiving joint trajectory message");
 
+  /*
 	if (!checkTrajectory(msg))
 	{
 		ROS_ERROR("Joint trajectory check failed, trajectory not downloaded");
@@ -85,7 +84,7 @@ void JointTrajectoryDownloader::jointTrajectoryCB(
 		ROS_ERROR("Failed to get joint velocity limits");
 		return;
 	}
-
+  */
 	for (int i = 0; i < msg->points.size(); i++)
 	{
 		ROS_INFO("Sending joints trajectory point[%d]", i);
@@ -95,7 +94,7 @@ void JointTrajectoryDownloader::jointTrajectoryCB(
 		SimpleMessage topic;
 		trajectory_msgs::JointTrajectoryPoint pt;
 
-		pt = this->msg->points[i];
+		pt = msg->points[i];
 
 		// The first and last sequence values must be given a special sequence
 		// value
@@ -104,14 +103,14 @@ void JointTrajectoryDownloader::jointTrajectoryCB(
 			ROS_DEBUG("First trajectory point, setting special sequence value");
 			jPt.setSequence(SpecialSeqValues::START_TRAJECTORY_DOWNLOAD);
 		}
-		else if (msg->points.size - 1 == i)
+		else if (msg->points.size() - 1 == i)
 		{
 			ROS_DEBUG("Last trajectory point, setting special sequence value");
-			jMsg.setSequence(SpecialSeqValues::END_TRAJECTORY);
+			jMsg.point_.setSequence(SpecialSeqValues::END_TRAJECTORY);
 		}
 		else
 		{
-			jMsg.setSequence(i);
+			jMsg.point_.setSequence(i);
 		}
 
 		// Copy position data to local variable
