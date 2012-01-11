@@ -1,6 +1,8 @@
 ﻿#labels Featured
 #sidebar SidebarNav
 
+[MainPage Main]   `*`   [Installation Install]   `*`   [Tutorials Tutorials]
+
 =ROS-Industrial=
 <g:plusone size="medium"></g:plusone>
 
