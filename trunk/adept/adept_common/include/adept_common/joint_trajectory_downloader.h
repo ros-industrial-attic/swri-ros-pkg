@@ -36,7 +36,7 @@
 #include "ros/ros.h"
 #include <trajectory_msgs/JointTrajectory.h>
 
-namespace motoman
+namespace adept
 {
 namespace joint_trajectory_downloader
 {

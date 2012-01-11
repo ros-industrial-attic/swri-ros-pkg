@@ -29,7 +29,7 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-#include "adept/joint_trajectory_handler.h"
+#include "adept_common/joint_trajectory_handler.h"
 #include "simple_message/socket/simple_socket.h"
 #include "simple_message/socket/tcp_client.h"
 
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
   ros::NodeHandle node;
 
   robot.init("192.168.10.3", StandardSocketPorts::MOTION);
-  motoman::joint_trajectory_handler::JointTrajectoryHandler jtHandler(node, &robot);
+  adept::joint_trajectory_handler::JointTrajectoryHandler jtHandler(node, &robot);
 
   ros::spin();
 
