@@ -21,7 +21,7 @@ Check out a [http://www.youtube.com/watch?v=qd76wAywZos video] of our progress s
 
 <wiki:video url="http://www.youtube.com/watch?v=qd76wAywZos"/>
 
-ROS-Industrial is at pre-1.0-experimental release level.  It currently supports ROS control (arm navigation with collision free path planning) for the Motoman [http://motoman.com/products/robots/models/sia10d.php SIA10D] and [http://motoman.com/products/controllers/default.php DX100] controller.  The software works with actual hardware or a simulated robot in rviz.  
+ROS-Industrial is at pre-1.0-experimental release level.  It currently supports ROS control (arm navigation with collision free path planning) for the Motoman [http://www.motoman.com/products/robots/models/sia10d.php SIA10D] and [http://www.motoman.com/products/controllers/default.php DX100] controller.  The software works with actual hardware or a simulated robot in rviz.  
 
 Click on the following links for [Installation Installation] instructions and [Tutorials Tutorials].
 
