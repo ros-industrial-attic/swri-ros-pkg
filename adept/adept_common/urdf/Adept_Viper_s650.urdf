@@ -145,41 +145,41 @@
 		<parent link="Adept_Viper_s650_Link1"/>
 		<child link="Adept_Viper_s650_Link2"/>
 		<axis xyz="0 0 1"/>
-		<limit effort="100" velocity="1.0" lower="-2.9670" upper="2.9670"/>
+		<limit effort="100" velocity="5.72468" lower="-2.9670" upper="2.9670"/>
 	</joint>
 	<joint name="joint_2" type="revolute">
 		<origin xyz="0.074 0 0.18795"/>
 		<parent link="Adept_Viper_s650_Link2"/>
 		<child link="Adept_Viper_s650_Link3"/>
 		<axis xyz="0 1 0"/>
-		<limit effort="100" velocity="1.0" lower="-3.31613" upper="0.7854"/>
+		<limit effort="100" velocity="5.235" lower="-3.31613" upper="0.7854"/>
 	</joint>
 	<joint name="joint_3" type="revolute">
 		<origin xyz="0.270 0 0"/>
 		<parent link="Adept_Viper_s650_Link3"/>
 		<child link="Adept_Viper_s650_Link4"/>
 		<axis xyz="0 1 0"/>
-		<limit effort="100" velocity="1.0" lower="-0.50615" upper="4.468053"/>
+		<limit effort="100" velocity="6.544" lower="-0.50615" upper="4.468053"/>
 	</joint>
 	<joint name="joint_4" type="revolute">
 		<origin xyz="-0.090 0 0.295"/>
 		<parent link="Adept_Viper_s650_Link4"/>
 		<child link="Adept_Viper_s650_Link5"/>
 		<axis xyz="0 0 1"/>
-		<limit effort="100" velocity="1.0" lower="-3.31613" upper="3.316133"/>
+		<limit effort="100" velocity="6.544" lower="-3.31613" upper="3.316133"/>
 	</joint>
 	<joint name="joint_5" type="revolute">
 		<origin xyz="0 0 0"/>
 		<parent link="Adept_Viper_s650_Link5"/>
 		<child link="Adept_Viper_s650_Link6"/>
 		<axis xyz="0 1 0"/>
-		<limit effort="100" velocity="1.0" lower="-2.0944" upper="2.0944"/>
+		<limit effort="100" velocity="6.544" lower="-2.0944" upper="2.0944"/>
 	</joint>	
 	<joint name="joint_6" type="revolute">
 		<origin xyz="0.0 0 0.08"/>
 		<parent link="Adept_Viper_s650_Link6"/>
 		<child link="Adept_Viper_650_Interface_Plate"/>
 		<axis xyz="0 0 1"/>
-		<limit effort="100" velocity="1.0" lower="-3.1416" upper="3.1416"/>
+		<limit effort="100" velocity="10.47" lower="-3.1416" upper="3.1416"/>
 	</joint>
 </robot>
