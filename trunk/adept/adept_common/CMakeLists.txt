@@ -40,3 +40,5 @@ rosbuild_add_executable(motion_interface
 						src/motion_interface.cpp
 						src/joint_trajectory_handler.cpp
             src/joint_trajectory_downloader.cpp)
+rosbuild_add_executable(joint_trajectory_action
+						src/joint_trajectory_action.cpp)
