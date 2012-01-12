@@ -41,7 +41,7 @@ int main(int argc, char** argv)
   industrial::tcp_client::TcpClient robot;
   ros::NodeHandle node;
 
-  robot.init("192.168.10.3", StandardSocketPorts::MOTION);
+  robot.init("172.21.3.79", StandardSocketPorts::MOTION);
   adept::joint_trajectory_handler::JointTrajectoryHandler jtHandler(node, &robot);
 
   ros::spin();

@@ -44,7 +44,7 @@ using namespace adept::joint_relay_handler;
 
 int main(int argc, char** argv)
 {
-  char ip[1024] = "192.168.10.3"; // Robot IP address
+  char ip[1024] = "172.21.3.79"; // Robot IP address
   TcpClient connection;
   MessageManager manager;
 
