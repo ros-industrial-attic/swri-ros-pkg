@@ -9,8 +9,8 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/armadillo_calibration</url>
   <depend package="armadillo"/>
-  <depend package="calibration_estimation"/>
-  <depend package="calibration_launch"/>
+  <!--<depend package="calibration_estimation"/-->
+  <!--<depend package="calibration_launch"/-->
 
 </package>
 
