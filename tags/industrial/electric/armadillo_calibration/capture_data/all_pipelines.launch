@@ -1,0 +1,40 @@
+<launch>
+
+  <group ns="arm_chain">
+    <node pkg="joint_states_settler" type="joint_states_settler_action"
+          name="settler" output="screen">
+      <remap from="joint_states" to="/joint_states" />
+      <remap from="pruned_joint_states" to="chain_state" />
+      <param name="joint_name_00" type="string" value="joint_s" />
+      <param name="joint_tol_00"  type="double" value="0.001" />
+      <param name="joint_name_01" type="string" value="joint_l" />
+      <param name="joint_tol_01"  type="double" value="0.001" />
+      <param name="joint_name_02" type="string" value="joint_e" />
+      <param name="joint_tol_02"  type="double" value="0.001" />
+      <param name="joint_name_03" type="string" value="joint_u" />
+      <param name="joint_tol_03"  type="double" value="0.001" />
+      <param name="joint_name_04" type="string" value="joint_r" />
+      <param name="joint_tol_04"  type="double" value="0.001" />
+      <param name="joint_name_05" type="string" value="joint_b" />
+      <param name="joint_tol_05"  type="double" value="0.001" />
+      <param name="joint_name_06" type="string" value="joint_t" />
+      <param name="joint_tol_06"  type="double" value="0.001" />
+    </node>
+  </group>
+
+  <!-- Cameras -->
+  <include file="$(find calibration_launch)/capture_data/monocam_pipeline.launch" ns="camera/rgb" >    
+    <arg name="image_topic" value="image_mono"/>
+  </include>
+
+  <!-- Intersector -->
+  <node type="interval_intersection_action"
+        pkg="interval_intersection"
+        name="interval_intersection"
+        output="screen">
+    <remap from="arm_chain" to="arm_chain/settled_interval" />
+    <remap from="kinect_camera" to="camera/rgb/settled_interval" />
+    <remap from="interval" to="request_interval" />
+  </node>
+
+</launch>
