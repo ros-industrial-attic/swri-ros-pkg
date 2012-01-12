@@ -4,17 +4,17 @@ planner_configs:
   LBKPIECEkConfig1:
     type: kinematic::LBKPIECE
 groups:
-  - arm_1
-  - arm_1_cartesian
-arm_1:
+  - manipulator
+  - manipulator_cartesian
+manipulator:
   planner_type: JointPlanner
   planner_configs:
     - SBLkConfig1
     - LBKPIECEkConfig1
   projection_evaluator: joint_state
-arm_1_cartesian:
+manipulator_cartesian:
   parent_frame: Adept_Viper_s650_Link1
-  physical_group: arm_1
+  physical_group: manipulator
   planner_type: RPYIKTaskSpacePlanner
   state_spaces:
     - x
