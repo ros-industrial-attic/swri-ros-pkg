@@ -5,7 +5,7 @@
 ==ROS-Industrial Software Installation==
 All of the following ROS Industrial software must be installed.
   # ROS Electric Install - ROS-Industrial has only been tested on Ubuntu with the ROS-Electric release.  The instructions for installing ROS-Electric can be found [http://www.ros.org/wiki/electric/Installation/Ubuntu here].
-  # Arm Navigation Stack - The arm navigation stack is not installed with the basic ROS-Electric install.  The instructions for installing ROS-Electric can be found [http://www.ros.org/wiki/arm_navigation here].
+  # PR2 Desktop - Some required libraries are not installed with the basic ROS-Electric install.  The instructions for installing the PR2 Desktop can be found [http://www.ros.org/wiki/Robots/PR2/electric here].
   # Currently, ROS-Industrial can only be downloaded and installed from source.  
     # Download the desired repository version:
       * The latest stable source release can be is tagged in the software repository here: [https://swri-ros-pkg.googlecode.com/svn/tags/ros_org_video_rc1] *(Recommended)*.  
