@@ -33,3 +33,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_executable(gripper_interface 
 						src/gripper_message.cpp
 						src/grasp_execution_action.cpp)
+
+rosbuild_add_executable(gripper_utility
+						src/gripper_message.cpp
+						src/grasp_utility.cpp)
