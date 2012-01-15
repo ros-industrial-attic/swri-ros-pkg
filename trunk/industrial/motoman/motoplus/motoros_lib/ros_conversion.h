@@ -33,7 +33,6 @@
 #define ROS_CONVERSION_H
 
 #include "joint_data.h"
-#include "motoPlus.h"
 
 namespace motoman
 {
