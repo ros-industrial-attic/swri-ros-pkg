@@ -115,17 +115,41 @@ void initJointConversion(MotomanRobotModel model_number);
 float toPulses(float radians, MotomanJointIndex joint);
 float toRadians(float pulses, MotomanJointIndex joint);
 
-void toRosJointOrder(industrial::joint_data::JointData & joints);
+
+/**
+ * \brief Converts a motoplus joint (in motoplus order and pulses) to
+ * a ros joint (in ros order and radians)
+ *
+ * \param motoplus joints to convert
+ * \param ros joint (returned)
+ */
+void toRosJoint(industrial::joint_data::JointData & mp_joints, 
+				industrial::joint_data::JointData & ros_joints);
+
+/**
+ * \brief Converts a ros joint (in ros order and radians) to
+ * a motoplus joint (in motoplus order and pulses)
+ * WARNING: This function should only be used at the lowest levels.
+ * The assumption is that any JointData type is assumed to be a ROS
+ * Joint.
+ *
+ * \param ros joint (returned)
+ * \param motoplus joints to convert
+ */
+void toMpJoint(industrial::joint_data::JointData & ros_joints,
+				industrial::joint_data::JointData & mp_joints);
+				
+				
+				
+//DEPRECATED
 void toMotomanJointOrder(industrial::joint_data::JointData & joints);
-
-void getMotomanFbPos(industrial::joint_data::JointData & pos);
-void getRosFbPos(industrial::joint_data::JointData & pos);
-
-void toJointData(MP_FB_PULSE_POS_RSP_DATA & src, 
-    industrial::joint_data::JointData & dest);
-    
-void toMpPosVarData(USHORT posVarIndex, industrial::joint_data::JointData & src, 
-    MP_POSVAR_DATA & dest);
+// These functions change the JointData in place which has lead to some dangerous
+// bugs when they are called more than once.  Use the functions above
+// that swap joint order and perform unit conversion automatically
+//DEPRECATED
+void toRosJointOrder(industrial::joint_data::JointData & joints);
+//DEPRECATED
+void toMotomanJointOrder(industrial::joint_data::JointData & joints);
     
     
 } //ros_conversion

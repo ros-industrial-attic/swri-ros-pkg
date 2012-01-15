@@ -33,10 +33,18 @@
 #define MP_WRAPPER_H
 
 /*
+DEPRECATED - The utilities in this file should not be used.  The controller class
+in controller.h should be used instead.
+
 The mp wrapper source contains functions for wrapping common MP calls.  The MP
 API provides a lot of flexibility that results in a lot of repeated code for
 simple operations, like reading a value out of the integer data table
 */
+
+#include "joint_data.h"
+#include "motoPlus.h"
+
+using namespace industrial::joint_data;
 
 namespace motoman
 {
@@ -68,6 +76,15 @@ int getInteger(int index);
   * \param value to write
   */
 void setInteger(int index, int value);
+
+void getMotomanFbPos(industrial::joint_data::JointData & pos);
+void getRosFbPos(industrial::joint_data::JointData & pos);
+
+void toJointData(MP_FB_PULSE_POS_RSP_DATA & src, 
+    industrial::joint_data::JointData & dest);
+    
+void toMpPosVarData(USHORT posVarIndex, industrial::joint_data::JointData & src, 
+    MP_POSVAR_DATA & dest);
 
 
 

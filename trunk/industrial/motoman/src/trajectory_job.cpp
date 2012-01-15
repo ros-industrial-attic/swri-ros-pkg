@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -29,6 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #ifdef ROS
+#include "ros_conversion.h"
 #include "trajectory_job.h"
 #include "string.h"
 #include "simple_message/joint_traj_pt.h"
@@ -37,6 +38,7 @@
 #endif
 
 #ifdef MOTOPLUS
+#include "ros_conversion.h"
 #include "trajectory_job.h"
 #include "string.h"
 #include "joint_traj_pt.h"
@@ -48,6 +50,7 @@ using namespace industrial::shared_types;
 using namespace industrial::joint_traj;
 using namespace industrial::joint_traj_pt;
 using namespace industrial::joint_data;
+using namespace motoman::ros_conversion;
 
 namespace motoman
 {
@@ -149,25 +152,29 @@ bool TrajectoryJob::toJobString(char* str_buffer, size_t buffer_size)
     // Point declaration and initialization
     // ----------------------------------------------------------------------------
     JointTrajPt pt;
-    JointData data;
+    JointData rosData;
+    JointData mpData;
 
     for(int i = 0; i < this->trajectory_.size(); i++)
     {
       sprintf(this->line_buffer_, "C%05d=", i);
       SAFE_STRCAT(str_buffer, buffer_size, this->line_buffer_);
       this->trajectory_.getPoint(i, pt);
-      pt.getJointPosition(data);
-      for(int j = 0; j < data.getMaxNumJoints(); j++)
+      pt.getJointPosition(rosData);
+      
+      // Converting to a motoplus joint (i.e. the correct order and units
+      toMpJoint(rosData, mpData);
+      for(int j = 0; j < mpData.getMaxNumJoints(); j++)
       {
         // Don't append comma to last position, instead line-feed.
-        if (j < (data.getMaxNumJoints() - 1))
+        if (j < (mpData.getMaxNumJoints() - 1))
         {
-          sprintf(this->line_buffer_, "%d,", (int)data.getJoint(j));
+          sprintf(this->line_buffer_, "%d,", (int)mpData.getJoint(j));
           SAFE_STRCAT(str_buffer, buffer_size, this->line_buffer_);
         }
         else
         {
-          sprintf(this->line_buffer_, "%d", (int)data.getJoint(j));
+          sprintf(this->line_buffer_, "%d", (int)mpData.getJoint(j));
           APPEND_LINE(str_buffer, buffer_size, this->line_buffer_);
         }
       }

@@ -31,7 +31,10 @@
 
 #include "mp_wrapper.h"
 #include "log_wrapper.h"
+#include "ros_conversion.h"
 #include "motoPlus.h"
+
+using namespace motoman::ros_conversion;
 
 namespace motoman
 {
@@ -74,6 +77,90 @@ int getInteger(int index)
     }
     return rtn;
 }
+
+
+void getMotomanFbPos(JointData & pos)
+{
+    LONG getPulseRtn = 0;
+    
+    MP_CTRL_GRP_SEND_DATA sData;
+    MP_FB_PULSE_POS_RSP_DATA rData;
+    
+    // Get feedback for first robot
+    sData.sCtrlGrp = 0;
+        
+    // Get pulse data from robot
+    getPulseRtn = mpGetFBPulsePos (&sData,&rData);
+    
+    if (0 == getPulseRtn)
+    {
+        toJointData(rData, pos);
+    }
+    else
+    {
+        LOG_ERROR("Failed to get pulse feedback position: %u", getPulseRtn);
+    }
+}
+
+
+void getRosFbPos(JointData & pos)
+{
+    getMotomanFbPos(pos);
+    toRosJointOrder(pos);
+}
+
+void toJointData(MP_FB_PULSE_POS_RSP_DATA & src, JointData & dest)
+{    
+
+    int minJointSize = 0;
+    int jointPosSize = dest.getMaxNumJoints();
+    
+    // Check for size constraints on Postion data
+    if (MAX_PULSE_AXES >= jointPosSize)
+    {
+        LOG_WARN("Number of pulse axes: %u exceeds joint position size: %u",
+            MAX_PULSE_AXES, dest.getMaxNumJoints());
+    }
+    
+    // Determine which buffer is the smallest and only copy that many members
+    if (jointPosSize > MAX_PULSE_AXES)
+    {
+        minJointSize = MAX_PULSE_AXES;
+    }
+    else
+    {
+        minJointSize = jointPosSize;
+    }
+    
+    for(int i = 0; i < minJointSize; i++)
+    {
+          dest.setJoint(i, toRadians(src.lPos[i], (MotomanJointIndex)i));
+    }
+    
+}
+
+void toMpPosVarData(USHORT posVarIndex, JointData & src, MP_POSVAR_DATA & dest)
+{
+  const int MOTOMAN_AXIS_SIZE = 8;
+  LONG pulse_coords[MOTOMAN_AXIS_SIZE];
+  
+  motoman::ros_conversion::toMotomanJointOrder(src);
+  for (int i = 0; i < MOTOMAN_AXIS_SIZE; i++)
+  {
+    pulse_coords[i] = motoman::ros_conversion::toPulses(src.getJoint(i), 
+        (motoman::ros_conversion::MotomanJointIndex)i);
+  }
+  
+  dest.usType = MP_RESTYPE_VAR_ROBOT;  // All joint positions are robot positions
+  dest.usIndex = posVarIndex;          // Index within motoman position variable data table
+  dest.ulValue[0] = 0;                 // Position is in pulse counts
+  
+  for (SHORT i = 0; i < MOTOMAN_AXIS_SIZE; i++)
+  {
+	dest.ulValue[i+2] = pulse_coords[i];  // First two values in ulValue reserved
+  }
+}
+
 
 
 } //mp_wrapper

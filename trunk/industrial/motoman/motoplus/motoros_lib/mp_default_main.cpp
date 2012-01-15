@@ -39,6 +39,7 @@
 #include "joint_message.h"
 #include "simple_message.h"
 #include "ros_conversion.h"
+#include "mp_wrapper.h"
 
 #include "motoPlus.h"
 
@@ -108,6 +109,7 @@ void stateServer(void)
     using namespace industrial::joint_data;
     using namespace industrial::simple_message;
     using namespace motoman::ros_conversion;
+    using namespace motoman::mp_wrapper;
     
     // Using TPC server for debugging (this should really be UDP)
     TcpServer connection;
