@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Software License Agreement (BSD License) 
 *
 * Copyright (c) 2011, Southwest Research Institute
@@ -45,6 +45,20 @@ namespace motoman
 namespace trajectory_job
 {
 
+/**
+ * \brief Size of fixed buffers that hold a line of information (in the JOB file).
+ * Allows for static allocation of character buffers
+ */
+//TODO: Should be "class static const" not macro
+#define LINE_BUFFER_SIZE_ 128
+
+
+/**
+ * \brief Size of fixed buffer that holds the job file name.  This is set by the
+ * motoman job name size limit
+ */
+//TODO: Should be "class static const" not macro
+#define NAME_BUFFER_SIZE_ 20
 
 /**
  * \brief The job class encapsulates a trajectory as defined by a motoman job
@@ -108,22 +122,13 @@ char* getName() { return & this->name_[0];};
 
 private:
 
-/**
- * \brief Size of fixed buffers that hold a line of information (in the JOB file).
- * Allows for static allocation of character buffers
- */
-static const int LINE_BUFFER_SIZE_ = 128;
+
 
 /**
  * \brief Temporary line buffer used when generating a job file test string
  */
 char line_buffer_[LINE_BUFFER_SIZE_+1];
 
-/**
- * \brief Size of fixed buffer that holds the job file name.  This is set by the
- * motoman job name size limit
- */
-static const int NAME_BUFFER_SIZE_ = 20;
 /**
  * \brief Name of the job file
  */

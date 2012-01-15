@@ -2,40 +2,6 @@
 <MotoPlusProject>
   <ProjectName>motoros_lib</ProjectName>
   <FilesInProject>
-    <FileForProject>tcp_socket.h</FileForProject>
-    <FileForProject>tcp_socket.cpp</FileForProject>
-    <FileForProject>tcp_server.h</FileForProject>
-    <FileForProject>tcp_server.cpp</FileForProject>
-    <FileForProject>tcp_client.h</FileForProject>
-    <FileForProject>tcp_client.cpp</FileForProject>
-    <FileForProject>smpl_msg_connection.h</FileForProject>
-    <FileForProject>smpl_msg_connection.cpp</FileForProject>
-    <FileForProject>simple_socket.h</FileForProject>
-    <FileForProject>simple_socket.cpp</FileForProject>
-    <FileForProject>simple_serialize.h</FileForProject>
-    <FileForProject>simple_message.h</FileForProject>
-    <FileForProject>simple_message.cpp</FileForProject>
-    <FileForProject>simple_comms_fault_handler.h</FileForProject>
-    <FileForProject>simple_comms_fault_handler.cpp</FileForProject>
-    <FileForProject>shared_types.h</FileForProject>
-    <FileForProject>ros_conversion.h</FileForProject>
-    <FileForProject>ros_conversion.cpp</FileForProject>
-    <FileForProject>ping_message.h</FileForProject>
-    <FileForProject>ping_message.cpp</FileForProject>
-    <FileForProject>ping_handler.h</FileForProject>
-    <FileForProject>ping_handler.cpp</FileForProject>
-    <FileForProject>p_var_q.h</FileForProject>
-    <FileForProject>p_var_q.cpp</FileForProject>
-    <FileForProject>mp_wrapper.h</FileForProject>
-    <FileForProject>mp_wrapper.cpp</FileForProject>
-    <FileForProject>mp_default_main.h</FileForProject>
-    <FileForProject>mp_default_main.cpp</FileForProject>
-    <FileForProject>motoros_lib.h</FileForProject>
-    <FileForProject>message_manager.h</FileForProject>
-    <FileForProject>message_manager.cpp</FileForProject>
-    <FileForProject>message_handler.h</FileForProject>
-    <FileForProject>message_handler.cpp</FileForProject>
-    <FileForProject>log_wrapper.h</FileForProject>
     <FileForProject>joint_motion_handler.h</FileForProject>
     <FileForProject>joint_motion_handler.cpp</FileForProject>
     <FileForProject>joint_message.h</FileForProject>
@@ -55,6 +21,40 @@
     <FileForProject>joint_traj_pt.h</FileForProject>
     <FileForProject>joint_traj_pt_message.cpp</FileForProject>
     <FileForProject>joint_traj_pt_message.h</FileForProject>
+    <FileForProject>log_wrapper.h</FileForProject>
+    <FileForProject>message_handler.cpp</FileForProject>
+    <FileForProject>message_handler.h</FileForProject>
+    <FileForProject>message_manager.cpp</FileForProject>
+    <FileForProject>message_manager.h</FileForProject>
+    <FileForProject>motoros_lib.h</FileForProject>
+    <FileForProject>mp_default_main.cpp</FileForProject>
+    <FileForProject>mp_default_main.h</FileForProject>
+    <FileForProject>mp_wrapper.cpp</FileForProject>
+    <FileForProject>mp_wrapper.h</FileForProject>
+    <FileForProject>p_var_q.cpp</FileForProject>
+    <FileForProject>p_var_q.h</FileForProject>
+    <FileForProject>ping_handler.cpp</FileForProject>
+    <FileForProject>ping_handler.h</FileForProject>
+    <FileForProject>ping_message.cpp</FileForProject>
+    <FileForProject>ping_message.h</FileForProject>
+    <FileForProject>ros_conversion.cpp</FileForProject>
+    <FileForProject>ros_conversion.h</FileForProject>
+    <FileForProject>shared_types.h</FileForProject>
+    <FileForProject>simple_comms_fault_handler.cpp</FileForProject>
+    <FileForProject>simple_comms_fault_handler.h</FileForProject>
+    <FileForProject>simple_message.cpp</FileForProject>
+    <FileForProject>simple_message.h</FileForProject>
+    <FileForProject>simple_serialize.h</FileForProject>
+    <FileForProject>simple_socket.cpp</FileForProject>
+    <FileForProject>simple_socket.h</FileForProject>
+    <FileForProject>smpl_msg_connection.cpp</FileForProject>
+    <FileForProject>smpl_msg_connection.h</FileForProject>
+    <FileForProject>tcp_client.cpp</FileForProject>
+    <FileForProject>tcp_client.h</FileForProject>
+    <FileForProject>tcp_server.cpp</FileForProject>
+    <FileForProject>tcp_server.h</FileForProject>
+    <FileForProject>tcp_socket.cpp</FileForProject>
+    <FileForProject>tcp_socket.h</FileForProject>
     <FileForProject>trajectory_job.cpp</FileForProject>
     <FileForProject>trajectory_job.h</FileForProject>
     <FileForProject>typed_message.h</FileForProject>
@@ -65,7 +65,7 @@
     <FileForProject>udp_socket.cpp</FileForProject>
     <FileForProject>udp_socket.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>trajectory_job.cpp</LastFileOpened>
+  <LastFileOpened>ros_conversion.h</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Library</ProjectType>
   <Debug>
