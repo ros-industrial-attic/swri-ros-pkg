@@ -184,7 +184,7 @@ void PVarQ::setPosition(int index, industrial::joint_data::JointData & point,
   int convertedVelocity = 0;
   
   LOG_DEBUG("Setting joint position, index: %d", index);
-  motoman::ros_conversion::toMpPosVarData(index, point, this->pointData_);
+  motoman::mp_wrapper::toMpPosVarData(index, point, this->pointData_);
   
   while (mpPutPosVarData ( &(this->pointData_), 1 ) == ERROR) {
     LOG_ERROR("Failed set position variable, index: %d, retrying...", index);
