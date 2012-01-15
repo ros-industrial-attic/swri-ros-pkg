@@ -38,7 +38,7 @@
 
 #ifdef MOTOPLUS
 #include "joint_traj_pt_message.h"
-#include "joint_position.h"
+#include "joint_data.h"
 #include "byte_array.h"
 #include "log_wrapper.h"
 #endif

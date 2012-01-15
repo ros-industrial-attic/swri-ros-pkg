@@ -32,10 +32,21 @@
 #ifndef JOINT_TRAJ_PT_MESSAGE_H
 #define JOINT_TRAJ_PT_MESSAGE_H
 
+#ifdef ROS
 #include "simple_message/typed_message.h"
 #include "simple_message/simple_message.h"
 #include "simple_message/shared_types.h"
 #include "simple_message/joint_traj_pt.h"
+
+#endif
+
+#ifdef MOTOPLUS
+#include "typed_message.h"
+#include "simple_message.h"
+#include "shared_types.h"
+#include "joint_traj_pt.h"
+
+#endif
 
 namespace industrial
 {
