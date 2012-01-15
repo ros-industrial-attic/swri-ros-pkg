@@ -2,6 +2,16 @@
 <MotoPlusProject>
   <ProjectName>motoros_lib</ProjectName>
   <FilesInProject>
+    <FileForProject>trajectory_job.cpp</FileForProject>
+    <FileForProject>joint_traj_pt_message.h</FileForProject>
+    <FileForProject>joint_traj_pt_message.cpp</FileForProject>
+    <FileForProject>joint_traj_pt.h</FileForProject>
+    <FileForProject>joint_traj_pt.cpp</FileForProject>
+    <FileForProject>joint_traj.h</FileForProject>
+    <FileForProject>joint_traj.cpp</FileForProject>
+    <FileForProject>controller.h</FileForProject>
+    <FileForProject>controller.cpp</FileForProject>
+    <FileForProject>trajectory_job.h</FileForProject>
     <FileForProject>byte_array.cpp</FileForProject>
     <FileForProject>byte_array.h</FileForProject>
     <FileForProject>comms_fault_handler.h</FileForProject>
@@ -55,7 +65,7 @@
     <FileForProject>udp_socket.cpp</FileForProject>
     <FileForProject>udp_socket.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>mp_wrapper.h</LastFileOpened>
+  <LastFileOpened>controller.cpp</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Library</ProjectType>
   <Debug>
