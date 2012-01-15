@@ -110,7 +110,7 @@ TrajectoryJob::~TrajectoryJob(void)
 bool TrajectoryJob::init(const char* name, JointTraj joint_traj)
 {
   bool rtn = false;
-  if( strlen(name) <= this->NAME_BUFFER_SIZE_ )
+  if( strlen(name) <= NAME_BUFFER_SIZE_ )
   {
     strcpy(this->name_, name);
     this->trajectory_.copyFrom(joint_traj);
@@ -119,7 +119,7 @@ bool TrajectoryJob::init(const char* name, JointTraj joint_traj)
   else
   {
     LOG_ERROR("Failed to initialize trajectory job, name size %d too large",
-              this->NAME_BUFFER_SIZE_);
+              NAME_BUFFER_SIZE_);
     rtn = false;
   }
   return rtn;
