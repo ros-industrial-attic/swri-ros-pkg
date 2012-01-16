@@ -40,6 +40,7 @@ using namespace industrial::simple_message;
 using namespace industrial::shared_types;
 using namespace industrial::armadillo;
 using namespace industrial::gripper_message;
+using namespace motoman::controller;
 
 namespace armadillo
 {
@@ -47,8 +48,10 @@ namespace gripper_handler
 {
 
 
-bool GripperHandler::init(industrial::smpl_msg_connection::SmplMsgConnection* connection)
+bool GripperHandler::init(industrial::smpl_msg_connection::SmplMsgConnection* connection,
+        motoman::controller::Controller* ctrl)
 {
+  this->ctrl_ = ctrl;
   return this->init(ArmadilloMsgTypes::GRIPPER, connection);
 }
 
@@ -56,9 +59,6 @@ bool GripperHandler::internalCB(industrial::simple_message::SimpleMessage & in)
 {
 
   bool rtn = false;
-  bool unloadStat = false;
-  shared_int temp;
-  int i = 0;
   ReplyType code = ReplyTypes::INVALID;
   SimpleMessage reply;
   GripperMessage gMsg;
@@ -69,31 +69,31 @@ bool GripperHandler::internalCB(industrial::simple_message::SimpleMessage & in)
   {
   case GripperOperationTypes::INIT:
     LOG_INFO("Initializing gripper");
-    setDigitalOut(this->GRIPPER_INIT_, true);
-    mpTaskDelay(MOTION_START_DELAY);
-    waitDigitalIn(this->GRIPPER_INITIALIZED_, true);
+    this->ctrl_->setDigitalOut(this->GRIPPER_INIT_, true);
+    this->ctrl_->delayTicks(MOTION_START_DELAY);
+    this->ctrl_->waitDigitalIn(this->GRIPPER_INITIALIZED_, true);
     code = ReplyTypes::SUCCESS;
     break;
     
   case GripperOperationTypes::OPEN:
     LOG_DEBUG("Opening gripper");
-    setDigitalOut(this->GRIPPER_OPEN_, true);
-    setDigitalOut(this->GRIPPER_CLOSE_, false);
-    mpTaskDelay(MOTION_START_DELAY);
-    waitDigitalIn(this->GRIPPER_OPENING_, true);
-    waitDigitalIn(this->GRIPPER_MOTION_IN_PROGRESS_, true);
-    waitDigitalIn(this->GRIPPER_MOTION_COMPLETE_, true);
+    this->ctrl_->setDigitalOut(this->GRIPPER_OPEN_, true);
+    this->ctrl_->setDigitalOut(this->GRIPPER_CLOSE_, false);
+    this->ctrl_->delayTicks(MOTION_START_DELAY);
+    this->ctrl_->waitDigitalIn(this->GRIPPER_OPENING_, true);
+    this->ctrl_->waitDigitalIn(this->GRIPPER_MOTION_IN_PROGRESS_, true);
+    this->ctrl_->waitDigitalIn(this->GRIPPER_MOTION_COMPLETE_, true);
     code = ReplyTypes::SUCCESS;
     break;
     
   case GripperOperationTypes::CLOSE:
     LOG_DEBUG("Closing gripper");
-    setDigitalOut(this->GRIPPER_OPEN_, false);
-    setDigitalOut(this->GRIPPER_CLOSE_, true);
-    mpTaskDelay(MOTION_START_DELAY);
-    waitDigitalIn(this->GRIPPER_CLOSING_, true);
-    waitDigitalIn(this->GRIPPER_MOTION_IN_PROGRESS_, true);
-    waitDigitalIn(this->GRIPPER_MOTION_COMPLETE_, true);
+    this->ctrl_->setDigitalOut(this->GRIPPER_OPEN_, false);
+    this->ctrl_->setDigitalOut(this->GRIPPER_CLOSE_, true);
+    this->ctrl_->delayTicks(MOTION_START_DELAY);
+    this->ctrl_->waitDigitalIn(this->GRIPPER_CLOSING_, true);
+    this->ctrl_->waitDigitalIn(this->GRIPPER_MOTION_IN_PROGRESS_, true);
+    this->ctrl_->waitDigitalIn(this->GRIPPER_MOTION_COMPLETE_, true);
     code = ReplyTypes::SUCCESS;
     break;
     
@@ -110,59 +110,9 @@ bool GripperHandler::internalCB(industrial::simple_message::SimpleMessage & in)
 
 }
 
-void GripperHandler::setDigitalOut(int bit_offset, bool value)
-{
-  LOG_DEBUG("Setting digital out, Bit offset: %d, value: %d", bit_offset, value);
-  if ( (bit_offset < this->UNIV_IO_DATA_SIZE_) && 
-       ( bit_offset > 0) )
-  {  
-    MP_IO_DATA data;
-    data.ulAddr = this->UNIV_OUT_DATA_START_ + bit_offset;
-    data.ulValue = value;
-    //TODO: The return result of mpWriteIO is not checked
-    mpWriteIO(&data, 1);
-  }
-  else
-  {
-    LOG_ERROR("Bit offset: %d, is greater than size: %d", bit_offset, this->UNIV_IO_DATA_SIZE_);
-  }
-}
-
- /**
-  * \brief Utility function for waiting for a digital input
-  * in the Universal input data tabel (most IO is accessible there).
-  *
-  * \param bit offset in data table (0-2047)
-  * \param in incoming message
-  *
-  */
- void GripperHandler::waitDigitalIn(int bit_offset, bool wait_value)
- {
-   LOG_DEBUG("Waiting for digital in, Bit offset: %d, Wait value: %d", bit_offset, wait_value);
-   if ( (bit_offset < this->UNIV_IO_DATA_SIZE_) && 
-       ( bit_offset > 0) )
-  { 
-    MP_IO_INFO info;
-    info.ulAddr = this->UNIV_IN_DATA_START_ + bit_offset;
-    
-    USHORT readValue;
-    do
-    {
-      readValue = !wait_value;  
-      //TODO: The return result of mpReadIO is not checked
-      mpReadIO (&info, &readValue, 1);
-      mpTaskDelay(VAR_POLL_TICK_DELAY);
-    } while ( ((bool)readValue) != wait_value);
-  }
-  else
-  {
-    LOG_ERROR("Bit offset: %d, is greater than size: %d", bit_offset, this->UNIV_IO_DATA_SIZE_);
-  }
- }
 
 
-
-}//namespace ping_handler
+}//namespace gripper_handler
 }//namespace motoman
 
 
