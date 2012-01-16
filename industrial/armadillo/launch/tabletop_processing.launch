@@ -28,5 +28,11 @@
      <arg if="$(arg stereo)" name="tabletop_segmentation_points_input" value="narrow_stereo_textured/points2"/>
  </include>
 
+  <!-- cluster bounding box finder--> 
+  <node name="cluster_bounding_box_finder" pkg="object_manipulator" cwd="node" 
+   type="cluster_bounding_box_finder_server.py" output="screen" respawn="false" >
+	<param name="z_up_frame" value="/base_link" />
+  </node>
+
 </launch>
 

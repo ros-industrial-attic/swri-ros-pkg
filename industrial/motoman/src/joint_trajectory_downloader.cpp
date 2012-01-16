@@ -57,7 +57,7 @@ JointTrajectoryDownloader::JointTrajectoryDownloader(ros::NodeHandle &n,
 	ROS_INFO("Constructor joint trajectory downloader node");
 
 	this->sub_joint_trajectory_ = this->node_.subscribe("command",
-			0, &JointTrajectoryHandler::jointTrajectoryCB, this);
+			0, &JointTrajectoryDownloader::jointTrajectoryCB, this);
 	this->robot_ = robotConnecton;
 	ROS_INFO("Joint trajectory downloader node initialized");
 }
@@ -65,13 +65,14 @@ JointTrajectoryDownloader::JointTrajectoryDownloader(ros::NodeHandle &n,
 JointTrajectoryDownloader::~JointTrajectoryDownloader()
 {  
 	trajectoryStop();
-	this->sub_joint_tranectory_.shutdown();
+	this->sub_joint_trajectory_.shutdown();
 }
 
 void JointTrajectoryDownloader::jointTrajectoryCB(
 		const trajectory_msgs::JointTrajectoryConstPtr &msg)
 {
 	ROS_INFO("Receiving joint trajectory message");
+
 
 	if (!checkTrajectory(msg))
 	{
@@ -80,11 +81,13 @@ void JointTrajectoryDownloader::jointTrajectoryCB(
 	}
 
 	std::vector<double> joint_velocity_limits;
-	if (!getVelocityLimits("robot_description", msg->joint_names, joint_velocity_limits))
+	if (!getVelocityLimits("robot_description", msg, joint_velocity_limits))
 	{
 		ROS_ERROR("Failed to get joint velocity limits");
 		return;
 	}
+
+
 
 	for (int i = 0; i < msg->points.size(); i++)
 	{
@@ -95,7 +98,22 @@ void JointTrajectoryDownloader::jointTrajectoryCB(
 		SimpleMessage topic;
 		trajectory_msgs::JointTrajectoryPoint pt;
 
-		pt = this->msg->points[i];
+		pt = msg->points[i];
+
+		// Performing a manual copy of the joint velocities in order to send them
+                // to the utility function.  Passing the pt data members doesn't seem to
+                // work.
+                std::vector<double> joint_velocities;
+                double velocity =0 ;
+
+                joint_velocities.resize(msg->joint_names.size());
+                for (int j = 0; j < joint_velocities.size(); j++)
+                {
+                  joint_velocities[i] = pt.velocities[i];
+                }
+                velocity = toMotomanVelocity(joint_velocity_limits, joint_velocities);
+
+                jPt.setVelocity(velocity);
 
 		// The first and last sequence values must be given a special sequence
 		// value
@@ -104,14 +122,14 @@ void JointTrajectoryDownloader::jointTrajectoryCB(
 			ROS_DEBUG("First trajectory point, setting special sequence value");
 			jPt.setSequence(SpecialSeqValues::START_TRAJECTORY_DOWNLOAD);
 		}
-		else if (msg->points.size - 1 == i)
+		else if (msg->points.size() - 1 == i)
 		{
 			ROS_DEBUG("Last trajectory point, setting special sequence value");
-			jMsg.setSequence(SpecialSeqValues::END_TRAJECTORY);
+			jPt.setSequence(SpecialSeqValues::END_TRAJECTORY);
 		}
 		else
 		{
-			jMsg.setSequence(i);
+			jPt.setSequence(i);
 		}
 
 		// Copy position data to local variable
@@ -138,6 +156,20 @@ void JointTrajectoryDownloader::jointTrajectoryCB(
 			ROS_WARN("Failed sent joint point, skipping point");
 		}
 	}
+}
+
+void JointTrajectoryDownloader::trajectoryStop()
+{
+  JointTrajPtMessage jMsg;
+  SimpleMessage msg;
+  SimpleMessage reply;
+
+  ROS_INFO("Joint trajectory downloader: entering stopping state");
+  jMsg.point_.setSequence(SpecialSeqValues::STOP_TRAJECTORY);
+  jMsg.toRequest(msg);
+  ROS_DEBUG("Sending stop command");
+  this->robot_->sendAndReceiveMsg(msg, reply);
+  ROS_DEBUG("Stop command sent");
 }
 
 } //joint_trajectory_handler

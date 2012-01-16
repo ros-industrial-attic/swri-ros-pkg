@@ -77,6 +77,8 @@ private:
   ros::Subscriber sub_joint_trajectory_; //subscribe to "command"
   ros::NodeHandle node_;
 
+  void trajectoryStop();
+
 };
 
 } //joint_trajectory_downloader
