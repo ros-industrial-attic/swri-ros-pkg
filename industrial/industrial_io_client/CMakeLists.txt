@@ -9,7 +9,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rosbuild_add_executable(mock_server test/mock_server.cpp)
-rosbuild_add_gtest_build_flags(mock_server)
-rosbuild_add_rostest(test/client1.test)
-rosbuild_add_rostest(test/client2.test)
+#rosbuild_add_executable(mock_server test/mock_server.cpp)
+#rosbuild_add_gtest_build_flags(mock_server)
+#rosbuild_add_rostest(test/client1.test)
+#rosbuild_add_rostest(test/client2.test)
