@@ -8,6 +8,10 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/armadillo_object_manipulation</url>
+  <depend package="trajectory_execution_monitor"/>
+  <depend package="object_manipulator"/>
+  <depend package="tabletop_object_detector"/>
+  <depend package="planning_environment"/>
 
 </package>
 
