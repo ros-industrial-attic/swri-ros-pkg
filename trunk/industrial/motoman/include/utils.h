@@ -51,17 +51,17 @@ namespace utils
  *
  * \return True if trajectory is valid and meets requirements
  */
-  bool checkTrajectory(trajectory_msgs::JointTrajectory &trajectory);
+bool checkTrajectory(trajectory_msgs::JointTrajectoryConstPtr trajectory);
 
   /**
  * \brief Checks that the joint names match the assumptions made by the motoman
  * controller interface.
  *
- * \param joint names to check
+ * \param trajectory with joint names to check
  *
  * \return True if joint names and order match the expected motoman order
  */
-  bool checkJointNames(std::vector<std::string> &joint_names);
+  bool checkJointNames(trajectory_msgs::JointTrajectoryConstPtr trajectory);
 
   /**
   * \brief Checks a string a the suffix
@@ -80,13 +80,13 @@ namespace utils
   * an expensive one.  The results of this call should be cached for future needs.
   *
   * \param parameter name to query (typically \robot_description)
-  * \param joint names to query
+  * \param trajectory with joint names to query
   * \param joint velocity limits returned by URDQ query
   *
   * \return True if all velocities were found
   */
    bool getVelocityLimits(std::string param_name,
-                           std::vector<std::string> &joint_names,
+                          trajectory_msgs::JointTrajectoryConstPtr trajectory,
                           std::vector<double> &joint_velocity_limits);
 
   /**

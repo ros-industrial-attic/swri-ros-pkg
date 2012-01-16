@@ -29,8 +29,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
  
- #include "ros_conversion.h"
- #include "log_wrapper.h"
+#ifdef ROS
+#include "ros_conversion.h"
+#include "simple_message/log_wrapper.h"
+#endif
+
+#ifdef MOTOPLUS
+#include "ros_conversion.h"
+#include "log_wrapper.h"
+#endif
 
 using namespace industrial::joint_data;
 

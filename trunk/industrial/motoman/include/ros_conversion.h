@@ -32,7 +32,13 @@
 #ifndef ROS_CONVERSION_H
 #define ROS_CONVERSION_H
 
+#ifdef ROS
+#include "simple_message/joint_data.h"
+#endif
+
+#ifdef MOTOPLUS
 #include "joint_data.h"
+#endif
 
 namespace motoman
 {
