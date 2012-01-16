@@ -71,6 +71,7 @@ bool GripperMessage::init(industrial::simple_message::SimpleMessage & msg)
 
   this->setMessageType(ArmadilloMsgTypes::GRIPPER);
   this->unload(&msg.getData());
+  return rtn;
 
 }
 

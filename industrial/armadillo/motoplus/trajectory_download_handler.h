@@ -30,28 +30,44 @@
  */
 
 
-#ifndef GRIPPER_HANDLER_H
-#define GRIPPER_HANDLER_H
+#ifndef TRAJECTORY_DOWNLOAD_HANDLER_H
+#define TRAJECTORY_DOWNLOAD_HANDLER_H
 
 #include "message_handler.h"
+#include "joint_traj.h"
+#include "joint_traj_pt_message.h"
 #include "controller.h"
-#include "motoPlus.h"
 
 namespace armadillo
 {
-namespace gripper_handler
+namespace trajectory_download_handler
 {
 
+
 /**
- * \brief Message handler that responds to gripper operation requests
+* \brief job name
+*/
+//TODO: Should be "class static const" not macro
+#define JOB_NAME "ROS_I_TRAJ.JBI"  
+
+/**
+* \brief size of job buffer
+*/
+//TODO: Should be "class static const" not macro
+#define JOB_BUFFER_SIZE_ 5000   
+  
+  
+/**
+ * \brief Message handler that handles the recieiving of entire trajectories
+ * and trajectory inform job execution.
  */
-//* GripperHandler
+//* TrajectoryDownloadHandler
 /**
  *
  * THIS CLASS IS NOT THREAD-SAFE
  *
  */
-class GripperHandler : public industrial::message_handler::MessageHandler
+class TrajectoryDownloadHandler : public industrial::message_handler::MessageHandler
 {
 
 public:
@@ -59,6 +75,7 @@ public:
 * \brief Class initializer
 *
 * \param connection simple message connection that will be used to send replies.
+* \param controller object used for enabling/disabling motion
 *
 * \return true on success, false otherwise (an invalid message type)
 */
@@ -67,45 +84,8 @@ bool init(industrial::smpl_msg_connection::SmplMsgConnection* connection,
 
 protected:
 
- // Gripper constants
- //
- // The gripper operation is achieved using operation bits and
- // status bit for feedback.
- //
- // For and OPEN/CLOSE move here is the expected order of operations
- // 1. Set OPEN/CLOSE operations bit
- // 2. Wait for OPENING/CLOSING status bit
- // 3. Wait for MOTION_IN_PROGRESS status bit
- // 4. Wait for MOTION_COMPLETE_BIT status bit
- 
- // Operations
- static const int GRIPPER_OUT_BASE_ = 40;
- static const int GRIPPER_INIT_ = GRIPPER_OUT_BASE_ + 0;
- static const int GRIPPER_PINCH_MODE_ = GRIPPER_OUT_BASE_ + 1;
- static const int GRIPPER_OPEN_ = GRIPPER_OUT_BASE_ + 3;
- static const int GRIPPER_CLOSE_ = GRIPPER_OUT_BASE_ + 4;
- 
- // Status
- static const int GRIPPER_IN_BASE_ = 40;
- static const int GRIPPER_INITIALIZED_ = GRIPPER_IN_BASE_ + 0;
- static const int GRIPPER_IN_PINCH_MODE_ = GRIPPER_IN_BASE_ + 1;
- static const int GRIPPER_OPENING_ = GRIPPER_IN_BASE_ + 3;
- static const int GRIPPER_CLOSING_ = GRIPPER_IN_BASE_ + 4;
- static const int GRIPPER_MOTION_IN_PROGRESS_ = GRIPPER_IN_BASE_ + 5;
- static const int GRIPPER_MOTION_COMPLETE_ = GRIPPER_IN_BASE_ + 6;
 
- // Delay between outputs are set and motion starts (this allows status
- // inputs to update as well.  Blocking on other status indicators did
- // not work.
- static const int MOTION_START_DELAY = 50;
- 
- 
-   /**
-* \brief Controller object for setting/reading IO
-*/
- motoman::controller::Controller* ctrl_;
-
-   /**
+  /**
 * \brief Class initializer (Direct call to base class with the same name)
 * I couldn't get the "using" form to work/
 *
@@ -125,10 +105,46 @@ bool init(int msg_type, industrial::smpl_msg_connection::SmplMsgConnection* conn
   */
  bool internalCB(industrial::simple_message::SimpleMessage & in);
  
-};
+  /**
+  * \brief Handle joint trajectory start message
+  *
+  * \param in incoming joint message message (assumes sequence is set to 
+  * START_TRAJECTORY_DOWNLOAD)
+  *
+  */
+ void startTrajectory(industrial::joint_traj_pt_message::JointTrajPtMessage & jMsg);
+ 
+ /**
+  * \brief Handle joint trajectory start message
+  *
+  * \param in incoming joint message message (assumes sequence is set to 
+  * START_TRAJECTORY_DOWNLOAD)
+  *
+  */
+ void endTrajectory(industrial::joint_traj_pt_message::JointTrajPtMessage & jMsg);
+  
 
-}//gripper_handler
+   /**
+* \brief Controller object for handing jobs and motion
+*/
+ motoman::controller::Controller* ctrl_;
+ 
+/**
+   * \brief joint trajectory (internal buffer)
+   */
+  industrial::joint_traj::JointTraj traj_;
+  
+ /**
+   * \brief job sting buffer (limited to JOB_BUFFER_SIZE_ characters);
+   */
+   char jobBuffer_[JOB_BUFFER_SIZE_];
+ 
+};
+ 
+
+
+}//trajectory_download_handler
 }//motoman
 
 
-#endif /* INPUT_HANDLER_H_ */
+#endif // TRAJECTORY_DOWNLOAD_HANDLER_H
