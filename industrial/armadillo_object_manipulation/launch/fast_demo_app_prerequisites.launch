@@ -66,6 +66,7 @@
     <param name="prune_table_clearance" value="-1.0"/>
   </node>
 -->
+  <include file="$(find pr2_gripper_grasp_planner_cluster)/launch/robotiq_hand_grasp_planner_cluster_server.launch"/>
 
   <include file="$(find tabletop_object_detector)/launch/tabletop_segmentation.launch">
     <arg unless="$(arg stereo)" name="tabletop_segmentation_points_in" value="camera/depth/points"/>

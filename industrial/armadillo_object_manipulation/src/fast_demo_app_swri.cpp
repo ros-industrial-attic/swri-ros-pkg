@@ -21,6 +21,7 @@
 #include <object_manipulation_msgs/GraspPlanning.h>
 #include <planning_environment/util/construct_object.h>
 #include <armadillo_object_manipulation/grasp_posture_trajectory_controller_handler.h>
+#include <object_manipulation_msgs/GraspPlanningAction.h>
 
 using namespace trajectory_execution_monitor;
 
@@ -65,9 +66,15 @@ public:
     trajectory_filter_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>("/trajectory_filter_server/filter_trajectory_with_constraints");
     //trajectory_filter_fast_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>("/trajectory_filter_server_fast/filter_trajectory_with_constraints");
 
-    object_database_model_mesh_client_ = nh.serviceClient<household_objects_database_msgs::GetModelMesh>("/objects_database_node/get_model_mesh", true);
-    object_database_grasp_client_ = nh.serviceClient<object_manipulation_msgs::GraspPlanning>("/objects_database_node/database_grasp_planning", true);
-    object_database_model_description_client_ = nh.serviceClient<household_objects_database_msgs::GetModelDescription>("/objects_database_node/get_model_description", true);
+    nh.param<bool>("use_cluster_planner", use_cluster_planner_, false);
+
+    if(!use_cluster_planner_) {
+      object_database_model_mesh_client_ = nh.serviceClient<household_objects_database_msgs::GetModelMesh>("/objects_database_node/get_model_mesh", true);
+      object_database_grasp_client_ = nh.serviceClient<object_manipulation_msgs::GraspPlanning>("/objects_database_node/database_grasp_planning", true);
+      object_database_model_description_client_ = nh.serviceClient<household_objects_database_msgs::GetModelDescription>("/objects_database_node/get_model_description", true);
+    } else {
+      cluster_planner_action_.reset(new actionlib::SimpleActionClient<object_manipulation_msgs::GraspPlanningAction>("TODO", true));
+    }
 
     grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_);
     place_tester_ = new object_manipulator::PlaceTesterFast(&cm_);
@@ -463,9 +470,9 @@ public:
     household_objects_database_msgs::DatabaseModelPose dmp_copy = dmp;
     dmp_copy.pose = transformed_recognition_poses_[pickup_goal.collision_object_name];
     pickup_goal.target.potential_models.push_back(dmp_copy);
-    return getDatabaseObjectGrasps(arm_name,
-                                   dmp,
-                                   grasps);
+    return getObjectGrasps(arm_name,
+                           dmp,
+                           grasps);
   }
 
   bool putDownSomething(const std::string& arm_name) {
@@ -752,9 +759,9 @@ public:
     return trajectories_succeeded_;
   }
 
-  bool getDatabaseObjectGrasps(const std::string& arm_name,
-                               const household_objects_database_msgs::DatabaseModelPose& dmp,
-                               std::vector<object_manipulation_msgs::Grasp>& grasps)
+  bool getObjectGrasps(const std::string& arm_name,
+                       const household_objects_database_msgs::DatabaseModelPose& dmp,
+                       std::vector<object_manipulation_msgs::Grasp>& grasps)
   {
     household_objects_database_msgs::GetModelDescription::Request des_req;
     household_objects_database_msgs::GetModelDescription::Response des_res;
@@ -768,33 +775,48 @@ public:
       ROS_WARN_STREAM("Object database gave non-success code " << des_res.return_code.code << " for model id " << des_req.model_id);
       return false;
     }
-
-    object_manipulation_msgs::GraspPlanning::Request request;
-    object_manipulation_msgs::GraspPlanning::Response response;
     household_objects_database_msgs::DatabaseModelPose dmp_copy = dmp;
     dmp_copy.pose = geometry_msgs::PoseStamped();
     dmp_copy.pose.pose.orientation.w = 1.0;
     dmp_copy.pose.header.frame_id = des_res.name;
     dmp_copy.pose.header.stamp = ros::Time::now();
 
-    request.arm_name = arm_name;
-    request.target.potential_models.push_back(dmp_copy);
-    request.target.reference_frame_id = des_res.name;
-    
-    if(!object_database_grasp_client_.call(request, response)) {
-      ROS_WARN_STREAM("Call to objects database for GraspPlanning failed");
-      return false;
+
+    if(!use_cluster_planner_) {
+      object_manipulation_msgs::GraspPlanning::Request request;
+      object_manipulation_msgs::GraspPlanning::Response response;
+      
+      request.arm_name = arm_name;
+      request.target.potential_models.push_back(dmp_copy);
+      request.target.reference_frame_id = des_res.name;
+      
+      if(!object_database_grasp_client_.call(request, response)) {
+        ROS_WARN_STREAM("Call to objects database for GraspPlanning failed");
+        return false;
+      }
+      if(response.error_code.value != response.error_code.SUCCESS) {
+        ROS_WARN_STREAM("Object database gave non-success code " << response.error_code.value);
+        return false;
+      }
+      
+      if(response.grasps.size() == 0) {
+        ROS_WARN_STREAM("No grasps returned in response");
+        return false;
+      }  
+      grasps = response.grasps;
+    } else {
+      object_manipulation_msgs::GraspPlanningGoal plan_goal;
+      object_manipulation_msgs::GraspPlanningResult plan_res;;
+      plan_goal.arm_name = arm_name;
+      plan_goal.target.potential_models.push_back(dmp_copy);
+      plan_goal.target.reference_frame_id = des_res.name;
+      
+      if(cluster_planner_action_->sendGoalAndWait(plan_goal, ros::Duration(10.0)) != actionlib::SimpleClientGoalState::SUCCEEDED) {
+        ROS_WARN_STREAM("Cluster planner failed to respond in time or successfully");
+      } else {
+        grasps = cluster_planner_action_->getResult()->grasps;
+      }
     }
-    if(response.error_code.value != response.error_code.SUCCESS) {
-      ROS_WARN_STREAM("Object database gave non-success code " << response.error_code.value);
-      return false;
-    }
-    
-    if(response.grasps.size() == 0) {
-      ROS_WARN_STREAM("No grasps returned in response");
-      return false;
-    }  
-    grasps = response.grasps;
     return true;
   }  
   
@@ -992,9 +1014,12 @@ protected:
   ros::ServiceClient trajectory_filter_service_client_;
   //ros::ServiceClient trajectory_filter_fast_service_client_;
 
+  bool use_cluster_planner_;
   ros::ServiceClient object_database_model_mesh_client_;
   ros::ServiceClient object_database_grasp_client_;
   ros::ServiceClient object_database_model_description_client_;
+
+  boost::shared_ptr<actionlib::SimpleActionClient<object_manipulation_msgs::GraspPlanningAction> > cluster_planner_action_;
 
   ros::ServiceClient set_planning_scene_diff_client_;
 
