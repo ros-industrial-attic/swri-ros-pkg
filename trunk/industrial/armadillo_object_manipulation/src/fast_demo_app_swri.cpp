@@ -16,11 +16,11 @@
 #include <actionlib/client/simple_action_client.h>
 #include <trajectory_execution_monitor/joint_state_recorder.h>
 #include <trajectory_execution_monitor/follow_joint_trajectory_controller_handler.h>
-#include <trajectory_execution_monitor/pr2_gripper_trajectory_controller_handler.h>
 #include <household_objects_database_msgs/GetModelMesh.h>
 #include <household_objects_database_msgs/GetModelDescription.h>
 #include <object_manipulation_msgs/GraspPlanning.h>
 #include <planning_environment/util/construct_object.h>
+#include <armadillo_object_manipulation/grasp_posture_trajectory_controller_handler.h>
 
 using namespace trajectory_execution_monitor;
 
@@ -46,8 +46,8 @@ public:
 
     arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler("right_arm",
                                                                              "/r_arm_controller/follow_joint_trajectory"));
-    gripper_controller_handler_.reset(new Pr2GripperTrajectoryControllerHandler("r_end_effector",
-                                                                                "/r_gripper_controller/gripper_action"));
+    gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("r_end_effector",
+                                                                                  "/r_gripper_controller/gripper_action"));
 
     trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
     trajectory_execution_monitor_.addTrajectoryControllerHandler(arm_controller_handler_);
