@@ -13,6 +13,10 @@
   <depend package="tabletop_object_detector"/>
   <depend package="planning_environment"/>
 
+  <export>
+    <cpp cflags="-I${prefix}/include"/>
+  </export>
+
 </package>
 
 
