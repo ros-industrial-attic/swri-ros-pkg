@@ -1,5 +1,6 @@
 # ----- Microsoft Kinect -----
 kinect_camera:
+  rgbd: True
   cb_detector_config:  /camera/rgb/cb_detector_config
   led_detector_config: /camera/rgb/led_detector
   settler_config:      /camera/rgb/monocam_settler_config
