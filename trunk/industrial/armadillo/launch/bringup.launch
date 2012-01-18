@@ -7,6 +7,7 @@
   <!-- Start Motoman specific nodes -->
   <node pkg="motoman" type="robot_state" name="robot_state"/>
   <node pkg="motoman" type="motion_interface" name="motion_interface"/>
+  <node pkg="motoman" type="joint_trajectory_action" name="joint_trajectory_action"/>
   
   <!-- Start Armadillo specific nodes -->
   <node pkg="armadillo" type="gripper_interface" name="gripper_interface"/>
