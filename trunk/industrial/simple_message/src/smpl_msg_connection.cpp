@@ -125,13 +125,19 @@ bool SmplMsgConnection::receiveMsg(SimpleMessage & message)
 
 
 
-bool SmplMsgConnection::sendAndReceiveMsg(SimpleMessage & send, SimpleMessage & recv)
+bool SmplMsgConnection::sendAndReceiveMsg(SimpleMessage & send, SimpleMessage & recv, bool verbose)
 {	
   bool rtn = false;
   rtn = this->sendMsg(send);
   if (rtn)
   {
+    if(verbose) {
+      LOG_ERROR("Sent message");
+    }
     rtn = this->receiveMsg(recv);
+    if(verbose) {
+      LOG_ERROR("Got message");
+    }
   }
   else
   {
