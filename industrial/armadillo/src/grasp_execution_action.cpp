@@ -131,9 +131,11 @@ private:
           case GraspHandPostureExecutionGoal::GRASP:
             ROS_INFO("Executing a gripper grasp");
             gMsg.init(GripperOperationTypes::CLOSE);
+            break;
           case GraspHandPostureExecutionGoal::RELEASE:
             ROS_INFO("Executing a gripper release");
             gMsg.init(GripperOperationTypes::OPEN);
+            break;
         }
         gMsg.toRequest(request);
         this->robot_->sendAndReceiveMsg(request, reply);
@@ -143,14 +145,17 @@ private:
           case ReplyTypes::SUCCESS:
             ROS_INFO("Robot gripper returned success");
             gh.setSucceeded();
+            break;
           case ReplyTypes::FAILURE:
             ROS_ERROR("Robot gripper returned failure");
             gh.setCanceled();
+            break;
         }
         break;
 
           default:
             gh.setRejected();
+            break;
 
     }
   }
