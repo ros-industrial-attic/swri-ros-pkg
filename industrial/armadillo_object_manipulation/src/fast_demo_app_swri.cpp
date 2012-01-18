@@ -60,8 +60,8 @@ public:
     set_planning_scene_diff_client_ = 
       nh.serviceClient<arm_navigation_msgs::SetPlanningSceneDiff>(SET_PLANNING_SCENE_DIFF_NAME);
 
-    planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>("/ompl_planning/plan_kinematic_path");
-    //planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>("/chomp_planner_longrange/plan_path");
+    //planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>("/ompl_planning/plan_kinematic_path");
+    planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>("/chomp_planner_longrange/plan_path");
     trajectory_filter_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>("/trajectory_filter_server/filter_trajectory_with_constraints");
     //trajectory_filter_fast_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>("/trajectory_filter_server_fast/filter_trajectory_with_constraints");
 
@@ -466,7 +466,7 @@ public:
     pickup_goal.lift.direction.header.frame_id = cm_.getWorldFrameId();
     pickup_goal.lift.direction.vector.z = 1.0;
     pickup_goal.lift.desired_distance = .1;
-    pickup_goal.target.reference_frame_id = "base_link";
+    pickup_goal.target.reference_frame_id = pickup_goal.collision_object_name;
     pickup_goal.target.cluster = last_clusters_[0];
 
     household_objects_database_msgs::DatabaseModelPose dmp_copy = dmp;
@@ -545,7 +545,7 @@ public:
           tf::poseMsgToTF(place_pose.pose, trans);
           trans = trans*rot;
           tf::poseTFToMsg(trans, place_pose.pose);
-          ROS_DEBUG_STREAM("Place location " << i << " " << j << " " 
+          ROS_INFO_STREAM("Place location " << i << " " << j << " " 
                            << place_pose.pose.position.x << " " 
                            << place_pose.pose.position.y << " " 
                            << place_pose.pose.position.z);
@@ -812,7 +812,26 @@ public:
 		      << response.grasps[0].grasp_pose.position.y << " "
 		      << response.grasps[0].grasp_pose.position.z);
     }
+
+    //TODO - actually deal with the different cases here, especially for the cluster planner
     grasps = response.grasps;
+    if(request.target.reference_frame_id != des_res.name) {
+      if(request.target.reference_frame_id != dmp.pose.header.frame_id) {
+        ROS_WARN_STREAM("Cluster does not match recognition");
+      } else {
+        tf::Transform object_in_world_tf;
+        tf::poseMsgToTF(dmp.pose.pose, object_in_world_tf);
+
+        tf::Transform object_in_world_inverse_tf = object_in_world_tf.inverse();
+        //poses are positions of the wrist link in terms of the world
+        //we need to get them in terms of the object
+        for(unsigned int i = 0; i < grasps.size(); i++) {
+          tf::Transform grasp_in_world_tf;
+          tf::poseMsgToTF(grasps[i].grasp_pose, grasp_in_world_tf);
+          tf::poseTFToMsg(object_in_world_inverse_tf*grasp_in_world_tf, grasps[i].grasp_pose);
+        }
+      }
+    }
     return true;
   }  
   
@@ -858,7 +877,6 @@ public:
       ROS_ERROR_STREAM("No object with id " << collision_object_name);
       return false;
     }
-    //TODO - deal
     att.link_name = "palm";
     att.touch_links.push_back("end_effector");
     
