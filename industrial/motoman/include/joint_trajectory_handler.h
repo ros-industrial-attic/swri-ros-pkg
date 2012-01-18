@@ -82,6 +82,10 @@ public:
   void jointTrajectoryCB(const trajectory_msgs::JointTrajectoryConstPtr &msg);
   void trajectoryHandler();
 
+  unsigned int getNextTrajectoryPoint(const trajectory_msgs::JointTrajectory& traj,
+                                      const ros::Time& start,
+                                      const ros::Time& cur);
+
 private:
 
   void trajectoryStop();
@@ -94,6 +98,7 @@ private:
   boost::mutex mutex_;int currentPoint;
   trajectory_msgs::JointTrajectory current_traj_;
   JointTrajectoryState state_;
+  ros::Time streaming_start_;
 
   static const int NUM_OF_JOINTS_ = 7;
 };

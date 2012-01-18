@@ -94,6 +94,24 @@ public:
     watchdog_timer_.stop();
   }
 
+  bool withinGoalConstraints(const control_msgs::FollowJointTrajectoryFeedbackConstPtr &msg,
+                             const std::map<std::string, double>& constraints,
+                             const trajectory_msgs::JointTrajectory& traj) {
+    ROS_DEBUG("Checking goal contraints");
+    int last = traj.points.size() - 1;
+    for (size_t i = 0; i < msg->joint_names.size(); ++i)
+    {
+      double abs_error = fabs(msg->actual.positions[i]-traj.points[last].positions[i]);
+      double goal_constraint = constraints.at(msg->joint_names[i]);
+      if (goal_constraint >= 0 && abs_error > goal_constraint)
+      {
+        return false;
+      }
+      ROS_DEBUG("Checking constraint: %f, abs_errs: %f", goal_constraint, abs_error);
+    }
+    return true;
+  }
+
 private:
 
   static bool setsEqual(const std::vector<std::string> &a, const std::vector<std::string> &b)
@@ -174,14 +192,23 @@ private:
       has_active_goal_ = false;
     }
 
-    gh.setAccepted();
-    active_goal_ = gh;
-    has_active_goal_ = true;
-
     // Sends the trajectory along to the controller
-    ROS_DEBUG("Publishing trajectory");
-    current_traj_ = active_goal_.getGoal()->trajectory;
-    pub_controller_command_.publish(current_traj_);
+    if(withinGoalConstraints(last_controller_state_,
+                             goal_constraints_,
+                             gh.getGoal()->trajectory)) {
+      ROS_INFO_STREAM("Already within goal constraints");
+      gh.setAccepted();
+      gh.setSucceeded();
+    } else {
+      gh.setAccepted();
+      active_goal_ = gh;
+      has_active_goal_ = true;
+
+      ROS_INFO("Publishing trajectory");
+
+      current_traj_ = active_goal_.getGoal()->trajectory;
+      pub_controller_command_.publish(current_traj_);
+    }
   }
 
   void cancelCB(GoalHandle gh)
@@ -251,21 +278,9 @@ private:
     // Checks that we have ended inside the goal constraints
 
     ROS_DEBUG("Checking goal contraints");
-    bool inside_goal_constraints = true;
-    int last = current_traj_.points.size() - 1;
-    for (size_t i = 0; i < msg->joint_names.size() && inside_goal_constraints; ++i)
-    {
-      double abs_error = fabs(msg->actual.positions[i]-current_traj_.points[last].positions[i]);
-      double goal_constraint = goal_constraints_[msg->joint_names[i]];
-      if (goal_constraint >= 0 && abs_error > goal_constraint)
-      {
-        inside_goal_constraints = false;
-      }
-      ROS_DEBUG("Checking constraint: %f, abs_errs: %f", goal_constraint, abs_error);
-    }
-
-    if (inside_goal_constraints)
-    {
+    if(withinGoalConstraints(msg, 
+                             goal_constraints_,
+                             current_traj_)) {
       ROS_INFO("Inside goal contraints, return success for action");
       active_goal_.setSucceeded();
       has_active_goal_ = false;

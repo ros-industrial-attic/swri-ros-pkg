@@ -87,30 +87,28 @@ void JointTrajectoryHandler::jointTrajectoryCB(const trajectory_msgs::JointTraje
     }
     trajectoryStop();
   }
+  if (msg->points.empty())
+  {
+    ROS_INFO("Empty trajectory received while in IDLE state, nothing is done");
+  }
   else
   {
-    if (msg->points.empty())
+    ROS_INFO("Loading trajectory, setting state to streaming");
+    this->current_traj_ = *msg;
+    
+    // TODO: This section pads any trajectory below the minimum size with the same
+    // end point.  This is required because the motoman side requires a minimum buffer
+    // size before it start motion.
+    while (current_traj_.points.size() < 6)
     {
-      ROS_INFO("Empty trajectory received while in IDLE state, nothing is done");
-    }
-    else
-    {
-      ROS_INFO("Loading trajectory, setting state to streaming");
-      this->current_traj_ = *msg;
-
-      // TODO: This section pads any trajectory below the minimum size with the same
-      // end point.  This is required because the motoman side requires a minimum buffer
-      // size before it start motion.
-      while (current_traj_.points.size() < 6)
-      {
-        ROS_DEBUG("Padding trajectory, current size: %d", current_traj_.points.size());
-        current_traj_.points.push_back(current_traj_.points[current_traj_.points.size()-1]);
-      };
-
-      ROS_INFO("Executing trajectory of size: %d", this->current_traj_.points.size());
-      this->currentPoint = 0;
-      this->state_ = JointTrajectoryStates::STREAMING;
-    }
+      ROS_DEBUG("Padding trajectory, current size: %d", current_traj_.points.size());
+      current_traj_.points.push_back(current_traj_.points[current_traj_.points.size()-1]);
+    };
+    
+    ROS_INFO("Executing trajectory of size: %d", this->current_traj_.points.size());
+    this->currentPoint = 0;
+    this->state_ = JointTrajectoryStates::STREAMING;
+    streaming_start_ = ros::Time::now();
   }
   this->mutex_.unlock();
 }
@@ -145,7 +143,11 @@ void JointTrajectoryHandler::trajectoryHandler()
         case JointTrajectoryStates::STREAMING:
           if (this->currentPoint < this->current_traj_.points.size())
           {
-	          ROS_INFO("Streaming joints point[%d]", this->currentPoint);
+            unsigned int lastCurrentPoint = currentPoint;
+            currentPoint = getNextTrajectoryPoint(current_traj_,
+                                                  streaming_start_,
+                                                  ros::Time::now());
+            ROS_INFO("Skipping from point[%d] to point[%d]", lastCurrentPoint, currentPoint);
             pt = this->current_traj_.points[this->currentPoint];
             
             jMsg.setSequence(this->currentPoint);
@@ -157,15 +159,17 @@ void JointTrajectoryHandler::trajectoryHandler()
             
             jMsg.toRequest(msg);
             ROS_DEBUG("Sending joint point");
-            if (this->robot_->sendAndReceiveMsg(msg, reply))
+            if (this->robot_->sendAndReceiveMsg(msg, reply, false))
             {
-              ROS_INFO("Point[%d] sent to controller", this->currentPoint);
+              ROS_INFO("Point[%d of %d] sent to controller", 
+                       this->currentPoint, this->current_traj_.points.size());
               this->currentPoint++;
             }
             else
             {
-	           ROS_WARN("Failed sent joint point, will try again");
+              ROS_WARN("Failed sent joint point, will try again");
             }
+            //ROS_INFO_STREAM("Time taken to stream single point is " << (ros::WallTime::now()-start));
           }
           else
           {
@@ -194,6 +198,18 @@ void JointTrajectoryHandler::trajectoryHandler()
   ROS_WARN("Exiting trajectory handler thread");
 }
 
+unsigned int JointTrajectoryHandler::getNextTrajectoryPoint(const trajectory_msgs::JointTrajectory& traj,
+                                                            const ros::Time& start,
+                                                            const ros::Time& cur)
+{
+  for(unsigned int i = 0; i < traj.points.size(); i++) {
+    ros::Duration dur(cur-start);
+    if(dur < traj.points[i].time_from_start) {
+      return i;
+    }
+  }
+  return traj.points.size()-1;
+}
 
 
 void JointTrajectoryHandler::trajectoryStop()
