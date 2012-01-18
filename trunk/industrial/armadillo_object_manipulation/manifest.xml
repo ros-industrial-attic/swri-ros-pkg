@@ -12,6 +12,8 @@
   <depend package="object_manipulator"/>
   <depend package="tabletop_object_detector"/>
   <depend package="planning_environment"/>
+  <depend package="armadillo_arm_navigation"/>
+  <depend package="pr2_gripper_grasp_planner_cluster"/>
 
   <export>
     <cpp cflags="-I${prefix}/include"/>
