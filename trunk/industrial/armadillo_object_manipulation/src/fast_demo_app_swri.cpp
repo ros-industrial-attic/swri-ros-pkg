@@ -489,10 +489,10 @@ public:
     object_manipulation_msgs::PlaceGoal place_goal;
     place_goal.arm_name = arm_name;
     place_goal.grasp = current_grasp_map_[arm_name];
-    place_goal.desired_retreat_distance = .2;
-    place_goal.min_retreat_distance = .2;
-    place_goal.approach.desired_distance = .17;
-    place_goal.approach.min_distance = .17;
+    place_goal.desired_retreat_distance = .1;
+    place_goal.min_retreat_distance = .1;
+    place_goal.approach.desired_distance = .1;
+    place_goal.approach.min_distance = .1;
     place_goal.approach.direction.header.frame_id = cm_.getWorldFrameId();
     place_goal.approach.direction.vector.x = 0.0;
     place_goal.approach.direction.vector.y = 0.0;
@@ -506,8 +506,8 @@ public:
     table_pose.pose = table_.poses[0];
     table_pose.header.frame_id = table_.header.frame_id;
 
-    double l = table_.shapes[0].dimensions[0];
-    double w = table_.shapes[0].dimensions[1];
+    double l = table_.shapes[0].dimensions[0]-.2;
+    double w = table_.shapes[0].dimensions[1]-.2;
     double d = table_.shapes[0].dimensions[2];
 
     double spacing = .1;
