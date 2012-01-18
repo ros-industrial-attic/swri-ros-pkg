@@ -68,9 +68,11 @@ public:
     initializeRecordedTrajectory(trajectory);
 
     object_manipulation_msgs::GraspHandPostureExecutionGoal goal;
-    if(trajectory.points[0].positions[0] > 0.0) {
+    if(trajectory.points[0].positions[0] == 0.0) {
+      ROS_INFO_STREAM("Should be commanding grasp");
       goal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP;
     } else {
+      ROS_INFO_STREAM("Should be commanding release");
       goal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE;
     }
 

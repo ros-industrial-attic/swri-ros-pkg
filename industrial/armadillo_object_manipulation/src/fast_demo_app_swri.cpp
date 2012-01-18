@@ -44,10 +44,10 @@ public:
 
     joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
 
-    arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler("right_arm",
-                                                                             "/r_arm_controller/follow_joint_trajectory"));
-    gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("r_end_effector",
-                                                                                  "/r_gripper_controller/gripper_action"));
+    arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler("manipulator",
+                                                                             "/joint_trajectory_action"));
+    gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("end_effector",
+										  "/grasp_execution_action"));
 
     trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
     trajectory_execution_monitor_.addTrajectoryControllerHandler(arm_controller_handler_);
@@ -68,10 +68,10 @@ public:
     object_database_model_mesh_client_ = nh.serviceClient<household_objects_database_msgs::GetModelMesh>("/objects_database_node/get_model_mesh", true);
     object_database_model_description_client_ = nh.serviceClient<household_objects_database_msgs::GetModelDescription>("/objects_database_node/get_model_description", true);
 
-    object_database_grasp_client_ = nh.serviceClient<object_manipulation_msgs::GraspPlanning>("/robotiq_hand_grasp_planner_cluster/plan_point_cluster_grasps", true);
+    object_database_grasp_client_ = nh.serviceClient<object_manipulation_msgs::GraspPlanning>("/plan_point_cluster_grasp", true);
 
-    grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_);
-    place_tester_ = new object_manipulator::PlaceTesterFast(&cm_);
+    grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, "armadillo_manipulator_kinematics/IKFastKinematicsPlugin");
+    place_tester_ = new object_manipulator::PlaceTesterFast(&cm_, "armadillo_manipulator_kinematics/IKFastKinematicsPlugin");
 
     trajectories_finished_function_ = boost::bind(&FastDemoApp::trajectoriesFinishedCallbackFunction, this, _1);
 
@@ -228,6 +228,7 @@ public:
     ter_reqs.push_back(ter);
 
     ros::WallTime start_execution = ros::WallTime::now();
+    ROS_INFO_STREAM("Should be trying to move arm");
     trajectory_execution_monitor_.executeTrajectories(ter_reqs,
                                                       trajectories_finished_function_);
     boost::unique_lock<boost::mutex> lock(execution_mutex_);
@@ -275,15 +276,19 @@ public:
   bool moveArmToSide() {
 
     getAndSetPlanningScene();
+
+    //name: ['joint_s', 'joint_l', 'joint_e', 'joint_u', 'joint_r', 'joint_b', 'joint_t']
+    //position: [-0.46665400266647339, 0.1069866344332695, 2.1171059608459473, -1.4666222333908081, -0.17949093878269196, -1.6554385423660278, -1.7431133985519409]
+
     
     std::vector<double> joint_angles;
-    joint_angles.push_back(-2.1);
-    joint_angles.push_back(-0.02);
-    joint_angles.push_back(-1.64);
-    joint_angles.push_back(-2.07);
-    joint_angles.push_back(-1.64);
-    joint_angles.push_back(-1.68);
-    joint_angles.push_back(1.398);
+    joint_angles.push_back(-0.46665400266647339);
+    joint_angles.push_back(0.1069866344332695);
+    joint_angles.push_back(2.1171059608459473);
+    joint_angles.push_back(-1.4666222333908081);
+    joint_angles.push_back(-0.17949093878269196);
+    joint_angles.push_back(-1.6554385423660278);
+    joint_angles.push_back(-1.7431133985519409);
     return moveArm("manipulator",joint_angles);
   }
 
@@ -371,6 +376,8 @@ public:
     object_models_.clear();
     if(!segmentation_srv.response.clusters.empty()) {
       
+      last_clusters_ = segmentation_srv.response.clusters;
+
       tabletop_object_detector::TabletopObjectRecognition recognition_srv;
       recognition_srv.request.table = segmentation_srv.response.table;
       recognition_srv.request.clusters = segmentation_srv.response.clusters;
@@ -459,14 +466,16 @@ public:
     pickup_goal.lift.direction.header.frame_id = cm_.getWorldFrameId();
     pickup_goal.lift.direction.vector.z = 1.0;
     pickup_goal.lift.desired_distance = .1;
-    pickup_goal.target.reference_frame_id = pickup_goal.collision_object_name;
+    pickup_goal.target.reference_frame_id = "base_link";
+    pickup_goal.target.cluster = last_clusters_[0];
 
     household_objects_database_msgs::DatabaseModelPose dmp_copy = dmp;
     dmp_copy.pose = transformed_recognition_poses_[pickup_goal.collision_object_name];
     pickup_goal.target.potential_models.push_back(dmp_copy);
     return getObjectGrasps(arm_name,
                            dmp,
-                           grasps);
+			   last_clusters_[0],
+			   grasps);
   }
 
   bool putDownSomething(const std::string& arm_name) {
@@ -480,10 +489,10 @@ public:
     object_manipulation_msgs::PlaceGoal place_goal;
     place_goal.arm_name = arm_name;
     place_goal.grasp = current_grasp_map_[arm_name];
-    place_goal.desired_retreat_distance = .1;
-    place_goal.min_retreat_distance = .1;
-    place_goal.approach.desired_distance = .1;
-    place_goal.approach.min_distance = .1;
+    place_goal.desired_retreat_distance = .2;
+    place_goal.min_retreat_distance = .2;
+    place_goal.approach.desired_distance = .17;
+    place_goal.approach.min_distance = .17;
     place_goal.approach.direction.header.frame_id = cm_.getWorldFrameId();
     place_goal.approach.direction.vector.x = 0.0;
     place_goal.approach.direction.vector.y = 0.0;
@@ -603,8 +612,7 @@ public:
       if(grasp_execution_info[i].result_.result_code == object_manipulation_msgs::GraspResult::SUCCESS) {
         current_grasped_object_name_[arm_name] = pickup_goal.collision_object_name;
         current_grasp_map_[arm_name] = grasps[i];
-        bool grasped =  attemptGraspSequence(arm_name,
-                                             grasp_execution_info[i]);
+        bool grasped =  attemptGraspSequence(arm_name, grasp_execution_info[i]);
         if(!grasped) {
           ROS_WARN_STREAM("Grasp failed");
           current_grasped_object_name_.erase(arm_name);
@@ -642,7 +650,7 @@ public:
     std::vector<TrajectoryExecutionRequest> ter_reqs;
     TrajectoryExecutionRequest gripper_ter;
     gripper_ter.group_name_ = "end_effector";
-    gripper_ter.controller_name_ = "/r_gripper_controller/gripper_action";
+    gripper_ter.controller_name_ = "/grasp_execution_action";
     gripper_ter.trajectory_ = getGripperTrajectory(group_name, true);
     gripper_ter.failure_ok_ = true;
     ter_reqs.push_back(gripper_ter);
@@ -728,7 +736,7 @@ public:
     //open gripper
     TrajectoryExecutionRequest gripper_ter;
     gripper_ter.group_name_ = "end_effector";
-    gripper_ter.controller_name_ = "/r_gripper_controller/gripper_action";
+    gripper_ter.controller_name_ = "/grasp_execution_action";
     gripper_ter.trajectory_ = getGripperTrajectory(group_name, true);
     gripper_ter.failure_ok_ = true;
     ter_reqs.push_back(gripper_ter);
@@ -755,6 +763,7 @@ public:
 
   bool getObjectGrasps(const std::string& arm_name,
                        const household_objects_database_msgs::DatabaseModelPose& dmp,
+                       const sensor_msgs::PointCloud& cloud,
                        std::vector<object_manipulation_msgs::Grasp>& grasps)
   {
     household_objects_database_msgs::GetModelDescription::Request des_req;
@@ -781,7 +790,9 @@ public:
       
     request.arm_name = arm_name;
     request.target.potential_models.push_back(dmp_copy);
-    request.target.reference_frame_id = des_res.name;
+    //request.target.reference_frame_id = des_res.name;
+    request.target.reference_frame_id = cloud.header.frame_id;
+    request.target.cluster = cloud;
       
     if(!object_database_grasp_client_.call(request, response)) {
       ROS_WARN_STREAM("Call to objects database for GraspPlanning failed");
@@ -796,6 +807,11 @@ public:
       ROS_WARN_STREAM("No grasps returned in response");
       return false;
     }  
+    if(response.grasps.size() > 0) {
+      ROS_INFO_STREAM("Grasp is " << response.grasps[0].grasp_pose.position.x << " "
+		      << response.grasps[0].grasp_pose.position.y << " "
+		      << response.grasps[0].grasp_pose.position.z);
+    }
     grasps = response.grasps;
     return true;
   }  
@@ -1021,6 +1037,7 @@ protected:
 
   std::map<std::string, geometry_msgs::PoseStamped> transformed_recognition_poses_;
   std::vector<household_objects_database_msgs::DatabaseModelPoseList> object_models_;
+  std::vector<sensor_msgs::PointCloud> last_clusters_;
   arm_navigation_msgs::CollisionObject table_;
 
   std::map<std::string, bool> object_in_hand_map_;
@@ -1056,7 +1073,7 @@ int main(int argc, char** argv) {
 
   fda.moveArmToSide();
 
-  while(0) {
+  while(1) {
     fda.startCycleTimer();
     if(!fda.segmentAndRecognize()) {
       ROS_WARN_STREAM("Segment and recognized failed");
@@ -1067,8 +1084,7 @@ int main(int argc, char** argv) {
       break;
     }
     if(!fda.putDownSomething("manipulator")) {
-      ROS_WARN_STREAM("Pick up failed");
-      break;
+      ROS_WARN_STREAM("Put down failed");
     }
     if(!fda.moveArmToSide()) {
       ROS_WARN_STREAM("Final side moved failed");
