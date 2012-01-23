@@ -14,10 +14,11 @@ sensors:
     kinect_camera:
       frame_id: kinect_rgb_optical_frame
       baseline_shift: 0.0
+      baseline_rgbd: 0.055
       f_shift: 0.0
       cx_shift: 0.0
       cy_shift: 0.0
-      cov: {u: 0.25, v: 0.25}
+      cov: {u: 0.25, v: 0.25, x: 0.25}
 
   tilting_lasers: {}
 
