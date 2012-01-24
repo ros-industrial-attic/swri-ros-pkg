@@ -29,8 +29,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef _MOTOMAN_UTILS_H
+#define _MOTOMAN_UTILS_H
 
 #include <vector>
 #include <string>
@@ -51,7 +51,8 @@ namespace utils
  *
  * \return True if trajectory is valid and meets requirements
  */
-bool checkTrajectory(trajectory_msgs::JointTrajectoryConstPtr trajectory);
+bool checkTrajectory(const trajectory_msgs::JointTrajectoryConstPtr& trajectory);
+bool checkTrajectory();
 
   /**
  * \brief Checks that the joint names match the assumptions made by the motoman
@@ -61,7 +62,7 @@ bool checkTrajectory(trajectory_msgs::JointTrajectoryConstPtr trajectory);
  *
  * \return True if joint names and order match the expected motoman order
  */
-  bool checkJointNames(trajectory_msgs::JointTrajectoryConstPtr trajectory);
+  bool checkJointNames(const trajectory_msgs::JointTrajectoryConstPtr& trajectory);
 
   /**
   * \brief Checks a string a the suffix
@@ -71,7 +72,7 @@ bool checkTrajectory(trajectory_msgs::JointTrajectoryConstPtr trajectory);
   *
   * \return True if str has the suffix
   */
-   bool hasSuffix(std::string &str, std::string &suffix);
+   bool hasSuffix(const std::string &str, const std::string &suffix);
 
   /**
   * \brief Queries the URDF parameter server to determine what the velocity limits

@@ -29,8 +29,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-#include "utils.h"
-#include "definitions.h"
+#include <motoman/utils.h>
+#include <motoman/definitions.h>
 #include "ros/ros.h"
 #include "urdf/model.h"
 
@@ -42,10 +42,10 @@ namespace motoman
 namespace utils
 {
 
-  bool checkTrajectory(JointTrajectoryConstPtr trajectory)
+bool checkTrajectory(const trajectory_msgs::JointTrajectoryConstPtr& trajectory)
   {
     bool rtn = false;
-    rtn = checkJointNames(trajectory->joint_names);
+    rtn = checkJointNames(trajectory);
     if (!rtn)
     {
       ROS_WARN("Joint trajectory name check failed");
@@ -54,26 +54,26 @@ namespace utils
   }
 
 
-  bool checkJointNames(JointTrajectoryConstPtr trajectory)
+  bool checkJointNames(const JointTrajectoryConstPtr& trajectory)
   {
     bool rtn = false;
 
     // The maximum number of joints in the motoman controller is fixed
-    if (trajectory->joint_names.size() <= motoman::parameters::Parameters::JOINT_SUFFIXES_SIZE)
+    if ((int)trajectory->joint_names.size() <= motoman::parameters::Parameters::JOINT_SUFFIXES_SIZE)
     {
       rtn = true;
     }
     else
     {
       rtn = false;
-      ROS_WARN("Size of joint names: %d, exceeds motoman size: %d",
+      ROS_WARN("Size of joint names: %zd, exceeds motoman size: %d",
                trajectory->joint_names.size(),
                motoman::parameters::Parameters::JOINT_SUFFIXES_SIZE);
     }
 
     if (rtn)
     {
-      for(int i = 0; i<trajectory->joint_names.size(); i++)
+      for(unsigned int i = 0; i<trajectory->joint_names.size(); i++)
       {
         string suffix(motoman::parameters::Parameters::JOINT_SUFFIXES[i]);
         if ( hasSuffix(trajectory->joint_names[i], suffix ) )
@@ -93,7 +93,7 @@ namespace utils
   }
 
 
-  bool hasSuffix(string &str, string &suffix)
+  bool hasSuffix(const string &str, const string &suffix)
   {
     bool rtn = false;
     int result;
@@ -138,7 +138,7 @@ namespace utils
       if (urdf_model.initString(urdf))
       {
 
-        for(int i = 0; i<joint_names.size(); i++)
+        for(unsigned int i = 0; i<trajectory->joint_names.size(); i++)
         {
           double limit;
           boost::shared_ptr<const urdf::Joint> joint = urdf_model.getJoint(trajectory->joint_names[i]);
