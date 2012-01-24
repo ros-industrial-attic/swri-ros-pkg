@@ -37,16 +37,18 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #					)
 rosbuild_add_executable(system_inferface src/system_interface.cpp)
 rosbuild_add_executable(robot_state 
-						src/robot_state.cpp
-						src/joint_relay_handler.cpp)
+  src/robot_state.cpp
+  src/joint_relay_handler.cpp)
 rosbuild_add_executable(motion_interface
-						src/motion_interface.cpp
-						src/joint_trajectory_handler.cpp)
-#rosbuild_add_executable(motion_download_interface
-#						src/motion_download_interface.cpp
-#						src/joint_trajectory_downloader.cpp)
+  src/motion_interface.cpp
+  src/joint_trajectory_handler.cpp)
+rosbuild_add_executable(motion_download_interface
+  src/motion_download_interface.cpp
+  src/joint_trajectory_downloader.cpp
+  src/utils.cpp)
 rosbuild_add_executable(joint_trajectory_action
-						src/joint_trajectory_action.cpp)
+  src/utils.cpp 
+  src/joint_trajectory_action.cpp)
 #rosbuild_add_gtest(utest test/utest.cpp)
 #target_link_libraries(utest motoman_lib)
 #target_link_libraries(motion_download_interface motoman_lib)

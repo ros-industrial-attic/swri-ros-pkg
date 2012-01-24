@@ -29,11 +29,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "joint_trajectory_downloader.h"
+#include <motoman/joint_trajectory_downloader.h>
 #include "simple_message/joint_traj_pt.h"
 #include "simple_message/messages/joint_traj_pt_message.h"
 #include "simple_message/smpl_msg_connection.h"
-#include "utils.h"
+#include <motoman/utils.h>
 
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::joint_data;
