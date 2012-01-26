@@ -157,9 +157,11 @@ void JointTrajectoryHandler::trajectoryHandler()
               jMsg.getJoints().setJoint(i, pt.positions[i]);
             }
             
-            jMsg.toRequest(msg);
             ROS_DEBUG("Sending joint point");
+            jMsg.toRequest(msg);
             if (this->robot_->sendAndReceiveMsg(msg, reply, false))
+            //jMsg.toTopic(msg);
+            //if (this->robot_->sendMsg(msg))
             {
               ROS_INFO("Point[%d of %d] sent to controller", 
                        this->currentPoint, this->current_traj_.points.size());

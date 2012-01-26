@@ -38,6 +38,7 @@
   <node pkg="motoman" type="joint_trajectory_action" name="joint_trajectory_action"/>
   <node pkg="motoman" type="robot_state" name="robot_state"/>
   <node pkg="motoman" type="motion_interface" name="motion_interface"/>
+  <!--node pkg="motoman" type="motion_download_interface" name="motion_download_interface"/-->
 
 
   <!-- Called when left arm executes trajectory using controllers -->
@@ -71,7 +72,7 @@
   <!-- Interpolates between end effector positions for the right arm -->
   <param name="right_interpolate_service_name" value="none" />
   <!-- Called to smooth and optimize a planner trajectory -->
-  <param name="trajectory_filter_service_name" value="/trajectory_filter_server/filter_trajectory_with_constraints" />
+  <param name="trajectory_filter_1_service_name" value="/trajectory_filter_server/filter_trajectory_with_constraints" />
   <!-- Called to get the proximity space -->
   <param name="proximity_space_service_name" value="none" />
   <!-- Called to get collision validity of robot state -->
