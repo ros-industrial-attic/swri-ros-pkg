@@ -33,6 +33,7 @@
 #include <motoman/definitions.h>
 #include "ros/ros.h"
 #include "urdf/model.h"
+#include "math.h"
 
 using namespace trajectory_msgs;
 using namespace std;
@@ -143,8 +144,12 @@ bool checkTrajectory(const trajectory_msgs::JointTrajectoryConstPtr& trajectory)
           double limit;
           boost::shared_ptr<const urdf::Joint> joint = urdf_model.getJoint(trajectory->joint_names[i]);
           limit = joint->limits->velocity;
-          ROS_DEBUG("Found joint velocity limit: %e for joint: %s", limit, trajectory->joint_names[i].c_str());
+          joint_velocity_limits[i] = limit;
+          ROS_DEBUG("Found joint velocity limit: %e for joint: %s", 
+                    joint_velocity_limits[i], trajectory->joint_names[i].c_str());
         }
+        ROS_DEBUG("Successefully populated velocity limits, size: %d", joint_velocity_limits.size());
+        rtn = true;
       }
       else
       {
@@ -174,21 +179,24 @@ bool checkTrajectory(const trajectory_msgs::JointTrajectoryConstPtr& trajectory)
   {
     double maxVelPct = 0.0;
 
+    ROS_DEBUG("Converting to motoman velocity, limit size: %d, velocity size: %d",
+              joint_velocity_limits.size(), joint_velocities.size());
     if (joint_velocity_limits.size() == joint_velocities.size())
     {
       for(int i = 0; i<joint_velocity_limits.size(); i++)
       {
-        if (joint_velocity_limits[i] > 0.0 && joint_velocities[i] > 0.0)
+        if (joint_velocity_limits[i] > 0.0)
         {
+          ROS_DEBUG("Calculating velocity percent");
           double velPct = joint_velocities[i]/joint_velocity_limits[i];
 
-          ROS_DEBUG("Calculating velocity percent, velocity: %e, limit: %e, percetn: %e",
+          ROS_DEBUG("Calculating velocity percent, velocity: %e, limit: %e, percent: %e",
                     joint_velocities[i], joint_velocity_limits[i], velPct);
-          if (velPct > maxVelPct)
+          if (abs(velPct) > maxVelPct)
           {
             ROS_DEBUG("Calculated velocity: %e, greater than current max: %e",
                       velPct, maxVelPct);
-            maxVelPct = velPct;
+            maxVelPct = abs(velPct);
           }
         }
         else

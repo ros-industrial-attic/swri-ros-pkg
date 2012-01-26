@@ -59,6 +59,7 @@ JointTrajectoryDownloader::JointTrajectoryDownloader(ros::NodeHandle &n,
 	this->sub_joint_trajectory_ = this->node_.subscribe("command",
 			0, &JointTrajectoryDownloader::jointTrajectoryCB, this);
 	this->robot_ = robotConnecton;
+  this->robot_->makeConnect();
 	ROS_INFO("Joint trajectory downloader node initialized");
 }
 
@@ -73,21 +74,27 @@ void JointTrajectoryDownloader::jointTrajectoryCB(
 {
 	ROS_INFO("Receiving joint trajectory message");
 
-
 	if (!checkTrajectory(msg))
 	{
 		ROS_ERROR("Joint trajectory check failed, trajectory not downloaded");
 		return;
 	}
-
+  
 	std::vector<double> joint_velocity_limits;
+  
 	if (!getVelocityLimits("robot_description", msg, joint_velocity_limits))
 	{
 		ROS_ERROR("Failed to get joint velocity limits");
 		return;
 	}
 
-
+  if (!this->robot_->isConnected())
+  {
+    ROS_WARN("Attempting robot reconnection");
+    this->robot_->makeConnect();
+  }
+  
+  ROS_INFO("Sending trajectory points, size: %d", msg->points.size());
 
 	for (int i = 0; i < msg->points.size(); i++)
 	{
@@ -96,24 +103,21 @@ void JointTrajectoryDownloader::jointTrajectoryCB(
 		JointTrajPt jPt;
 		JointTrajPtMessage jMsg;
 		SimpleMessage topic;
-		trajectory_msgs::JointTrajectoryPoint pt;
-
-		pt = msg->points[i];
 
 		// Performing a manual copy of the joint velocities in order to send them
-                // to the utility function.  Passing the pt data members doesn't seem to
-                // work.
-                std::vector<double> joint_velocities;
-                double velocity =0 ;
+    // to the utility function.  Passing the pt data members doesn't seem to
+    // work.
+    std::vector<double> joint_velocities(0.0);
+    double velocity =0 ;
+    joint_velocities.resize(msg->joint_names.size(), 0.0);
+    for (int j = 0; j < joint_velocities.size(); j++)
+    {
+      joint_velocities[j] = msg->points[i].velocities[j];
+    }
+    ROS_DEBUG("Joint velocities copied");
+    velocity = toMotomanVelocity(joint_velocity_limits, joint_velocities);
 
-                joint_velocities.resize(msg->joint_names.size());
-                for (int j = 0; j < joint_velocities.size(); j++)
-                {
-                  joint_velocities[i] = pt.velocities[i];
-                }
-                velocity = toMotomanVelocity(joint_velocity_limits, joint_velocities);
-
-                jPt.setVelocity(velocity);
+    jPt.setVelocity(velocity);
 
 		// The first and last sequence values must be given a special sequence
 		// value
@@ -136,8 +140,7 @@ void JointTrajectoryDownloader::jointTrajectoryCB(
 		JointData data;
 		for (int j = 0; j < msg->joint_names.size(); j++)
 		{
-			pt = msg->points[j];
-			data.setJoint(j, pt.positions[j]);
+			data.setJoint(j, msg->points[i].positions[j]);
 		}
 
 		// Initialize joint trajectory message
