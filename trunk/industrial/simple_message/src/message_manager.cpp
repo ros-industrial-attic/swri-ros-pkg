@@ -29,6 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #ifdef ROS
+#include "ros/ros.h"
 #include "simple_message/message_manager.h"
 #include "simple_message/log_wrapper.h"
 #include "simple_message/simple_message.h"
@@ -168,7 +169,11 @@ void MessageManager::spinOnce()
 void MessageManager::spin()
 {
   LOG_INFO("Entering message manager spin loop");
+#ifdef ROS
+  while (ros::ok())
+#else
   while (true)
+#endif
   {
     this->spinOnce();
   }
