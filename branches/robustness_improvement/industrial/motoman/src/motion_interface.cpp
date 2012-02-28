@@ -31,14 +31,14 @@
 
 #include <motoman/joint_trajectory_handler.h>
 #include "simple_message/socket/simple_socket.h"
-#include "simple_message/socket/tcp_client.h"
+#include "simple_message/socket/udp_client.h"
 
 using namespace industrial::simple_socket;
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "joint_trajectory_handler");
-  industrial::tcp_client::TcpClient robot;
+  industrial::udp_client::UdpClient robot;
   ros::NodeHandle node;
 
   robot.init("192.168.10.3", StandardSocketPorts::MOTION);

@@ -62,7 +62,7 @@ public:
    *
    * \return true on success, false otherwise (socket is invalid)
    */
-  bool init(char *buff, int port_num);
+  bool init(const char *buff, int port_num);
 
 
 private:

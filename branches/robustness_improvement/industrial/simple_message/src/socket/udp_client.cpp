@@ -55,7 +55,7 @@ UdpClient::~UdpClient()
 {
 }
 
-bool UdpClient::init(char *buff, int port_num)
+bool UdpClient::init(const char *buff, int port_num)
 {
 
   int rc;

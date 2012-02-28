@@ -20,17 +20,6 @@
   <node pkg="robot_state_publisher" type="state_publisher" name="rob_st_pub" />
   <node name="planning_scene_warehouse_viewer" pkg="move_arm_warehouse" type="planning_scene_warehouse_viewer"/>
 
-  <node name="interpolated_ik_node_right" pkg="interpolated_ik_motion_planner" 
-	type="interpolated_ik_motion_planner.py" args="r" respawn="false" output="screen">
-    <param name="robot_prefix" type="string" value="armadillo"/>
-    <param name="consistent_angle" type="double" value="1.05"/>
-  </node>
-  <node name="interpolated_ik_node_left" pkg="interpolated_ik_motion_planner" 
-	type="interpolated_ik_motion_planner.py" args="l" respawn="false" output="screen">
-    <param name="robot_prefix" type="string" value="armadillo"/>
-    <param name="consistent_angle" type="double" value="1.05"/>
-  </node>
-
   <node pkg="rviz" type="rviz" name='rviz_warehouse_viewer' args="-d $(find armadillo_arm_navigation)/config/planning_scene_warehouse_viewer.vcg" />
 
   
