@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="armadillo" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="longhorn" xmlns:xacro="http://ros.org/wiki/xacro">
 	<include filename="$(find motoman)/cfg/sia10d_mesh_macro.xacro" />
 	<include filename="$(find robotiq)/cfg/s-model_mesh_macro.xacro" />
 	<xacro:sia10d_mesh prefix=""/>
@@ -42,82 +42,85 @@
 		<link name="table">
 			<visual>
 				<geometry>
-					<box size="2 2 0.75"/>
+					<box size="1.83 2.44 0.25"/>
 				</geometry>
 				<material name="">
 					<color rgba="1 0 1 1"/>
 				</material>
 			</visual>
+      <collision>
+				<geometry>
+					<box size="1.83 2.44 0.25"/>
+				</geometry>
+				<material name="">
+					<color rgba="1 0 1 1"/>
+				</material>
+			</collision>
 		</link>
 		<link name="table_keepout_1">
-			<visual>
+			<collision>
 				<geometry>
-					<box size="2 0.25 2"/>
+					<box size="2.08 0.25 2"/>
 				</geometry>
 				<material name="">
-					<color rgba="1 0.2 1 0.25"/>
+					<color rgba="1 0.2 1 0.1"/>
 				</material>
-			</visual>
+			</collision>
 		</link>
 		<link name="table_keepout_2">
-			<visual>
+			<collision>
 				<geometry>
-					<box size="0.25 2 2"/>
+					<box size="0.25 2.69 2"/>
 				</geometry>
 				<material name="">
-					<color rgba="1 0.2 1 0.25"/>
+					<color rgba="1 0.2 1 0.1"/>
 				</material>
-			</visual>
+			</collision>
 		</link>
 		<link name="kinect_keepout">
-			<visual>
+			<collision>
 				<geometry>
-					<box size="0.25 2 2"/>
+					<box size="0.25 2.69 2"/>
 				</geometry>
 				<material name="">
-					<color rgba="1 0.2 1 0.25"/>
+					<color rgba="1 0.2 1 0.1"/>
 				</material>
-			</visual>
+			</collision>
 		</link>
     <link name="kinect">
-			<visual>
+			<collision>
 				<geometry>
 					<box size="0.36 0.28 0.22"/>
 				</geometry>
 				<material name="">
-					<color rgba="1 0.8 1 1"/>
+					<color rgba="1 0.8 1 0.1"/>
 				</material>
-			</visual>
+			</collision>
 		</link>
 		<joint name="base-table" type="fixed">
 			<parent link="base_link"/>
 			<child link="table"/>
-			<origin xyz="-0.52 -0.34 -0.11" rpy="0 0 0"/>
+			<origin xyz="1.19 0.22 -0.125" rpy="0 0 -0.785"/>
 		</joint>
-		<joint name="base-controller" type="fixed">
+		<joint name="base-kinect" type="fixed">
 			<parent link="base_link"/>
-			<child link="controller"/>
-			<origin xyz="-0.75 -0.50 0.50" rpy="0 0 0"/>
-		</joint>
-		<joint name="base-filter" type="fixed">
-			<parent link="base_link"/>
-			<child link="filter"/>
-			<origin xyz="-0.17 -0.50 0.63" rpy="0 0 0"/>
-		</joint>
-		<joint name="pallet-floor" type="fixed">
-			<parent link="pallet"/>
-			<child link="floor"/>
-			<origin xyz="0 0 -0.11" rpy="0 0 0"/>
-		</joint>
-		<joint name="filter-kinect" type="fixed">
-			<parent link="filter"/>
 			<child link="kinect"/>
-			<origin xyz="0.18 0 0.29" rpy="0 0 0"/>
+			<origin xyz="1.26 -0.72 0.75" rpy="0 0 2.356"/>
 		</joint>
-		<joint name="base-tables" type="fixed">
-			<parent link="base_link"/>
-			<child link="tables"/>
-			<origin xyz="0.84 0 0" rpy="0 0 0"/>
+		<joint name="table-keepout_1" type="fixed">
+			<parent link="table"/>
+			<child link="table_keepout_1"/>
+			<origin xyz="0 -1.34 1" rpy="0 0 0"/>
+		</joint>
+		<joint name="table-keepout_2" type="fixed">
+			<parent link="table"/>
+			<child link="table_keepout_2"/>
+			<origin xyz="-1.025 0 1" rpy="0 0 0"/>
+		</joint>
+		<joint name="table-kinect" type="fixed">
+			<parent link="table"/>
+			<child link="kinect_keepout"/>
+			<origin xyz=".5 0 1" rpy="0 0 0"/>
 		</joint>
   <!-- end environment list -->
 
@@ -125,7 +128,7 @@
 		<joint name="kinect_frame_joint" type="fixed">
 			<parent link="kinect"/>
 			<child link="kinect_frame"/>
-			<origin rpy="0.075 0.351422870712 0.396594014755" xyz="-0.12481258247 0.064659133914 -0.022541275619"/>
+			<origin rpy="0 0 0" xyz="0 0 0"/>
 		</joint>
 		<link name="kinect_frame">
 			<visual>
