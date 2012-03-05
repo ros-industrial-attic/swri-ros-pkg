@@ -36,14 +36,14 @@
 #include "simple_message/typed_message.h"
 #include "simple_message/simple_message.h"
 #include "simple_message/shared_types.h"
-#include "armadillo/armadillo.h"
+#include "longhorn/longhorn.h"
 #endif
 
 #ifdef MOTOPLUS
 #include "typed_message.h"
 #include "simple_message.h"
 #include "shared_types.h"
-#include "armadillo.h"
+#include "longhorn.h"
 #endif
 
 
@@ -68,7 +68,7 @@ namespace GripperOperationTypes
 typedef GripperOperationTypes::GripperOperationType GripperOperationType;
 
 /**
- * \brief Class encapsulated armadillo robot gripper message.
+ * \brief Class encapsulated longhorn robot gripper message.
  */
 //* GripperMessage
 /**

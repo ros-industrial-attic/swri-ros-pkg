@@ -30,14 +30,14 @@
  */
 
 #ifdef ROS
-#include "armadillo/armadillo.h"
-#include "armadillo/messages/gripper_message.h"
+#include "longhorn/longhorn.h"
+#include "longhorn/messages/gripper_message.h"
 #include "simple_message/byte_array.h"
 #include "simple_message/log_wrapper.h"
 #endif
 
 #ifdef MOTOPLUS
-#include "armadillo.h"
+#include "longhorn.h"
 #include "gripper_message.h"
 #include "byte_array.h"
 #include "log_wrapper.h"
@@ -46,7 +46,7 @@
 using namespace industrial::shared_types;
 using namespace industrial::byte_array;
 using namespace industrial::simple_message;
-using namespace industrial::armadillo;
+using namespace industrial::longhorn;
 
 namespace industrial
 {
@@ -55,7 +55,7 @@ namespace gripper_message
 
 GripperMessage::GripperMessage(void)
 {
-  this->setMessageType(ArmadilloMsgTypes::GRIPPER);
+  this->setMessageType(LonghornMsgTypes::GRIPPER);
   this->init();
 }
 
@@ -69,7 +69,7 @@ bool GripperMessage::init(industrial::simple_message::SimpleMessage & msg)
   bool rtn = false;
   ByteArray data = msg.getData();
 
-  this->setMessageType(ArmadilloMsgTypes::GRIPPER);
+  this->setMessageType(LonghornMsgTypes::GRIPPER);
   this->unload(&msg.getData());
   return rtn;
 

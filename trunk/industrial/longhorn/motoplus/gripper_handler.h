@@ -37,7 +37,7 @@
 #include "controller.h"
 #include "motoPlus.h"
 
-namespace armadillo
+namespace longhorn
 {
 namespace gripper_handler
 {

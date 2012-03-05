@@ -32,7 +32,7 @@
 #include "trajectory_download_handler.h"
 #include "shared_types.h"
 #include "log_wrapper.h"
-#include "armadillo.h"
+#include "longhorn.h"
 #include "joint_traj_pt.h"
 #include "trajectory_job.h"
 #include "motoPlus.h"
@@ -40,7 +40,7 @@
 
 using namespace industrial::simple_message;
 using namespace industrial::shared_types;
-using namespace industrial::armadillo;
+using namespace industrial::longhorn;
 using namespace industrial::joint_data;
 using namespace industrial::joint_traj_pt;
 using namespace industrial::joint_traj_pt_message;
@@ -48,7 +48,7 @@ using namespace industrial::smpl_msg_connection;
 using namespace motoman::trajectory_job;
 using namespace motoman::controller;
 
-namespace armadillo
+namespace longhorn
 {
 namespace trajectory_download_handler
 {

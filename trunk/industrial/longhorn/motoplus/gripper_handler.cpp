@@ -32,17 +32,17 @@
 #include "gripper_handler.h"
 #include "shared_types.h"
 #include "log_wrapper.h"
-#include "armadillo.h"
+#include "longhorn.h"
 #include "gripper_message.h"
 #include "motoPlus.h"
 
 using namespace industrial::simple_message;
 using namespace industrial::shared_types;
-using namespace industrial::armadillo;
+using namespace industrial::longhorn;
 using namespace industrial::gripper_message;
 using namespace motoman::controller;
 
-namespace armadillo
+namespace longhorn
 {
 namespace gripper_handler
 {
@@ -52,7 +52,7 @@ bool GripperHandler::init(industrial::smpl_msg_connection::SmplMsgConnection* co
         motoman::controller::Controller* ctrl)
 {
   this->ctrl_ = ctrl;
-  return this->init(ArmadilloMsgTypes::GRIPPER, connection);
+  return this->init(LonghornMsgTypes::GRIPPER, connection);
 }
 
 bool GripperHandler::internalCB(industrial::simple_message::SimpleMessage & in)
@@ -103,7 +103,7 @@ bool GripperHandler::internalCB(industrial::simple_message::SimpleMessage & in)
     break;
   }
   
-  reply.init(ArmadilloMsgTypes::GRIPPER, CommTypes::SERVICE_REPLY, code);
+  reply.init(LonghornMsgTypes::GRIPPER, CommTypes::SERVICE_REPLY, code);
   rtn = this->getConnection()->sendMsg(reply);
   
   return rtn;

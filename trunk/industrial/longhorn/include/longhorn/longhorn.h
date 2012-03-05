@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Software License Agreement (BSD License) 
 *
 * Copyright (c) 2011, Southwest Research Institute
@@ -29,8 +29,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-#ifndef ARMADILLO_H_
-#define ARMADILLO_H_
+#ifndef LONGHORN_H_
+#define LONGHORN_H_
 
 #ifdef ROS
 #include "simple_message/simple_message.h"
@@ -42,7 +42,7 @@
 
 namespace industrial
 {
-namespace armadillo
+namespace longhorn
 {
 
 
@@ -50,16 +50,16 @@ namespace armadillo
  * \brief Enumeration of standard message types (supported by all platforms).
  * In addition, each robot interface will support it's own message types.
  */
-namespace ArmadilloMsgTypes
+namespace LonghornMsgTypes
 {
-  enum ArmadilloMsgType
+  enum LonghornMsgType
   {
     GRIPPER = industrial::simple_message::StandardMsgTypes::SWRI_MSG_BEGIN
   };
 }
-typedef ArmadilloMsgTypes::ArmadilloMsgType ArmadilloMsgType;
+typedef LonghornMsgTypes::LonghornMsgType LonghornMsgType;
 
-} //armadillo
+} //Longhorn
 } //industrial
 
-#endif /* ARMADILLO_H_ */
+#endif /* LONGHORN_H_ */

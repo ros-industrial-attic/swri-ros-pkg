@@ -39,7 +39,7 @@
 #include "tcp_server.h"
 #include "gripper_handler.h"
 #include "trajectory_download_handler.h"
-#include "armadillo.h"
+#include "longhorn.h"
 #include "message_manager.h"
 #include "controller.h"
 
@@ -56,8 +56,8 @@ void gripperServer(void)
     using namespace industrial::simple_socket;
     using namespace industrial::message_manager;
     using namespace industrial::simple_message;
-    using namespace industrial::armadillo;
-    using namespace armadillo::gripper_handler;
+    using namespace industrial::longhorn;
+    using namespace longhorn::gripper_handler;
     
     TcpServer connection;
     GripperHandler gHandler;
@@ -84,8 +84,8 @@ void motionDownloadServer(void)
     using namespace industrial::simple_socket;
     using namespace industrial::message_manager;
     using namespace industrial::simple_message;
-    using namespace industrial::armadillo;
-    using namespace armadillo::trajectory_download_handler;
+    using namespace industrial::longhorn;
+    using namespace longhorn::trajectory_download_handler;
     
     TcpServer connection;
     TrajectoryDownloadHandler tdHandler;
@@ -116,11 +116,12 @@ int state_server_task_ID; \
 int gripper_server_task_ID; \
 extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)
 {  
+  //TODO: Swap out for SIA_20D
   initJointConversion( MotomanRobotModels::SIA_10D );
-  motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (
-                                        FUNCPTR)motionServer, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); 
   //motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (
-  //                                      FUNCPTR)motionDownloadServer, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); 
+  //                                      FUNCPTR)motionServer, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); 
+  motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (
+                                        FUNCPTR)motionDownloadServer, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); 
   //system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer, 
   //					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); 
   state_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, 

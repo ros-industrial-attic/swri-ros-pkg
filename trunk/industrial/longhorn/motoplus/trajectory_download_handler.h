@@ -38,7 +38,7 @@
 #include "joint_traj_pt_message.h"
 #include "controller.h"
 
-namespace armadillo
+namespace longhorn
 {
 namespace trajectory_download_handler
 {
