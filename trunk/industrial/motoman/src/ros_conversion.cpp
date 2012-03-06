@@ -76,6 +76,17 @@ void initJointConversion(MotomanRobotModel model_number)
         T_PULSE_TO_RAD	= 33246.8329;	  
         E_PULSE_TO_RAD	= 65841.76588;	
         break;
+        
+    case MotomanRobotModels::SIA_20D:
+        LOG_INFO("SIA_20D: %d", model_number);
+        S_PULSE_TO_RAD	= 58670.87822;	    
+        L_PULSE_TO_RAD	= 58670.87822;	 
+        U_PULSE_TO_RAD	= 65841.76588;	    
+        R_PULSE_TO_RAD  = 65841.76588;	  
+        B_PULSE_TO_RAD	= 65841.76588;    
+        T_PULSE_TO_RAD	= 33246.8329;	  
+        E_PULSE_TO_RAD	= 65841.76588;	
+        break;
     
     default:
         LOG_ERROR("Failed to initialize conversion factors for model: %d", model_number);
