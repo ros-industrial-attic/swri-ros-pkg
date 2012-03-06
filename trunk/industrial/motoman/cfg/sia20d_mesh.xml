@@ -24,6 +24,7 @@
   </link>
   <link name="link_s">
     <visual>
+      <origin rpy="0 0 3.1416" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://motoman/meshes/sia20d/visual/MOTOMAN_AXIS_S.stl"/>
       </geometry>
@@ -32,6 +33,7 @@
       </material>
     </visual>
     <collision>
+      <origin rpy="0 0 3.1416" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_S.stl"/>
       </geometry>
@@ -40,14 +42,14 @@
   </link>
   <link name="link_l">
     <visual>
-      <origin rpy="1.57 3.1416 0" xyz="0 0 0"/>
+      <origin rpy="1.57 3.1416 3.1416" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://motoman/meshes/sia20d/visual/MOTOMAN_AXIS_L.stl"/>
       </geometry>
       <material name="blue"/>
     </visual>
     <collision>
-      <origin rpy="1.57 3.1416 0" xyz="0 0 0"/>
+      <origin rpy="1.57 3.1416 3.1416" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_L.stl"/>
       </geometry>
@@ -72,14 +74,14 @@
   </link>
   <link name="link_u">
     <visual>
-      <origin rpy="1.57 -3.1415 0" xyz="0 0 0"/>
+      <origin rpy="1.57 -3.1415 3.1416" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://motoman/meshes/sia20d/visual/MOTOMAN_AXIS_U.stl"/>
       </geometry>
       <material name="blue"/>
     </visual>
     <collision>
-      <origin rpy="1.57 -3.1415 0" xyz="0 0 0"/>
+      <origin rpy="1.57 -3.1415 3.1416" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_U.stl"/>
       </geometry>
@@ -88,14 +90,14 @@
   </link>
   <link name="link_r">
     <visual>
-      <origin rpy="0 0 3.1416" xyz="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://motoman/meshes/sia20d/visual/MOTOMAN_AXIS_R.stl"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
-      <origin rpy="0 0 3.1416" xyz="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_R.stl"/>
       </geometry>
@@ -104,14 +106,14 @@
   </link>
   <link name="link_b">
     <visual>
-      <origin rpy="-1.57 0 3.1416" xyz="0 0 0"/>
+      <origin rpy="-1.57 0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://motoman/meshes/sia20d/visual/MOTOMAN_AXIS_B.stl"/>
       </geometry>
       <material name="blue"/>
     </visual>
     <collision>
-      <origin rpy="-1.57 0 3.1416" xyz="0 0 0"/>
+      <origin rpy="-1.57 0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://motoman/meshes/sia20d/collision/MOTOMAN_AXIS_B.stl"/>
       </geometry>
