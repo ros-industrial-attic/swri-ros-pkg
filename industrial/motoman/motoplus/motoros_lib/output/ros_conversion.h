@@ -96,7 +96,8 @@ namespace MotomanRobotModels
 {
 enum MotomanRobotModel
 {
-  SIA_10D
+  SIA_10D,
+  SIA_20D
 };
 }
 typedef MotomanRobotModels::MotomanRobotModel MotomanRobotModel;
