@@ -2,14 +2,14 @@ joint_limits:
   joint_s:
     has_position_limits: true
     has_velocity_limits: true
-    max_velocity: 2.96
+    max_velocity: 2.66
     has_acceleration_limits: true
     max_acceleration: 1
     angle_wraparound: false
   joint_l:
     has_position_limits: true
     has_velocity_limits: true
-    max_velocity: 2.96
+    max_velocity: 2.66
     has_acceleration_limits: true
     max_acceleration: 1
     angle_wraparound: false
