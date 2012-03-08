@@ -77,6 +77,16 @@
 				</material>
 			</collision>
 		</link>
+		<link name="abb_keepout">
+			<collision>
+				<geometry>
+					<box size="0.915 1.524 2"/>
+				</geometry>
+				<material name="">
+					<color rgba="1 0.2 1 0.1"/>
+				</material>
+			</collision>
+		</link>
 		<link name="kinect_keepout">
 			<collision>
 				<geometry>
@@ -116,6 +126,11 @@
 			<parent link="table"/>
 			<child link="table_keepout_2"/>
 			<origin xyz="-1.025 0 1" rpy="0 0 0"/>
+		</joint>
+		<joint name="abb-keepout" type="fixed">
+			<parent link="table"/>
+			<child link="abb_keepout"/>
+			<origin xyz="0.475 0.458 1.125" rpy="0 0 0"/>
 		</joint>
 		<joint name="table-kinect" type="fixed">
 			<parent link="table"/>
