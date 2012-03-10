@@ -81,11 +81,11 @@ void initJointConversion(MotomanRobotModel model_number)
         LOG_INFO("SIA_20D: %d", model_number);
         S_PULSE_TO_RAD	= 58670.87822;	    
         L_PULSE_TO_RAD	= 58670.87822;	 
-        U_PULSE_TO_RAD	= 65841.76588;	    
+        U_PULSE_TO_RAD	= 58670.87822;	    
         R_PULSE_TO_RAD  = 65841.76588;	  
         B_PULSE_TO_RAD	= 65841.76588;    
         T_PULSE_TO_RAD	= 33246.8329;	  
-        E_PULSE_TO_RAD	= 65841.76588;	
+        E_PULSE_TO_RAD	= 58670.87822;	
         break;
     
     default:
