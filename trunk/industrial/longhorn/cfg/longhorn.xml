@@ -139,14 +139,14 @@
     <child link="link_s"/>
     <origin rpy="0 0 0" xyz="0 0 0.41"/>
     <axis xyz="0 0 1"/>
-    <limit effort="100" lower="-3.1416" upper="3.1416" velocity="2.66"/>
+    <limit effort="100" lower="-3.1416" upper="3.1416" velocity="2.26"/>
   </joint>
   <joint name="joint_l" type="revolute">
     <parent link="link_s"/>
     <child link="link_l"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
-    <limit effort="100" lower="-1.91" upper="1.91" velocity="2.66"/>
+    <limit effort="100" lower="-1.91" upper="1.91" velocity="2.26"/>
   </joint>
   <joint name="joint_e" type="revolute">
     <parent link="link_l"/>
@@ -160,7 +160,7 @@
     <child link="link_u"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 -1 0"/>
-    <limit effort="100" lower="-3.1416" upper="3.1416" velocity="2.96"/>
+    <limit effort="100" lower="-2.26" upper="2.26" velocity="2.96"/>
   </joint>
   <joint name="joint_r" type="revolute">
     <parent link="link_u"/>
@@ -339,6 +339,16 @@
       </material>
     </collision>
   </link>
+  <link name="power_supply">
+    <visual>
+      <geometry>
+        <box size="0.400 0.250 0.115"/>
+      </geometry>
+      <material name="">
+        <color rgba="1 0.2 1 0.1"/>
+      </material>
+    </visual>
+  </link>
   <link name="kinect_keepout">
     <collision>
       <geometry>
@@ -383,6 +393,11 @@
     <parent link="table"/>
     <child link="abb_keepout"/>
     <origin rpy="0 0 0" xyz="0.475 0.458 1.125"/>
+  </joint>
+  <joint name="base-power_supply" type="fixed">
+    <parent link="base_link"/>
+    <child link="power_supply"/>
+    <origin rpy="0 0 0" xyz="0 -0.260 0.050"/>
   </joint>
   <joint name="table-kinect" type="fixed">
     <parent link="table"/>
