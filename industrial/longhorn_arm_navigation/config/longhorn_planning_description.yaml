@@ -27,6 +27,9 @@ default_collision_operations:
     object2: kinect_rgb_optical_frame
     operation: disable  # Adjacent in collision
   - object1: base_link
+    object2: power_supply
+    operation: disable  # Adjacent in collision
+  - object1: base_link
     object2: table
     operation: disable  # Adjacent in collision
   - object1: table
@@ -101,6 +104,12 @@ default_collision_operations:
   - object1: kinect_keepout
     object2: table_keepout_1
     operation: disable  # Always in collision
+  - object1: power_supply
+    object2: table
+    operation: disable  # Always in collision
+  - object1: power_supply
+    object2: table_keepout_1
+    operation: disable  # Always in collision
   - object1: table_keepout_1
     object2: table_keepout_2
     operation: disable  # Always in collision
@@ -133,6 +142,9 @@ default_collision_operations:
     operation: disable  # Never in collision
   - object1: abb_keepout
     object2: link_u
+    operation: disable  # Never in collision
+  - object1: abb_keepout
+    object2: power_supply
     operation: disable  # Never in collision
   - object1: abb_keepout
     object2: table_keepout_1
@@ -294,6 +306,9 @@ default_collision_operations:
     object2: link_u
     operation: disable  # Never in collision
   - object1: kinect
+    object2: power_supply
+    operation: disable  # Never in collision
+  - object1: kinect
     object2: table
     operation: disable  # Never in collision
   - object1: kinect
@@ -330,6 +345,9 @@ default_collision_operations:
     object2: palm
     operation: disable  # Never in collision
   - object1: kinect_frame
+    object2: power_supply
+    operation: disable  # Never in collision
+  - object1: kinect_frame
     object2: table
     operation: disable  # Never in collision
   - object1: kinect_frame
@@ -364,6 +382,9 @@ default_collision_operations:
     operation: disable  # Never in collision
   - object1: kinect_ir_link
     object2: palm
+    operation: disable  # Never in collision
+  - object1: kinect_ir_link
+    object2: power_supply
     operation: disable  # Never in collision
   - object1: kinect_ir_link
     object2: table
@@ -393,6 +414,9 @@ default_collision_operations:
     object2: link_u
     operation: disable  # Never in collision
   - object1: kinect_keepout
+    object2: power_supply
+    operation: disable  # Never in collision
+  - object1: kinect_keepout
     object2: table_keepout_2
     operation: disable  # Never in collision
   - object1: kinect_rgb_link
@@ -420,6 +444,9 @@ default_collision_operations:
     object2: palm
     operation: disable  # Never in collision
   - object1: kinect_rgb_link
+    object2: power_supply
+    operation: disable  # Never in collision
+  - object1: kinect_rgb_link
     object2: table
     operation: disable  # Never in collision
   - object1: kinect_rgb_link
@@ -432,10 +459,16 @@ default_collision_operations:
     object2: link_e
     operation: disable  # Never in collision
   - object1: link_b
+    object2: link_l
+    operation: disable  # Never in collision
+  - object1: link_b
     object2: link_u
     operation: disable  # Never in collision
   - object1: link_b
     object2: palm
+    operation: disable  # Never in collision
+  - object1: link_e
+    object2: link_r
     operation: disable  # Never in collision
   - object1: link_e
     object2: link_s
@@ -447,10 +480,28 @@ default_collision_operations:
     object2: palm
     operation: disable  # Never in collision
   - object1: link_e
+    object2: power_supply
+    operation: disable  # Never in collision
+  - object1: link_e
     object2: table
     operation: disable  # Never in collision
   - object1: link_l
+    object2: link_r
+    operation: disable  # Never in collision
+  - object1: link_l
+    object2: link_t
+    operation: disable  # Never in collision
+  - object1: link_l
+    object2: link_u
+    operation: disable  # Never in collision
+  - object1: link_l
+    object2: power_supply
+    operation: disable  # Never in collision
+  - object1: link_l
     object2: table
+    operation: disable  # Never in collision
+  - object1: link_r
+    object2: link_s
     operation: disable  # Never in collision
   - object1: link_r
     object2: link_t
@@ -460,6 +511,9 @@ default_collision_operations:
     operation: disable  # Never in collision
   - object1: link_s
     object2: link_u
+    operation: disable  # Never in collision
+  - object1: link_s
+    object2: power_supply
     operation: disable  # Never in collision
   - object1: link_s
     object2: table
@@ -478,4 +532,7 @@ default_collision_operations:
     operation: disable  # Never in collision
   - object1: link_u
     object2: palm
+    operation: disable  # Never in collision
+  - object1: power_supply
+    object2: table_keepout_2
     operation: disable  # Never in collision
