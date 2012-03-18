@@ -1,0 +1,45 @@
+﻿#sidebar SidebarNav
+
+[MainPage Main]   `*`   [Installation Install]   `*`   [Tutorials Tutorials]
+
+=ROS-Industrial Detailed Description=
+
+*What is ROS-Industrial?*
+
+Simply put ROS-Industrial is the following:
+ * Drivers for industrial automation equipment
+ * Standards for interoperability between ROS-Industrial software and hardware componenets
+ * Tools for developing, configuring, and deploying industrial systems
+ * Libraries that support industrial application areas
+ 
+ ==Drivers==
+ PLCs, HMI's, robot controllers
+ 
+ ==Standards==
+ ROS messaging standards between software, between software and hardware
+ 
+
+https://swri-ros-pkg.googlecode.com/svn/wiki/images/arm_warehouse_viewer.png
+
+ROS-Industrial is a BSD-licensed ROS stack that contains libraries, tools and drivers for industrial hardware. The goals of ROS-Industrial are to: 
+ * Create a community supported by industrial robotics researchers and professionals 
+ * Provide a one-stop location for industry-related ROS applications 
+ * Develop robust and reliable software that meets the needs of industrial applications 
+ * Combine the relative strengths of ROS with existing industrial technologies (i.e. combining ROS high-level functionality with the low-level reliability and safety of industrial robot controllers). 
+ * Create standard interfaces to stimulate “hardware-agnostic” software development (using standardized ROS messages) 
+ * Provide an easy path to apply cutting-edge research in industrial applications, using a common ROS architecture 
+ * Provide simple, easy-to-use, well-documented APIs
+ 
+Check out a [http://www.youtube.com/watch?v=qd76wAywZos video] of our progress so far:
+
+<wiki:video url="http://www.youtube.com/watch?v=qd76wAywZos"/>
+
+ROS-Industrial is at pre-1.0-experimental release level.  It currently supports ROS control (arm navigation with collision free path planning) for the Motoman [http://www.motoman.com/products/robots/models/sia10d.php SIA10D] and [http://www.motoman.com/products/controllers/default.php DX100] controller.  The software works with actual hardware or a simulated robot in rviz.  
+
+Click on the following links for [Installation Installation] instructions and [Tutorials Tutorials].
+
+We’d like to invite others to use this software and contribute new applications and interfaces, particularly ROS drivers for different industrial robot platforms.  If you are interested in integrating a new platform or otherwise contributing to ROS-Industrial, please send an email to [mailto:swri-ros-pkg-dev@googlegroups.com ROS-Industrial Developers Group]
+
+*Contact us:* [mailto:swri-ros-pkg-dev@googlegroups.com ROS-Industrial Developers Group]
+
+*Join our developers list:* [http://groups.google.com/group/swri-ros-pkg-dev?lnk= Developers List]
