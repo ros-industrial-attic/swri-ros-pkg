@@ -64,7 +64,7 @@ void JointTrajPt::init()
 	this->velocity_ = 0.0;
 }
 
-void JointTrajPt::init(shared_int sequence, JointData position, shared_real velocity)
+void JointTrajPt::init(shared_int sequence, JointData & position, shared_real velocity)
 {
 	this->setJointPosition(position);
 	this->setSequence(sequence);
