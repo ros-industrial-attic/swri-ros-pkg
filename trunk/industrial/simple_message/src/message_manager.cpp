@@ -139,12 +139,12 @@ void MessageManager::spinOnce()
 
   if (this->getConnection()->receiveMsg(msg))
   {
-    LOG_INFO("Message received");
+    LOG_COMM("Message received");
     handler = this->getHandler(msg.getMessageType());
 
     if (NULL != handler)
     {
-      LOG_INFO("Executing handler callback for message type: %d", handler->getMsgType());
+      LOG_DEBUG("Executing handler callback for message type: %d", handler->getMsgType());
       handler->callback(msg);
     }
     else

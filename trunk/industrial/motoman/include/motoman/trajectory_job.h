@@ -99,7 +99,7 @@ public:
 *
 * \return true on success, false otherwise (invalid name or trajectory)
 */
-bool init(const char* name, industrial::joint_traj::JointTraj joint_traj);
+bool init(const char* name);
 
 /**
 * \brief Generates a job string that can be written to a file
@@ -109,7 +109,7 @@ bool init(const char* name, industrial::joint_traj::JointTraj joint_traj);
 *
 * \return true on success, otherwise false
 */
-bool toJobString(char* str_buffer, size_t buffer_size);
+bool toJobString(industrial::joint_traj::JointTraj & trajectory, char* str_buffer, size_t buffer_size);
 
 /**
 * \brief Returns job name
@@ -135,23 +135,6 @@ char line_buffer_[LINE_BUFFER_SIZE_+1];
 char name_[NAME_BUFFER_SIZE_+1];
 
 
-
-/**
- * \brief Joint trajectory
- */
-industrial::joint_traj::JointTraj trajectory_;
-
-/**
-* \brief Appends a line to the job buffer.  The function checks that the job
-* buffer is large enough before this is done.
-*
-* \param job buffer
-* \param job buffer size
-* \param line buffer
-*
-* \return true on success, false if te job buffer is not big enough
-*/
-bool appendLine(char* job_buffer, size_t job_buffer_size, char* line_buffer);
 
 };
 

@@ -99,7 +99,7 @@ bool SimpleSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
 {
   int rc = this->SOCKET_FAIL;
   bool rtn = false;
-
+  
   // Reset the buffer (this is not required since the buffer length should
   // ensure that we don't read any of the garbage that may be left over from
   // a previous read), but it is good practice.
@@ -122,7 +122,7 @@ bool SimpleSocket::receiveBytes(ByteArray & buffer, shared_int num_bytes)
     {
       if (rc > 0)
       {
-        LOG_DEBUG("Byte array receive, bytes read: %u", rc);
+        LOG_COMM("Byte array receive, bytes read: %u", rc);
         buffer.init(&this->buffer_[0], rc);
         rtn = true;
       }

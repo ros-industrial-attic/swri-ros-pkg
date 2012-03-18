@@ -107,13 +107,14 @@ TrajectoryJob::~TrajectoryJob(void)
 {
 }
 
-bool TrajectoryJob::init(const char* name, JointTraj joint_traj)
+bool TrajectoryJob::init(const char* name)
 {
+
   bool rtn = false;
+
   if( strlen(name) <= NAME_BUFFER_SIZE_ )
   {
     strcpy(this->name_, name);
-    this->trajectory_.copyFrom(joint_traj);
     rtn = true;
   }
   else
@@ -126,7 +127,7 @@ bool TrajectoryJob::init(const char* name, JointTraj joint_traj)
 
 }
 
-bool TrajectoryJob::toJobString(char* str_buffer, size_t buffer_size)
+bool TrajectoryJob::toJobString(JointTraj & trajectory, char* str_buffer, size_t buffer_size)
 {
   bool rtn = false;
   if (0 < buffer_size)
@@ -142,7 +143,7 @@ bool TrajectoryJob::toJobString(char* str_buffer, size_t buffer_size)
 
     APPEND_LINE(str_buffer, buffer_size, "//POS");
 
-    sprintf(this->line_buffer_, "///NPOS %d,0,0,0,0,0", this->trajectory_.size());
+    sprintf(this->line_buffer_, "///NPOS %d,0,0,0,0,0", trajectory.size());
     APPEND_LINE(str_buffer, buffer_size, this->line_buffer_);
 
     APPEND_LINE(str_buffer, buffer_size, "///TOOL 0");
@@ -155,11 +156,11 @@ bool TrajectoryJob::toJobString(char* str_buffer, size_t buffer_size)
     JointData rosData;
     JointData mpData;
 
-    for(int i = 0; i < this->trajectory_.size(); i++)
+    for(int i = 0; i < trajectory.size(); i++)
     {
       sprintf(this->line_buffer_, "C%05d=", i);
       SAFE_STRCAT(str_buffer, buffer_size, this->line_buffer_);
-      this->trajectory_.getPoint(i, pt);
+      trajectory.getPoint(i, pt);
       pt.getJointPosition(rosData);
       
       // Converting to a motoplus joint (i.e. the correct order and units
@@ -189,9 +190,9 @@ bool TrajectoryJob::toJobString(char* str_buffer, size_t buffer_size)
 
     // Program
     APPEND_LINE(str_buffer, buffer_size, "NOP");
-    for(int i = 0; i < this->trajectory_.size(); i++)
+    for(int i = 0; i < trajectory.size(); i++)
     {
-      this->trajectory_.getPoint(i, pt);
+      trajectory.getPoint(i, pt);
       sprintf(this->line_buffer_, "MOVJ C%05d VJ=%.2f", i, pt.getVelocity());
       APPEND_LINE(str_buffer, buffer_size, this->line_buffer_);
     }
@@ -205,6 +206,7 @@ bool TrajectoryJob::toJobString(char* str_buffer, size_t buffer_size)
     LOG_ERROR("Failed to generate job string");
   }
   return rtn;
+
 }
 
 

@@ -169,16 +169,19 @@ bool Controller::writeJob(char* path, char* job)
     char filename[FILE_NAM_BUFFER_SIZE];  //should be big enough to hold a file name and DRAM drive name
     
     memset(filename, '\0', FILE_NAM_BUFFER_SIZE);  //not sure this is needed, strcpy below also does this.
-    strcpy(filename, "MPRAM1:");
+    strcpy(filename, "MPRAM1:\\");
     strcat(filename, path);
-    strcat(filename, job);
+    
+    LOG_DEBUG("writeJob: %s", filename);
     
     // Remove the file, if it exists
+    LOG_DEBUG("Trying to remove file, if it exists");
     status = mpRemove( filename );
     if (this->MP_ERROR == status)
     {
         LOG_WARN("Failed to remove job file: %s", filename);
     }
+    
     
     // Create the file and write the job
     fd = mpCreate( filename, O_WRONLY );
@@ -188,34 +191,71 @@ bool Controller::writeJob(char* path, char* job)
         if ( this->MP_ERROR != status )
         {
             LOG_INFO("Successfully loaded file: %s, bytes written: %d", filename, status);
-            status = mpClose(fd);
-            if (this->MP_ERROR == status)
-            {
-                LOG_WARN("Failed to close file: %s, ignoring failure", filename);
-            }
             rtn = true;
         }
         else
         {
-            LOG_ERROR("Failed to wraite file: %s", filename);
+            LOG_ERROR("Failed to write file: %s", filename);
             rtn = false;
         }
+        
+        
+        // Checking file status
+        /*
+	    struct stat pStat;
+	    status = mpFstat(fd, &pStat);
+	    {
+			LOG_DEBUG("mpFstat Complete");
+			LOG_DEBUG("st_dev = %u", pStat.st_dev);
+			LOG_DEBUG("st_ino = %u", pStat.st_ino);
+			LOG_DEBUG("st_mode = %u", pStat.st_mode);
+			LOG_DEBUG("st_nlink = %d", pStat.st_nlink);
+			LOG_DEBUG("st_uid = %d", pStat.st_uid);
+			LOG_DEBUG("st_gid = %d", pStat.st_gid);
+			LOG_DEBUG("st_rdev = %u", pStat.st_rdev);
+			LOG_DEBUG("st_size = %u", pStat.st_size);
+			LOG_DEBUG("st_atime = %u", pStat.st_atime);
+			LOG_DEBUG("st_mtime = %u", pStat.st_mtime);
+			LOG_DEBUG("st_ctime = %u", pStat.st_ctime);
+			LOG_DEBUG("st_blksize = %u", pStat.st_blksize);
+			LOG_DEBUG("st_blocks = %u", pStat.st_blocks);
+			LOG_DEBUG("st_attrib = %u", pStat.st_attrib);
+		}
+		*/
+		
+        // close file descriptor
+	    status = mpClose(fd);
+	    if (this->MP_ERROR == status)
+	    {
+	        LOG_WARN("Failed to close file: %s, ignoring failure", filename);
+	    }
     }
     else
     {
         LOG_ERROR("Failed to create job file: %s", filename);
         rtn = false;
     }
+    
+    
     return rtn;
 }
 #undef FILE_NAM_BUFFER_SIZE
 
 
-
 bool Controller::loadJob(char* path, char * job)
 {
     bool rtn = false;
-    int status;
+    int status;    
+    
+    LOG_DEBUG("Refreshing file list");
+    status = mpRefreshFileList(MP_EXT_ID_JBI);
+    if (this->MP_OK != status)
+    {
+    	LOG_WARN("Failed to refresh file list: %d, ignoring failure", status);
+    }
+    LOG_DEBUG("File count before file load: %d", mpGetFileCount());
+    
+    LOG_DEBUG("Attempting to load file, path: %s, job: %s", path, job);
     status = mpLoadFile (MP_DRV_ID_DRAM, path, job );
     if (this->MP_OK == status)
     {
@@ -228,6 +268,15 @@ bool Controller::loadJob(char* path, char * job)
                     job, path, status);
         rtn = false;
     }
+    
+    LOG_DEBUG("Refreshing file list");
+    status = mpRefreshFileList(MP_EXT_ID_JBI);
+    if (this->MP_OK != status)
+    {
+    	LOG_WARN("Failed to refresh file list: %d, ignoring failure", status);
+    }
+    LOG_DEBUG("File count after file load: %d", mpGetFileCount());
+    
     return rtn;
 
 }

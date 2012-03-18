@@ -170,7 +170,6 @@ bool JointData::unload(industrial::byte_array::ByteArray *buffer)
       LOG_ERROR("Failed to unload message joint: %d from data[%d]", i, buffer->getBufferSize());
       break;
     }
-    LOG_DEBUG("Unloaded value: %f to index: %d", value, i);
     this->setJoint(i, value);
   }
   return rtn;

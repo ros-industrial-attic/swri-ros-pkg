@@ -2,11 +2,11 @@
 <MotoPlusProject>
   <ProjectName>motoros_lib</ProjectName>
   <FilesInProject>
-    <FileForProject>controller.h</FileForProject>
-    <FileForProject>controller.cpp</FileForProject>
-    <FileForProject>byte_array.cpp</FileForProject>
-    <FileForProject>byte_array.h</FileForProject>
     <FileForProject>comms_fault_handler.h</FileForProject>
+    <FileForProject>byte_array.h</FileForProject>
+    <FileForProject>byte_array.cpp</FileForProject>
+    <FileForProject>controller.cpp</FileForProject>
+    <FileForProject>controller.h</FileForProject>
     <FileForProject>input_handler.cpp</FileForProject>
     <FileForProject>input_handler.h</FileForProject>
     <FileForProject>joint_data.cpp</FileForProject>

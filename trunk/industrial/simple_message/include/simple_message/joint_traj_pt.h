@@ -107,7 +107,7 @@ public:
    *
    */
   void init(industrial::shared_types::shared_int sequence,
-		  industrial::joint_data::JointData position,
+		  industrial::joint_data::JointData & position,
 		  industrial::shared_types::shared_real velocity);
 
   /**
