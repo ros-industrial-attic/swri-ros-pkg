@@ -2,25 +2,25 @@
 <MotoPlusProject>
   <ProjectName>longhorn_server</ProjectName>
   <FilesInProject>
-    <FileForProject>joint_traj_pt_message.h</FileForProject>
-    <FileForProject>mpMain.cpp</FileForProject>
-    <FileForProject>message_handler.h</FileForProject>
     <FileForProject>gripper_message.h</FileForProject>
     <FileForProject>gripper_message.cpp</FileForProject>
-    <FileForProject>longhorn.h</FileForProject>
     <FileForProject>gripper_handler.h</FileForProject>
     <FileForProject>gripper_handler.cpp</FileForProject>
     <FileForProject>byte_array.h</FileForProject>
-    <FileForProject>motoros_lib.mpLib</FileForProject>
-    <FileForProject>motoros_lib.h</FileForProject>
-    <FileForProject>log_wrapper.h</FileForProject>
-    <FileForProject>mp_default_main.h</FileForProject>
     <FileForProject>joint_data.h</FileForProject>
-    <FileForProject>message_manager.h</FileForProject>
     <FileForProject>comms_fault_handler.h</FileForProject>
     <FileForProject>controller.h</FileForProject>
     <FileForProject>joint_traj.h</FileForProject>
     <FileForProject>joint_traj_pt.h</FileForProject>
+    <FileForProject>joint_traj_pt_message.h</FileForProject>
+    <FileForProject>log_wrapper.h</FileForProject>
+    <FileForProject>longhorn.h</FileForProject>
+    <FileForProject>message_handler.h</FileForProject>
+    <FileForProject>message_manager.h</FileForProject>
+    <FileForProject>motoros_lib.h</FileForProject>
+    <FileForProject>motoros_lib.mpLib</FileForProject>
+    <FileForProject>mp_default_main.h</FileForProject>
+    <FileForProject>mpMain.cpp</FileForProject>
     <FileForProject>ping_handler.h</FileForProject>
     <FileForProject>ros_conversion.h</FileForProject>
     <FileForProject>shared_types.h</FileForProject>
@@ -36,7 +36,7 @@
     <FileForProject>trajectory_job.h</FileForProject>
     <FileForProject>typed_message.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>gripper_handler.cpp</LastFileOpened>
+  <LastFileOpened>mpMain.cpp</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
