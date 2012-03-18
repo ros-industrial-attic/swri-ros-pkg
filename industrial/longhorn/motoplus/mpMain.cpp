@@ -79,7 +79,7 @@ void gripperServer(void)
 void motionDownloadServer(void)
 {
 
-
+    
     using namespace industrial::tcp_server;
     using namespace industrial::simple_socket;
     using namespace industrial::message_manager;
@@ -88,6 +88,7 @@ void motionDownloadServer(void)
     using namespace longhorn::trajectory_download_handler;
     
     TcpServer connection;
+    
     TrajectoryDownloadHandler tdHandler;
     MessageManager manager;
     
@@ -97,9 +98,10 @@ void motionDownloadServer(void)
     manager.init(&connection);
     
     tdHandler.init(&connection, &rbtCtrl);
+    
     manager.add(&tdHandler);
     manager.spin();
- 
+    
 
     
 }
@@ -116,12 +118,11 @@ int state_server_task_ID; \
 int gripper_server_task_ID; \
 extern "C" void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)
 {  
-  //TODO: Swap out for SIA_20D
-  initJointConversion( MotomanRobotModels::SIA_10D );
-  //motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (
-  //                                      FUNCPTR)motionServer, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); 
-  motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (
-                                        FUNCPTR)motionDownloadServer, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); 
+  initJointConversion( MotomanRobotModels::SIA_20D );
+  motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionServer, 
+                        arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+  //motion_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)motionDownloadServer, 
+  //                      arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
   //system_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)systemServer, 
   //					arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); 
   state_server_task_ID = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, 

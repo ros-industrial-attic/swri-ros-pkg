@@ -34,7 +34,6 @@
 #include "log_wrapper.h"
 #include "longhorn.h"
 #include "joint_traj_pt.h"
-#include "trajectory_job.h"
 #include "motoPlus.h"
 #include "smpl_msg_connection.h"
 
@@ -88,8 +87,7 @@ bool TrajectoryDownloadHandler::internalCB(industrial::simple_message::SimpleMes
     break;
     
   default:
-    LOG_ERROR("Adding point: %d to trajectory", jMsg.point_.getSequence());
-    this->traj_.addPoint(jMsg.point_); 
+    rtn = this->traj_.addPoint(jMsg.point_); 
     break;
   }
   
@@ -129,31 +127,42 @@ void TrajectoryDownloadHandler::endTrajectory(JointTrajPtMessage & jMsg)
 {
 
     LOG_INFO("Trajecotry ended, starting job");
-    TrajectoryJob job;
     
     // Add end point
     this->traj_.addPoint(jMsg.point_);
     
+    LOG_DEBUG("Creating trajectory job");
+    
+    
     // Create, load, and execute motion
-    if (job.init(JOB_NAME, this->traj_))
+    if (this->job_.init(JOB_NAME))
     {
-        if(job.toJobString(this->jobBuffer_, JOB_BUFFER_SIZE_))
+        LOG_INFO("Motion job initialized");
+        if(this->job_.toJobString(this->traj_, this->jobBuffer_, JOB_BUFFER_SIZE_))
         {
-            if(this->ctrl_->writeJob("", JOB_NAME))
+        
+            LOG_INFO("Job string created");
+            
+            if(this->ctrl_->writeJob(JOB_NAME, this->jobBuffer_))
             {
-                if(this->ctrl_->loadJob("", JOB_NAME))
+                
+                LOG_INFO("Job file written");
+                if(this->ctrl_->loadJob("\\", JOB_NAME))
                 {
+                    LOG_INFO("Starting motion job: %s", JOB_NAME);
                     //this->ctrl_->startMotionJob(JOB_NAME);
                 }
                 else
                 {
                     LOG_ERROR("Failed to load job");
                 }
+                
             }
             else
             {
                 LOG_ERROR("Failed to write job");
             }
+            
         }
         else
         {
@@ -164,6 +173,12 @@ void TrajectoryDownloadHandler::endTrajectory(JointTrajPtMessage & jMsg)
     {
         LOG_ERROR("Failed to intialize job trajectory");
     }
+    
+    // Clear out the last downloaded trajectory
+    this->traj_.init();
+    
+    
+    return;
 }
 
 }//namespace trajectory_download_handler

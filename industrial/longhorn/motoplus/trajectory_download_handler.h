@@ -37,6 +37,7 @@
 #include "joint_traj.h"
 #include "joint_traj_pt_message.h"
 #include "controller.h"
+#include "trajectory_job.h"
 
 namespace longhorn
 {
@@ -54,7 +55,7 @@ namespace trajectory_download_handler
 * \brief size of job buffer
 */
 //TODO: Should be "class static const" not macro
-#define JOB_BUFFER_SIZE_ 5000   
+#define JOB_BUFFER_SIZE_ 1024   
   
   
 /**
@@ -133,6 +134,11 @@ bool init(int msg_type, industrial::smpl_msg_connection::SmplMsgConnection* conn
    * \brief joint trajectory (internal buffer)
    */
   industrial::joint_traj::JointTraj traj_;
+  
+  /**
+   * \brief joint trajectory job(internal buffer)
+   */
+    motoman::trajectory_job::TrajectoryJob job_;
   
  /**
    * \brief job sting buffer (limited to JOB_BUFFER_SIZE_ characters);
