@@ -348,6 +348,14 @@
         <color rgba="1 0.2 1 0.1"/>
       </material>
     </visual>
+    <collision>
+      <geometry>
+        <box size="0.400 0.250 0.115"/>
+      </geometry>
+      <material name="">
+        <color rgba="1 0.2 1 0.1"/>
+      </material>
+    </collision>
   </link>
   <link name="kinect_keepout">
     <collision>
