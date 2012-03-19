@@ -32,4 +32,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #Library containing ikfast plugins
 rosbuild_add_library(armadillo_kinematics_lib
   src/armadillo_manipulator_ikfast_plugin.cpp
+  src/pr2_right_arm_ikfast_plugin.cpp
   )

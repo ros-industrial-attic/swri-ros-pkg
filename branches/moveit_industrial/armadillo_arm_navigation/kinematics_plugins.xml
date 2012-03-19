@@ -3,4 +3,7 @@
   <class name="armadillo_manipulator_kinematics/IKFastKinematicsPlugin" type="armadillo_manipulator_kinematics::IKFastKinematicsPlugin" base_class_type="kinematics::KinematicsBase">
     <description>A plugin created by using OpenRAVE's IK Fast component</description>
   </class>
+  <class name="pr2_right_arm_kinematics/IKFastKinematicsPlugin" type="pr2_right_arm_kinematics::IKFastKinematicsPlugin" base_class_type="kinematics::KinematicsBase">
+    <description>A plugin created by using OpenRAVE's IK Fast component</description>
+  </class>
 </library>
