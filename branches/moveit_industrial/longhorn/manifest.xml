@@ -1,0 +1,15 @@
+<package>
+  <description brief="longhorn">
+
+     longhorn
+
+  </description>
+  <author>Shaun Edwards</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/longhorn</url>
+  <depend package="armadillo"/>
+
+</package>
+
+
