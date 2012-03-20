@@ -1,0 +1,18 @@
+<launch>
+  <param name="robot_description" textfile="$(find armadillo)/cfg/armadillo.urdf" />
+  <param name="robot_description_semantic" textfile="$(find armadillo_arm_navigation)/config/armadillo.srdf" />
+
+  <group ns="robot_description_planning">
+    <rosparam command="load" file="$(find armadillo_arm_navigation)/config/collision_matrix.yaml"/>
+    <rosparam command="load" file="$(find armadillo_arm_navigation)/config/joint_limits.yaml"/>
+  </group>
+  
+  <node pkg="robot_state_publisher" type="state_publisher" name="rob_st_pub" />
+  <node pkg="moveit_visualization_ros" name="wall_clock_server" type="fake_time.py" />
+
+  <node pkg="moveit_manipulation_visualization" type="moveit_manipulation_visualizer" name="moveit_manipulation_visualizer" output="screen">
+    <rosparam command="load" file="$(find armadillo_arm_navigation)/config/ompl_planning.yaml"/>
+    <rosparam command="load" file="$(find armadillo_arm_navigation)/config/kinematics.yaml"/>
+  </node>
+
+</launch>
