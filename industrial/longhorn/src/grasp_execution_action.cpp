@@ -37,14 +37,14 @@
 #include "object_manipulation_msgs/GraspHandPostureExecutionGoal.h"
 #include <simple_message/smpl_msg_connection.h>
 #include <simple_message/simple_message.h>
-#include <armadillo/armadillo.h>
-#include <armadillo/messages/gripper_message.h>
+#include <longhorn/longhorn.h>
+#include <longhorn/messages/gripper_message.h>
 
 using namespace object_manipulation_msgs;
 using namespace actionlib;
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::simple_message;
-using namespace industrial::armadillo;
+using namespace industrial::longhorn;
 using namespace industrial::gripper_message;
 
 class GraspExecutionAction
@@ -179,15 +179,24 @@ private:
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "grasp_execution_action_node");
-  ros::NodeHandle node;
-  industrial::tcp_client::TcpClient robot;
+	const unsigned int IP_ARG_IDX = 1;
+	ros::init(argc, argv, "grasp_execution_action_node");
+	
+	if(argc != 1)  //Only one argument, the robot IP address is accepted
+	{
+		ROS_INFO("Grasp action none connecting to IP address: %s", argv[IP_ARG_IDX]);
+		ros::NodeHandle node;
+		industrial::tcp_client::TcpClient robot;
 
-  robot.init("192.168.10.3", industrial::simple_socket::StandardSocketPorts::IO);
-  GraspExecutionAction ge(node, &robot);
+		robot.init(argv[IP_ARG_IDX], industrial::simple_socket::StandardSocketPorts::IO);
+		GraspExecutionAction ge(node, &robot);
 
-  ros::spin();
-
+		ros::spin();
+	}
+	else
+	{
+		ROS_ERROR("Missing command line arguments, usage: grasp_execution_action <robot ip address>");
+	}
   return 0;
 }
 

@@ -44,24 +44,33 @@ using namespace motoman::joint_relay_handler;
 
 int main(int argc, char** argv)
 {
-  char ip[1024] = "192.168.10.3"; // Robot IP address
   TcpClient connection;
   MessageManager manager;
-
+	
+	const unsigned int IP_ARG_IDX = 1;
   ros::init(argc, argv, "state_interface");
   ros::NodeHandle n;
 
   JointRelayHandler jr_handler(n);
 
-  ROS_INFO("Setting up client");
-  connection.init(ip, StandardSocketPorts::STATE);
-  connection.makeConnect();
+	if(argc != 1)  //Only one argument, the robot IP address is accepted
+	{
+		ROS_INFO("Robot state connecting to IP address: %s", argv[IP_ARG_IDX]);
+		connection.init(argv[IP_ARG_IDX], StandardSocketPorts::STATE);
+		connection.makeConnect();
 
-  jr_handler.init(&connection);
+		jr_handler.init(&connection);
 
-  manager.init(&connection);
-  manager.add(&jr_handler);
+		manager.init(&connection);
+		manager.add(&jr_handler);
+	}
+	else
+	{
+		ROS_ERROR("Missing command line arguments, usage: robot_state <robot ip address>");
+	}
 
   manager.spin();
+
+	return 0;
 }
 

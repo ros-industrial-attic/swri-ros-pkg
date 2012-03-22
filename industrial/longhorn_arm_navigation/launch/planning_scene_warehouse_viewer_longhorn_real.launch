@@ -37,8 +37,8 @@
   <!-- Start Motoman specific nodes -->
   <node pkg="motoman" type="joint_trajectory_action" name="joint_trajectory_action"/>
   <node pkg="motoman" type="robot_state" name="robot_state" args="192.168.32.3"/>
-  <node pkg="motoman" type="motion_download_interface" name="motion_download_interface" args="192.168.32.3"/>
-  <!--node pkg="motoman" type="motion_interface" name="motion_interface" args="192.168.32.3"/-->
+  <!--node pkg="motoman" type="motion_download_interface" name="motion_download_interface" args="192.168.32.3"/-->
+  <node pkg="motoman" type="motion_interface" name="motion_interface" args="192.168.32.3"/>
 
 
   <!-- Called when left arm executes trajectory using controllers -->
