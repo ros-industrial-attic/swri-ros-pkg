@@ -32,13 +32,13 @@
 
 #include <simple_message/smpl_msg_connection.h>
 #include <simple_message/simple_message.h>
-#include <armadillo/armadillo.h>
-#include <armadillo/messages/gripper_message.h>
+#include <longhorn/longhorn.h>
+#include <longhorn/messages/gripper_message.h>
 #include <iostream>
 using namespace std;
 using namespace industrial::smpl_msg_connection;
 using namespace industrial::simple_message;
-using namespace industrial::armadillo;
+using namespace industrial::longhorn;
 using namespace industrial::gripper_message;
 
 
@@ -47,52 +47,62 @@ using namespace industrial::gripper_message;
 
 int main(int argc, char** argv)
 {
-  industrial::tcp_client::TcpClient robot;
-  robot.init("192.168.10.3", industrial::simple_socket::StandardSocketPorts::IO);
-  robot.makeConnect();
- 
-  cout << "Grasp client connected" << endl;;
+	const unsigned int IP_ARG_IDX = 1;
+	
+	if(argc != 1)  //Only one argument, the robot IP address is accepted
+	{
+		ROS_INFO("Grasp utility connecting to IP address: %s", argv[IP_ARG_IDX]);
+		industrial::tcp_client::TcpClient robot;
+		robot.init(argv[IP_ARG_IDX], industrial::simple_socket::StandardSocketPorts::IO);
+		robot.makeConnect();
+	 
+		cout << "Grasp client connected" << endl;;
 
-  int i = 0;
-  while (true)
-  {
-    cout << "Armadillo Grasp Utility" << endl
-	 << "1. INIT" << endl
-	 << "2. CLOSE" << endl
-	 << "3. OPEN" << endl;
-    cin >> i;
+		int i = 0;
+		while (true)
+		{
+		  cout << "Armadillo Grasp Utility" << endl
+		 << "1. INIT" << endl
+		 << "2. CLOSE" << endl
+		 << "3. OPEN" << endl;
+		  cin >> i;
 
-    GripperMessage gMsg;
-    SimpleMessage request;
-    SimpleMessage reply;
+		  GripperMessage gMsg;
+		  SimpleMessage request;
+		  SimpleMessage reply;
 
-    switch(i)
-    {
-    case 1:
-	    gMsg.init(GripperOperationTypes::INIT);
-	    gMsg.toRequest(request);
-	    robot.sendAndReceiveMsg(request, reply);
-	    cout << "Gripper initialized" << endl;
-      break;
+		  switch(i)
+		  {
+		  case 1:
+			  gMsg.init(GripperOperationTypes::INIT);
+			  gMsg.toRequest(request);
+			  robot.sendAndReceiveMsg(request, reply);
+			  cout << "Gripper initialized" << endl;
+		    break;
 
-    case 2:
-      gMsg.init(GripperOperationTypes::CLOSE);
-      gMsg.toRequest(request);
-      robot.sendAndReceiveMsg(request, reply);
-      cout << "Gripper closed" << endl;
-      break;
+		  case 2:
+		    gMsg.init(GripperOperationTypes::CLOSE);
+		    gMsg.toRequest(request);
+		    robot.sendAndReceiveMsg(request, reply);
+		    cout << "Gripper closed" << endl;
+		    break;
 
-    case 3:
-      gMsg.init(GripperOperationTypes::OPEN);
-      gMsg.toRequest(request);
-      robot.sendAndReceiveMsg(request, reply);
-      cout << "Gripper opened" << endl;
-      break;
+		  case 3:
+		    gMsg.init(GripperOperationTypes::OPEN);
+		    gMsg.toRequest(request);
+		    robot.sendAndReceiveMsg(request, reply);
+		    cout << "Gripper opened" << endl;
+		    break;
 
-    default:
-      return 0;
-    }
-  }
+		  default:
+		    return 0;
+		  }
+  	}
+	}
+	else
+	{
+		ROS_ERROR("Missing command line arguments, usage: grasp_utility <robot ip address>");
+	}
   return 0;
 }
 

@@ -37,14 +37,24 @@ using namespace industrial::simple_socket;
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "joint_trajectory_handler");
-  industrial::tcp_client::TcpClient robot;
-  ros::NodeHandle node;
+	const unsigned int IP_ARG_IDX = 1;
+	ros::init(argc, argv, "joint_trajectory_handler");
+	
+	if(argc != 1)  //Only one argument, the robot IP address is accepted
+	{
+		ROS_INFO("Motion download interface connecting to IP address: %s", argv[IP_ARG_IDX]);
+		industrial::tcp_client::TcpClient robot;
+		ros::NodeHandle node;
 
-  robot.init("192.168.10.3", StandardSocketPorts::MOTION);
-  motoman::joint_trajectory_downloader::JointTrajectoryDownloader jtHandler(node, &robot);
+		robot.init(argv[IP_ARG_IDX], StandardSocketPorts::MOTION);
+		motoman::joint_trajectory_downloader::JointTrajectoryDownloader jtHandler(node, &robot);
 
-  ros::spin();
+		ros::spin();
+	}
+	else
+	{
+		ROS_ERROR("Missing command line arguments, usage: motion_download_interface <robot ip address>");
+	}
 
   return 0;
 }
