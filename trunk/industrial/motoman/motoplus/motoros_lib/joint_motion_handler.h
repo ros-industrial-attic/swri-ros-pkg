@@ -115,7 +115,8 @@ MP_STD_RSP_DATA servo_power_error;
 
 // Job variables
 MP_START_JOB_SEND_DATA job_start_data;
-MP_DELETE_JOB_SEND_DATA job_delete_data;
+MP_CUR_JOB_SEND_DATA job_reset_data;
+MP_STD_RSP_DATA job_reset_error;
 MP_STD_RSP_DATA job_error;
 
 

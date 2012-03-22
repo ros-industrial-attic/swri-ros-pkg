@@ -53,8 +53,8 @@ JointMotionHandler::JointMotionHandler()
   job_start_data.sTaskNo = 0;
   strcpy(job_start_data.cJobName, JOBNAME);
  
-  // delete task
-  strcpy(job_delete_data.cJobName, JOBNAME);
+  // reset task
+  strcpy(job_reset_data.cJobName, JOBNAME);
   
   this->jobStarted = false;
   this->motionEnabled = false;
@@ -227,9 +227,11 @@ void JointMotionHandler::stopMotionJob(void)
   LOG_INFO("Stopping motion job");
   this->disableMotion();
   
-  while(mpDeleteJob(&job_delete_data, &job_error) == ERROR)
+  // Reseting the job.
+  job_reset_data.usJobLine = 1;  //Job lines start at 1
+  while(mpSetCurJob(&job_reset_data, &job_reset_error) == ERROR)
   {
-    LOG_ERROR("Failed to delete job, error: %d, retrying...", job_error.err_no);
+    LOG_ERROR("Failed to reset job, error: %d, retrying...", job_reset_error.err_no);
     mpTaskDelay(this->MP_POLL_TICK_DELAY);
   };
   

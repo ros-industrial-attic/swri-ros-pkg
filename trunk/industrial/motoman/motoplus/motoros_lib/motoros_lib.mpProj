@@ -2,9 +2,9 @@
 <MotoPlusProject>
   <ProjectName>motoros_lib</ProjectName>
   <FilesInProject>
-    <FileForProject>comms_fault_handler.h</FileForProject>
-    <FileForProject>byte_array.h</FileForProject>
     <FileForProject>byte_array.cpp</FileForProject>
+    <FileForProject>byte_array.h</FileForProject>
+    <FileForProject>comms_fault_handler.h</FileForProject>
     <FileForProject>controller.cpp</FileForProject>
     <FileForProject>controller.h</FileForProject>
     <FileForProject>input_handler.cpp</FileForProject>
@@ -65,7 +65,7 @@
     <FileForProject>udp_socket.cpp</FileForProject>
     <FileForProject>udp_socket.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>ros_conversion.h</LastFileOpened>
+  <LastFileOpened>joint_motion_handler.cpp</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Library</ProjectType>
   <Debug>
