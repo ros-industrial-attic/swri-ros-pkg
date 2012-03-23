@@ -143,11 +143,11 @@ void JointTrajectoryHandler::trajectoryHandler()
         case JointTrajectoryStates::STREAMING:
           if (this->currentPoint < this->current_traj_.points.size())
           {
-            unsigned int lastCurrentPoint = currentPoint;
-            currentPoint = getNextTrajectoryPoint(current_traj_,
-                                                  streaming_start_,
-                                                  ros::Time::now());
-            ROS_INFO("Skipping from point[%d] to point[%d]", lastCurrentPoint, currentPoint);
+            // unsigned int lastCurrentPoint = currentPoint;
+            // currentPoint = getNextTrajectoryPoint(current_traj_,
+            //                                       streaming_start_,
+            //                                       ros::Time::now());
+            //ROS_INFO("Skipping from point[%d] to point[%d]", lastCurrentPoint, currentPoint);
             pt = this->current_traj_.points[this->currentPoint];
             
             jMsg.setSequence(this->currentPoint);

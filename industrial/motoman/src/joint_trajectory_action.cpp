@@ -105,6 +105,7 @@ public:
       double goal_constraint = constraints.at(msg->joint_names[i]);
       if (goal_constraint >= 0 && abs_error > goal_constraint)
       {
+	ROS_DEBUG("Bad constraint: %f, abs_errs: %f", goal_constraint, abs_error);
         return false;
       }
       ROS_DEBUG("Checking constraint: %f, abs_errs: %f", goal_constraint, abs_error);
