@@ -7,7 +7,26 @@ groups:
   - name: manipulator
     base_link: base_link
     tip_link: palm
+  - name: end_effector
+    joints:
+      - joint_1
+      - joint_2
+      - joint_3
+      - tool-coupler
+      - coupler-hand
 default_collision_operations:
+  - object1: table_keepout_2
+    object2: manipulator
+    operation: disable  # Temporarily added
+  - object1: table_keepout_2
+    object2: end_effector
+    operation: disable  # Temporarily added
+  - object1: table_keepout_1
+    object2: manipulator
+    operation: disable  # Temporarily added
+  - object1: table_keepout_1
+    object2: end_effector
+    operation: disable  # Temporarily added
   - object1: base_link
     object2: kinect
     operation: disable  # Adjacent in collision
