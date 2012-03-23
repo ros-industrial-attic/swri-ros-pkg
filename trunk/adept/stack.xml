@@ -1,0 +1,9 @@
+<stack>
+  <description brief="adept">adept</description>
+  <author>Maintained by root</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/adept</url>
+  <depend stack="ros" />
+
+</stack>
