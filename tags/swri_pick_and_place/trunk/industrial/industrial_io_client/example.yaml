@@ -1,0 +1,36 @@
+device:
+  type: "generic_io_socket_server"
+  host: "localhost"
+  port: 1234
+
+inputs:
+  - foobar:
+      type: "std_msgs/Int32"
+      transformation:
+          network_data_table: 1
+          device_offset: 2
+          bit_byte_offset: 3
+          value: "m.data + 32"
+  - barfoo:
+      type: "std_msgs/Int16"
+      transformation:
+          network_data_table: 10
+          device_offset: 20
+          bit_byte_offset: 30
+          value: "m.data ** 2"
+  - baz:
+      type: "actionlib_msgs/GoalID"
+      transformation:
+          network_data_table: 10
+          device_offset: 20
+          bit_byte_offset: 30
+          value: "int(m.id) - 1"
+  - bat:
+      type: "geometry_msgs/Quaternion"
+      transformation:
+          network_data_table: 10
+          device_offset: 20
+          bit_byte_offset: 30
+          value: "m.x**2+m.y**2+m.z**2+m.w**2"
+
+#outputs:
