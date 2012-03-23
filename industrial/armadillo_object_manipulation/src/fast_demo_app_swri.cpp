@@ -20,7 +20,7 @@
 #include <household_objects_database_msgs/GetModelDescription.h>
 #include <object_manipulation_msgs/GraspPlanning.h>
 #include <planning_environment/util/construct_object.h>
-#include <armadillo_object_manipulation/grasp_posture_trajectory_controller_handler.h>
+#include <longhorn_object_manipulation/grasp_posture_trajectory_controller_handler.h>
 
 using namespace trajectory_execution_monitor;
 
@@ -56,12 +56,15 @@ public:
     seg_srv_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>("/tabletop_segmentation", true);
     rec_srv_ = nh.serviceClient<tabletop_object_detector::TabletopObjectRecognition>("/tabletop_object_recognition", true);
 
+    vis_marker_publisher_ = nh.advertise<visualization_msgs::Marker> ("swri", 128);
+    vis_marker_array_publisher_ = nh.advertise<visualization_msgs::MarkerArray> ("swri_array", 128);
+
     ros::service::waitForService(SET_PLANNING_SCENE_DIFF_NAME);
     set_planning_scene_diff_client_ = 
       nh.serviceClient<arm_navigation_msgs::SetPlanningSceneDiff>(SET_PLANNING_SCENE_DIFF_NAME);
 
-    //planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>("/ompl_planning/plan_kinematic_path");
-    planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>("/chomp_planner_longrange/plan_path");
+    planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>("/ompl_planning/plan_kinematic_path");
+    //planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>("/chomp_planner_longrange/plan_path");
     trajectory_filter_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>("/trajectory_filter_server/filter_trajectory_with_constraints");
     //trajectory_filter_fast_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>("/trajectory_filter_server_fast/filter_trajectory_with_constraints");
 
@@ -70,8 +73,8 @@ public:
 
     object_database_grasp_client_ = nh.serviceClient<object_manipulation_msgs::GraspPlanning>("/plan_point_cluster_grasp", true);
 
-    grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, "armadillo_manipulator_kinematics/IKFastKinematicsPlugin");
-    place_tester_ = new object_manipulator::PlaceTesterFast(&cm_, "armadillo_manipulator_kinematics/IKFastKinematicsPlugin");
+    grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, "longhorn_manipulator_kinematics/IKFastKinematicsPlugin");
+    place_tester_ = new object_manipulator::PlaceTesterFast(&cm_, "longhorn_manipulator_kinematics/IKFastKinematicsPlugin");
 
     trajectories_finished_function_ = boost::bind(&FastDemoApp::trajectoriesFinishedCallbackFunction, this, _1);
 
@@ -221,7 +224,8 @@ public:
     ter.group_name_ = group_name;
     ter.controller_name_ = arm_controller_handler_->getControllerName();
     ter.trajectory_ = filter_res.trajectory;
-    ter.test_for_close_enough_ = true;
+    ter.test_for_close_enough_ = false;
+    ter.failure_time_factor_ = 1000;
     ter.max_joint_distance_ = .01;
     
     std::vector<TrajectoryExecutionRequest> ter_reqs;
@@ -280,9 +284,10 @@ public:
     //name: ['joint_s', 'joint_l', 'joint_e', 'joint_u', 'joint_r', 'joint_b', 'joint_t']
     //position: [-0.46665400266647339, 0.1069866344332695, 2.1171059608459473, -1.4666222333908081, -0.17949093878269196, -1.6554385423660278, -1.7431133985519409]
 
-    
+    //-3.0410828590393066, 0.10696959495544434, 2.117098093032837, -1.466621994972229, -0.17949093878269196, -1.6554234027862549, -1.7430833578109741    
+
     std::vector<double> joint_angles;
-    joint_angles.push_back(-0.46665400266647339);
+    joint_angles.push_back(-3.0410828590393066);
     joint_angles.push_back(0.1069866344332695);
     joint_angles.push_back(2.1171059608459473);
     joint_angles.push_back(-1.4666222333908081);
@@ -468,6 +473,9 @@ public:
     pickup_goal.lift.desired_distance = .1;
     pickup_goal.target.reference_frame_id = pickup_goal.collision_object_name;
     pickup_goal.target.cluster = last_clusters_[0];
+    pickup_goal.allow_gripper_support_collision = true;
+    pickup_goal.collision_support_surface_name = "table";
+    
 
     household_objects_database_msgs::DatabaseModelPose dmp_copy = dmp;
     dmp_copy.pose = transformed_recognition_poses_[pickup_goal.collision_object_name];
@@ -498,6 +506,7 @@ public:
     place_goal.approach.direction.vector.y = 0.0;
     place_goal.approach.direction.vector.z = -1.0;
     place_goal.collision_object_name = "attached_"+current_grasped_object_name_[arm_name];
+    place_goal.allow_gripper_support_collision = true;
     place_goal.collision_support_surface_name = "table";
     place_goal.allow_gripper_support_collision = true;
     place_goal.place_padding = .02;
@@ -653,6 +662,7 @@ public:
     gripper_ter.controller_name_ = "/grasp_execution_action";
     gripper_ter.trajectory_ = getGripperTrajectory(group_name, true);
     gripper_ter.failure_ok_ = true;
+    gripper_ter.test_for_close_enough_ = false;
     ter_reqs.push_back(gripper_ter);
 
     ros::WallTime start_execution = ros::WallTime::now();
@@ -681,8 +691,10 @@ public:
     arm_ter.controller_name_ = arm_controller_handler_->getControllerName();
     arm_ter.trajectory_ = gei.approach_trajectory_;
     fastFilterTrajectory(group_name, arm_ter.trajectory_);
-    arm_ter.test_for_close_enough_ = true;
+    arm_ter.test_for_close_enough_ = false;
     arm_ter.max_joint_distance_ = .05;
+    arm_ter.failure_time_factor_ = 1000;
+
     arm_ter.callback_function_ = boost::bind(&FastDemoApp::attachCollisionObjectCallback, this, _1);
     ter_reqs.push_back(arm_ter);
 
@@ -728,8 +740,9 @@ public:
     arm_ter.controller_name_ = arm_controller_handler_->getControllerName();
     arm_ter.trajectory_ = pei.descend_trajectory_;
     fastFilterTrajectory(group_name, arm_ter.trajectory_);
-    arm_ter.test_for_close_enough_ = true;
+    arm_ter.test_for_close_enough_ = false;
     arm_ter.max_joint_distance_ = .05;
+    arm_ter.failure_time_factor_ = 1000;
     arm_ter.callback_function_ = boost::bind(&FastDemoApp::detachCollisionObjectCallback, this, _1);
     ter_reqs.push_back(arm_ter);
 
@@ -739,6 +752,7 @@ public:
     gripper_ter.controller_name_ = "/grasp_execution_action";
     gripper_ter.trajectory_ = getGripperTrajectory(group_name, true);
     gripper_ter.failure_ok_ = true;
+    gripper_ter.test_for_close_enough_ = false;
     ter_reqs.push_back(gripper_ter);
 
     //do the retreat
@@ -813,6 +827,30 @@ public:
 		      << response.grasps[0].grasp_pose.position.z);
     }
 
+    ROS_INFO_STREAM("Cloud header " << cloud.header.frame_id);
+    ROS_INFO_STREAM("Recognition pose frame " << dmp.pose.header.frame_id);
+
+    tf::Transform first_grasp_in_world_tf;
+    tf::poseMsgToTF(response.grasps[0].grasp_pose, first_grasp_in_world_tf);
+
+    planning_models::KinematicState state(*current_robot_state_);
+    state.updateKinematicStateWithLinkAt("palm", first_grasp_in_world_tf);
+
+    std_msgs::ColorRGBA col_pregrasp;
+    col_pregrasp.r = 0.0;
+    col_pregrasp.g = 1.0;
+    col_pregrasp.b = 1.0;
+    col_pregrasp.a = 1.0;
+    visualization_msgs::MarkerArray arr;
+    
+    std::vector<std::string> links = cm_.getKinematicModel()->getModelGroup("end_effector")->getGroupLinkNames();
+
+    cm_.getRobotMarkersGivenState(state, arr, col_pregrasp,
+				  "first_grasp",
+				  ros::Duration(0.0), 
+				  &links);
+    vis_marker_array_publisher_.publish(arr);
+    
     //TODO - actually deal with the different cases here, especially for the cluster planner
     grasps = response.grasps;
     if(request.target.reference_frame_id != des_res.name) {
@@ -1073,6 +1111,9 @@ protected:
   ros::WallDuration grasp_planning_duration_;
 
   ros::Publisher attached_object_publisher_;
+
+  ros::Publisher vis_marker_array_publisher_;
+  ros::Publisher vis_marker_publisher_;
 
 };
 

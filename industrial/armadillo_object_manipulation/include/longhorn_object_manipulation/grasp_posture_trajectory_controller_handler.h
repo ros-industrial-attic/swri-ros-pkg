@@ -93,7 +93,7 @@ public:
   {
     recorder_->deregisterCallback(group_controller_combo_name_);
     ROS_INFO_STREAM("Controller is done with state " << (state == actionlib::SimpleClientGoalState::SUCCEEDED));
-    trajectory_finished_callback_(state == actionlib::SimpleClientGoalState::SUCCEEDED);
+    done();
   }
 
   void controllerActiveCallback() 
