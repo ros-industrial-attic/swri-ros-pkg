@@ -42,6 +42,7 @@ rosbuild_add_executable(robot_state
 rosbuild_add_executable(motion_interface
   src/motion_interface.cpp
   src/joint_trajectory_handler.cpp)
+rosbuild_link_boost(motion_interface thread)
 rosbuild_add_executable(motion_download_interface
   src/motion_download_interface.cpp
   src/joint_trajectory_downloader.cpp
@@ -49,6 +50,7 @@ rosbuild_add_executable(motion_download_interface
 rosbuild_add_executable(joint_trajectory_action
   src/utils.cpp 
   src/joint_trajectory_action.cpp)
+rosbuild_link_boost(joint_trajectory_action thread)
 #rosbuild_add_gtest(utest test/utest.cpp)
 #target_link_libraries(utest motoman_lib)
 #target_link_libraries(motion_download_interface motoman_lib)
