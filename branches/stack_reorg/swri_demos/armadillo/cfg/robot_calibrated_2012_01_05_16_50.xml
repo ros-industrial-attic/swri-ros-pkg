@@ -3,7 +3,7 @@
   <link name="base_link">
     <visual>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_BASE.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/visual/MOTOMAN_BASE.stl"/>
       </geometry>
       <material name="blue">
         <color rgba="0 0 1 1"/>
@@ -11,14 +11,14 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_BASE.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/collision/MOTOMAN_BASE.stl"/>
       </geometry>
     </collision>
   </link>
   <link name="link_s">
     <visual>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_S.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/visual/MOTOMAN_AXIS_S.stl"/>
       </geometry>
       <material name="silver">
         <color rgba="0.8 0.8 0.8 1"/>
@@ -26,7 +26,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_S.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/collision/MOTOMAN_AXIS_S.stl"/>
       </geometry>
     </collision>
   </link>
@@ -34,14 +34,14 @@
     <visual>
       <origin rpy="1.57 3.1416 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_L.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/visual/MOTOMAN_AXIS_L.stl"/>
       </geometry>
       <material name="blue"/>
     </visual>
     <collision>
       <origin rpy="1.57 3.1416 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_L.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/collision/MOTOMAN_AXIS_L.stl"/>
       </geometry>
     </collision>
   </link>
@@ -49,14 +49,14 @@
     <visual>
       <origin rpy="0 0 3.1415" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_E.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/visual/MOTOMAN_AXIS_E.stl"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin rpy="0 0 3.1415" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_E.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/collision/MOTOMAN_AXIS_E.stl"/>
       </geometry>
     </collision>
   </link>
@@ -64,14 +64,14 @@
     <visual>
       <origin rpy="1.57 -3.1415 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_U.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/visual/MOTOMAN_AXIS_U.stl"/>
       </geometry>
       <material name="blue"/>
     </visual>
     <collision>
       <origin rpy="1.57 -3.1415 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_U.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/collision/MOTOMAN_AXIS_U.stl"/>
       </geometry>
     </collision>
   </link>
@@ -79,14 +79,14 @@
     <visual>
       <origin rpy="0 0 3.1516" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_R.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/visual/MOTOMAN_AXIS_R.stl"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin rpy="0 0 3.1516" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_R.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/collision/MOTOMAN_AXIS_R.stl"/>
       </geometry>
     </collision>
   </link>
@@ -94,27 +94,27 @@
     <visual>
       <origin rpy="-1.57 0 3.1516" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_B.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/visual/MOTOMAN_AXIS_B.stl"/>
       </geometry>
       <material name="blue"/>
     </visual>
     <collision>
       <origin rpy="-1.57 0 3.1516" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_B.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/collision/MOTOMAN_AXIS_B.stl"/>
       </geometry>
     </collision>
   </link>
   <link name="link_t">
     <visual>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/visual/MOTOMAN_AXIS_T.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/visual/MOTOMAN_AXIS_T.stl"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://motoman/meshes/sia10d/collision/MOTOMAN_AXIS_T.stl"/>
+        <mesh filename="package://motoman_config/meshes/sia10d/collision/MOTOMAN_AXIS_T.stl"/>
       </geometry>
     </collision>
   </link>
