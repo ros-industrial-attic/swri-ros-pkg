@@ -1,5 +1,5 @@
 <stack>
-  <description brief="industrial">industrial</description>
+  <description brief="industrial">ROS-Industrial stack contains packages and libraries for supporing industrial systems</description>
   <author>Shaun Edwards/sedwards@swri.org</author>
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
