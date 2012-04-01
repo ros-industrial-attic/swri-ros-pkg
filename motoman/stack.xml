@@ -1,9 +1,9 @@
 <stack>
-  <description brief="industrial">ROS-Industrial stack contains packages and libraries for supporing industrial systems</description>
-  <author>Shaun Edwards/sedwards@swri.org</author>
+  <description brief="motoman">The motoman stack constains libraries, configuration files, and ROS nodes for controlling a Motoman robot from ROS-Industrial</description>
+  <author>Shaun Edwards(Southwest Research Institute)</author>
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/industrial</url>
+  <url>http://ros.org/wiki/motoman</url>
   <depend stack="arm_navigation" /> <!-- move_arm, trajectory_filter_server, planning_environment, constraint_aware_spline_smoother, arm_kinematics_constraint_aware, kinematics_base, ompl_ros_interface -->
   <depend stack="arm_navigation_experimental" /> <!-- chomp_motion_planner -->
   <depend stack="common" /> <!-- actionlib -->
