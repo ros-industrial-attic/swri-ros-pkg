@@ -1,12 +1,10 @@
 ﻿#labels Featured
 #sidebar SidebarNav
 
-[MainPage Main]   `*`   [Installation Install]   `*`   [Tutorials Tutorials]
+[MainPage Main]   `*`   [Installation Install]
 
 =ROS-Industrial=
 <g:plusone size="medium"></g:plusone>
-
-https://swri-ros-pkg.googlecode.com/svn/wiki/images/arm_warehouse_viewer.png
 
 ROS-Industrial is a BSD-licensed ROS stack that contains libraries, tools and drivers for industrial hardware. The goals of ROS-Industrial are to: 
  * Create a community supported by industrial robotics researchers and professionals 
@@ -17,13 +15,11 @@ ROS-Industrial is a BSD-licensed ROS stack that contains libraries, tools and dr
  * Provide an easy path to apply cutting-edge research in industrial applications, using a common ROS architecture 
  * Provide simple, easy-to-use, well-documented APIs
  
-Check out a [http://www.youtube.com/watch?v=qd76wAywZos video] of our progress so far:
+https://swri-ros-pkg.googlecode.com/svn/wiki/images/arm_warehouse_viewer.png
 
-<wiki:video url="http://www.youtube.com/watch?v=qd76wAywZos"/>
+This site content is meant for ROS-Industrial developers.  ROS-Industrial users should go [http://www.ros.org/wiki/swri-ros-pkg here].
 
-ROS-Industrial is at pre-1.0-experimental release level.  It currently supports ROS control (arm navigation with collision free path planning) for the Motoman [http://www.motoman.com/products/robots/models/sia10d.php SIA10D] and [http://www.motoman.com/products/controllers/default.php DX100] controller.  The software works with actual hardware or a simulated robot in rviz.  
-
-Click on the following links for [Installation Installation] instructions and [Tutorials Tutorials].
+Information on installing ROS-Industrial from source can be found [Installation here].
 
 We’d like to invite others to use this software and contribute new applications and interfaces, particularly ROS drivers for different industrial robot platforms.  If you are interested in integrating a new platform or otherwise contributing to ROS-Industrial, please send an email to [mailto:swri-ros-pkg-dev@googlegroups.com ROS-Industrial Developers Group]
 
