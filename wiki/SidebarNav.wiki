@@ -1,4 +1,3 @@
   * [MainPage Main]
   * [Installation Install]
-  * [Tutorials Tutorials]
   * [mailto:swri-ros-pkg-dev@googlegroups.com Support/Feature Request]
