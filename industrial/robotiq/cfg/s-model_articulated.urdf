@@ -313,21 +313,18 @@ s-model_articulated - articulated version of the robotiq s-model,
     <child link="finger_1_link_0"/>
     <axis xyz="0 0 1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
   </joint>
   <joint name="joint_finger_2" type="fixed">
     <parent link="palm"/>
     <child link="finger_2_link_0"/>
     <axis xyz="0 0 1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
   </joint>
   <joint name="joint_finger_middle" type="fixed">
     <parent link="palm"/>
     <child link="finger_middle_link_0"/>
     <axis xyz="0 0 1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
   </joint>
   <!--
 	<include filename="$(find robotiq)/cfg/s-model_finger_articulated_macro.xacro" />

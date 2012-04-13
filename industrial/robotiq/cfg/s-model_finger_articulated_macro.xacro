@@ -1,3 +1,15 @@
+<!--
+s-model_finder_articulated_macro(prefix, origin_xyz, origin_rpy)
+
+Creates an articulated s-model finder with the passed in prefix.  The
+prefix typcially includes the hand prefix and an identifier for the
+finger(i.e. finger_1, etc...).
+
+The origin of the first link (link_0) must is also required.  It is
+passed as two parameters, one for xyz and one for rpy.
+
+NOTE: This urdf does not include the "scissor" degree of freedom.
+-->
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 	<xacro:macro name="s-model_finger_articulated" params="prefix origin_xyz origin_rpy">
 		<!-- link list -->
