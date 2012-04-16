@@ -6,10 +6,10 @@
 All of the following ROS Industrial software must be installed.
   # ROS Install - The instructions for installing ROS can be found here:
     * [http://www.ros.org/wiki/electric/Installation/Ubuntu Electric ]
-    * [http://www.ros.org/wiki/electric/Installation/Ubuntu Fuerte(Beta)]
+    * [http://ros.org/wiki/fuerte/Installation Fuerte(Beta)]
   # PR2 Desktop - Some required libraries are not installed with the basic ROS install.  The instructions for installing the PR2 Desktop can be found here:
     * [http://www.ros.org/wiki/Robots/PR2/electric Electric].
-    * [http://www.ros.org/wiki/Robots/PR2/electric Feurte(Beta)].
+    * Feurte(Beta) - follow the directions for electric, but replace electric references to feurte.
 
   # Currently, ROS-Industrial can only be downloaded and installed from source.  
     # Download the desired repository version:
