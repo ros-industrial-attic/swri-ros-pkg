@@ -1,21 +1,17 @@
 <!--
-s-model_finder_articulated_macro(prefix, origin_xyz, origin_rpy)
+s-model_finder_articulated_macro(prefix)
 
 Creates an articulated s-model finder with the passed in prefix.  The
 prefix typcially includes the hand prefix and an identifier for the
 finger(i.e. finger_1, etc...).
 
-The origin of the first link (link_0) must is also required.  It is
-passed as two parameters, one for xyz and one for rpy.
-
-NOTE: This urdf does not include the "scissor" degree of freedom.
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-	<xacro:macro name="s-model_finger_articulated" params="prefix origin_xyz origin_rpy">
+	<xacro:macro name="s-model_finger_articulated" params="prefix">
 		<!-- link list -->
 		<link name="${prefix}link_0">
 			<visual>
-				<origin xyz="${origin_xyz}" rpy="${origin_rpy}"/>
+				<origin xyz="0.020 0 0" rpy="0 0 0"/>
 				<geometry>
 					<mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_0.STL" />
 				</geometry>
@@ -95,7 +91,7 @@ NOTE: This urdf does not include the "scissor" degree of freedom.
 			<parent link="${prefix}link_0"/>
 			<child link="${prefix}link_1"/>
 			<axis xyz="0 0 1"/>
-			<origin xyz="${origin_xyz}" rpy="${origin_rpy}"/>
+			<origin xyz="0.020 0 0" rpy="0 0 0"/>
 			<limit lower="0" upper="3.1416" effort="100" velocity="100"/>
 		</joint>
 		<!-- WARNING: LIMITS NOT CORRECT -->
