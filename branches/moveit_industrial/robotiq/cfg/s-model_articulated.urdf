@@ -10,7 +10,7 @@ s-model_articulated - articulated version of the robotiq s-model,
 <robot name="s-model_articulated" xmlns:xacro="http://ros.org/wiki/xacro">
   <link name="finger_1_link_0">
     <visual>
-      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
       <geometry>
         <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_0.STL"/>
       </geometry>
@@ -85,7 +85,7 @@ s-model_articulated - articulated version of the robotiq s-model,
     <parent link="finger_1_link_0"/>
     <child link="finger_1_link_1"/>
     <axis xyz="0 0 1"/>
-    <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
     <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
   </joint>
   <joint name="finger_1_joint_2" type="revolute">
@@ -104,7 +104,7 @@ s-model_articulated - articulated version of the robotiq s-model,
   </joint>
   <link name="finger_2_link_0">
     <visual>
-      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 -0.036"/>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
       <geometry>
         <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_0.STL"/>
       </geometry>
@@ -179,7 +179,7 @@ s-model_articulated - articulated version of the robotiq s-model,
     <parent link="finger_2_link_0"/>
     <child link="finger_2_link_1"/>
     <axis xyz="0 0 1"/>
-    <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 -0.036"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
     <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
   </joint>
   <joint name="finger_2_joint_2" type="revolute">
@@ -198,7 +198,7 @@ s-model_articulated - articulated version of the robotiq s-model,
   </joint>
   <link name="finger_middle_link_0">
     <visual>
-      <origin rpy="0 0 1.57" xyz="0.0455 0.0414 0"/>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
       <geometry>
         <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_0.STL"/>
       </geometry>
@@ -273,7 +273,7 @@ s-model_articulated - articulated version of the robotiq s-model,
     <parent link="finger_middle_link_0"/>
     <child link="finger_middle_link_1"/>
     <axis xyz="0 0 1"/>
-    <origin rpy="0 0 1.57" xyz="0.0455 0.0414 0"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
     <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
   </joint>
   <joint name="finger_middle_joint_2" type="revolute">
@@ -308,23 +308,25 @@ s-model_articulated - articulated version of the robotiq s-model,
       </material>
     </collision>
   </link>
-  <joint name="joint_finger_1" type="fixed">
+  <joint name="palm_finger_1_joint" type="revolute">
     <parent link="palm"/>
     <child link="finger_1_link_0"/>
-    <axis xyz="0 0 1"/>
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0214 0.036"/>
+    <limit effort="100" lower="-0.16" upper="0.25" velocity="100"/>
   </joint>
-  <joint name="joint_finger_2" type="fixed">
+  <joint name="palm_finger_2_joint" type="revolute">
     <parent link="palm"/>
     <child link="finger_2_link_0"/>
-    <axis xyz="0 0 1"/>
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0214 -0.036"/>
+    <limit effort="100" lower="-0.25" upper="0.16" velocity="100"/>
   </joint>
-  <joint name="joint_finger_middle" type="fixed">
+  <joint name="palm_finger_middle_joint" type="fixed">
     <parent link="palm"/>
     <child link="finger_middle_link_0"/>
     <axis xyz="0 0 1"/>
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <origin rpy="0 0 1.57" xyz="0.0455 0.0214 0"/>
   </joint>
   <!--
 	<include filename="$(find robotiq)/cfg/s-model_finger_articulated_macro.xacro" />

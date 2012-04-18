@@ -5,14 +5,13 @@ Creates an articulated s-model hand with the passed in prefix.  If there
 is only one hand in the urdf then an empty prefix can be used "".  If
 there are multiple hands then a prefix followed by an "_" is needed.
 
-NOTE: This urdf does not include the "scissor" degree of freedom.
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 	<include filename="$(find robotiq)/cfg/s-model_finger_articulated_macro.xacro" />
 	<xacro:macro name="s-model_articulated" params="prefix">
-	<xacro:s-model_finger_articulated prefix="${prefix}finger_1_" origin_xyz="-0.0455 0.0414 0.036" origin_rpy="0 3.1416 -1.57"/>
-	<xacro:s-model_finger_articulated prefix="${prefix}finger_2_" origin_xyz="-0.0455 0.0414 -0.036" origin_rpy="0 3.1416 -1.57"/>
-	<xacro:s-model_finger_articulated prefix="${prefix}finger_middle_" origin_xyz="0.0455 0.0414 0" origin_rpy="0 0 1.57"/>
+	<xacro:s-model_finger_articulated prefix="${prefix}finger_1_"/>
+	<xacro:s-model_finger_articulated prefix="${prefix}finger_2_"/>
+	<xacro:s-model_finger_articulated prefix="${prefix}finger_middle_"/>
 		<!-- link list -->
 		<link name="${prefix}palm">
 			<visual>
@@ -34,23 +33,28 @@ NOTE: This urdf does not include the "scissor" degree of freedom.
 		</link>
 		<!-- end of link list -->
 		<!-- joint list -->
-		<joint name="${prefix}joint_finger_1" type="fixed">
+
+		<!-- WARNING: LIMITS NOT CORRECT -->
+		<joint name="${prefix}palm_finger_1_joint" type="revolute">
 			<parent link="${prefix}palm"/>
 			<child link="${prefix}finger_1_link_0"/>
-			<axis xyz="0 0 1"/>
-			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<axis xyz="0 1 0"/>
+			<origin xyz="-0.0455 0.0214 0.036" rpy="0 3.1416 -1.57"/>
+			<limit lower="-0.16" upper="0.25" effort="100" velocity="100"/>
 		</joint>
-		<joint name="${prefix}joint_finger_2" type="fixed">
+		<!-- WARNING: LIMITS NOT CORRECT -->
+		<joint name="${prefix}palm_finger_2_joint" type="revolute">
 			<parent link="${prefix}palm"/>
 			<child link="${prefix}finger_2_link_0"/>
-			<axis xyz="0 0 1"/>
-			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<axis xyz="0 1 0"/>
+			<origin xyz="-0.0455 0.0214 -0.036" rpy="0 3.1416 -1.57"/>
+			<limit lower="-0.25" upper="0.16" effort="100" velocity="100"/>
 		</joint>
-		<joint name="${prefix}joint_finger_middle" type="fixed">
+		<joint name="${prefix}palm_finger_middle_joint" type="fixed">
 			<parent link="${prefix}palm"/>
 			<child link="${prefix}finger_middle_link_0"/>
 			<axis xyz="0 0 1"/>
-			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<origin xyz="0.0455 0.0214 0" rpy="0 0 1.57"/>
 		</joint>
 		<!-- end of joint list -->
 	</xacro:macro>
