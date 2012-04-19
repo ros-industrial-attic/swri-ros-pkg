@@ -16,8 +16,8 @@ It is recommended that you be familiar with the following arm navigation tutoria
 The arm navigation warehouse is used to demonstrate and test arm motion planning.  For a detailed tutorial on the warehouse see this [http://www.ros.org/wiki/arm_navigation/Tutorials/tools/Warehouse%20Viewer tutorial]
   # Bring up a terminal window
   # Launch the warehouse viewer for the sia10d Motoman robot
-    * Simulated robot - {{{roslauch sia10d_mesh_arm_navigation planning_scene_warehouse_viewer_sia10d_mesh.launch}}}
-    * Actual robot - {{{roslauch sia10d_mesh_arm_navigation planning_scene_warehouse_viewer_sia10d_mesh_real.launch}}}
+    * Simulated robot - {{{roslaunch sia10d_mesh_arm_navigation planning_scene_warehouse_viewer_sia10d_mesh.launch}}}
+    * Actual robot - {{{roslaunch sia10d_mesh_arm_navigation planning_scene_warehouse_viewer_sia10d_mesh_real.launch}}}
   # The launch file will bring up the nodes and GUI required to run the warehouse viewer.  Select the warehouse window (this window may be behind the main rviz window).
     https://swri-ros-pkg.googlecode.com/svn/wiki/images/select_planning_window.png
   # Accept the default setup of the arm navigation viewer
