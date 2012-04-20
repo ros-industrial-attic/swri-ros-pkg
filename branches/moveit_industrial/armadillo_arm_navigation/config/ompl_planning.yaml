@@ -2,7 +2,6 @@ manipulator:
   planner_configs:
     - SBLkConfigDefault
     - LBKPIECEkConfigDefault
-  projection_evaluator: joints(joint_e)
   longest_valid_segment_fraction: 0.05
 
 planner_configs:

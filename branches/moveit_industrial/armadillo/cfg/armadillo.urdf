@@ -181,10 +181,292 @@
     <axis xyz="0 0 -1"/>
     <limit effort="100" lower="-3.1416" upper="3.1416" velocity="6.97"/>
   </joint>
+  <link name="finger_0_link_0">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_0.STL"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_0.STL"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="0 1 1 1"/>
+      </material>
+    </collision>
+  </link>
+  <link name="finger_0_link_1">
+    <visual>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_1.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_1.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="finger_0_link_2">
+    <!--
+			NOTE: This link has an offset in the z-direction based on the models that were
+			used to generate grap-it poses.  With the offset below the model appears visually
+			correct, but it is suspect.
+			-->
+    <visual>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_2.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_2.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="finger_0_link_3">
+    <visual>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_3.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_3.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <joint name="finger_0_joint_1" type="revolute">
+    <parent link="finger_0_link_0"/>
+    <child link="finger_0_link_1"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="finger_0_joint_2" type="revolute">
+    <parent link="finger_0_link_1"/>
+    <child link="finger_0_link_2"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="finger_0_joint_3" type="revolute">
+    <parent link="finger_0_link_2"/>
+    <child link="finger_0_link_3"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.039 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <link name="finger_1_link_0">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_0.STL"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_0.STL"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="0 1 1 1"/>
+      </material>
+    </collision>
+  </link>
+  <link name="finger_1_link_1">
+    <visual>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_1.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_1.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="finger_1_link_2">
+    <!--
+			NOTE: This link has an offset in the z-direction based on the models that were
+			used to generate grap-it poses.  With the offset below the model appears visually
+			correct, but it is suspect.
+			-->
+    <visual>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_2.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_2.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="finger_1_link_3">
+    <visual>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_3.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_3.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <joint name="finger_1_joint_1" type="revolute">
+    <parent link="finger_1_link_0"/>
+    <child link="finger_1_link_1"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="finger_1_joint_2" type="revolute">
+    <parent link="finger_1_link_1"/>
+    <child link="finger_1_link_2"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="finger_1_joint_3" type="revolute">
+    <parent link="finger_1_link_2"/>
+    <child link="finger_1_link_3"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.039 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <link name="finger_2_link_0">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_0.STL"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_0.STL"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="0 1 1 1"/>
+      </material>
+    </collision>
+  </link>
+  <link name="finger_2_link_1">
+    <visual>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_1.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_1.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="finger_2_link_2">
+    <!--
+			NOTE: This link has an offset in the z-direction based on the models that were
+			used to generate grap-it poses.  With the offset below the model appears visually
+			correct, but it is suspect.
+			-->
+    <visual>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_2.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_2.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="finger_2_link_3">
+    <visual>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/link_3.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/link_3.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <joint name="finger_2_joint_1" type="revolute">
+    <parent link="finger_2_link_0"/>
+    <child link="finger_2_link_1"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="finger_2_joint_2" type="revolute">
+    <parent link="finger_2_link_1"/>
+    <child link="finger_2_link_2"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="finger_2_joint_3" type="revolute">
+    <parent link="finger_2_link_2"/>
+    <child link="finger_2_link_3"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.039 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
   <link name="palm">
     <visual>
       <geometry>
-        <mesh filename="package://robotiq/meshes/s-model/visual/GRIPPER_OPEN_PALM.stl"/>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/visual/palm.STL"/>
       </geometry>
       <material name="green">
         <color rgba="0 1 0 1"/>
@@ -192,69 +474,32 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://robotiq/meshes/s-model/collision/GRIPPER_OPEN_PALM.stl"/>
+        <mesh filename="package://robotiq/meshes/s-model_articulated/collision/palm.STL"/>
       </geometry>
       <material name="yellow">
         <color rgba="0 1 1 1"/>
       </material>
     </collision>
   </link>
-  <link name="finger_1">
-    <visual>
-      <geometry>
-        <mesh filename="package://robotiq/meshes/s-model/visual/GRIPPER_OPEN_FINGER_1.stl"/>
-      </geometry>
-      <material name="green"/>
-    </visual>
-    <collision>
-      <geometry>
-        <mesh filename="package://robotiq/meshes/s-model/collision/GRIPPER_OPEN_FINGER_1.stl"/>
-      </geometry>
-      <material name="yellow"/>
-    </collision>
-  </link>
-  <link name="finger_2">
-    <visual>
-      <geometry>
-        <mesh filename="package://robotiq/meshes/s-model/visual/GRIPPER_OPEN_FINGER_2.stl"/>
-      </geometry>
-      <material name="green"/>
-    </visual>
-    <collision>
-      <geometry>
-        <mesh filename="package://robotiq/meshes/s-model/collision/GRIPPER_OPEN_FINGER_2.stl"/>
-      </geometry>
-      <material name="yellow"/>
-    </collision>
-  </link>
-  <link name="finger_3">
-    <visual>
-      <geometry>
-        <mesh filename="package://robotiq/meshes/s-model/visual/GRIPPER_OPEN_FINGER_3.stl"/>
-      </geometry>
-      <material name="green"/>
-    </visual>
-    <collision>
-      <geometry>
-        <mesh filename="package://robotiq/meshes/s-model/collision/GRIPPER_OPEN_FINGER_3.stl"/>
-      </geometry>
-      <material name="yellow"/>
-    </collision>
-  </link>
-  <joint name="joint_1" type="fixed">
+  <joint name="palm_finger_1_joint" type="revolute">
     <parent link="palm"/>
-    <child link="finger_1"/>
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <child link="finger_1_link_0"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0214 0.036"/>
+    <limit effort="100" lower="-0.16" upper="0.25" velocity="100"/>
   </joint>
-  <joint name="joint_2" type="fixed">
+  <joint name="palm_finger_2_joint" type="revolute">
     <parent link="palm"/>
-    <child link="finger_2"/>
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <child link="finger_2_link_0"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0214 -0.036"/>
+    <limit effort="100" lower="-0.25" upper="0.16" velocity="100"/>
   </joint>
-  <joint name="joint_3" type="fixed">
+  <joint name="palm_finger_0_joint" type="fixed">
     <parent link="palm"/>
-    <child link="finger_3"/>
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <child link="finger_0_link_0"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 1.57" xyz="0.0455 0.0214 0"/>
   </joint>
   <!-- link list -->
   <link name="coupler">
@@ -285,7 +530,7 @@
   <joint name="coupler-hand" type="fixed">
     <parent link="coupler"/>
     <child link="palm"/>
-    <origin rpy="-1.570 -0.478 0" xyz="0 0.240 0"/>
+    <origin rpy="0 0 0" xyz="0 0.120 0"/>
   </joint>
   <!-- end of joint list -->
   <!-- environment list -->
