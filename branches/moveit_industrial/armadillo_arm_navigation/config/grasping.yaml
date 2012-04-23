@@ -1,0 +1,3 @@
+end_effector:
+  database_id: RobotIQ
+  approach_direction: [0.0,-1.0,0.0]

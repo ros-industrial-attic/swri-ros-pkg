@@ -1,6 +1,7 @@
 <launch>
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find armadillo)/cfg/armadillo.xacro'" />
   <param name="robot_description_semantic" textfile="$(find armadillo_arm_navigation)/config/armadillo.srdf" />
+  <rosparam command="load" file="$(find armadillo_arm_navigation)/config/grasping.yaml"/>
 
   <group ns="robot_description_planning">
     <rosparam command="load" file="$(find armadillo_arm_navigation)/config/collision_matrix.yaml"/>
