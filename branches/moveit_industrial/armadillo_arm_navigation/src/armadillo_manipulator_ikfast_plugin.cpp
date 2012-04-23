@@ -171,6 +171,24 @@ public:
     }
   }
 
+  double getMaximumJointDifference(const std::vector<double>& ik_seed_state,
+                                   const std::vector<double>& solution) const {
+    unsigned int joint_max_ind = 0;
+    double max_dist = -1000000.0;
+    if(ik_seed_state.size() != solution.size()) {
+      ROS_WARN_STREAM("ik seed state and solution not same size for distance");
+    }
+    for(unsigned int i = 0; i < ik_seed_state.size(); i++) {
+      double diff = fabs(ik_seed_state[i]-solution[i]);
+      if(diff > max_dist) {
+        joint_max_ind = i;
+        max_dist = diff;
+      }
+    }
+    ROS_DEBUG_STREAM("Max distance " << max_dist << " for joint num " << joint_max_ind);
+    return max_dist;
+  }
+
   bool getPositionIK(const geometry_msgs::Pose &ik_pose,
                      const std::vector<double> &ik_seed_state,
                      std::vector<double> &solution,
@@ -308,9 +326,13 @@ public:
                         moveit_msgs::MoveItErrorCodes &error_code) const
   {
     if(free_params_.size()==0){
-      //TODO - how to check consistency when there are no free params?
-      return getPositionIK(ik_pose, ik_seed_state,solution, error_code);
-      ROS_WARN_STREAM("No free parameters, so can't search");
+      getPositionIK(ik_pose, ik_seed_state,solution, error_code);
+      double md = getMaximumJointDifference(ik_seed_state, solution);
+      if(md > consistency_limit) {
+        ROS_INFO_STREAM("No free parameters, and max dist " << md << " more than consistency limit " << consistency_limit);
+        error_code.val = error_code.NO_IK_SOLUTION; 
+        return false;
+      }
     }
 
     if(redundancy != (unsigned int)free_params_[0]) {
@@ -357,6 +379,11 @@ public:
             //ROS_INFO_STREAM("Num " << i << " value " << sol[i] << " has limits " << joint_has_limits_vector_[i] << " " << joint_min_vector_[i] << " " << joint_max_vector_[i]);
           }
           if(obeys_limits) {
+            double md = getMaximumJointDifference(ik_seed_state, solutions[i]);
+            if(md > consistency_limit) {
+              ROS_DEBUG_STREAM("Max dist " << md << " more than consistency limit " << consistency_limit);
+              break;
+            }
             solution = solutions[i];
             error_code.val = error_code.SUCCESS;
             return true;
@@ -593,6 +620,11 @@ public:
             }
           }
           if(obeys_limits) {
+            double md = getMaximumJointDifference(ik_seed_state, solutions[i]);
+            if(md > consistency_limit) {
+              ROS_INFO_STREAM("Max dist " << md << " more than consistency limit " << consistency_limit);
+              break;
+            }
             solution_callback(ik_pose,solutions[i],error_code);
             if(error_code.val == error_code.SUCCESS){
               solution = solutions[i];
