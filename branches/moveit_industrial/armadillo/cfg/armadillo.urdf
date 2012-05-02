@@ -544,26 +544,6 @@
       </material>
     </visual>
   </link>
-  <link name="controller">
-    <visual>
-      <geometry>
-        <box size="0.80 0.65 1.00"/>
-      </geometry>
-      <material name="">
-        <color rgba="1 0.2 1 1"/>
-      </material>
-    </visual>
-  </link>
-  <link name="filter">
-    <visual>
-      <geometry>
-        <box size="0.36 0.36 0.36"/>
-      </geometry>
-      <material name="">
-        <color rgba="1 0.4 1 1"/>
-      </material>
-    </visual>
-  </link>
   <link name="floor">
     <visual>
       <geometry>
@@ -581,16 +561,6 @@
       </geometry>
       <material name="">
         <color rgba="1 0.8 1 1"/>
-      </material>
-    </visual>
-  </link>
-  <link name="tables">
-    <visual>
-      <geometry>
-        <box size="1.10 1.65 0.45"/>
-      </geometry>
-      <material name="">
-        <color rgba="1 0.7 1 1"/>
       </material>
     </visual>
   </link>
