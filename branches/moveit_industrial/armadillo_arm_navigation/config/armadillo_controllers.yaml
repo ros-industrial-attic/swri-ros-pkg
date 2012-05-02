@@ -1,0 +1,8 @@
+
+manipulator:
+  controllers: 
+    - name: /joint_trajectory_action
+      ns: /
+      type: trajectory_execution_ros/FollowJointTrajectoryControllerHandler
+      load: false
+      default: true

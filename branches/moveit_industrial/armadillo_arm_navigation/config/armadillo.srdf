@@ -2,29 +2,8 @@
 
 <robot name="armadillo">
 
-   <virtual_joint name="world_joint" type="floating" parent_frame="odom_combined" child_link="base_link"/> 
-
    <group name="manipulator">
-      <chain base_link="base_link" tip_link="palm"/>
+      <chain base_link="base_link" tip_link="link_t"/>
    </group>
-
-   <group name="end_effector">
-      <joint name="palm_finger_0_joint" />
-      <joint name="finger_0_joint_1" />
-      <joint name="finger_0_joint_2" />
-      <joint name="finger_0_joint_3" />
-      <joint name="palm_finger_1_joint" />
-      <joint name="finger_1_joint_1" />
-      <joint name="finger_1_joint_2" />
-      <joint name="finger_1_joint_3" />
-      <joint name="palm_finger_2_joint" />
-      <joint name="finger_2_joint_1" />
-      <joint name="finger_2_joint_2" />
-      <joint name="finger_2_joint_3" />
-      <joint name="tool-coupler" />
-      <joint name="coupler-hand" />
-   </group>
-
-   <end_effector name="end_effector" parent_link="palm" group="end_effector"/>
 
 </robot>

@@ -1,0 +1,7 @@
+manipulator:
+  kinematics_solver: armadillo_hand_manipulator_kinematics/IKFastKinematicsPlugin
+  kinematics_solver_search_resolution: 0.005
+  redundancy:
+    name: joint_e
+  tip_name: palm
+  root_name: base_link
