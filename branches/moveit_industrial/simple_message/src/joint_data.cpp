@@ -137,6 +137,9 @@ bool JointData::operator==(JointData &rhs)
 
 }
 
+// Fixed-point precision, radians
+#define ANGULAR_MULTIPLIER 1e6
+
 bool JointData::load(industrial::byte_array::ByteArray *buffer)
 {
   bool rtn = false;
@@ -146,7 +149,11 @@ bool JointData::load(industrial::byte_array::ByteArray *buffer)
   for (int i = 0; i < this->getMaxNumJoints(); i++)
   {
     this->getJoint(i, value);
-    rtn = buffer->load(value);
+    // Switch to fixed point
+    shared_int int_value;
+    // This is a straight cast because we couldn't find a round function that works in Motoplus.
+    int_value = (shared_int)(value * ANGULAR_MULTIPLIER);
+    rtn = buffer->load(int_value);
     if (!rtn)
     {
       LOG_ERROR("Failed to load joint position data");
@@ -164,12 +171,15 @@ bool JointData::unload(industrial::byte_array::ByteArray *buffer)
   LOG_COMM("Executing joint position unload");
   for (int i = this->getMaxNumJoints() - 1; i >= 0; i--)
   {
-    rtn = buffer->unload(value);
+    // Switch from fixed point
+    shared_int int_value;
+    rtn = buffer->unload(int_value);
     if (!rtn)
     {
       LOG_ERROR("Failed to unload message joint: %d from data[%d]", i, buffer->getBufferSize());
       break;
     }
+    value = int_value / ANGULAR_MULTIPLIER;
     this->setJoint(i, value);
   }
   return rtn;

@@ -87,6 +87,9 @@ bool JointTrajPt::operator==(JointTrajPt &rhs)
 
 }
 
+// Fixed-point precision, radians
+#define VELOCITY_MULTIPLIER 1e6
+
 bool JointTrajPt::load(industrial::byte_array::ByteArray *buffer)
 {
 	bool rtn = false;
@@ -97,10 +100,14 @@ bool JointTrajPt::load(industrial::byte_array::ByteArray *buffer)
 	{
 		if (this->joint_position_.load(buffer))
 		{
-			if (buffer->load(this->velocity_))
+                        // Switch to fixed point
+                        shared_int int_value;
+                        // This is a straight cast because we couldn't find a round function that works in Motoplus.
+                        int_value = (shared_int)(this->velocity_ * VELOCITY_MULTIPLIER);
+			if (buffer->load(int_value))
 			{
-				LOG_COMM("Trajectory point successfully loaded");
-				rtn = true;
+                          LOG_COMM("Trajectory point successfully loaded %g %d", this->velocity_, int_value);
+                          rtn = true;
 			}
 			else
 			{
@@ -129,8 +136,11 @@ bool JointTrajPt::unload(industrial::byte_array::ByteArray *buffer)
   bool rtn = false;
 
   LOG_COMM("Executing joint traj. pt. unload");
-  if (buffer->unload(this->velocity_))
+  shared_int int_value;
+  if (buffer->unload(int_value))
   {
+          // Switch from fixed point
+          this->velocity_ = int_value / VELOCITY_MULTIPLIER;
 	  if(this->joint_position_.unload(buffer))
 	  {
 		  if (buffer->unload(this->sequence_))

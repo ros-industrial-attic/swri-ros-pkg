@@ -32,6 +32,9 @@
 #include "simple_message/byte_array.h"
 #include "simple_message/simple_serialize.h"
 #include "simple_message/log_wrapper.h"
+#include <arpa/inet.h>
+#define HTONL(num) htonl(num)
+#define NTOHL(num) ntohl(num)
 #endif
 
 #ifdef MOTOPLUS
@@ -39,6 +42,9 @@
 #include "byte_array.h"
 #include "simple_serialize.h"
 #include "log_wrapper.h"
+// These macros *should* call the motoplus functions, but they seem to be broken for FS100
+#define HTONL(num) num
+#define NTOHL(num) num
 #endif
 
 #include "string.h"
@@ -122,7 +128,8 @@ bool ByteArray::load(shared_real value)
 
 bool ByteArray::load(shared_int value)
 {
-  return this->load(&value, sizeof(shared_int));
+  shared_int network_int = HTONL(value);
+  return this->load(&network_int, sizeof(shared_int));
 }
 
 bool ByteArray::load(simple_serialize::SimpleSerialize &value)
@@ -188,7 +195,11 @@ bool ByteArray::unload(shared_real &value)
 
 bool ByteArray::unload(shared_int &value)
 {
-  return this->unload(&value, sizeof(shared_int));
+  shared_int network_int;
+  bool ret = this->unload(&network_int, sizeof(shared_int));
+  if(ret)
+      value = NTOHL(network_int);
+  return ret;
 }
 
 bool ByteArray::unload(simple_serialize::SimpleSerialize &value)
