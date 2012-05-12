@@ -21,8 +21,6 @@
       <joint name="finger_2_joint_1" />
       <joint name="finger_2_joint_2" />
       <joint name="finger_2_joint_3" />
-      <joint name="tool-coupler" />
-      <joint name="coupler-hand" />
    </group>
 
    <end_effector name="end_effector" parent_link="palm" group="end_effector"/>

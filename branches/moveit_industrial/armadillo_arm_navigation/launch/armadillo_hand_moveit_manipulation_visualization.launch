@@ -12,6 +12,7 @@
   <node pkg="moveit_visualization_ros" name="wall_clock_server" type="fake_time.py" />
 
   <node pkg="moveit_manipulation_visualization" type="moveit_manipulation_visualizer" name="moveit_manipulation_visualizer" output="screen">
+    <param name="request_adapters" value="default_planner_request_adapters/FixStartStateWorkspaceBoundsPlanningRequestAdapter default_planner_request_adapters/FixStartStateBoundsPlanningRequestAdapter default_planner_request_adapters/FixStartStatePathConstraintsPlanningRequestAdapter" />
     <rosparam command="load" file="$(find armadillo_arm_navigation)/config/ompl_planning.yaml"/>
     <rosparam command="load" file="$(find armadillo_arm_navigation)/config/kinematics_hand.yaml"/>
   </node>
