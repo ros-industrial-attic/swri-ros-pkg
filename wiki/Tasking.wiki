@@ -1,5 +1,5 @@
 =ROS-Industrial - Development Tasks=
-The following is a table of future tasks for the ROS-Industrial program.
+The following is a table of future tasks for the ROS-Industrial program.  These are potential tasks for the community to attempt and may be addressed by the [http://consortium.rosindustrial.org ROS-Industrial Consortium].  To add items to this list or sign up to address one of them, email the [mailto:swri-ros-pkg-dev@googlegroups.com developers group]
 
 ||	*Project Title*	||	*Project Description*	||	*ROS-Stack*	||	*References*	||	*Level of Effort*	||
 ||	Path Planning Optimization	||	The current path planners have been developed using very few assumptions about the world.  This is key to their generality but results in slow path planning.  In an industrial setting, assumptions about the world can be made which would result in much faster path planning.  Path planning needs to be performed in the 100 ms for most applications.  Slower path planning would require planning in parallel with other non-motion tasks (this is not out of the question)	||	ROS-Industrial	||		||	Optimization of existing code, Development of assumption based planners	||
