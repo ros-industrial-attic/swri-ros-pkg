@@ -1,6 +1,0 @@
-<launch>
-	<include file="$(find urdf_tutorial)/display.launch">
-		<arg name="model" value="$(find adept_common)/urdf/Adept_Viper_s650.urdf"/>
-		<arg name="gui" value="True"/>
-	</include>
-</launch>
