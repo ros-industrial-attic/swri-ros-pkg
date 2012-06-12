@@ -12,7 +12,7 @@
 
 ==Open Source Discussion==
 
-This section is not meant to extol the virtues of open source software.  Rather it is intended to discuss common misconceptions about ROS-Industrial being open source.  ROS-Industrial uses the BSD license.  This license is considered “business friendly” in that is does not restrict is use.  The code can be used for any purpose and does not require the release of any related code.  The last point is important, as many have mistakenly thought that providing a ROS interface to their equipment required the release of proprietary software that implements that interface.  This is not the case.  We expect the majority of ROS-Interfaces will make use of existing interfaces.  The ROS portion simply implements a ROS node to convert ROS messages to interface specific requirements.
+This section is not meant to extol the virtues of open source software.  Rather, it is intended to discuss common misconceptions about ROS-Industrial being open source.  ROS-Industrial uses the BSD license.  This license is considered “business friendly” in that is does not restrict its use.  The code can be used for any purpose and does not require the release of any related code.  The last point is important, as many have mistakenly thought that providing a ROS interface to their equipment required the release of proprietary software that implements that interface.  This is not the case.  We expect the majority of ROS-Interfaces will make use of existing interfaces.  The ROS portion simply implements a ROS node to convert ROS messages to interface specific requirements.
 
 There is also the misconception that being part of the community means you must give you software away for free.  The main goal of the community is to develop and standardize ROS interfaces.  The software which implements those interfaces can be open source or sold by individual vendors.  This choice is at the discretion of the developers.  If this results in every vendor selling their own software that accepts the standardized interface, then the main goal of achieving industrial systems integration with ROS, will still be realized.
 
@@ -22,8 +22,8 @@ There is also the misconception that being part of the community means you must 
 
   * Determine the set of standard ROS messages that shall be used for interfacing with industrial robot controllers
   * Create a suite of software that can be used to develop ROS interfaces across a variety of platforms (focusing on industrial robot controllers – See Common Software Tools)
-  * Implement a ROS interface on a commercial robot controller.
-  * Demonstrate an industrial application that uses high level ROS functionality include, path/motion planning, 3-D sensing, and grasping planning.
+  * Implement a ROS interface on a commercial robot controller
+  * Demonstrate an industrial application that uses high level ROS functionality including path/motion planning, 3-D sensing, and grasping planning
 
 ===Long-term===
 
@@ -44,7 +44,7 @@ There is also the misconception that being part of the community means you must 
 
 ==Standard Messages==
 
-ROS is a message based architecture.  Processes and hardware drivers communicate with each other via defined messages.  By defining standard ROS messages for controllers, actuators, and sensors, a level of hardware abstraction and device independence is achieved.  It is important to note, that this approach does not specify a particular hardware/software interface to the equipment.  Rather, it just specifies that whatever the hardware/software interface may be, it must be wrapped within a ROS node that accepts the standard message types defined below.
+ROS is a message-based architecture.  Processes and hardware drivers communicate with each other via defined messages.  By defining standard ROS messages for controllers, actuators, and sensors, a level of hardware abstraction and device independence is achieved.  It is important to note, that this approach does not specify a particular hardware/software interface to the equipment.  Rather, it just specifies that whatever the hardware/software interface may be, it must be wrapped within a ROS node that accepts the standard message types defined below.
 
 ===Robot Controller Messages===
 
