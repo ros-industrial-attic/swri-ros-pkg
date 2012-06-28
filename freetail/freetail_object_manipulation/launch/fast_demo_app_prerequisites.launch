@@ -23,14 +23,14 @@
 
   <node pkg="trajectory_filter_server" name="trajectory_filter_server" type="trajectory_filter_server" output="screen">
     <rosparam command="load" file="$(find longhorn_arm_navigation)/config/joint_limits.yaml"/>
-    <rosparam command="load" file="$(find longhorn_object_manipulation)/config/ompl_filters.yaml"/>
+    <rosparam command="load" file="$(find freetail_object_manipulation)/config/ompl_filters.yaml"/>
   </node>
 
   <rosparam command="load" file="$(find longhorn)/cfg/longhorn_hand_descriptions.yaml"/>
 
   <!--<include file="$(find household_objects_database)/launch/objects_database_remote_client.launch"/-->
 
-  <rosparam command="load" file="$(find longhorn_object_manipulation)/config/localhost.yaml"/>
+  <rosparam command="load" file="$(find freetail_object_manipulation)/config/localhost.yaml"/>
   <node pkg="household_objects_database" name="objects_database_node" type="objects_database_node" 
   	respawn="true" output="screen">
     <param name="prune_table_clearance" value="-1.0"/>
@@ -38,7 +38,7 @@
 
   <include file="$(find pr2_gripper_grasp_planner_cluster)/launch/robotiq_hand_grasp_planner_cluster_server.launch"/>
 
-  <include file="$(find longhorn_object_manipulation)/launch/tabletop_segmentation.launch">
+  <include file="$(find freetail_object_manipulation)/launch/tabletop_segmentation.launch">
     <arg name="tabletop_segmentation_points_in" value="camera/depth/points"/>
   </include>
   <include file="$(find tabletop_object_detector)/launch/tabletop_object_recognition.launch"/>
