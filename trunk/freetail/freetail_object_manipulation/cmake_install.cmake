@@ -1,4 +1,4 @@
-# Install script for directory: /home/jnicho/Desktop/Programming/ROS_Industrial/swri-ros-pkg/industrial/longhorn_object_manipulation
+# Install script for directory: /home/coky/Desktop/Projects/ROS/ManipulationIRD/repository/freetail/freetail_object_manipulation
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -38,7 +38,7 @@ ELSE(CMAKE_INSTALL_COMPONENT)
   SET(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 ENDIF(CMAKE_INSTALL_COMPONENT)
 
-FILE(WRITE "/home/jnicho/Desktop/Programming/ROS_Industrial/swri-ros-pkg/industrial/longhorn_object_manipulation/${CMAKE_INSTALL_MANIFEST}" "")
+FILE(WRITE "/home/coky/Desktop/Projects/ROS/ManipulationIRD/repository/freetail/freetail_object_manipulation/${CMAKE_INSTALL_MANIFEST}" "")
 FOREACH(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  FILE(APPEND "/home/jnicho/Desktop/Programming/ROS_Industrial/swri-ros-pkg/industrial/longhorn_object_manipulation/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
+  FILE(APPEND "/home/coky/Desktop/Projects/ROS/ManipulationIRD/repository/freetail/freetail_object_manipulation/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
 ENDFOREACH(file)
