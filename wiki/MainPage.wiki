@@ -17,7 +17,7 @@ ROS-Industrial is a BSD-licensed ROS stack that contains libraries, tools and dr
  
 https://swri-ros-pkg.googlecode.com/svn/wiki/images/arm_warehouse_viewer.png
 
-This site content is meant for ROS-Industrial developers.  ROS-Industrial users should go [http://www.ros.org/wiki/swri-ros-pkg here].
+This site content is meant for ROS-Industrial developers.  ROS-Industrial users should go [http://www.ros.org/wiki/Industrial here].
 
 Information on installing ROS-Industrial from source can be found [Installation here].
 
