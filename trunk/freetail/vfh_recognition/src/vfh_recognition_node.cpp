@@ -149,15 +149,13 @@ bool recognize_cb(vfh_recognition::Recognize::Request &fromKinect,
       ROS_INFO("%i", atoi(viewNumber.c_str()));
       
       //Here, objectToView is the transformation of the detected object to it's nearest viewpoint in the database.
-      //To get the object pose in the world frame: T(camera_to_world)*T(training_view_to_camera)*objectToView 
+      //To get the object pose in the world frame: T(camera_to_world)*T(training_view_to_camera)*objectToView. 
+      //For visualization convenience, the transformed template is also returned in the alignTemplate function call.
+      //In the next iteration, the templates will be demeaned so this will no longer work. The transformation to 
+      //camera coordinates would then happen here by finding T(view_cam) in a lookup table and premultiplying
+      //by objectToView (coming soon.)
       alignTemplate(clouds.at(segment_it), cloud_name, aligned_template, objectToView);
-      printf ("\n");
-      printf ("    | %6.3f %6.3f %6.3f | \n", rotation (0,0), rotation (0,1), rotation (0,2)), rotation (0,3);
-      printf ("T = | %6.3f %6.3f %6.3f | \n", rotation (1,0), rotation (1,1), rotation (1,2)), rotation (1,3);
-      printf ("    | %6.3f %6.3f %6.3f | \n", rotation (2,0), rotation (2,1), rotation (2,2)), rotation (2,3);
-      printf ("    | %6.3f %6.3f %6.3f | \n", rotation (3,0), rotation (3,1), rotation (3,2)), rotation (3,3);
-      printf ("\n");
-      
+      std::cout << "T = " << objectToView << std::endl;
       pcl::toROSMsg(*aligned_template, res.model);
       
     }else{   

@@ -220,7 +220,7 @@ class TemplateAlignment
 
 // Align a collection of object templates to a sample point cloud
 int
-alignTemplate (pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::string modelName, pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud, Eigen::Matrix4f objectToView)
+alignTemplate (pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::string modelName, pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud, Eigen::Matrix4f &objectToView)
 {
   //Load clouds
   //pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
@@ -271,7 +271,7 @@ alignTemplate (pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::string modelName,
   printf ("t = < %0.3f, %0.3f, %0.3f >\n", translation (0), translation (1), translation (2));
 
   // Save the aligned template for visualization
-  objectToView = best_alignment.final_transformation;
+  objectToView = best_alignment.final_transformation.block<4,4>(0,0);
   pcl::transformPointCloud (*object_template.getPointCloud (), *transformed_cloud, best_alignment.final_transformation);
   //pcl::io::savePCDFileBinary ("data/output.pcd", transformed_cloud);
 
