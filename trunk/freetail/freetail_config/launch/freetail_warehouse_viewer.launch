@@ -60,7 +60,8 @@
   <!-- Link on the right arm to perform inverse kinematics for -->
   <param name="right_ik_link" value="none" />
   <!-- Called to plan trajectories given motion plan requests -->
-  <param name="planner_service_name" value="/ompl_planning/plan_kinematic_path" />
+  <param name="planner_1_service_name" value="/chomp_planner_longrange/plan_path"/>
+  <param name="planner_2_service_name" value="/ompl_planning/plan_kinematic_path"/>
   <!-- Interpolates between end effector positions for the left arm -->
   <param name="left_interpolate_service_name" value="none" />
   <!-- Interpolates between end effector positions for the right arm -->
