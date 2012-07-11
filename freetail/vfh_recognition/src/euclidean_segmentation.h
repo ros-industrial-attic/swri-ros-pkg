@@ -16,7 +16,6 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
 {
   // Read in the cloud data
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>), cloud_f (new pcl::PointCloud<pcl::PointXYZ>);
-  std::cout << "In SegmentCloud, reading PointCloud2 msg" << std::endl;
   pcl::fromROSMsg(rawCloud, *cloud);
   
   // Create the filtering object: downsample the dataset using a leaf size of 1cm
@@ -38,7 +37,7 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
   seg.setMaxIterations (100);
   seg.setDistanceThreshold (0.02);
 
-  int i=0, nr_points = (int) cloud_filtered->points.size ();
+  int nr_points = (int) cloud_filtered->points.size ();
   while (cloud_filtered->points.size () > 0.3 * nr_points)
   {
     // Segment the largest planar component from the remaining cloud

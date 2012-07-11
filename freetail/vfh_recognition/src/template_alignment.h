@@ -223,8 +223,6 @@ int
 alignTemplate (pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::string modelName, pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud, Eigen::Matrix4f &objectToView)
 {
   //Load clouds
-  //pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-  //pcl::io::loadPCDFile (testName, *cloud);
   pcl::PointCloud<pcl::PointXYZ>::Ptr modelCloud (new pcl::PointCloud<pcl::PointXYZ>);
   pcl::io::loadPCDFile (modelName, *modelCloud);
   
@@ -245,35 +243,23 @@ alignTemplate (pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::string modelName,
 
   // Set the TemplateAlignment inputs
   TemplateAlignment template_align;
-  //for (size_t i = 0; i < object_templates.size (); ++i)
-  //{
-    template_align.addTemplateCloud(object_template);//(object_templates[i]);
-  //}
+  template_align.addTemplateCloud(object_template);//(object_templates[i]);
   template_align.setTargetCloud (target_cloud);
 
   // Find the best template alignment
   TemplateAlignment::Result best_alignment;
   int best_index = template_align.findBestAlignment (best_alignment);
-  //const FeatureCloud &best_template = object_templates[best_index];
 
   // Print the alignment fitness score (values less than 0.00002 are good)
-  printf ("Best fitness score: %f\n", best_alignment.fitness_score);
+  //printf ("Best fitness score: %f\n", best_alignment.fitness_score);
 
   // Print the rotation matrix and translation vector
-  Eigen::Matrix3f rotation = best_alignment.final_transformation.block<3,3>(0, 0);
-  Eigen::Vector3f translation = best_alignment.final_transformation.block<3,1>(0, 3);
-
-  printf ("\n");
-  printf ("    | %6.3f %6.3f %6.3f | \n", rotation (0,0), rotation (0,1), rotation (0,2));
-  printf ("R = | %6.3f %6.3f %6.3f | \n", rotation (1,0), rotation (1,1), rotation (1,2));
-  printf ("    | %6.3f %6.3f %6.3f | \n", rotation (2,0), rotation (2,1), rotation (2,2));
-  printf ("\n");
-  printf ("t = < %0.3f, %0.3f, %0.3f >\n", translation (0), translation (1), translation (2));
-
+  //Eigen::Matrix3f rotation = best_alignment.final_transformation.block<3,3>(0, 0);
+  //Eigen::Vector3f translation = best_alignment.final_transformation.block<3,1>(0, 3);
+  
   // Save the aligned template for visualization
   objectToView = best_alignment.final_transformation.block<4,4>(0,0);
   pcl::transformPointCloud (*object_template.getPointCloud (), *transformed_cloud, best_alignment.final_transformation);
-  //pcl::io::savePCDFileBinary ("data/output.pcd", transformed_cloud);
 
   return (0);
 }
