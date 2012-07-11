@@ -16,15 +16,16 @@
 #include <pcl/ModelCoefficients.h>
 #include "euclidean_segmentation.h"
 #include "vfh_recognition/Recognize.h"
-
-//Usage: ./build/nearest_neighbors_raw -k 16 -thresh 50 ~/pcl_workspace/euclidean_cluster/cloud_cluster_1.pcd
+#include <tabletop_object_detector/TabletopSegmentation.h>
+#include <tabletop_object_detector/TabletopObjectRecognition.h>
 
 typedef std::pair<std::string, std::vector<float> > vfh_model;
 std::vector<vfh_model> models;
 flann::Matrix<int> k_indices;
 flann::Matrix<float> k_distances;
 flann::Matrix<float> data;
-ros::Publisher recognized_pub;
+//ros::Publisher recognized_pub;
+sensor_msgs::PointCloud2 fromKinect;
 
 /** \brief Search for the closest k neighbors
   * \param index the tree
@@ -73,21 +74,24 @@ loadFileList (std::vector<vfh_model> &models, const std::string &filename)
   return (true);
 }
 
-bool recognize_cb(vfh_recognition::Recognize::Request &fromKinect,
-		  vfh_recognition::Recognize::Response &res)
+bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &srv_request,
+		  tabletop_object_detector::TabletopObjectRecognition::Response &srv_response)
 {
+  //clear any models in the response:
+  srv_response.models.resize(0);
+  
   // Create the VFH estimation class, and pass the input dataset+normals to it
   pcl::VFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::VFHSignature308> vfh;
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clouds;
   
   //Euclidean segmentation:
-  SegmentCloud(fromKinect.scene, clouds);
+  SegmentCloud(fromKinect, clouds);
  
   //For storing results:
   pcl::PointCloud<pcl::PointXYZ>::Ptr aligned_template (new pcl::PointCloud<pcl::PointXYZ>);
-  bool objectFound = false;
   sensor_msgs::PointCloud2 recognized_msg;
   Eigen::Matrix4f objectToView;
+  int numFound = 0;
   
   //For each segment passed in:
   for(unsigned int segment_it = 0; segment_it < clouds.size(); segment_it++){
@@ -125,24 +129,17 @@ bool recognize_cb(vfh_recognition::Recognize::Request &fromKinect,
     index.buildIndex ();
     nearestKSearch (index, histogram, k, k_indices, k_distances);
 
-    // Output the results on screen
-    //pcl::console::print_highlight ("The closest %d neighbors for %s are:\n", k, models.at(k_indices[0][0].first));
-    for (int i = 0; i < k; ++i)
-      pcl::console::print_info ("    %d - %s (%d) with a distance of: %f\n", 
-	  i, models.at (k_indices[0][i]).first.c_str (), k_indices[0][i], k_distances[0][i]);
-
-    //Once a model is matched, do finer pose estimation by RANSAC fitting.
+    //If model match is close enough, do finer pose estimation by RANSAC fitting.
     if(k_distances[0][0] < thresh){
-      objectFound = true;
-      //std::cout << "OBJECT FOUND!!!" << std::endl;
+      numFound++;
       //Load nearest match
       std::string cloud_name = models.at(k_indices[0][0]).first;
-      cloud_name.erase(cloud_name.end()-8, cloud_name.end()-4);
       
+      //Extract object label and view number from file name:
+      cloud_name.erase(cloud_name.end()-8, cloud_name.end()-4);
       std::string recognitionLabel, viewNumber;
       recognitionLabel.assign(cloud_name.begin()+5, cloud_name.end()-6);
       viewNumber.assign(cloud_name.end()-5, cloud_name.end()-4);
-      //std::cout << "Label: " << recognitionLabel << std::endl << "View Number: " << viewNumber << std::endl;
       
       //ROS_INFO the recognitionLabel and view number. This info will later be used to look the object up in a manipulation database.
       ROS_INFO("%s", recognitionLabel.c_str());
@@ -150,25 +147,47 @@ bool recognize_cb(vfh_recognition::Recognize::Request &fromKinect,
       
       //Here, objectToView is the transformation of the detected object to it's nearest viewpoint in the database.
       //To get the object pose in the world frame: T(camera_to_world)*T(training_view_to_camera)*objectToView. 
-      //For visualization convenience, the transformed template is also returned in the alignTemplate function call.
-      //In the next iteration, the templates will be demeaned so this will no longer work. The transformation to 
-      //camera coordinates would then happen here by finding T(view_cam) in a lookup table and premultiplying
-      //by objectToView (coming soon.)
+      //The transformation to camera coordinates would then happen here by finding T(view_cam) in a lookup table and premultiplying
+      //by objectToView
       alignTemplate(clouds.at(segment_it), cloud_name, aligned_template, objectToView);
-      std::cout << "T = " << objectToView << std::endl;
-      pcl::toROSMsg(*aligned_template, res.model);
+      //Convert rotational component of objectToView to Quaternion for messaging:
+      Eigen::Matrix3f rotation = objectToView.block<3,3>(0, 0);
+      Eigen::Quaternionf rotQ(rotation);
+     
+      //Build service response:
+      srv_response.models.resize(numFound);
+      srv_response.models[numFound-1].model_list.resize(1);
+      //model_id
+      srv_response.models[numFound-1].model_list[0].model_id = atoi(viewNumber.c_str()); //This ID will eventually correspond to the object label.
+      //PoseStamped
+        //Header
+      srv_response.models[numFound-1].model_list[0].pose.header.seq = 1; //Don't know what this is, but it's set.
+      srv_response.models[numFound-1].model_list[0].pose.header.stamp = fromKinect.header.stamp;
+      srv_response.models[numFound-1].model_list[0].pose.header.frame_id = "/camera_depth_optical_frame";
+        //Pose
+          //Position:
+      srv_response.models[numFound-1].model_list[0].pose.pose.position.x = objectToView(0,3);
+      srv_response.models[numFound-1].model_list[0].pose.pose.position.y = objectToView(1,3);
+      srv_response.models[numFound-1].model_list[0].pose.pose.position.z = objectToView(2,3);
+          //Orientation:
+      srv_response.models[numFound-1].model_list[0].pose.pose.orientation.x = rotQ.x();
+      srv_response.models[numFound-1].model_list[0].pose.pose.orientation.y = rotQ.y();
+      srv_response.models[numFound-1].model_list[0].pose.pose.orientation.z = rotQ.z();
+      srv_response.models[numFound-1].model_list[0].pose.pose.orientation.w = rotQ.w();
+      //confidence and cluster_model_indcices are not currently used.
       
-    }else{   
-     //std::cout << "Object not found." << std::endl;
-    }
+    }//end threshold if statement
     
-  }
-  if(!objectFound){
-      aligned_template->clear();
-      pcl::toROSMsg(*aligned_template, res.model);
-    }
+  }//end segment iterator
+  
   return(1);
 }
+
+void kinect_cb(const sensor_msgs::PointCloud2 inCloud)
+{
+  fromKinect = inCloud;
+}
+
 int main(int argc, char **argv)
 {
   
@@ -182,6 +201,8 @@ int main(int argc, char **argv)
   flann::load_from_file (data, training_data_h5_file_name, "training_data");
   pcl::console::print_highlight ("Training data found. Loaded %d VFH models from %s/%s.\n", 
   (int)data.rows, training_data_h5_file_name.c_str (), training_data_list_file_name.c_str ());
+  
+  ros::Subscriber sub = n.subscribe("/camera/depth_registered/points", 1, kinect_cb);
   
   ros::ServiceServer serv = n.advertiseService("/object_recognition", recognize_cb);
   ROS_INFO("Recognition node ready.");
