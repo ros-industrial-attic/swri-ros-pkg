@@ -20,7 +20,7 @@
 #include <household_objects_database_msgs/GetModelDescription.h>
 #include <object_manipulation_msgs/GraspPlanning.h>
 #include <planning_environment/util/construct_object.h>
-#include <longhorn_object_manipulation/grasp_posture_trajectory_controller_handler.h>
+#include <freetail_object_manipulation/grasp_posture_trajectory_controller_handler.h>
 
 using namespace trajectory_execution_monitor;
 
