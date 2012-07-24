@@ -1,13 +1,13 @@
 <?xml version="1.0" ?>
 <launch>
-	<node name="freetail_simple_manipulation_demo" pkg="freetail_object_manipulation" type="SimpleManipulation">
-		<param name="planner_service_name" default="/ompl_planning/plan_kinematic_path"/>
-		<param name="trajectory_filter_service_name" default="/trajectory_filter_server/filter_trajectory_with_constraints"/>
-		<param name="segmentation_service_name" default="/tabletop_segmentation"/>
-		<param name="grasp_planning_service_name" default="/plan_point_cluster_grasp"/>
-		<param name="mesh_database_service_name" default="/objects_database_node/get_model_mesh"/>
-		<param name="model_database_service_name" default="/objects_database_node/get_model_description"/>	
-		<param name="planning_scene_service_name" default="/environment_server/set_planning_scene_diff"/>	
-		<param name="arm_inverse_kinematics_plugin" default="SIA20D_Mesh_manipulator_kinematics/IKFastKinematicsPlugin"/>		
+	<node name="freetail_simple_manipulation_demo" pkg="freetail_object_manipulation" type="SimpleManipulation" output="screen">
+		<param name="planner_service_name" value="/ompl_planning/plan_kinematic_path"/>
+		<param name="trajectory_filter_service_name" value="/trajectory_filter_server/filter_trajectory_with_constraints"/>
+		<param name="segmentation_service_name" value="/tabletop_segmentation"/>
+		<param name="grasp_planning_service_name" value="/plan_point_cluster_grasp"/>
+		<param name="mesh_database_service_name" value="/objects_database_node/get_model_mesh"/>
+		<param name="model_database_service_name" value="/objects_database_node/get_model_description"/>	
+		<param name="planning_scene_service_name" value="/environment_server/set_planning_scene_diff"/>	
+		<param name="arm_inverse_kinematics_plugin" value="SIA20D_Mesh_manipulator_kinematics/IKFastKinematicsPlugin"/>		
 	</node>  
 </launch>
