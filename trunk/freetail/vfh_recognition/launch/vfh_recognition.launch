@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<launch>
+  <node name="vfh_recognition" pkg="vfh_recognition" type="vfh_recognition_node">
+  </node>
+</launch>
