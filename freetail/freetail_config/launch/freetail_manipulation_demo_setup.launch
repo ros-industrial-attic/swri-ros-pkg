@@ -14,7 +14,7 @@
        <param name="database_path" value="arm_navigation_dbs/pr2_manip_db"/>
   </node>
 <!-- sensor setup -->
-  <include file="$(find freetail_config)/launch/openni.launch"/>
+  <include file="$(find freetail_config)/launch/openni_try.launch"/>
 
 <!-- enviroment server -->
   <include file="$(find freetail_arm_navigation)/launch/freetail_planning_environment.launch"/>
