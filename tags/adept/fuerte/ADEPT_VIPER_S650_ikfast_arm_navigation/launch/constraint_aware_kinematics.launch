@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='ASCII'?>
+<launch>
+  <include file="$(find ADEPT_VIPER_S650_ikfast_arm_navigation)/launch/ADEPT_VIPER_S650_planning_environment.launch"/>
+  <node pkg="arm_kinematics_constraint_aware" type="arm_kinematics_constraint_aware" name="ADEPT_VIPER_S650_arm_1_kinematics">
+    <param name="group" type="string" value="arm_1"/>
+    <param name="arm_1/root_name" type="string" value="Adept_Viper_s650_Link1"/>
+    <param name="arm_1/tip_name" type="string" value="Adept_Viper_650_Interface_Plate"/>
+    <param name="kinematics_solver" type="string" value="ADEPT_VIPER_S650_arm_1_kinematics/IKFastKinematicsPlugin"/>
+  </node>
+</launch>
