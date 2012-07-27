@@ -17,6 +17,11 @@
   <depend package="sensor_msgs" />
   <depend package="simple_message" />
   <depend package="urdf" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include/"/>
+  </export>
+
 </package>
 
 
