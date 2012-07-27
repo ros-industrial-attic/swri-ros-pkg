@@ -1,4 +1,0 @@
-<launch>
-    <param name="robot_description" textfile="$(find freetail_config)/urdf/freetail.urdf" />
-    <rosparam command="load" ns="robot_description_planning" file="$(find freetail_arm_navigation)/config/freetail_planning_description.yaml" />
-</launch>
