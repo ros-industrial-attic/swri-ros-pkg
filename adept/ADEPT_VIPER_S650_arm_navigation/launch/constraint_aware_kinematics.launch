@@ -1,9 +1,0 @@
-<launch>
-    <include file="$(find ADEPT_VIPER_S650_arm_navigation)/launch/ADEPT_VIPER_S650_planning_environment.launch" />
-    <node pkg="arm_kinematics_constraint_aware" type="arm_kinematics_constraint_aware" name="ADEPT_VIPER_S650_manipulator_kinematics">
-        <param name="group" type="string" value="manipulator" />
-        <param name="manipulator/root_name" type="string" value="Adept_Viper_s650_Link1" />
-        <param name="manipulator/tip_name" type="string" value="Adept_Viper_650_Interface_Plate" />
-        <param name="kinematics_solver" type="string" value="arm_kinematics_constraint_aware/KDLArmKinematicsPlugin" />
-    </node>
-</launch>
