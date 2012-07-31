@@ -1,4 +1,6 @@
 //vfh_recognition_node.cpp
+#define BOOST_FILESYSTEM_VERSION 2
+
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/common/transforms.h>
@@ -18,14 +20,18 @@
 #include "vfh_recognition/Recognize.h"
 #include <tabletop_object_detector/TabletopSegmentation.h>
 #include <tabletop_object_detector/TabletopObjectRecognition.h>
+#include <boost/filesystem.hpp>
+
+
 
 typedef std::pair<std::string, std::vector<float> > vfh_model;
 std::vector<vfh_model> models;
 flann::Matrix<int> k_indices;
 flann::Matrix<float> k_distances;
-flann::Matrix<float> data;
+flann::Matrix<float> *data;
 //ros::Publisher recognized_pub;
 sensor_msgs::PointCloud2 fromKinect;
+ros::Publisher pub;
 
 /** \brief Search for the closest k neighbors
   * \param index the tree
@@ -74,9 +80,81 @@ loadFileList (std::vector<vfh_model> &models, const std::string &filename)
   return (true);
 }
 
+bool
+loadHist (const boost::filesystem::path &path, vfh_model &vfh)
+{
+  int vfh_idx;
+  // Load the file as a PCD
+  try
+  {
+    sensor_msgs::PointCloud2 cloud;
+    int version;
+    Eigen::Vector4f origin;
+    Eigen::Quaternionf orientation;
+    pcl::PCDReader r;
+    int type;  int idx;
+    r.readHeader (path.string (), cloud, origin, orientation, version, type, idx);
+
+    vfh_idx = pcl::getFieldIndex (cloud, "vfh");
+    if (vfh_idx == -1)
+      return (false);
+    if ((int)cloud.width * cloud.height != 1)
+      return (false);
+  }
+  catch (pcl::InvalidConversionException e)
+  {
+    return (false);
+  }
+
+  // Treat the VFH signature as a single Point Cloud
+  pcl::PointCloud <pcl::VFHSignature308> point;
+  pcl::io::loadPCDFile (path.string (), point);
+  vfh.second.resize (308);
+
+  std::vector <sensor_msgs::PointField> fields;
+  pcl::getFieldIndex (point, "vfh", fields);
+
+  for (size_t i = 0; i < fields[vfh_idx].count; ++i)
+  {
+    vfh.second[i] = point.points[0].histogram[i];
+  }
+  vfh.first = path.string ();
+  return (true);
+}
+
+void
+loadFeatureModels (const boost::filesystem::path &base_dir, const std::string &extension, 
+                   std::vector<vfh_model> &models)
+{
+  if (!boost::filesystem::exists (base_dir) && !boost::filesystem::is_directory (base_dir))
+    return;
+
+  for (boost::filesystem::directory_iterator it (base_dir); it != boost::filesystem::directory_iterator (); ++it)
+  {
+    if (boost::filesystem::is_directory (it->status ()))
+    {
+      std::stringstream ss;
+      ss << it->path ();
+      pcl::console::print_highlight ("Loading %s (%lu models loaded so far).\n", ss.str ().c_str (), (unsigned long)models.size ());
+      loadFeatureModels (it->path (), extension, models);
+    }
+    if (boost::filesystem::is_regular_file (it->status ()) && boost::filesystem::extension (it->path ()) == extension)
+    {
+      vfh_model m;
+      if (loadHist (base_dir / it->path ().filename (), m))
+        models.push_back (m);
+    }
+  }
+}
+
 bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &srv_request,
 		  tabletop_object_detector::TabletopObjectRecognition::Response &srv_response)
 {
+  
+  //build kdtree index
+  flann::Index<flann::ChiSquareDistance<float> > index (*data, flann::LinearIndexParams ());
+   index.buildIndex ();
+   
   //clear any models in the response:
   srv_response.models.resize(0);
   
@@ -92,7 +170,7 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
   sensor_msgs::PointCloud2 recognized_msg;
   Eigen::Matrix4f objectToView;
   int numFound = 0;
-  
+  std::cout << "Found " << clouds.size() << " clusters.\n"; 
   //For each segment passed in:
   for(unsigned int segment_it = 0; segment_it < clouds.size(); segment_it++){
     vfh.setInputCloud (clouds.at(segment_it));
@@ -121,11 +199,11 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
       }
 
     //Algorithm parameters  
-    float thresh = 125; //similarity threshold
+    float thresh = 100; //similarity threshold
     int k = 1; //number of neighbors
     
     //KNN classification
-    flann::Index<flann::ChiSquareDistance<float> > index (data, flann::SavedIndexParams ("kdtree.idx"));
+    flann::Index<flann::ChiSquareDistance<float> > index (*data, flann::LinearIndexParams ());
     index.buildIndex ();
     nearestKSearch (index, histogram, k, k_indices, k_distances);
 
@@ -140,12 +218,13 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
       std::string recognitionLabel, viewNumber;
       recognitionLabel.assign(cloud_name.begin()+5, cloud_name.end()-6);
       viewNumber.assign(cloud_name.end()-5, cloud_name.end()-4);
+    
       
       //ROS_INFO the recognitionLabel and view number. This info will later be used to look the object up in a manipulation database.
       ROS_INFO("%s", recognitionLabel.c_str());
       ROS_INFO("%i", atoi(viewNumber.c_str()));
       
-      //Here, objectToView is the transformation of the detected object to it's nearest viewpoint in the database.
+      //Here, objectToView is the transformation of the detected object to its nearest viewpoint in the database.
       //To get the object pose in the world frame: T(camera_to_world)*T(training_view_to_camera)*objectToView. 
       //The transformation to camera coordinates would then happen here by finding T(view_cam) in a lookup table and premultiplying
       //by objectToView
@@ -154,6 +233,8 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
       Eigen::Matrix3f rotation = objectToView.block<3,3>(0, 0);
       Eigen::Quaternionf rotQ(rotation);
      
+      //Set num models in request:
+      srv_request.num_models = numFound;
       //Build service response:
       srv_response.models.resize(numFound);
       srv_response.models[numFound-1].model_list.resize(1);
@@ -193,14 +274,20 @@ int main(int argc, char **argv)
   
   ros::init(argc, argv, "recongition_node");
   ros::NodeHandle n;
-  std::string kdtree_idx_file_name = "kdtree.idx";
-  std::string training_data_h5_file_name = "training_data.h5";
-  std::string training_data_list_file_name = "training_data.list";
   
-  loadFileList (models, training_data_list_file_name);
-  flann::load_from_file (data, training_data_h5_file_name, "training_data");
-  pcl::console::print_highlight ("Training data found. Loaded %d VFH models from %s/%s.\n", 
-  (int)data.rows, training_data_h5_file_name.c_str (), training_data_list_file_name.c_str ());
+  loadFeatureModels ("data", ".pcd", models);
+  pcl::console::print_highlight ("Loaded %d VFH models. Creating training data\n", 
+      (int)models.size ());
+
+  // Convert data into FLANN format
+  data = new flann::Matrix<float> (new float[models.size () * models[0].second.size ()], models.size (), models[0].second.size ());
+  
+  std::cout << "data size: [" << data->rows << " , " << data->cols << "]\n";
+  for (size_t i = 0; i < data->rows; ++i)
+    for (size_t j = 0; j < data->cols; ++j)
+      *(data->ptr()+(i*data->cols + j)) = models[i].second[j];
+    
+  pcl::console::print_error ("Training data loaded.\n");
   
   ros::Subscriber sub = n.subscribe("/camera/depth_registered/points", 1, kinect_cb);
   

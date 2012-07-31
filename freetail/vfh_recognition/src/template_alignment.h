@@ -248,7 +248,8 @@ alignTemplate (pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::string modelName,
 
   // Find the best template alignment
   TemplateAlignment::Result best_alignment;
-  int best_index = template_align.findBestAlignment (best_alignment);
+  template_align.findBestAlignment (best_alignment);
+  //int best_index = template_align.findBestAlignment (best_alignment);
 
   // Print the alignment fitness score (values less than 0.00002 are good)
   //printf ("Best fitness score: %f\n", best_alignment.fitness_score);
