@@ -20,10 +20,10 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
   
   // Create the filtering object: downsample the dataset using a leaf size of 1cm
   pcl::VoxelGrid<pcl::PointXYZ> vg;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>), cloud_filtered_0 (new pcl::PointCloud<pcl::PointXYZ>);
   vg.setInputCloud (cloud);
   vg.setLeafSize (0.01f, 0.01f, 0.01f);
-  vg.filter (*cloud_filtered);
+  vg.filter (*cloud_filtered_0);
 
   // Create the segmentation object for the planar model and set all the parameters
   pcl::SACSegmentation<pcl::PointXYZ> seg;
@@ -37,7 +37,19 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
   seg.setMaxIterations (100);
   seg.setDistanceThreshold (0.02);
 
+  
+  //Spatial filter.
+  cloud_filtered->resize(0);
+  //Parameters
+  float min_x = -.7, max_x = .7;
+  float min_y = -10, max_y = 10;
+  float min_z = 0, max_z = 2.0;
+  for(pcl::PointCloud<pcl::PointXYZ>::iterator position=cloud_filtered_0->begin(); position!=cloud_filtered_0->end(); position++){
+    if(position->x > min_x && position->x < max_x && position->y > min_y && position->y < max_y && position->z > min_z && position->z < max_z)
+      cloud_filtered->push_back(*position);
+  }
   int nr_points = (int) cloud_filtered->points.size ();
+  
   while (cloud_filtered->points.size () > 0.3 * nr_points)
   {
     // Segment the largest planar component from the remaining cloud

@@ -35,10 +35,12 @@ include_directories(${FLANN_INCLUDE_DIRS})
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 rosbuild_add_executable(vfh_recognition_node src/vfh_recognition_node.cpp)
 target_link_libraries(vfh_recognition_node ${PCL_LIBRARIES} 
-                                        ${Boost_LIBRARIES} ${HDF5_hdf5_LIBRARY}
+                                      boost_system boost_filesystem  ${Boost_LIBRARIES} ${HDF5_hdf5_LIBRARY}
 )
 rosbuild_add_executable(test_client src/test_client.cpp)
 target_link_libraries(test_client ${PCL_LIBRARIES} 
                                         ${Boost_LIBRARIES} 
                                        )
+rosbuild_add_executable(extract_vfh src/extract_vfh.cpp)
+target_link_libraries(extract_vfh boost_system boost_filesystem ${PCL_LIBRARIES})
 #target_link_libraries(example ${PROJECT_NAME})
