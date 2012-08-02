@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
 <launch>
-  <node name="vfh_recognition" pkg="vfh_recognition" type="vfh_recognition_node">
+  <node name="vfh_recognition" pkg="vfh_recognition" type="vfh_recognition_configurable">.
+	<rosparam command="load" file="$(find vfh_recognition)/config/vfh_recognition_config_params.yaml"/>
   </node>
 </launch>
