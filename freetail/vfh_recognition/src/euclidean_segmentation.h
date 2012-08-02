@@ -1,3 +1,6 @@
+#ifndef EUCLIDEAN_SEGMENTATION_H
+#define EUCLIDEAN_SEGMENTATION_H
+
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -9,10 +12,11 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <vfh_recognition/SupportClasses.h>
 
 
-int 
-SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> & cloudSegments)
+int
+SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> & cloudSegments,RosParametersList &params)
 {
   // Read in the cloud data
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>), cloud_f (new pcl::PointCloud<pcl::PointXYZ>);
@@ -22,7 +26,10 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
   pcl::VoxelGrid<pcl::PointXYZ> vg;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>), cloud_filtered_0 (new pcl::PointCloud<pcl::PointXYZ>);
   vg.setInputCloud (cloud);
-  vg.setLeafSize (0.01f, 0.01f, 0.01f);
+  //vg.setLeafSize (0.01f, 0.01f, 0.01f);
+  vg.setLeafSize (params.Vals.SegmentationLeafSizeX,
+		  params.Vals.SegmentationLeafSizeY,
+		  params.Vals.SegmentationLeafSizeZ);
   vg.filter (*cloud_filtered_0);
 
   // Create the segmentation object for the planar model and set all the parameters
@@ -34,23 +41,33 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
   seg.setOptimizeCoefficients (true);
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setMaxIterations (100);
-  seg.setDistanceThreshold (0.02);
-
+  //seg.setMaxIterations (100);
+  //seg.setDistanceThreshold (0.02);
+  seg.setMaxIterations (params.Vals.SegmentationMaxIterations);
+  seg.setDistanceThreshold (params.Vals.SegmentationDistanceThreshold);
   
   //Spatial filter.
   cloud_filtered->resize(0);
   //Parameters
-  float min_x = -.7, max_x = .7;
-  float min_y = -10, max_y = 10;
-  float min_z = 0, max_z = 2.0;
+//  float min_x = -.7, max_x = .7;
+//  float min_y = -10, max_y = 10;
+//  float min_z = 0, max_z = 2.0;
+  float min_x = params.Vals.SegmentationSpatialFilterMinX;
+  float max_x = params.Vals.SegmentationSpatialFilterMaxX;
+  float min_y = params.Vals.SegmentationSpatialFilterMinY;
+  float max_y = params.Vals.SegmentationSpatialFilterMaxY;
+  float min_z = params.Vals.SegmentationSpatialFilterMinZ;
+  float max_z = params.Vals.SegmentationSpatialFilterMaxZ;
+
   for(pcl::PointCloud<pcl::PointXYZ>::iterator position=cloud_filtered_0->begin(); position!=cloud_filtered_0->end(); position++){
     if(position->x > min_x && position->x < max_x && position->y > min_y && position->y < max_y && position->z > min_z && position->z < max_z)
       cloud_filtered->push_back(*position);
   }
   int nr_points = (int) cloud_filtered->points.size ();
   
-  while (cloud_filtered->points.size () > 0.3 * nr_points)
+  float acctPercentage = params.Vals.SegmentationClusterConfigAcctPercnt;
+  //while (cloud_filtered->points.size () > 0.3 * nr_points)
+  while (cloud_filtered->points.size () > acctPercentage * nr_points)
   {
     // Segment the largest planar component from the remaining cloud
     seg.setInputCloud (cloud_filtered);
@@ -83,9 +100,12 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
 
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance (0.02); // 2cm
-  ec.setMinClusterSize (100);
-  ec.setMaxClusterSize (25000);
+//  ec.setClusterTolerance (0.02); // 2cm
+//  ec.setMinClusterSize (100);
+//  ec.setMaxClusterSize (25000);
+  ec.setClusterTolerance (params.Vals.SegmentationClusterConfigSpatialTolerance);
+  ec.setMinClusterSize (params.Vals.SegmentationClusterConfigMinSize);
+  ec.setMaxClusterSize (params.Vals.SegmentationClusterConfigMaxSize);
   ec.setSearchMethod (tree);
   ec.setInputCloud (cloud_filtered);
   ec.extract (cluster_indices);
@@ -105,3 +125,12 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
   
   return (0);
 }
+
+int
+SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> & cloudSegments)
+{
+	RosParametersList params = RosParametersList();
+	return SegmentCloud(rawCloud,cloudSegments,params);
+}
+
+#endif
