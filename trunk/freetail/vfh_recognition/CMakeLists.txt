@@ -44,3 +44,10 @@ target_link_libraries(test_client ${PCL_LIBRARIES}
 rosbuild_add_executable(extract_vfh src/extract_vfh.cpp)
 target_link_libraries(extract_vfh boost_system boost_filesystem ${PCL_LIBRARIES})
 #target_link_libraries(example ${PROJECT_NAME})
+
+rosbuild_add_executable(vfh_recognition_configurable src/vfh_recognition_configurable.cpp)
+target_link_libraries(vfh_recognition_configurable ${PCL_LIBRARIES}
+	boost_system 
+	boost_filesystem 
+	${Boost_LIBRARIES}
+	${HDF5_hdf5_LIBRARY}) 
