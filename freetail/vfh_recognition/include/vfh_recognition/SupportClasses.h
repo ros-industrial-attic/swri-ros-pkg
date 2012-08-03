@@ -73,6 +73,31 @@ namespace RosParams
 	{
 		Values()
 		{
+				InputDataDirectory = "";
+				InputDataExtension = "";
+				InputCloudTopicName = "";
+
+				RecognitionServiceName = "";
+				RecognitionHistogramSize = 0;
+				RecognitionNumNeighbors = 0;
+				RecognitionSimilarityThreshold = 0;
+				RecognitionNormalEstimationRadius = 0;
+
+				SegmentationMaxIterations = 0;
+				SegmentationDistanceThreshold = 0;
+				SegmentationLeafSizeX = 0;
+				SegmentationLeafSizeY = 0;
+				SegmentationLeafSizeZ = 0;
+				SegmentationSpatialFilterMinX = 0;
+				SegmentationSpatialFilterMaxX = 0;
+				SegmentationSpatialFilterMinY = 0;
+				SegmentationSpatialFilterMaxY = 0;
+				SegmentationSpatialFilterMinZ = 0;
+				SegmentationSpatialFilterMaxZ = 0;
+				SegmentationClusterConfigAcctPercnt = 0;
+				SegmentationClusterConfigSpatialTolerance = 0; // meters
+				SegmentationClusterConfigMinSize = 0;
+				SegmentationClusterConfigMaxSize = 0;
 		}
 
 		std::string InputDataDirectory;
@@ -120,6 +145,9 @@ public:
 	void loadParams(ros::NodeHandle &nh,bool useRelativeNamespace = true);
 
 	void loadParams(bool useRelativeNamespace = false);
+
+protected:
+
 };
 
 int alignTemplate (pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::string modelName,

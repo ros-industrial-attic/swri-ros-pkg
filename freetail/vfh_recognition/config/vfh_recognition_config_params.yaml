@@ -1,4 +1,3 @@
-InputDataDirectory: '$(find vfh_recognition)/data'
 InputDataExtension: '.pcd'
 InputCloudTopic: '/camera/depth_registered/points'
 Recognition:
