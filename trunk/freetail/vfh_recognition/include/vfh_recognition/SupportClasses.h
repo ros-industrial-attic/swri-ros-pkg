@@ -3,7 +3,11 @@
 
 #include <ros/package.h>
 #include <ros/ros.h>
-
+#include <fstream>
+#include <vector>
+#include <Eigen/Core>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
 static const std::string PACKAGE_NAME = "vfh_recognition";
 static const std::string PACKAGE_PATH = ros::package::getPath(PACKAGE_NAME);
@@ -69,7 +73,6 @@ namespace RosParams
 	{
 		Values()
 		{
-
 		}
 
 		std::string InputDataDirectory;
@@ -110,100 +113,20 @@ public:
 
 public:
 
-	RosParametersList()
-	{
-		loadParams();
-	}
+	RosParametersList();
 
-	~RosParametersList()
-	{
+	~RosParametersList(){}
 
-	}
+	void loadParams(ros::NodeHandle &nh,bool useRelativeNamespace = true);
 
-	void loadParams(ros::NodeHandle &nh,bool useRelativeNamespace = true)
-	{
-		using namespace RosParams;
-
-		std::string paramScope;
-		if(useRelativeNamespace)
-		{
-			paramScope = "";
-		}
-		else
-		{
-			paramScope = "/";
-		}
-
-		nh.param<std::string>(paramScope + Names::InputCloudTopicName,Vals.InputCloudTopicName,Defaults::InputCloudTopicName);
-		nh.param<std::string>(paramScope + Names::InputDataDirectory,Vals.InputDataDirectory,Defaults::InputDataDirectory);
-		nh.param<std::string>(paramScope + Names::InputDataExtension,Vals.InputDataExtension,Defaults::InputDataExtension);
-
-		nh.param<std::string>(paramScope + Names::RecognitionServiceName,Vals.RecognitionServiceName,Defaults::RecognitionServiceName);
-		nh.param<int>(paramScope + Names::RecognitionHistogramSize,Vals.RecognitionHistogramSize,Defaults::RecognitionHistogramSize);
-		nh.param<int>(paramScope + Names::RecognitionNumNeighbors,Vals.RecognitionNumNeighbors,Defaults::RecognitionNumNeighbors);
-		nh.param<double>(paramScope + Names::RecognitionSimilarityThreshold,Vals.RecognitionSimilarityThreshold,Defaults::RecognitionSimilarityThreshold);
-		nh.param<double>(paramScope + Names::RecognitionNormalEstimationRadius,Vals.RecognitionNormalEstimationRadius,Defaults::RecognitionNormalEstimationRadius);
-
-		nh.param<int>(paramScope + Names::SegmentationMaxIterations,Vals.SegmentationMaxIterations,Defaults::SegmentationMaxIterations);
-		nh.param<double>(paramScope + Names::SegmentationDistanceThreshold,Vals.SegmentationDistanceThreshold,Defaults::SegmentationLeafSizeX);
-		nh.param<double>(paramScope + Names::SegmentationLeafSizeX,Vals.SegmentationLeafSizeX,Defaults::SegmentationMaxIterations);
-		nh.param<double>(paramScope + Names::SegmentationLeafSizeY,Vals.SegmentationLeafSizeY,Defaults::SegmentationLeafSizeY);
-		nh.param<double>(paramScope + Names::SegmentationLeafSizeZ,Vals.SegmentationLeafSizeZ,Defaults::SegmentationLeafSizeZ);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMinX,Vals.SegmentationSpatialFilterMinX,Defaults::SegmentationSpatialFilterMinX);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMaxX,Vals.SegmentationSpatialFilterMaxX,Defaults::SegmentationSpatialFilterMaxX);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMinY,Vals.SegmentationSpatialFilterMinY,Defaults::SegmentationSpatialFilterMinY);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMaxY,Vals.SegmentationSpatialFilterMaxY,Defaults::SegmentationSpatialFilterMaxY);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMinZ,Vals.SegmentationSpatialFilterMinZ,Defaults::SegmentationSpatialFilterMinZ);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMaxZ,Vals.SegmentationSpatialFilterMinZ,Defaults::SegmentationSpatialFilterMinZ);
-		nh.param<double>(paramScope + Names::SegmentationClusterConfigAcctPercnt,Vals.SegmentationClusterConfigAcctPercnt,Defaults::SegmentationClusterConfigAcctPercnt);
-		nh.param<double>(paramScope + Names::SegmentationClusterConfigSpatialTolerance,Vals.SegmentationClusterConfigSpatialTolerance,
-				Defaults::SegmentationClusterConfigSpatialTolerance);
-		nh.param<int>(paramScope + Names::SegmentationClusterConfigMinSize,Vals.SegmentationClusterConfigMinSize,Defaults::SegmentationClusterConfigMinSize);
-		nh.param<int>(paramScope + Names::SegmentationClusterConfigMaxSize,Vals.SegmentationClusterConfigMaxSize,Defaults::SegmentationClusterConfigMaxSize);
-	}
-
-	void loadParams(bool useRelativeNamespace = false)
-	{
-		using namespace RosParams;
-		ros::NodeHandle nh;
-
-		std::string paramScope;
-		if(useRelativeNamespace)
-		{
-			paramScope = "";
-		}
-		else
-		{
-			paramScope = "/";
-		}
-
-		nh.param<std::string>(paramScope + Names::InputCloudTopicName,Vals.InputCloudTopicName,Defaults::InputCloudTopicName);
-		nh.param<std::string>(paramScope + Names::InputDataDirectory,Vals.InputDataDirectory,Defaults::InputDataDirectory);
-		nh.param<std::string>(paramScope + Names::InputDataExtension,Vals.InputDataExtension,Defaults::InputDataExtension);
-
-		nh.param<std::string>(paramScope + Names::RecognitionServiceName,Vals.RecognitionServiceName,Defaults::RecognitionServiceName);
-		nh.param<int>(paramScope + Names::RecognitionHistogramSize,Vals.RecognitionHistogramSize,Defaults::RecognitionHistogramSize);
-		nh.param<int>(paramScope + Names::RecognitionNumNeighbors,Vals.RecognitionNumNeighbors,Defaults::RecognitionNumNeighbors);
-		nh.param<double>(paramScope + Names::RecognitionSimilarityThreshold,Vals.RecognitionSimilarityThreshold,Defaults::RecognitionSimilarityThreshold);
-		nh.param<double>(paramScope + Names::RecognitionNormalEstimationRadius,Vals.RecognitionNormalEstimationRadius,Defaults::RecognitionNormalEstimationRadius);
-
-		nh.param<int>(paramScope + Names::SegmentationMaxIterations,Vals.SegmentationMaxIterations,Defaults::SegmentationMaxIterations);
-		nh.param<double>(paramScope + Names::SegmentationDistanceThreshold,Vals.SegmentationDistanceThreshold,Defaults::SegmentationLeafSizeX);
-		nh.param<double>(paramScope + Names::SegmentationLeafSizeX,Vals.SegmentationLeafSizeX,Defaults::SegmentationMaxIterations);
-		nh.param<double>(paramScope + Names::SegmentationLeafSizeY,Vals.SegmentationLeafSizeY,Defaults::SegmentationLeafSizeY);
-		nh.param<double>(paramScope + Names::SegmentationLeafSizeZ,Vals.SegmentationLeafSizeZ,Defaults::SegmentationLeafSizeZ);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMinX,Vals.SegmentationSpatialFilterMinX,Defaults::SegmentationSpatialFilterMinX);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMaxX,Vals.SegmentationSpatialFilterMaxX,Defaults::SegmentationSpatialFilterMaxX);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMinY,Vals.SegmentationSpatialFilterMinY,Defaults::SegmentationSpatialFilterMinY);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMaxY,Vals.SegmentationSpatialFilterMaxY,Defaults::SegmentationSpatialFilterMaxY);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMinZ,Vals.SegmentationSpatialFilterMinZ,Defaults::SegmentationSpatialFilterMinZ);
-		nh.param<double>(paramScope + Names::SegmentationSpatialFilterMaxZ,Vals.SegmentationSpatialFilterMinZ,Defaults::SegmentationSpatialFilterMinZ);
-		nh.param<double>(paramScope + Names::SegmentationClusterConfigAcctPercnt,Vals.SegmentationClusterConfigAcctPercnt,Defaults::SegmentationClusterConfigAcctPercnt);
-		nh.param<double>(paramScope + Names::SegmentationClusterConfigSpatialTolerance,Vals.SegmentationClusterConfigSpatialTolerance,
-				Defaults::SegmentationClusterConfigSpatialTolerance);
-		nh.param<int>(paramScope + Names::SegmentationClusterConfigMinSize,Vals.SegmentationClusterConfigMinSize,Defaults::SegmentationClusterConfigMinSize);
-		nh.param<int>(paramScope + Names::SegmentationClusterConfigMaxSize,Vals.SegmentationClusterConfigMaxSize,Defaults::SegmentationClusterConfigMaxSize);
-	}
+	void loadParams(bool useRelativeNamespace = false);
 };
+
+int alignTemplate (pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::string modelName,
+		pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud, Eigen::Matrix4f &objectToView);
+
+int SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> & cloudSegments);
+
+int SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> & cloudSegments,RosParametersList &params);
 
 #endif
