@@ -33,7 +33,10 @@ include_directories(${FLANN_INCLUDE_DIRS})
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
-rosbuild_add_executable(vfh_recognition_node src/vfh_recognition_node.cpp)
+rosbuild_add_executable(vfh_recognition_node src/vfh_recognition_node.cpp
+	src/SupportClasses.cpp 
+	src/template_alignment.cpp
+	src/euclidean_segmentation.cpp)
 target_link_libraries(vfh_recognition_node ${PCL_LIBRARIES} 
                                       boost_system boost_filesystem  ${Boost_LIBRARIES} ${HDF5_hdf5_LIBRARY}
 )
@@ -45,7 +48,10 @@ rosbuild_add_executable(extract_vfh src/extract_vfh.cpp)
 target_link_libraries(extract_vfh boost_system boost_filesystem ${PCL_LIBRARIES})
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_executable(vfh_recognition_configurable src/vfh_recognition_configurable.cpp)
+rosbuild_add_executable(vfh_recognition_configurable src/vfh_recognition_configurable.cpp 
+	src/SupportClasses.cpp 
+	src/template_alignment.cpp
+	src/euclidean_segmentation.cpp)
 target_link_libraries(vfh_recognition_configurable ${PCL_LIBRARIES}
 	boost_system 
 	boost_filesystem 

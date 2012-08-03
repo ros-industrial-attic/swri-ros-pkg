@@ -12,12 +12,10 @@
 #include <flann/io/hdf5.h>
 #include <pcl/features/vfh.h>
 #include <pcl/features/normal_3d.h>
-#include "template_alignment.h"
 #include "ros/ros.h"
 #include <ros/package.h>
 #include "sensor_msgs/PointCloud2.h"
 #include <pcl/ModelCoefficients.h>
-#include "euclidean_segmentation.h"
 #include "vfh_recognition/Recognize.h"
 #include <tabletop_object_detector/TabletopSegmentation.h>
 #include <tabletop_object_detector/TabletopObjectRecognition.h>
