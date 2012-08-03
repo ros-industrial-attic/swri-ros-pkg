@@ -1,6 +1,3 @@
-#ifndef EUCLIDEAN_SEGMENTATION_H
-#define EUCLIDEAN_SEGMENTATION_H
-
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -130,7 +127,7 @@ int
 SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> & cloudSegments)
 {
 	RosParametersList params = RosParametersList();
+	params.loadParams(true);
 	return SegmentCloud(rawCloud,cloudSegments,params);
 }
 
-#endif
