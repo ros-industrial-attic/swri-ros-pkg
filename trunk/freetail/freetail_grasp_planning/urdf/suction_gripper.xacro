@@ -1,0 +1,52 @@
+<?xml version="1.0" ?>
+<robot>
+	<!-- template block for material block -->
+	<xacro:macro name="material_block" params="color_name rgba_vals">
+		<material name="${color_name}">
+			<color rgba="${rgba_vals}"/>
+		</material>
+	</xacro:macro>
+	
+	<!-- instantiated material blocks -->
+	<xacro:material_block color_name="Blue" rgba_vals="0 0 1 1"/>
+	<xacro:material_block color_name="Red" rgba_vals="1 0 0 1"/>
+	<xacro:material_block color_name="Green" rgba_vals="0 1 0 1"/>
+	<xacro:material_block color_name="Gray" rgba_vals="0.8 0.8 0.8 1"/>
+
+	<!-- template block for link blocks -->
+	<xacro:macro name="link_default_block" params="link_name">
+		<link name="${link_name}">
+			<xacro:insert_block name="inertial_block" xyz_vals="0 0 0" rpy_vals="0 0 0" mass="1.0"/>
+			<visual>
+				<xacro:insert_block name="box_shape_sub_blocks" xyz_vals="0 0 0" rpy_vals="0 0 0"
+					size_vals="1 1 1">
+					<material name="Blue"/>
+				</xacro:insert_block>
+			</visual> 
+		</link>
+	</xacro:macro>
+
+	<!-- template block for inertial block -->
+	<xacro:macro name="inertial_block" params="xyz_vals rpy_vals mass">
+		<inertial>
+			<origin xyz="${xyz_vals}" rpy="${rpy_vals}"/>
+			<mass value="${mass}"/>
+			<inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1"/>
+		</inertial>
+	</xacro:macro>
+
+	<!-- template block for collision and visual subblocks -->
+	<xacro:macro name="box_shape_sub_blocks" params="xyz_vals rpy_vals size_vals *material_block">
+		<origin xyz="${xyz_vals}" rpy="${rpy_vals}"/>
+		<geometry>
+			<box size="${size_vals}"/>
+		</geometry>
+		<xacro:insert_block name="material_block"/>
+	</xacro:macro>	
+
+	<!-- template block for succion gripper block -->
+	<xacro:macro name="suction_gripper" params="prefix *link_default_block">
+		<link name="${prefix}">.
+		</link>
+	</xacro:macro>	
+</robot>
