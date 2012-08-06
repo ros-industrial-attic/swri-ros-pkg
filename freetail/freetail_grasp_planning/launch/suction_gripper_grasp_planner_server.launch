@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<launch>
+  <node name="suction_gripper_grasp_planner" pkg="pr2_gripper_grasp_planner_cluster" 
+    type="point_cluster_grasp_planner_server.py" respawn="false" output="screen">
+    <rosparam command="load" file="$(freetail_grasp_plannig)/config/suction_gripper_grasp_config.yaml" />
+	<param name="z_up_frame" value="/base_link"/>
+  </node>  
+</launch>
