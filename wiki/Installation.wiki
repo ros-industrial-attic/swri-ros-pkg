@@ -3,19 +3,29 @@
 =INSTALLATION=
 ----
 ==ROS-Industrial Software Installation==
+===User Install===
+It is recommended that ROS-Industrial users (those not interested in editing source) following instructions on the [http://www.ros.org/wiki/Industrial#Installation user page]
+===Developer Install===
+ROS-Industrial developers (those who intend on changing/adding source code) should check out ROS-Industrial from source.
 All of the following ROS Industrial software must be installed.
   # ROS *Desktop Full* Install - The instructions for installing ROS can be found here:
     * [http://www.ros.org/wiki/electric/Installation/Ubuntu Electric ]
     * [http://ros.org/wiki/fuerte/Installation Fuerte]
   # The following additional stacks may be required (see the install pages for installing individual stack)
     * arm_navigation_experimental
-  # Currently, ROS-Industrial can only be downloaded and installed from source.  
-    # Download the desired repository version:
-      * Electric branch:  [http://code.google.com/p/swri-ros-pkg/source/browse/#svn%2Fbranches%2Felectric]
+  # The ROS Industrial repository is organized according to the ROS repository conventions:  
+    * Tags
+      * _stack_
+        * _version_ - Proper versioned releases (never change)
+        * _ros_release_ - Latest release tied to a particular ros release
+    * Branches - Latest development for specific ros releases
+      * Electric branch (little development) [http://code.google.com/p/swri-ros-pkg/source/browse/#svn%2Fbranches%2Felectric] 
       * Fuerte (recommended for latest functionality): [https://code.google.com/p/swri-ros-pkg/source/browse/#svn%2Fbranches%2Ffuerte]
-      * Trunk (recommended for developers) [http://code.google.com/p/swri-ros-pkg/source/browse/#svn%2Ftrunk]
-    # Add the ROS-Industrial location to the ROS_PACKAGE_PATH system variable.
-    # Run "rosmake" from the industrial stack directory.  The source should build with no errors.
+    * Trunk (recommended for developers) [http://code.google.com/p/swri-ros-pkg/source/browse/#svn%2Ftrunk]
+    * Additional stacks - The following stacks are housed in other repositories.  The instructions for installing these package may differ.  See the links below
+      # [http://ros.org/wiki/universal_robot Universal Robot]
+  # Add the ROS-Industrial location to the ROS_PACKAGE_PATH system variable.
+  # Run "rosmake" from the industrial stack directory.  The source should build with no errors.
 
 ==Industrial Robot Controller Installation==
 Enabling ROS-Industrial control of a specific robot requires corresponding installations on the robot controller.
