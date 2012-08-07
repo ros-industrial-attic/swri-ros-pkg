@@ -86,6 +86,7 @@ public:
 
 	// methods
 	void setup();
+	void setupRecognitionOnly();
 	bool trajectoriesFinishedCallbackFunction(TrajectoryExecutionDataVector tedv);
 	void revertPlanningScene();
 	std::vector<std::string> getJointNames(const std::string& group);
@@ -97,6 +98,7 @@ public:
 	void addDetectedTableToPlanningSceneDiff(const tabletop_object_detector::Table &table);
 	void addDetectedObjectToPlanningSceneDiff(const household_objects_database_msgs::DatabaseModelPoseList& model);
 	bool segmentAndRecognize();
+	bool recognize();
 	bool getMeshFromDatabasePose(const household_objects_database_msgs::DatabaseModelPose &model_pose,arm_navigation_msgs::CollisionObject& obj,const geometry_msgs::PoseStamped& pose);
 	bool selectGraspableObject(const std::string& arm_name,object_manipulation_msgs::PickupGoal& pickup_goal,std::vector<object_manipulation_msgs::Grasp>& grasps);
 	bool putDownSomething(const std::string& arm_name);

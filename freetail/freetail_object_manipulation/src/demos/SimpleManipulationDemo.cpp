@@ -58,12 +58,11 @@ void RosParamsList::fetchParams()
 }
 
 SimpleManipulationDemo::SimpleManipulationDemo()
-:
-    cm_("robot_description"),
-    current_robot_state_(NULL)
+:cm_("robot_description"),
+ current_robot_state_(NULL)
 {
 	// TODO Auto-generated constructor stub
-	setup();
+	//setup();
 }
 
 SimpleManipulationDemo::~SimpleManipulationDemo() {
@@ -74,9 +73,12 @@ void SimpleManipulationDemo::setup()
 {
 	ros::NodeHandle nh;
 
+	ROS_INFO("Loading ros parameters");
 	// getting ros parametets
 	RosParamsList::fetchParams(nh);
 
+
+	ROS_INFO("Setting up execution Monitors");
 	// setting up execution monitors
 	{
 		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
@@ -88,6 +90,7 @@ void SimpleManipulationDemo::setup()
 		trajectory_execution_monitor_.addTrajectoryControllerHandler(gripper_controller_handler_);
 	}
 
+	ROS_INFO("Setting up Service Clients");
     // setting up service clients
 	{
 		seg_srv_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>(RosParamsList::Values::SegmentationService, true);
@@ -116,6 +119,24 @@ void SimpleManipulationDemo::setup()
     place_tester_ = new object_manipulator::PlaceTesterFast(&cm_, RosParamsList::Values::InverseKinematicsPlugin);
     trajectories_finished_function_ = boost::bind(&SimpleManipulationDemo::trajectoriesFinishedCallbackFunction, this, _1);
 
+}
+
+void SimpleManipulationDemo::setupRecognitionOnly()
+{
+	ros::NodeHandle nh;
+
+	ROS_INFO("Loading ros parameters");
+	// getting ros parametets
+	RosParamsList::fetchParams(nh);
+
+	ROS_INFO("Setting up Service Clients");
+    // setting up service clients
+	{
+		rec_srv_ = nh.serviceClient<tabletop_object_detector::TabletopObjectRecognition>(RosParamsList::Values::RecognitionService, true);
+
+		ROS_INFO_STREAM("Waiting for " + RosParamsList::Values::RecognitionService+ " service");
+		ros::service::waitForService(RosParamsList::Values::RecognitionService);
+	}
 }
 
 bool SimpleManipulationDemo::trajectoriesFinishedCallbackFunction(TrajectoryExecutionDataVector tedv)
@@ -471,6 +492,39 @@ bool SimpleManipulationDemo::segmentAndRecognize() {
   }
   perception_duration_ += ros::WallTime::now()-start;
   return got_recognition;
+}
+
+bool SimpleManipulationDemo::recognize()
+{
+	ros::WallTime start = ros::WallTime::now();
+	planning_scene_diff_.collision_objects.clear();
+	transformed_recognition_poses_.clear();
+
+	ros::WallTime after_seg = ros::WallTime::now();
+	bool success = false;
+
+	tabletop_object_detector::TabletopObjectRecognition recognition_srv;
+	//recognition_srv.request.table = segmentation_srv.response.table;
+	//recognition_srv.request.clusters = segmentation_srv.response.clusters;
+	recognition_srv.request.num_models = 1;
+	recognition_srv.request.perform_fit_merge = false;
+	if (!rec_srv_.call(recognition_srv))
+	{
+		ROS_ERROR("Call to recognition service failed");
+	}
+
+	ROS_INFO_STREAM("Recognition took " << (ros::WallTime::now()-after_seg));
+	ROS_INFO_STREAM("Got " << recognition_srv.response.models.size() << " models");
+	object_models_ = recognition_srv.response.models;
+	for(unsigned int i = 0; i < 1; i++)
+	{
+		success = true;
+	}
+
+	//convert returned service response to rviz markers
+
+	perception_duration_ += ros::WallTime::now()-start;
+	return success;
 }
 
 bool SimpleManipulationDemo::getMeshFromDatabasePose(const household_objects_database_msgs::DatabaseModelPose &model_pose,
@@ -1130,6 +1184,8 @@ const arm_navigation_msgs::CollisionObject* SimpleManipulationDemo::getCollision
 
 void SimpleManipulationDemo::runDemo()
 {
+	setup();// full setup
+
 	ros::AsyncSpinner spinner(4);
 	spinner.start();
 	srand(time(NULL));
@@ -1167,14 +1223,3 @@ void SimpleManipulationDemo::runDemo()
 	  }
 }
 
-int main(int argc,char** argv)
-{
-	ros::init(argc,argv,"SimpleManipulationDemo",ros::init_options::NoSigintHandler);
-
-	SimpleManipulationDemo demo;
-	demo.runDemo();
-
-	ros::shutdown();
-
-	return 0;
-}
