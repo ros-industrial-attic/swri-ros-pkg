@@ -38,23 +38,29 @@ std::string RosParamsList::Values::ModelDatabaseService = DEFAULT_MODEL_DATABASE
 std::string RosParamsList::Values::PlanningSceneService = DEFAULT_PLANNING_SCENE_SERVICE;
 std::string RosParamsList::Values::InverseKinematicsPlugin = DEFAULT_IK_PLUGING;
 
-void RosParamsList::fetchParams(ros::NodeHandle &nh)
+void RosParamsList::fetchParams(ros::NodeHandle &nh,bool useNodeNamespace)
 {
-	nh.param<std::string>(Names::GraspPlanningService,Values::GraspPlanningService,DEFAULT_GRASP_PLANNING_SERVICE);
-	nh.param<std::string>(Names::PathPlannerService,Values::PathPlannerService,DEFAULT_PLANNER_SERVICE);
-	nh.param<std::string>(Names::TrajectoryFilterService,Values::TrajectoryFilterService,DEFAULT_TRAJECTORY_FILTER_SERVICE);
-	nh.param<std::string>(Names::SegmentationService,Values::SegmentationService,DEFAULT_SEGMENTATION_SERVICE);
-	nh.param<std::string>(Names::RecognitionService,Values::RecognitionService,DEFAULT_RECOGNITION_SERVICE);
-	nh.param<std::string>(Names::MeshDatabaseService,Values::MeshDatabaseService,DEFAULT_MESH_DATABASE_SERVICE);
-	nh.param<std::string>(Names::ModelDatabaseService,Values::ModelDatabaseService,DEFAULT_MODEL_DATABASE_SERVICE);
-	nh.param<std::string>(Names::PlanningSceneService,Values::PlanningSceneService,DEFAULT_PLANNING_SCENE_SERVICE);
-	nh.param<std::string>(Names::InverseKinematicsPlugin,Values::InverseKinematicsPlugin,DEFAULT_IK_PLUGING);
+	std::string namespaceName = "";
+	if(useNodeNamespace)
+	{
+		namespaceName = ros::this_node::getName() + "/";
+	}
+
+	nh.param<std::string>(namespaceName + Names::GraspPlanningService,Values::GraspPlanningService,DEFAULT_GRASP_PLANNING_SERVICE);
+	nh.param<std::string>(namespaceName + Names::PathPlannerService,Values::PathPlannerService,DEFAULT_PLANNER_SERVICE);
+	nh.param<std::string>(namespaceName + Names::TrajectoryFilterService,Values::TrajectoryFilterService,DEFAULT_TRAJECTORY_FILTER_SERVICE);
+	nh.param<std::string>(namespaceName + Names::SegmentationService,Values::SegmentationService,DEFAULT_SEGMENTATION_SERVICE);
+	nh.param<std::string>(namespaceName + Names::RecognitionService,Values::RecognitionService,DEFAULT_RECOGNITION_SERVICE);
+	nh.param<std::string>(namespaceName + Names::MeshDatabaseService,Values::MeshDatabaseService,DEFAULT_MESH_DATABASE_SERVICE);
+	nh.param<std::string>(namespaceName + Names::ModelDatabaseService,Values::ModelDatabaseService,DEFAULT_MODEL_DATABASE_SERVICE);
+	nh.param<std::string>(namespaceName + Names::PlanningSceneService,Values::PlanningSceneService,DEFAULT_PLANNING_SCENE_SERVICE);
+	nh.param<std::string>(namespaceName + Names::InverseKinematicsPlugin,Values::InverseKinematicsPlugin,DEFAULT_IK_PLUGING);
 }
 
-void RosParamsList::fetchParams()
+void RosParamsList::fetchParams(bool useNodeNamespace)
 {
 	ros::NodeHandle nh;
-	fetchParams(nh);
+	fetchParams(nh,useNodeNamespace);
 }
 
 SimpleManipulationDemo::SimpleManipulationDemo()
@@ -135,7 +141,11 @@ void SimpleManipulationDemo::setupRecognitionOnly()
 		rec_srv_ = nh.serviceClient<tabletop_object_detector::TabletopObjectRecognition>(RosParamsList::Values::RecognitionService, true);
 
 		ROS_INFO_STREAM("Waiting for " + RosParamsList::Values::RecognitionService+ " service");
-		ros::service::waitForService(RosParamsList::Values::RecognitionService);
+		while(!ros::service::waitForService(RosParamsList::Values::RecognitionService,ros::Duration(4.0f)))
+		{
+			ROS_INFO_STREAM("Waiting for " + RosParamsList::Values::RecognitionService+ " service");
+		}
+		ROS_INFO_STREAM("Connected to " + RosParamsList::Values::RecognitionService+ " service");
 	}
 }
 
@@ -516,9 +526,15 @@ bool SimpleManipulationDemo::recognize()
 	ROS_INFO_STREAM("Recognition took " << (ros::WallTime::now()-after_seg));
 	ROS_INFO_STREAM("Got " << recognition_srv.response.models.size() << " models");
 	object_models_ = recognition_srv.response.models;
-	for(unsigned int i = 0; i < 1; i++)
+
+	std::stringstream ss;
+	for(unsigned int i = 0; i < object_models_.size(); i++)
 	{
 		success = true;
+		ss<<"\n\nRecognized model #"<<i+1<<" details:"<<"\n\tName:\t"<<object_models_[i].model_list[0].detector_name;
+		ss<<"\n\tModel Id:\t"<<object_models_[i].model_list[0].model_id;
+		ss<<"\n\tConfidence:\t"<<object_models_[i].model_list[0].confidence;
+
 	}
 
 	//convert returned service response to rviz markers

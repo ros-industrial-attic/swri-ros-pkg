@@ -74,8 +74,9 @@ public:
 
 	RosParamsList(){};
 
-	static void fetchParams(ros::NodeHandle &hn);
-	static void fetchParams();
+
+	static void fetchParams(ros::NodeHandle &hn,bool useNodeNamespace = true);
+	static void fetchParams(bool useNodeNamespace = true);
 
 };
 

@@ -12,7 +12,11 @@ const std::string PARAM_NAME_PAUSE_LOOP = "pause_node";
 
 void testVfHSegmentation(ros::NodeHandle &nodeHandle)
 {
+	ROS_INFO("Instantiating Manipulation Demo obj");
 	SimpleManipulationDemo demo;
+
+	ROS_INFO("Setting up object recognition");
+	demo.setupRecognitionOnly();
 	std::string nodeName = ros::this_node::getName() + "/";
 
 	// fetching parameters
@@ -25,18 +29,17 @@ void testVfHSegmentation(ros::NodeHandle &nodeHandle)
 	spinner.start();
 	srand(time(NULL));
 
-	ros::Rate loopRate(loopRateVal);
 	while(ros::ok())
 	{
 		if(!pauseLoop)
 		{
 			demo.startCycleTimer();
-			if(!demo.segmentAndRecognize())
+			if(!demo.recognize())
 			{
 				ROS_ERROR("Recognition failed");
 			}
 
-			loopRate.sleep();
+			ros::Rate(loopRateVal).sleep();
 		}
 	}
 
