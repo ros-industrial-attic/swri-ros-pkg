@@ -163,6 +163,7 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clouds;
 
   //Euclidean segmentation:
+  ROS_INFO_STREAM("Segmenting table out of point cloud from sensor");
   SegmentCloud(fromKinect, clouds,ROS_PARAMS);
 
   //For storing results:
@@ -244,7 +245,7 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
         //Header
       srv_response.models[numFound-1].model_list[0].pose.header.seq = 1; //Don't know what this is, but it's set.
       srv_response.models[numFound-1].model_list[0].pose.header.stamp = fromKinect.header.stamp;
-      srv_response.models[numFound-1].model_list[0].pose.header.frame_id = "/camera_depth_optical_frame";// perhaps it be best to return the frame id of the point cloud
+      srv_response.models[numFound-1].model_list[0].pose.header.frame_id = fromKinect.header.frame_id;// perhaps it be best to return the frame id of the point cloud
         //Pose
           //Position:
       srv_response.models[numFound-1].model_list[0].pose.pose.position.x = objectToView(0,3);
