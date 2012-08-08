@@ -520,7 +520,7 @@ bool SimpleManipulationDemo::recognize()
 	recognition_srv.request.perform_fit_merge = false;
 	if (!rec_srv_.call(recognition_srv))
 	{
-		ROS_ERROR("Call to recognition service failed");
+		ROS_ERROR("Call to recognition service %s failed",RosParamsList::Values::RecognitionService.c_str());
 	}
 
 	ROS_INFO_STREAM("Recognition took " << (ros::WallTime::now()-after_seg));
