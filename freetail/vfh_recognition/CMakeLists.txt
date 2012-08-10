@@ -33,13 +33,15 @@ include_directories(${FLANN_INCLUDE_DIRS})
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
-rosbuild_add_executable(vfh_recognition_node src/vfh_recognition_node.cpp
-	src/SupportClasses.cpp 
-	src/template_alignment.cpp
-	src/euclidean_segmentation.cpp)
-target_link_libraries(vfh_recognition_node ${PCL_LIBRARIES} 
-                                      boost_system boost_filesystem  ${Boost_LIBRARIES} ${HDF5_hdf5_LIBRARY}
-)
+
+# rosbuild_add_executable(vfh_recognition_node src/vfh_recognition_node.cpp
+# 	src/SupportClasses.cpp 
+# 	src/template_alignment.cpp
+# 	src/euclidean_segmentation.cpp)
+# target_link_libraries(vfh_recognition_node ${PCL_LIBRARIES} 
+#                                       boost_system boost_filesystem  ${Boost_LIBRARIES} ${HDF5_hdf5_LIBRARY}
+# )
+
 rosbuild_add_executable(test_client src/test_client.cpp)
 target_link_libraries(test_client ${PCL_LIBRARIES} 
                                         ${Boost_LIBRARIES} 
@@ -53,6 +55,15 @@ rosbuild_add_executable(vfh_recognition_configurable src/vfh_recognition_configu
 	src/template_alignment.cpp
 	src/euclidean_segmentation.cpp)
 target_link_libraries(vfh_recognition_configurable ${PCL_LIBRARIES}
+	boost_system 
+	boost_filesystem 
+	${Boost_LIBRARIES}
+	${HDF5_hdf5_LIBRARY}) 
+
+rosbuild_add_executable(vfh_segmentation_node src/vfh_segmentation_node.cpp 
+	src/SupportClasses.cpp 
+	src/euclidean_segmentation.cpp)
+target_link_libraries(vfh_segmentation_node ${PCL_LIBRARIES}
 	boost_system 
 	boost_filesystem 
 	${Boost_LIBRARIES}

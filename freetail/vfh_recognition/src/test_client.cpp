@@ -9,15 +9,23 @@
 #include <Eigen/Core>
 #include <pcl/registration/ia_ransac.h>
 
-ros::ServiceClient client;
+ros::ServiceClient rec_client, seg_client;
 ros::Publisher pub;
 pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 sensor_msgs::PointCloud2 rosMsg;
 
 void srv_cb(const sensor_msgs::PointCloud2 fromKinect)
 {
+  tabletop_object_detector::TabletopSegmentation seg_srv;
   tabletop_object_detector::TabletopObjectRecognition rec_srv;
-  if(client.call(rec_srv))
+  if(seg_client.call(seg_srv)){
+    rec_srv.request.table = seg_srv.response.table;
+    rec_srv.request.clusters = seg_srv.response.clusters;
+  }else{
+    ROS_INFO("Failed to call Segmentation service.");
+    //return;
+  }
+  if(rec_client.call(rec_srv))
   {
    if(!rec_srv.response.models.empty()){
     pub.publish(rec_srv.response);
@@ -58,8 +66,9 @@ int main(int argc, char **argv)
   
   ros::Subscriber sub = n.subscribe("/camera/depth_registered/points", 1, srv_cb);
   
-  tabletop_object_detector::TabletopObjectRecognition rec_srv;  
-  client = n.serviceClient<tabletop_object_detector::TabletopObjectRecognition>("/object_recognition");
+  tabletop_object_detector::TabletopObjectRecognition rec_srv;
+  seg_client = n.serviceClient<tabletop_object_detector::TabletopSegmentation>("/tabletop_segmentation_serv");
+  rec_client = n.serviceClient<tabletop_object_detector::TabletopObjectRecognition>("/object_recognition");
   
   pub = n.advertise<sensor_msgs::PointCloud2>("/recognition_result", 1);
   
