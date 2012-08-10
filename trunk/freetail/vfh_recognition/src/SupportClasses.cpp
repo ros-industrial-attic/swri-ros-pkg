@@ -35,6 +35,7 @@ void RosParametersList::loadParams(ros::NodeHandle &nh,bool useRelativeNamespace
 	nh.param<std::string>(paramScope + Names::InputDataExtension,Vals.InputDataExtension,Defaults::InputDataExtension);
 
 	nh.param<std::string>(paramScope + Names::RecognitionServiceName,Vals.RecognitionServiceName,Defaults::RecognitionServiceName);
+	nh.param<std::string>(paramScope + Names::SegmentationServiceName,Vals.SegmentationServiceName,Defaults::SegmentationServiceName);
 	nh.param<int>(paramScope + Names::RecognitionHistogramSize,Vals.RecognitionHistogramSize,Defaults::RecognitionHistogramSize);
 	nh.param<int>(paramScope + Names::RecognitionNumNeighbors,Vals.RecognitionNumNeighbors,Defaults::RecognitionNumNeighbors);
 	nh.param<double>(paramScope + Names::RecognitionSimilarityThreshold,Vals.RecognitionSimilarityThreshold,Defaults::RecognitionSimilarityThreshold);
@@ -81,6 +82,7 @@ void RosParametersList::loadParams(bool useRelativeNamespace)
 	ros::param::param<std::string>(paramScope + Names::InputDataExtension,Vals.InputDataExtension,Defaults::InputDataExtension);
 
 	ros::param::param<std::string>(paramScope + Names::RecognitionServiceName,Vals.RecognitionServiceName,Defaults::RecognitionServiceName);
+	ros::param::param<std::string>(paramScope + Names::SegmentationServiceName,Vals.SegmentationServiceName,Defaults::SegmentationServiceName);
 	ros::param::param<int>(paramScope + Names::RecognitionHistogramSize,Vals.RecognitionHistogramSize,Defaults::RecognitionHistogramSize);
 	ros::param::param<int>(paramScope + Names::RecognitionNumNeighbors,Vals.RecognitionNumNeighbors,Defaults::RecognitionNumNeighbors);
 	ros::param::param<double>(paramScope + Names::RecognitionSimilarityThreshold,Vals.RecognitionSimilarityThreshold,Defaults::RecognitionSimilarityThreshold);

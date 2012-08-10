@@ -13,7 +13,7 @@
 
 
 int
-SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> & cloudSegments,RosParametersList &params)
+SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> & cloudSegments, pcl::PointCloud<pcl::PointXYZ>::Ptr table, RosParametersList &params)
 {
   // Read in the cloud data
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>), cloud_f (new pcl::PointCloud<pcl::PointXYZ>);
@@ -28,7 +28,7 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
 		  params.Vals.SegmentationLeafSizeY,
 		  params.Vals.SegmentationLeafSizeZ);
   vg.filter (*cloud_filtered_0);
-
+  
   // Create the segmentation object for the planar model and set all the parameters
   pcl::SACSegmentation<pcl::PointXYZ> seg;
   pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
@@ -49,6 +49,7 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
 //  float min_x = -.7, max_x = .7;
 //  float min_y = -10, max_y = 10;
 //  float min_z = 0, max_z = 2.0;
+  
   float min_x = params.Vals.SegmentationSpatialFilterMinX;
   float max_x = params.Vals.SegmentationSpatialFilterMaxX;
   float min_y = params.Vals.SegmentationSpatialFilterMinY;
@@ -82,19 +83,22 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
     extract.setNegative (false);
 
     // Write the planar inliers to disk
-    extract.filter (*cloud_plane);
-    //std::cout << "PointCloud representing the planar component: " << cloud_plane->points.size () << " data points." << std::endl;
-
+    extract.filter (*cloud_plane);    
+    
     // Remove the planar inliers, extract the rest
     extract.setNegative (true);
     extract.filter (*cloud_f);
     cloud_filtered = cloud_f;
   }
-
+  //*table = *cloud_plane;
+  
+  //error check make sure there are some points here.
+  
   // Creating the KdTree object for the search method of the extraction
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud (cloud_filtered);
-
+  
+  std::cout.flush();
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
 //  ec.setClusterTolerance (0.02); // 2cm
@@ -107,6 +111,7 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
   ec.setInputCloud (cloud_filtered);
   ec.extract (cluster_indices);
 
+  
   int j = 0;
   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
   {
@@ -128,6 +133,7 @@ SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl:
 {
 	RosParametersList params = RosParametersList();
 	params.loadParams(true);
-	return SegmentCloud(rawCloud,cloudSegments,params);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr table;
+	return SegmentCloud(rawCloud,cloudSegments,table, params);
 }
 

@@ -19,6 +19,7 @@ namespace RosParams
 		static const std::string InputDataExtension = "InputDataExtension";
 		static const std::string InputCloudTopicName = "InputCloudTopic";
 		static const std::string RecognitionServiceName = "Recognition/ServiceName";
+		static const std::string SegmentationServiceName = "Segmentation/ServiceName";
 		static const std::string RecognitionHistogramSize = "Recognition/HistogramSize";
 		static const std::string RecognitionSimilarityThreshold = "Recognition/SimilarityThreshold";
 		static const std::string RecognitionNumNeighbors = "Recognition/NumberOfNeighbors";
@@ -46,6 +47,7 @@ namespace RosParams
 		static const std::string InputDataExtension = ".pcd";
 		static const std::string InputCloudTopicName = "/camera/depth_registered/points";
 		static const std::string RecognitionServiceName = "/object_recognition";
+		static const std::string SegmentationServiceName = "/tabletop_segmentation_serv";
 
 		static const int RecognitionHistogramSize = 300;
 		static const int RecognitionNumNeighbors = 1;
@@ -78,6 +80,7 @@ namespace RosParams
 				InputCloudTopicName = "";
 
 				RecognitionServiceName = "";
+				SegmentationServiceName = "";
 				RecognitionHistogramSize = 0;
 				RecognitionNumNeighbors = 0;
 				RecognitionSimilarityThreshold = 0;
@@ -104,6 +107,7 @@ namespace RosParams
 		std::string InputDataExtension;
 		std::string InputCloudTopicName;
 
+		std::string SegmentationServiceName;
 		std::string RecognitionServiceName;
 		int RecognitionHistogramSize;
 		int RecognitionNumNeighbors;
@@ -156,5 +160,7 @@ int alignTemplate (pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::string modelN
 int SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> & cloudSegments);
 
 int SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> & cloudSegments,RosParametersList &params);
+
+int SegmentCloud(sensor_msgs::PointCloud2 rawCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> & cloudSegments, pcl::PointCloud<pcl::PointXYZ>::Ptr table, RosParametersList &params);
 
 #endif
