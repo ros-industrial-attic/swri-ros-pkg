@@ -1,10 +1,12 @@
 #include "ros/ros.h"
 #include <algorithm>
+using std::max;
+using std::min;
 
 #include "std_msgs/String.h"
 #include <sensor_msgs/PointCloud.h>
 #include "sensor_msgs/PointCloud2.h"
-#include "freetail_ball_bin_segmentation/clusterclouds.h"
+#include <sensor_msgs/point_cloud_conversion.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 #include <boost/foreach.hpp>
@@ -12,7 +14,7 @@
 
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/passthrough.h>
-
+#include <pcl/point_types.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -28,7 +30,7 @@
 #include "/opt/ros/fuerte/stacks/pr2_object_manipulation/perception/tabletop_object_detector/srv_gen/cpp/include/tabletop_object_detector/TabletopSegmentation.h"
 #include </opt/ros/fuerte/stacks/pr2_object_manipulation/perception/tabletop_object_detector/srv_gen/cpp/include/tabletop_object_detector/TabletopObjectRecognition.h>
 /**
- * This node will subscribe to point cloud data from the Kinect and perform a table top segmentation
+ * This node will subscribe to point cloud data from the Kinect and perform segment objects down to ping pong balls
  */
 
 ros::Publisher pub;
@@ -39,7 +41,38 @@ ros::ServiceClient rec_srv;
 
 void pointcloudcallback(const sensor_msgs::PointCloud2ConstPtr& pcmsg)
 {
-  sensor_msgs::PointCloud2::Ptr clusters (new sensor_msgs::PointCloud2);
+  sensor_msgs::PointCloud2 clusters;//
+
+  //CALL TABLETOP SEGMENTATION SERVICE WHICH WILL OUTPUT A VECTOR OF CLUSTERS (AND A TABLE)
+  tabletop_object_detector::TabletopSegmentation segmentation_srv;
+      if (!seg_srv.call(segmentation_srv))
+         {
+            ROS_ERROR("Call to segmentation service failed");
+            //return false;
+          }
+      if (segmentation_srv.response.result != segmentation_srv.response.SUCCESS)
+          {
+            ROS_ERROR("Segmentation service returned error %d", segmentation_srv.response.result);
+            //return false;
+          }
+
+      ROS_INFO("Segmentation service succeeded. Detected %d clusters", (int)segmentation_srv.response.clusters.size());
+
+  //get the first and largest cluster and convert it to a PointCloud2 for publishing (making sure to include a
+  //frame id and a stamp)
+  sensor_msgs::PointCloud clustervector;
+  clustervector=segmentation_srv.response.clusters[0];
+  sensor_msgs::convertPointCloudToPointCloud2(clustervector, clusters);
+  clusters.header.frame_id=segmentation_srv.response.table.pose.header.frame_id;
+  clusters.header.stamp=segmentation_srv.response.table.pose.header.stamp;
+
+  //publish clusters for rviz
+  pub.publish (clusters);
+
+  //TAKE CLUSTER OF BIN/BALL AND REMOVE RED (BIN)
+
+  /* SEGMENTATION USING ONLY PCL ALGORITHMS
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr clustered_cloud (new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud (new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_f (new pcl::PointCloud<pcl::PointXYZ>);
@@ -47,25 +80,25 @@ void pointcloudcallback(const sensor_msgs::PointCloud2ConstPtr& pcmsg)
 	//sensor_msgs::PointCloud2::Ptr cloud_filtered;
 	//pcl::PassThrough<sensor_msgs::PointCloud2> pass;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
-  // Perform the actual filtering - First cut out far stuff
+  // Perform the actual filtering - Cut out far stuff
   pcl::PassThrough<pcl::PointXYZ> pass;
   pass.setInputCloud(in_cloud);
   pass.setFilterFieldName("z");
-  pass.setFilterLimits(0.0, 1.3);
+  pass.setFilterLimits(-0.1, 1.5);
   pass.filter(*cloud_filtered);
 
   pcl::SACSegmentation<pcl::PointXYZ> seg;
   pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane (new pcl::PointCloud<pcl::PointXYZ> ());
-  //pcl::PCDWriter writer;
+
   seg.setOptimizeCoefficients (true);
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
   seg.setMaxIterations (100);
-  seg.setDistanceThreshold (0.02);
+  seg.setDistanceThreshold (0.01);
 
-  int i=0, nr_points = (int) cloud_filtered->points.size ();
+  int nr_points = (int) cloud_filtered->points.size ();
   while (cloud_filtered->points.size () > 0.3 * nr_points)
     {
       // Segment the largest planar component from the remaining cloud
@@ -76,6 +109,11 @@ void pointcloudcallback(const sensor_msgs::PointCloud2ConstPtr& pcmsg)
         ROS_INFO("Could not estimate a planar model for the given dataset.");
         break;
       }
+      std::cerr << "Model coefficients: " << coefficients->values[0] << " "
+                                            << coefficients->values[1] << " "
+                                            << coefficients->values[2] << " "
+                                            << coefficients->values[3] << std::endl;
+
 
       // Extract the planar inliers from the input cloud
       pcl::ExtractIndices<pcl::PointXYZ> extract;
@@ -98,7 +136,7 @@ void pointcloudcallback(const sensor_msgs::PointCloud2ConstPtr& pcmsg)
 
     std::vector<pcl::PointIndices> cluster_indices;
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-    ec.setClusterTolerance (0.02); // 2cm
+    ec.setClusterTolerance (0.01); // 2cm
     ec.setMinClusterSize (100);
     ec.setMaxClusterSize (25000);
     ec.setSearchMethod (tree);
@@ -108,28 +146,28 @@ void pointcloudcallback(const sensor_msgs::PointCloud2ConstPtr& pcmsg)
     std::vector<pcl::PointIndices>::const_iterator it;
     std::vector<int>::const_iterator pit;
     for(it = cluster_indices.begin(); it != cluster_indices.end(); ++it) {
-            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
-            for(pit = it->indices.begin(); pit != it->indices.end(); pit++) {
-            //push_back: add a point to the end of the existing vector
-                    cloud_cluster->points.push_back(in_cloud->points[*pit]);
-            }
-
-            //Merge current clusters to whole point cloud
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
+        for(pit = it->indices.begin(); pit != it->indices.end(); pit++) {
+             //push_back: add a point to the end of the existing vector
+             cloud_cluster->points.push_back(cloud_filtered->points[*pit]);
+             }
+        //Merge current clusters to whole point cloud
         *clustered_cloud += *cloud_cluster;
+    }
 
-      }
+    pcl::toROSMsg (*clustered_cloud, clusters);
+    clusters.header.frame_id="/kinect_ir_optical_frame";
+    clusters.header.stamp=ros::Time::now();
 
-    pcl::toROSMsg (*clustered_cloud , *clusters);
-    //clusters.frame_id="kinect_ir_optical_frame";
-    pub.publish (*clusters);
-    /*
+
   // Publish the data
-  pub.publish (*cloud_filtered);
+    pub.publish (clusters);
 
-*/
-
+ */
 }
-void segment(tabletop_object_detector::TabletopSegmentation& segmentation_srv) {
+
+
+/*void segment(tabletop_object_detector::TabletopSegmentation& segmentation_srv) {
 	//tabletop_object_detector::TabletopSegmentation segmentation_srv;
     if (!seg_srv.call(segmentation_srv))
        {
@@ -145,32 +183,8 @@ void segment(tabletop_object_detector::TabletopSegmentation& segmentation_srv) {
     //addDetectedTableToPlanningSceneDiff(segmentation_srv.response.table);
     ROS_INFO("Segmentation service succeeded. Detected %d clusters", (int)segmentation_srv.response.clusters.size());
 
-}
+}*/
 
-void publishSegmentedPoints(std::vector<sensor_msgs::PointCloud> clustervector) //freetail_ball_bin_segmentation::clustercloudsPtr&
-{
-	//std::vector<sensor_msgs::PointCloud2> pclVector;
-	//pclVector=clusters->pointClouds;
-
-/*  sensor_msgs::PointCloud segmented;
-  sensor_msgs::PointCloud pc;
-  PointCloud::Ptr msg (new PointCloud);
-  for (unsigned int i =0; i < clusters.size(); i++)
-  {
-	  pc = clusters[i];
-	  msg->header = pc.header;
-	  //msg->channels = pc.channels;
-	  msg->points = pc.points;
-
-  }
-  //std::vector<sensor_msgs::PointCloud2> segmented;
-  //freetail_ball_bin_segmentation::clusterclouds segmented;
-  //segmented = clusters->pointClouds;
- // sensor_msgs::Image segmented;
-  //pcl::toROSMsg(clusters, segmented);*/
-
-  //pub.publish(segmented);
-}
 
 int main(int argc, char **argv)
 {
@@ -184,14 +198,11 @@ int main(int argc, char **argv)
   //subscribe to Kinect point xyzrgb point cloud data
   ros::Subscriber sub = n.subscribe<sensor_msgs::PointCloud2>("/camera/depth_registered/points", 1, pointcloudcallback);
 
-  //create the segmentation and recognition service clients
+  //create the segmentation service clients
   seg_srv = n.serviceClient<tabletop_object_detector::TabletopSegmentation>("/tabletop_segmentation", true);
-/*  //rec_srv = n.serviceClient<tabletop_object_detector::TabletopObjectRecognition>
-  ("/tabletop_object_recognition", true);
-  //tabletop_object_detector::TabletopSegmentation segmentation;
-  //segment(segmentation);
 
-  //publishSegmentedPoints(segmentation.response.clusters);
+/*  //tabletop_object_detector::TabletopSegmentation segmentation;
+  //segment(segmentation);
 */
 
   //publish topic for rviz visualization
