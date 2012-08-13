@@ -8,7 +8,7 @@
   <node pkg="dx100" type="motion_interface" name="motion_interface" args="192.168.32.3"/>
   <node pkg="dx100" type="joint_trajectory_action" name="joint_trajectory_action"/>
 
-  <!-- gripper interface from longhonr -->
+  <!-- gripper interface from longhorn -->
   <node pkg="longhorn" type="gripper_interface" name="gripper_interface" args="192.168.32.3"/>
 
   <!-- Get TF - publish robot and joint states -->
