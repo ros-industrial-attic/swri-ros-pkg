@@ -19,7 +19,6 @@ public:
 	virtual void fetchParameters(bool useNodeNamespace) = 0;
 
 protected:
-	const std::string _GraspPlannerName = "";
 };
 
 #endif /* GRASPPLANNERINTERFACE_H_ */
