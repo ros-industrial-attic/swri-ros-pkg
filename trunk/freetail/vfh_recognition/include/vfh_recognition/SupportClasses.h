@@ -56,9 +56,9 @@ namespace RosParams
 
 		static const int SegmentationMaxIterations = 100;
 		static const double SegmentationDistanceThreshold = 0.02f;
-		static const double SegmentationLeafSizeX = 0.01f;
-		static const double SegmentationLeafSizeY = 0.01f;
-		static const double SegmentationLeafSizeZ = 0.01f;
+		static const double SegmentationLeafSizeX = 0.01;
+		static const double SegmentationLeafSizeY = 0.01;
+		static const double SegmentationLeafSizeZ = 0.01;
 		static const double SegmentationSpatialFilterMinX = -0.7f;
 		static const double SegmentationSpatialFilterMaxX = 0.7f;
 		static const double SegmentationSpatialFilterMinY = 10.0f;

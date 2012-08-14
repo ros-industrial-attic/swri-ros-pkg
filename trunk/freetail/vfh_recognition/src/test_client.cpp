@@ -21,12 +21,14 @@ void srv_cb(const sensor_msgs::PointCloud2 fromKinect)
   if(seg_client.call(seg_srv)){
     rec_srv.request.table = seg_srv.response.table;
     rec_srv.request.clusters = seg_srv.response.clusters;
+    //std::cout << "Segmentation result: " << seg_srv.response.clusters.size() << " clusters found.\n";
   }else{
     ROS_INFO("Failed to call Segmentation service.");
     //return;
   }
   if(rec_client.call(rec_srv))
   {
+    std::cout << rec_srv.response.models.size() << " objects identified.\n";
    if(!rec_srv.response.models.empty()){
     pub.publish(rec_srv.response);
     std::stringstream fileName("");
