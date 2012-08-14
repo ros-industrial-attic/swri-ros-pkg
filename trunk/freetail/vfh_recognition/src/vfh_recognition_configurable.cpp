@@ -161,20 +161,30 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
   // Create the VFH estimation class, and pass the input dataset+normals to it
   pcl::VFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::VFHSignature308> vfh;
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clouds;
-
-  //Euclidean segmentation:
-  ROS_INFO_STREAM("Segmenting table out of point cloud from sensor");
-  SegmentCloud(fromKinect, clouds,ROS_PARAMS);
-
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZ> ());
+  std::cout << "loading " << srv_request.clusters.size() << " clusters into clouds vector... \n";
+  clouds.resize(0);
+  for(unsigned int i=0; i<srv_request.clusters.size(); i++){
+    cloud_ptr->resize(srv_request.clusters.at(i).points.size());
+    for(unsigned int j=0; j<srv_request.clusters.at(i).points.size(); j++){
+      cloud_ptr->points.at(j).x = srv_request.clusters.at(i).points.at(j).x;
+      cloud_ptr->points.at(j).y = srv_request.clusters.at(i).points.at(j).y;
+      cloud_ptr->points.at(j).z = srv_request.clusters.at(i).points.at(j).z;
+    }
+    clouds.push_back(cloud_ptr);
+  }
+  std::cout << "done.\n";
+  std::cout.flush();
   //For storing results:
   pcl::PointCloud<pcl::PointXYZ>::Ptr aligned_template (new pcl::PointCloud<pcl::PointXYZ>);
   sensor_msgs::PointCloud2 recognized_msg;
   Eigen::Matrix4f objectToView;
   int numFound = 0;
-  std::cout << "Found " << clouds.size() << " clusters.\n";
   //For each segment passed in:
+  std::cout << "Classifying each segment passed to recognition node... \n";
   for(unsigned int segment_it = 0; segment_it < clouds.size(); segment_it++){
     vfh.setInputCloud (clouds.at(segment_it));
+    std::cout << "estimating normals... ";
     //Estimate normals:
     pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
     ne.setInputCloud (clouds.at(segment_it));
@@ -183,13 +193,16 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
     pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
     ne.setRadiusSearch (0.03);
     ne.compute (*cloud_normals);
+    std::cout << "done.\n";
 
+    std::cout << "computing feature... ";
     //VFH estimation
     vfh.setInputNormals (cloud_normals);
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ> ());
     vfh.setSearchMethod (tree);
     pcl::PointCloud<pcl::VFHSignature308>::Ptr vfhs (new pcl::PointCloud<pcl::VFHSignature308> ());
     vfh.compute (*vfhs);
+    std::cout << "done.\n";
 
     //Load histogram
     vfh_model histogram;
@@ -200,7 +213,7 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
       }
 
     //Algorithm parameters
-    float thresh = 100; //similarity threshold
+    float thresh = 150; //similarity threshold
     int k = 1; //number of neighbors
 
     //KNN classification
@@ -209,6 +222,7 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
     nearestKSearch (index, histogram, k, k_indices, k_distances);
 
     //If model match is close enough, do finer pose estimation by RANSAC fitting.
+    
     if(k_distances[0][0] < thresh){
       numFound++;
       //Load nearest match
@@ -229,13 +243,14 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
       //To get the object pose in the world frame: T(camera_to_world)*T(training_view_to_camera)*objectToView.
       //The transformation to camera coordinates would then happen here by finding T(view_cam) in a lookup table and premultiplying
       //by objectToView
+      std::cout << "match found. performing RANSAC fit... ";
       alignTemplate(clouds.at(segment_it), cloud_name, aligned_template, objectToView);
+      std::cout << "done.\n";
       //Convert rotational component of objectToView to Quaternion for messaging:
       Eigen::Matrix3f rotation = objectToView.block<3,3>(0, 0);
       Eigen::Quaternionf rotQ(rotation);
 
-      //Set num models in request:
-      srv_request.num_models = numFound;
+     std::cout << "Populating the service response... ";
       //Build service response:
       srv_response.models.resize(numFound);
       srv_response.models[numFound-1].model_list.resize(1);
@@ -245,7 +260,7 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
         //Header
       srv_response.models[numFound-1].model_list[0].pose.header.seq = 1; //Don't know what this is, but it's set.
       srv_response.models[numFound-1].model_list[0].pose.header.stamp = fromKinect.header.stamp;
-      srv_response.models[numFound-1].model_list[0].pose.header.frame_id = fromKinect.header.frame_id;// perhaps it be best to return the frame id of the point cloud
+      srv_response.models[numFound-1].model_list[0].pose.header.frame_id = "/camera_depth_optical_frame";// perhaps it be best to return the frame id of the point cloud
         //Pose
           //Position:
       srv_response.models[numFound-1].model_list[0].pose.pose.position.x = objectToView(0,3);
@@ -257,17 +272,13 @@ bool recognize_cb(tabletop_object_detector::TabletopObjectRecognition::Request &
       srv_response.models[numFound-1].model_list[0].pose.pose.orientation.z = rotQ.z();
       srv_response.models[numFound-1].model_list[0].pose.pose.orientation.w = rotQ.w();
       //confidence and cluster_model_indcices are not currently used.
+      std::cout << "done.\n";
 
     }//end threshold if statement
 
   }//end segment iterator
 
   return(1);
-}
-
-void kinect_cb(const sensor_msgs::PointCloud2 inCloud)
-{
-  fromKinect = inCloud;
 }
 
 int main(int argc, char **argv)
@@ -298,8 +309,7 @@ int main(int argc, char **argv)
   pcl::console::print_error ("Training data loaded.\n");
 
   //ros::Subscriber sub = n.subscribe("/camera/depth_registered/points", 1, kinect_cb);
-  ros::Subscriber sub = n.subscribe(ROS_PARAMS.Vals.InputCloudTopicName, 1, kinect_cb);
-
+  //ros::Subscriber sub = n.subscribe(ROS_PARAMS.Vals.InputCloudTopicName, 1, kinect_cb);
   //ros::ServiceServer serv = n.advertiseService("/object_recognition", recognize_cb);
   ros::ServiceServer serv = n.advertiseService(ROS_PARAMS.Vals.RecognitionServiceName, recognize_cb);
   ROS_INFO("Recognition node ready.");
