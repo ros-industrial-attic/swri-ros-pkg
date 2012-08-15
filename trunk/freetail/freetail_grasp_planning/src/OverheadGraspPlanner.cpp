@@ -23,10 +23,13 @@
 #include <pcl/filters/project_inliers.h>
 #include <pcl/filters/extract_indices.h>
 #include <math.h>
-const std::string OverheadGraspPlanner::_GraspPlannerName = GRASP_PLANNER_NAME;
 
+const std::string OverheadGraspPlanner::_GraspPlannerName = GRASP_PLANNER_NAME;
 typedef pcl::PointCloud<pcl::PointXYZ> PclCloud;
-OverheadGraspPlanner::OverheadGraspPlanner() {
+OverheadGraspPlanner::OverheadGraspPlanner():
+_ParamVals(ParameterVals()),
+_WorldFrameId("/NO_PARENT")
+{
 	// TODO Auto-generated constructor stub
 	fetchParameters(true);
 }
@@ -42,10 +45,7 @@ void OverheadGraspPlanner::fetchParameters(bool useNodeNamespace)
 	{
 		paramNamespace = "/" + ros::this_node::getName();
 	}
-	_ParamVals = ParameterVals();
 
-	ros::param::param(paramNamespace + PARAM_NAME_WORLD_FRAME_ID,_ParamVals.WorldFrameId,
-			PARAM_DEFAULT_WORLD_FRAME_ID);
 	ros::param::param(paramNamespace + PARAM_NAME_DEFAULT_PREGRASP_DISTANCE,_ParamVals.DefaultPregraspDistance,
 			PARAM_DEFAULT_PREGRASP_DISTANCE);
 	ros::param::param(paramNamespace + PARAM_NAME_SEARCH_RADIUS_FROM_TOP_POINT,_ParamVals.SearchRadiusFromTopPoint,
@@ -59,17 +59,31 @@ void OverheadGraspPlanner::fetchParameters(bool useNodeNamespace)
 	XmlRpc::XmlRpcValue list;
 	_UsingDefaultApproachVector = true;
 	_ParamVals.ApproachVector = PARAM_DEFAULT_APPROACH_VECTOR;
+
+	// additional error checking
+	bool valid = false;
+	_UsingDefaultApproachVector = !valid;
+	_ParamVals.ApproachVector = _ParamVals.ApproachVector.normalize();
 	if(ros::param::has(paramNamespace + PARAM_NAME_APPROACH_VECTOR))
 	{
 		ros::param::get(paramNamespace + PARAM_NAME_APPROACH_VECTOR,list);
 
-		// additional error checking
-		bool valid = true;
 		std::string warnExpr;
-		valid = list.getType() != XmlRpc::XmlRpcValue::TypeArray;
-		ROS_WARN_COND(!valid,"%s",std::string("Invalid data type for '"+ paramNamespace + PARAM_NAME_APPROACH_VECTOR + "', using default").c_str());
-		valid = list.size()!= 3;
-		ROS_WARN_COND(!valid,"%s",std::string("Incorrect size for '"+ paramNamespace + PARAM_NAME_APPROACH_VECTOR + "', using default").c_str());
+		valid = list.getType() == XmlRpc::XmlRpcValue::TypeArray;
+		if(!valid)
+		{
+			ROS_WARN("%s",std::string("Invalid data type for '" + paramNamespace + PARAM_NAME_APPROACH_VECTOR + "', using default").c_str());
+			return;
+		}
+
+		valid = list.size()== 3;
+		if(!valid)
+		{
+			ROS_WARN("%s",std::string("Incorrect size for '"+ paramNamespace + PARAM_NAME_APPROACH_VECTOR + "', using default").c_str());
+			return;
+		}
+
+		_UsingDefaultApproachVector = !valid;
 		if(valid)
 		{
 			// converting into vector3 object
@@ -80,13 +94,12 @@ void OverheadGraspPlanner::fetchParameters(bool useNodeNamespace)
 					ROS_WARN("%s",std::string("Value in '" + paramNamespace + PARAM_NAME_APPROACH_VECTOR + "'is invalid, using default").c_str());
 					valid = false;
 					_ParamVals.ApproachVector = PARAM_DEFAULT_APPROACH_VECTOR;
-					break;
+					_UsingDefaultApproachVector = !valid;
+					return;
 				}
 				_ParamVals.ApproachVector.m_floats[i] = static_cast<double>(list[i]);
 			}
 		}
-		_UsingDefaultApproachVector = !valid;
-		_ParamVals.ApproachVector = _ParamVals.ApproachVector.normalize();
 	}
 }
 
@@ -95,37 +108,43 @@ std::string OverheadGraspPlanner::getPlannerName()
 	return _GraspPlannerName;
 }
 
-bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning &arg)
+bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Request &req,
+		object_manipulation_msgs::GraspPlanning::Response &res)
 {
 	// converting message to pcl type
 	sensor_msgs::PointCloud2 inCloudMsg;
-	sensor_msgs::convertPointCloudToPointCloud2(arg.request.target.cluster,inCloudMsg);
+	sensor_msgs::convertPointCloudToPointCloud2(req.target.cluster,inCloudMsg);
 	PclCloud cloud = PclCloud(),transformedCloud = PclCloud();
 	pcl::fromROSMsg(inCloudMsg,cloud);
 
 	// ---------------------------------------------------------------------------------------------------------------
 	// -------------------------------- resolving cluster reference frame in world coordinates
 	tf::TransformListener tfListener;
-	tf::StampedTransform clusterTf;
-	std::string clusterFrameId = arg.request.target.reference_frame_id;
+	tf::StampedTransform clusterTf;// will be modified if alternate approach direction is used
+	tf::StampedTransform clusterTfInWorld; // will remain fixed
+	std::string clusterFrameId = req.target.cluster.header.frame_id;
+	_WorldFrameId = req.target.reference_frame_id;
 	try
 	{
-		tfListener.lookupTransform(_ParamVals.WorldFrameId,clusterFrameId
+		tfListener.lookupTransform(_WorldFrameId ,clusterFrameId
 				,ros::Time(0),clusterTf);
 	}
 	catch(tf::TransformException ex)
 	{
-		ROS_ERROR("%s",ex.what());
-		ROS_ERROR("Will use Identity as world transform");
+		ROS_ERROR("%s",std::string(getPlannerName() + " , failed to resolve transform from" +
+				_WorldFrameId + " to " + clusterFrameId + "/n/t/t" + " tf error msg: " +  ex.what()).c_str());
+		ROS_ERROR("%s",std::string(getPlannerName() + ": Will use Identity as cluster transform").c_str());
 		clusterTf.setData(tf::Transform::getIdentity());
 	}
+	clusterTfInWorld.setData(clusterTf);
 
 	// ---------------------------------------------------------------------------------------------------------------
 	// -------------------------------- transforming to alternate approach vector
+	// This transformation will allow finding the highest point relative to the opposite direction of the approach vector
 	tf::Transform approachTf = tf::Transform::getIdentity();
 	if(!_UsingDefaultApproachVector)
 	{
-		// use cros-product and matrix inverse in order to compute transform with modified approach vector (z-direction)
+		// use cros-product and matrix inverse in order to compute transform with modified z-direction (approach vector)
 		// use the negative of the modified z-direction vector for all computations.
 		tf::Matrix3x3 rotMat;
 		tf::Vector3 zVec = -_ParamVals.ApproachVector;
@@ -209,6 +228,16 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning &ar
 	graspTf.setOrigin(tf::Vector3(centroid[0],centroid[1],centroid[2]));
 	graspTf.setRotation(rot);
 
+	if(_UsingDefaultApproachVector)
+	{
+		graspTf = approachTf*graspTf; // transforming to world coordinates
+	}
+
+	if(!_ParamVals.GraspInWorldCoordinates) // transform to object coordinates
+	{
+		graspTf = clusterTfInWorld.inverse()*graspTf;
+	}
+
 	// creating grasp array
 	std::vector<object_manipulation_msgs::Grasp> grasps;
 
@@ -220,7 +249,10 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning &ar
 		tf::Transform rotatedGraspTf = graspTf;
 		for(int i = 1; i < numGrasps - 1;i++)
 		{
+			// rotating by (angle x i) about z axis of initial grasp pose
 			rotatedGraspTf.setRotation(rotatedGraspTf.getRotation()*tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),angle*i));
+
+			// filling candidate grasp message data
 			object_manipulation_msgs::Grasp candidateGrasp;
 			candidateGrasp.grasp_pose = geometry_msgs::Pose();
 			tf::quaternionTFToMsg(graspTf.getRotation(),candidateGrasp.grasp_pose.orientation);
@@ -256,8 +288,8 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning &ar
 	object_manipulation_msgs::GraspPlanningErrorCode errorCode;
 	errorCode.value = errorCode.SUCCESS;
 
-	arg.response.grasps = grasps;
-	arg.response.error_code = errorCode;
+	res.grasps = grasps;
+	res.error_code = errorCode;
 	return true;
 }
 

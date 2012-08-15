@@ -16,7 +16,6 @@
 #include <XmlRpc.h>
 
 // ros parameters bare names
-const std::string PARAM_NAME_WORLD_FRAME_ID = "/world_frame_id";
 const std::string PARAM_NAME_DEFAULT_PREGRASP_DISTANCE = "/default_pregrasp_distance";
 const std::string PARAM_NAME_SEARCH_RADIUS_FROM_TOP_POINT = "/search_radius_from_top_point";
 const std::string PARAM_NAME_NUM_CANDIDATE_GRASPS = "/num_returned_candidate_grasps";
@@ -24,7 +23,6 @@ const std::string PARAM_NAME_GRASP_IN_WORLD_COORDINATES = "grasp_pose_in_world_c
 const std::string PARAM_NAME_APPROACH_VECTOR = "/approach_vector";
 
 // default ros parameter values
-const std::string PARAM_DEFAULT_WORLD_FRAME_ID = "/NO_PARENT";
 const double PARAM_DEFAULT_PREGRASP_DISTANCE = 0.1f;// meters
 const double PARAM_DEFAULT_SEARCH_RADIUS_FROM_TOP_POINT = 0.01; // meters
 const int PARAM_DEFAULT_NUM_CANDIDATE_GRASPS = 8;
@@ -42,7 +40,6 @@ public:
 
 	struct ParameterVals
 	{
-		std::string WorldFrameId;
 		double DefaultPregraspDistance;
 		double SearchRadiusFromTopPoint;
 		int NumCandidateGrasps;
@@ -53,12 +50,14 @@ public:
 	OverheadGraspPlanner();
 	virtual ~OverheadGraspPlanner();
 
-	bool planGrasp(object_manipulation_msgs::GraspPlanning &arg);
+	bool planGrasp(object_manipulation_msgs::GraspPlanning::Request &req,
+			object_manipulation_msgs::GraspPlanning::Response &res);
 	std::string getPlannerName();
 	void fetchParameters(bool useNodeNamespace);
 
 protected:
 	static const std::string _GraspPlannerName;
+	std::string _WorldFrameId;
 	ParameterVals _ParamVals;
 
 	// computational members
