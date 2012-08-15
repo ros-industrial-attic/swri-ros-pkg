@@ -12,17 +12,24 @@
 #include <object_manipulator/object_manipulator.h>
 #include <object_manipulation_msgs/GraspPlanning.h>
 #include <ros/package.h>
+#include <planners/OverheadGraspPlanner.h>
+
+const std::string SERVICE_NAME = "plan_point_cluster_grasp";
 
 class GraspPlannerServer {
 public:
 	GraspPlannerServer();
 	virtual ~GraspPlannerServer();
-
 	void init();
-	void serviceCallback(object_manipulation_msgs::GraspPlanning::Request &request,
+	void finish();
+	bool serviceCallback(object_manipulation_msgs::GraspPlanning::Request &request,
 			object_manipulation_msgs::GraspPlanning::Response &response);
 
+protected:
 
+	GraspPlannerInterface *_GraspPlanner;
+	ros::ServiceServer _ServiceServer;
+	std::string _ServiceName;
 };
 
 #endif /* GRASPPLANNERSERVER_H_ */

@@ -14,7 +14,8 @@
 class GraspPlannerInterface
 {
 public:
-	virtual bool planGrasp(object_manipulation_msgs::GraspPlanning &arg) = 0;
+	virtual bool planGrasp(object_manipulation_msgs::GraspPlanning::Request &req,
+			object_manipulation_msgs::GraspPlanning::Response &res) = 0;
 	virtual std::string getPlannerName() = 0;
 	virtual void fetchParameters(bool useNodeNamespace) = 0;
 
