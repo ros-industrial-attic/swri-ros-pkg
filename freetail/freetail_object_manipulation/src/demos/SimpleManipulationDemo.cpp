@@ -510,12 +510,20 @@ bool SimpleManipulationDemo::recognize()
 	planning_scene_diff_.collision_objects.clear();
 	transformed_recognition_poses_.clear();
 
+	// calling segmentation
+	tabletop_object_detector::TabletopSegmentation segmentation_srv;
+	if (!seg_srv_.call(segmentation_srv))
+	{
+	ROS_ERROR("Call to segmentation service failed");
+	return false;
+	}
+
 	ros::WallTime after_seg = ros::WallTime::now();
 	bool success = false;
 
 	tabletop_object_detector::TabletopObjectRecognition recognition_srv;
-	//recognition_srv.request.table = segmentation_srv.response.table;
-	//recognition_srv.request.clusters = segmentation_srv.response.clusters;
+	recognition_srv.request.table = segmentation_srv.response.table;
+	recognition_srv.request.clusters = segmentation_srv.response.clusters;
 	recognition_srv.request.num_models = 1;
 	recognition_srv.request.perform_fit_merge = false;
 	if (!rec_srv_.call(recognition_srv))

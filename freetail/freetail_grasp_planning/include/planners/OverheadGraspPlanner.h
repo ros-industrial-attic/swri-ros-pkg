@@ -12,8 +12,11 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <planners/GraspPlannerInterface.h>
-#include <tf/transform_datatypes.h>
 #include <XmlRpc.h>
+#include <tf/transform_datatypes.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
+
 
 // ros parameters bare names
 const std::string PARAM_NAME_DEFAULT_PREGRASP_DISTANCE = "/default_pregrasp_distance";
@@ -59,6 +62,7 @@ protected:
 	static const std::string _GraspPlannerName;
 	std::string _WorldFrameId;
 	ParameterVals _ParamVals;
+	tf::TransformListener _tfListener;
 
 	// computational members
 	bool _UsingDefaultApproachVector;
