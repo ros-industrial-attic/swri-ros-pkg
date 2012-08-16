@@ -45,14 +45,18 @@ public:
 
 		tf::Transform worldTransform = tf::Transform::getIdentity();
 
-		ros::Duration loopCycle(2.0f);
+		ros::Duration loopCycle(0.2f);
+		std::vector<tf::StampedTransform> transforms;
 		while(ros::ok())
 		{
-			_tfBroadcaster.sendTransform(tf::StampedTransform(worldTransform,ros::Time::now(),"world",_worldFrameId));
-			_tfBroadcaster.sendTransform(tf::StampedTransform(worldTransform,ros::Time::now(),_worldFrameId,
-					_clusterFrameId));
+			transforms.push_back(tf::StampedTransform(worldTransform,ros::Time::now(),"world",_worldFrameId));
+			transforms.push_back(tf::StampedTransform(worldTransform,ros::Time::now(),_worldFrameId,_clusterFrameId));
+			//_tfBroadcaster.sendTransform(tf::StampedTransform(worldTransform,ros::Time::now(),"world",_worldFrameId));
+			//_tfBroadcaster.sendTransform(tf::StampedTransform(worldTransform,ros::Time::now(),_worldFrameId,_clusterFrameId));
+			_tfBroadcaster.sendTransform(transforms);
 			ros::spinOnce();
 			loopCycle.sleep();
+			transforms.clear();
 		}
 	}
 

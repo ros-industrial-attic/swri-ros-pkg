@@ -12,8 +12,6 @@
 #include <pcl/point_cloud.h>
 #include <pcl_ros/point_cloud.h>
 #include <tf/LinearMath/Scalar.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
 #include <ros/console.h>
 #include <tf_conversions/tf_eigen.h>
 #include <pcl/common/transforms.h>
@@ -28,10 +26,12 @@ const std::string OverheadGraspPlanner::_GraspPlannerName = GRASP_PLANNER_NAME;
 typedef pcl::PointCloud<pcl::PointXYZ> PclCloud;
 OverheadGraspPlanner::OverheadGraspPlanner():
 _ParamVals(ParameterVals()),
-_WorldFrameId("/NO_PARENT")
+_WorldFrameId("/NO_PARENT"),
+_tfListener()
 {
 	// TODO Auto-generated constructor stub
 	fetchParameters(true);
+
 }
 
 OverheadGraspPlanner::~OverheadGraspPlanner() {
@@ -111,6 +111,10 @@ std::string OverheadGraspPlanner::getPlannerName()
 bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Request &req,
 		object_manipulation_msgs::GraspPlanning::Response &res)
 {
+	// local variables
+	ros::NodeHandle nh;
+	std::stringstream stdOut;
+
 	// converting message to pcl type
 	sensor_msgs::PointCloud2 inCloudMsg;
 	sensor_msgs::convertPointCloudToPointCloud2(req.target.cluster,inCloudMsg);
@@ -119,21 +123,20 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 
 	// ---------------------------------------------------------------------------------------------------------------
 	// -------------------------------- resolving cluster reference frame in world coordinates
-	tf::TransformListener tfListener;
-	tf::StampedTransform clusterTf;// will be modified if alternate approach direction is used
+	tf::StampedTransform clusterTf; clusterTf.setIdentity();// will be modified if alternate approach direction is used
 	tf::StampedTransform clusterTfInWorld; // will remain fixed
 	std::string clusterFrameId = req.target.cluster.header.frame_id;
 	_WorldFrameId = req.target.reference_frame_id;
 	try
 	{
-		tfListener.lookupTransform(_WorldFrameId ,clusterFrameId
-				,ros::Time(0),clusterTf);
+		_tfListener.lookupTransform(_WorldFrameId ,clusterFrameId,
+				ros::Time(0),clusterTf);
 	}
 	catch(tf::TransformException ex)
 	{
-		ROS_ERROR("%s",std::string(getPlannerName() + " , failed to resolve transform from" +
-				_WorldFrameId + " to " + clusterFrameId + "/n/t/t" + " tf error msg: " +  ex.what()).c_str());
-		ROS_ERROR("%s",std::string(getPlannerName() + ": Will use Identity as cluster transform").c_str());
+		ROS_ERROR("%s",std::string(getPlannerName() + " , failed to resolve transform from " +
+				_WorldFrameId + " to " + clusterFrameId + " \n\t\t" + " tf error msg: " +  ex.what()).c_str());
+		ROS_WARN("%s",std::string(getPlannerName() + ": Will use Identity as cluster transform").c_str());
 		clusterTf.setData(tf::Transform::getIdentity());
 	}
 	clusterTfInWorld.setData(clusterTf);
@@ -172,6 +175,10 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 	// extracting highest point from bounding box
 	double maxZ = pointMax.z;
 
+	stdOut << getPlannerName() << ": Found Max Point at height " << maxZ;
+	ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
+
+
 	// ---------------------------------------------------------------------------------------------------------------
 	// projecting points onto plane perpendicular to approach vector and placed at highest point
 
@@ -184,6 +191,10 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 	coefficients->values[1] = normal.getY();
 	coefficients->values[2] = normal.getZ();
 	coefficients->values[3] = offset;
+
+	stdOut << getPlannerName() << ": Created Contact Plane with coefficients: " << coefficients->values[0]
+		   << ", "	<< coefficients->values[1] << ", " << coefficients->values[2] << ", " << coefficients->values[3];
+	ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
 
 	// projecting points
 	PclCloud::Ptr projectedCloud = boost::make_shared<PclCloud>();
@@ -209,9 +220,14 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 	extractObj.setNegative(false);
 	extractObj.filter(*projectedCloud);
 
+	stdOut << getPlannerName() << ": Found " << projectedCloud->size() << " points within search radius: " << _ParamVals.SearchRadiusFromTopPoint;
+	ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
+
 	// finding centroid of projected point cloud (should work well for objects with relative degree of symmetry)
 	Eigen::Vector4f centroid;
 	pcl::compute3DCentroid(*projectedCloud,centroid);
+	stdOut << getPlannerName() << ": Found centroid at: x = " << centroid[0] << ", y = " << centroid[1] << ", z = " << centroid[2];
+	ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
 
 	// ---------------------------------------------------------------------------------------------------------------
 	// -------------------------------- generating candidate grasps  --------------------------------
