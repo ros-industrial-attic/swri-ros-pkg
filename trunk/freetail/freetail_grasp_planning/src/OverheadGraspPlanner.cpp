@@ -18,9 +18,10 @@
 #include <pcl/ModelCoefficients.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/filters/passthrough.h>
 #include <pcl/filters/project_inliers.h>
 #include <pcl/filters/extract_indices.h>
-#include <math.h>
+#include <cmath>
 
 const std::string OverheadGraspPlanner::_GraspPlannerName = GRASP_PLANNER_NAME;
 typedef pcl::PointCloud<pcl::PointXYZ> PclCloud;
@@ -48,8 +49,8 @@ void OverheadGraspPlanner::fetchParameters(bool useNodeNamespace)
 
 	ros::param::param(paramNamespace + PARAM_NAME_DEFAULT_PREGRASP_DISTANCE,_ParamVals.DefaultPregraspDistance,
 			PARAM_DEFAULT_PREGRASP_DISTANCE);
-	ros::param::param(paramNamespace + PARAM_NAME_SEARCH_RADIUS_FROM_TOP_POINT,_ParamVals.SearchRadiusFromTopPoint,
-			PARAM_DEFAULT_SEARCH_RADIUS_FROM_TOP_POINT);
+	ros::param::param(paramNamespace + PARAM_NAME_PLANE_PROXIMITY_THRESHOLD,_ParamVals.PlaneProximityThreshold,
+			PARAM_DEFAULT_PLANE_PROXIMITY_THRESHOLD);
 	ros::param::param(paramNamespace + PARAM_NAME_NUM_CANDIDATE_GRASPS,_ParamVals.NumCandidateGrasps,
 				PARAM_DEFAULT_NUM_CANDIDATE_GRASPS);
 	ros::param::param(paramNamespace + PARAM_NAME_GRASP_IN_WORLD_COORDINATES,_ParamVals.GraspInWorldCoordinates,
@@ -144,22 +145,44 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 	// ---------------------------------------------------------------------------------------------------------------
 	// -------------------------------- transforming to alternate approach vector
 	// This transformation will allow finding the highest point relative to the opposite direction of the approach vector
-	tf::Transform approachTf = tf::Transform::getIdentity();
+	tf::Transform approachTf;approachTf.setIdentity();
 	if(!_UsingDefaultApproachVector)
 	{
 		// use cros-product and matrix inverse in order to compute transform with modified z-direction (approach vector)
 		// use the negative of the modified z-direction vector for all computations.
-		tf::Matrix3x3 rotMat;
-		tf::Vector3 zVec = -_ParamVals.ApproachVector;
-		tf::Vector3 xVec = zVec.cross(tf::Vector3(0.0f,0.0f,1.0f)); //z_approach x z_world (0,0,1)
-		tf::Vector3 yVec = zVec.cross(xVec);
-		rotMat.setValue(xVec.x(),yVec.x(),zVec.x(),
-				xVec.y(),yVec.y(),zVec.y(),
-				xVec.z(),yVec.z(),zVec.z());
-		approachTf = tf::Transform(rotMat,tf::Vector3(0.0f,0.0f,0.0f));
+		tf::Matrix3x3 rotMat;rotMat.setIdentity();
+		tf::Vector3 zVec = -_ParamVals.ApproachVector.normalize();
 
-		// transforming cluster transform to new coordinates
-		clusterTf.setData((approachTf.inverse())*(tf::Transform)clusterTf);
+		// checking that both z vectors have different directions
+		tfScalar tolerance = 0.01f;
+		tfScalar angle = zVec.angle(tf::Vector3(0.0f,0.0f,1.0f));
+		if(std::abs(angle) > tolerance)
+		{
+			tf::Vector3 xVec = tf::Vector3((zVec.cross(tf::Vector3(0.0f,0.0f,1.0f))).normalize()); //z_approach x z_world (0,0,1)
+			tf::Vector3 yVec = tf::Vector3((zVec.cross(xVec)).normalize());
+			rotMat.setValue(xVec.x(),yVec.x(),zVec.x(),
+					xVec.y(),yVec.y(),zVec.y(),
+					xVec.z(),yVec.z(),zVec.z());
+			approachTf = tf::Transform(rotMat,tf::Vector3(0.0f,0.0f,0.0f));
+
+			stdOut<< getPlannerName() << ": Approach transform found is:";
+			for(int i = 0; i < 3; i++)
+			{
+				tf::Vector3 row = approachTf.getBasis().getRow(i);
+				stdOut<< "\n\t" << "|\t" << row.x() << ",\t" << row.y() << ",\t" << row.z()<<",\t" << approachTf.getOrigin()[i]<<"\t|";
+			}
+			ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
+
+			// transforming cluster transform to new coordinates
+			clusterTf.setData((approachTf.inverse())*(tf::Transform)clusterTf);
+			stdOut << getPlannerName() << ": Aligned the input cluster to the transform corresponding to the modified approach vector";
+			ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
+		}
+		else
+		{
+			stdOut << getPlannerName() << ": Requested approach vector and world z-vector are too close, using default world frame";
+			ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
+		}
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -174,14 +197,40 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 
 	// extracting highest point from bounding box
 	double maxZ = pointMax.z;
-
-	stdOut << getPlannerName() << ": Found Max Point at height " << maxZ;
+	stdOut << getPlannerName() << ": Found Min Point at x: "<<pointMin.x<<", y: "<<pointMin.y<<", z: " << pointMin.z;
+	ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
+	stdOut << getPlannerName() << ": Found Max Point at x: "<<pointMax.x<<", y: "<<pointMax.y<<", z: " << maxZ;
 	ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
 
+	// ---------------------------------------------------------------------------------------------------------------
+	// finding points near or on top plane
+	PclCloud::Ptr planeCloud  = boost::make_shared<PclCloud>();
+	pcl::PassThrough<pcl::PointXYZ> passFilter;
+	passFilter.setInputCloud(boost::make_shared<PclCloud>(cloud));
+	passFilter.setFilterFieldName("z");
+	passFilter.setFilterLimits(maxZ - std::abs(_ParamVals.PlaneProximityThreshold),
+			maxZ + std::abs(_ParamVals.PlaneProximityThreshold));
+	passFilter.filter(*planeCloud);
+	if(planeCloud->size() > 0)
+	{
+		stdOut << getPlannerName() << ": Found " << planeCloud->size()<<" points at a proximity of "
+				<<_ParamVals.PlaneProximityThreshold << " to top plane";
+		// printing found points
+		BOOST_FOREACH(pcl::PointXYZ point,*planeCloud)
+		{
+			stdOut<<"\n\t"<<"x: "<<point.x<<", y: "<<point.y<<", z: "<<point.z;
+		}
+		ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
+	}
+	else
+	{
+		stdOut<<getPlannerName()<< ": Found not points on top plane, canceling request";
+		ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
+		return false;
+	}
 
 	// ---------------------------------------------------------------------------------------------------------------
-	// projecting points onto plane perpendicular to approach vector and placed at highest point
-
+	// projecting filtered points onto top plane
 	// defining plane coefficients
 	tf::Vector3 normal = tf::Vector3(0.0f,0.0f,1.0f);
 	double offset = -normal.dot(tf::Vector3(0.0f,0.0f,maxZ));
@@ -191,7 +240,6 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 	coefficients->values[1] = normal.getY();
 	coefficients->values[2] = normal.getZ();
 	coefficients->values[3] = offset;
-
 	stdOut << getPlannerName() << ": Created Contact Plane with coefficients: " << coefficients->values[0]
 		   << ", "	<< coefficients->values[1] << ", " << coefficients->values[2] << ", " << coefficients->values[3];
 	ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
@@ -200,28 +248,28 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 	PclCloud::Ptr projectedCloud = boost::make_shared<PclCloud>();
 	pcl::ProjectInliers<pcl::PointXYZ> projectObj;
 	projectObj.setModelType(pcl::SACMODEL_PLANE);
-	projectObj.setInputCloud(boost::make_shared<PclCloud>(cloud));
+	projectObj.setInputCloud(planeCloud);
 	projectObj.setModelCoefficients(coefficients);
 	projectObj.filter(*projectedCloud);
 
-	// finding all points within a search radius
-	pcl::search::KdTree<pcl::PointXYZ>::Ptr searchTree = boost::make_shared<pcl::search::KdTree<pcl::PointXYZ> >();
-	std::vector<int> indices;
-	std::vector<float> sqDistances;
-	searchTree->setInputCloud(projectedCloud);
-	searchTree->radiusSearch(pcl::PointXYZ(0.0f,0.0f,maxZ),_ParamVals.SearchRadiusFromTopPoint,indices,sqDistances);
-
-	// extracting points
-	pcl::PointIndices::Ptr inliers = boost::make_shared<pcl::PointIndices>();
-	inliers->indices = indices;
-	pcl::ExtractIndices<pcl::PointXYZ> extractObj;
-	extractObj.setInputCloud(projectedCloud);
-	extractObj.setIndices(inliers);
-	extractObj.setNegative(false);
-	extractObj.filter(*projectedCloud);
-
-	stdOut << getPlannerName() << ": Found " << projectedCloud->size() << " points within search radius: " << _ParamVals.SearchRadiusFromTopPoint;
-	ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
+//	// finding all points within a search radius
+//	pcl::search::KdTree<pcl::PointXYZ>::Ptr searchTree = boost::make_shared<pcl::search::KdTree<pcl::PointXYZ> >();
+//	std::vector<int> indices;
+//	std::vector<float> sqDistances;
+//	searchTree->setInputCloud(projectedCloud);
+//	searchTree->radiusSearch(pcl::PointXYZ(0.0f,0.0f,maxZ),_ParamVals.PlaneProximityThreshold,indices,sqDistances);
+//
+//	// extracting points
+//	pcl::PointIndices::Ptr inliers = boost::make_shared<pcl::PointIndices>();
+//	inliers->indices = indices;
+//	pcl::ExtractIndices<pcl::PointXYZ> extractObj;
+//	extractObj.setInputCloud(projectedCloud);
+//	extractObj.setIndices(inliers);
+//	extractObj.setNegative(false);
+//	extractObj.filter(*projectedCloud);
+//
+//	stdOut << getPlannerName() << ": Found " << projectedCloud->size() << " points within search radius: " << _ParamVals.PlaneProximityThreshold;
+//	ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
 
 	// finding centroid of projected point cloud (should work well for objects with relative degree of symmetry)
 	Eigen::Vector4f centroid;

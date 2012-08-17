@@ -20,14 +20,14 @@
 
 // ros parameters bare names
 const std::string PARAM_NAME_DEFAULT_PREGRASP_DISTANCE = "/default_pregrasp_distance";
-const std::string PARAM_NAME_SEARCH_RADIUS_FROM_TOP_POINT = "/search_radius_from_top_point";
+const std::string PARAM_NAME_PLANE_PROXIMITY_THRESHOLD= "/plane_proximity_threshold";
 const std::string PARAM_NAME_NUM_CANDIDATE_GRASPS = "/num_returned_candidate_grasps";
 const std::string PARAM_NAME_GRASP_IN_WORLD_COORDINATES = "grasp_pose_in_world_coordinates";
 const std::string PARAM_NAME_APPROACH_VECTOR = "/approach_vector";
 
 // default ros parameter values
 const double PARAM_DEFAULT_PREGRASP_DISTANCE = 0.1f;// meters
-const double PARAM_DEFAULT_SEARCH_RADIUS_FROM_TOP_POINT = 0.01; // meters
+const double PARAM_DEFAULT_PLANE_PROXIMITY_THRESHOLD= 0.005; // meters
 const int PARAM_DEFAULT_NUM_CANDIDATE_GRASPS = 8;
 const bool PARAM_DEFAULT_GRASP_IN_WORLD_COORDINATES = true; //
 const tf::Vector3 PARAM_DEFAULT_APPROACH_VECTOR = tf::Vector3(0.0f,0.0f,-1.0f);  // in world coordinates
@@ -44,7 +44,7 @@ public:
 	struct ParameterVals
 	{
 		double DefaultPregraspDistance;
-		double SearchRadiusFromTopPoint;
+		double PlaneProximityThreshold;
 		int NumCandidateGrasps;
 		bool GraspInWorldCoordinates;
 		tf::Vector3 ApproachVector; // in world coordinates
