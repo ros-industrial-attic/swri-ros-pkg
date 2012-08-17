@@ -36,6 +36,13 @@ public:
 
 	}
 
+	void fetchParams()
+	{
+		std::string nodeNamespace = "/" + ros::this_node::getName();
+		ros::param::param(nodeNamespace + "/world_frame_id",_worldFrameId,WORLD_FRAME_ID);
+		//ros::param::param(nodeNamespace + "/cluster_frame_id",_clusterFrameId,CLUSTER_FRAME_ID);
+	}
+
 	void init()
 	{
 		ros::NodeHandle nh;
@@ -49,11 +56,12 @@ public:
 		std::vector<tf::StampedTransform> transforms;
 		while(ros::ok())
 		{
-			transforms.push_back(tf::StampedTransform(worldTransform,ros::Time::now(),"world",_worldFrameId));
-			transforms.push_back(tf::StampedTransform(worldTransform,ros::Time::now(),_worldFrameId,_clusterFrameId));
+			fetchParams();
+			//transforms.push_back(tf::StampedTransform(worldTransform,ros::Time::now(),"my_world_frame",_worldFrameId));
+			//transforms.push_back(tf::StampedTransform(worldTransform,ros::Time::now(),_worldFrameId,_clusterFrameId));
 			//_tfBroadcaster.sendTransform(tf::StampedTransform(worldTransform,ros::Time::now(),"world",_worldFrameId));
 			//_tfBroadcaster.sendTransform(tf::StampedTransform(worldTransform,ros::Time::now(),_worldFrameId,_clusterFrameId));
-			_tfBroadcaster.sendTransform(transforms);
+			//_tfBroadcaster.sendTransform(transforms);
 			ros::spinOnce();
 			loopCycle.sleep();
 			transforms.clear();
@@ -66,7 +74,8 @@ public:
 		object_manipulation_msgs::GraspPlanning srv;
 		sensor_msgs::PointCloud inCloud;
 		sensor_msgs::convertPointCloud2ToPointCloud(*cloudMsg,inCloud);
-		inCloud.header.frame_id = _clusterFrameId;
+		//inCloud.header.frame_id = _clusterFrameId;
+		_clusterFrameId = inCloud.header.frame_id;
 		srv.request.target.cluster = inCloud;
 		srv.request.target.reference_frame_id = _worldFrameId;
 
