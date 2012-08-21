@@ -9,7 +9,9 @@
   <!--node pkg="dx100" type="joint_trajectory_action" name="joint_trajectory_action"/-->
 
   <rosparam command="load" file="$(find freetail_config)/config/freetail_joint_trajectory_action_sim.yaml"/>
-  <node pkg="joint_trajectory_action" name="joint_trajectory_action" type="joint_trajectory_action" output="screen"/>
+  <node pkg="dx100" type="joint_trajectory_action" name="joint_trajectory_action" output="screen"/>
+  <!--node pkg="joint_trajectory_action" name="joint_trajectory_action" type="joint_trajectory_action" output="screen"/-->
+  <node pkg="freetail_config" name="simulated_robot_controller" type="SimulatedController" output="screen"/>
   
   <!-- gripper interface from longhorn -->
   <!--node pkg="longhorn" type="gripper_interface" name="gripper_interface" args="192.168.32.3"/-->

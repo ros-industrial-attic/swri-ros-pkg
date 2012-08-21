@@ -14,7 +14,7 @@
   <depend package="visualization_msgs"/>
   <depend package="sensor_msgs"/>
   <depend package="pr2_controllers_msgs"/>
-
+  <depend package="control_msgs"/>
 </package>
 
 
