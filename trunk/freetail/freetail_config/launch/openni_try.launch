@@ -1,6 +1,5 @@
 <?xml version="1.0" ?>
 <launch>
-
   <include file="$(find openni_launch)/launch/openni.launch">
     <arg name="publish_tf" value="true" />
     <arg name="camera" value="camera" />
@@ -8,6 +7,4 @@
     <arg name="depth_frame_id" value="/kinect_ir_optical_frame"/>
     <arg name="rgb_camera_info_url" value="file://$(find freetail_config)/config/kinect_calibration_rgb.yaml"/>
   </include>
-  <!--include file="$(find longhorn)/launch/openni.launch"/-->
-
 </launch>

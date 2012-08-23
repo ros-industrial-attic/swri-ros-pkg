@@ -492,7 +492,14 @@ bool SimpleManipulationDemo::segmentAndRecognize() {
     if (!rec_srv_.call(recognition_srv))
     {
       ROS_ERROR("Call to recognition service failed");
+      return false;
       //response.detection.result = response.detection.OTHER_ERROR;
+    }
+
+    if(recognition_srv.response.models.size() == 0)
+    {
+    	ROS_ERROR("Recognition found no objects");
+    	return false;
     }
     ROS_INFO_STREAM("Recognition took " << (ros::WallTime::now()-after_seg));
     ROS_INFO_STREAM("Got " << recognition_srv.response.models.size() << " models");
@@ -746,9 +753,9 @@ bool SimpleManipulationDemo::pickUpSomething(const std::string& arm_name) {
 
   object_manipulation_msgs::PickupGoal pickup_goal;
   std::vector<object_manipulation_msgs::Grasp> grasps;
-  if(!selectGraspableObject(arm_name,
-                            pickup_goal,
-                            grasps)) {
+  if(!selectGraspableObject(arm_name,pickup_goal,grasps))
+  {
+	ROS_INFO("%s","freetail manipulation: graspable object selection failed");
     return false;
   }
   std::vector<object_manipulator::GraspExecutionInfo> grasp_execution_info;

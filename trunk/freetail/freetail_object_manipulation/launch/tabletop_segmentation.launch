@@ -1,3 +1,4 @@
+<?xml version="1.0" ?>
 <launch>
 
     <arg name="tabletop_segmentation_points_in" default="narrow_stereo_textured/points2" />

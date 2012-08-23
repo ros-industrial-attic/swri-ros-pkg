@@ -385,7 +385,7 @@
   <joint name="base-kinect" type="fixed">
     <parent link="base_link"/>
     <child link="kinect"/>
-    <origin rpy="0 0 2.356" xyz="1.26 -0.72 0.75"/>
+    <origin rpy="0 0.5235 2.356" xyz="1.08 -0.72 0.82"/>
   </joint>
   <joint name="table-keepout_1" type="fixed">
     <parent link="table"/>
