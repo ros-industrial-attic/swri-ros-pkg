@@ -48,7 +48,7 @@
 
 <!-- table top recognition expects the household objects database to be active -->
   <include unless="$(arg use_vfh_recognition)" file="$(find tabletop_object_detector)/launch/tabletop_object_recognition.launch"/>
-  <include unless="$(arg use_vfh_recognition)" file="$(find household_objects_database)/launch/objects_database_remote_client.launch"/>
+  <!--include unless="$(arg use_vfh_recognition)" file="$(find household_objects_database)/launch/objects_database_remote_client.launch"/-->
 
 <!-- segmentation :
 	Segmentation needs to run for now since the segmented table is added onto the environment server as part of the

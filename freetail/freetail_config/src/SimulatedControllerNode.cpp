@@ -122,6 +122,8 @@ public:
 
 	void callbackJointTrajectory(const trajectory_msgs::JointTrajectory::ConstPtr &msg)
 	{
+		std::string nodeName = ros::this_node::getName();
+
 
 		if(msg->points.empty())
 		{
@@ -132,6 +134,9 @@ public:
 		{
 			_ProcessingRequest = true;
 		}
+
+		ROS_INFO_STREAM(nodeName<<": Starting joint trajectory execution, "
+				<<msg->points.size()<<" points in requested trajectory");
 
 		// the messages below contain the same information, but the are expected by different joint trajectory action servers
 		pr2_controllers_msgs::JointTrajectoryControllerState state;
@@ -166,7 +171,11 @@ public:
 			_ControllerStatePublisher.publish(state);
 			_ControllerFeedbackPublisher.publish(feedback);
 			_JointStatePublisher.publish(jointState);
+
+			ROS_INFO_STREAM(nodeName<<": Executed joint point at "<<duration.sec<<" seconds");
 		}
+
+		ROS_INFO_STREAM(nodeName<<": Finished joint trajectory execution, ");
 
 		_LastJointState = jointState;
 		_ProcessingRequest = false;

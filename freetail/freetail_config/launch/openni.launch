@@ -10,7 +10,7 @@
     <rosparam command="load" file="$(find openni_camera)/info/openni_params.yaml" />
   </node>-->
 
-  <arg name="rgb_camera_info_url" value="file://$(find freetail_config)/config/rgb.yaml"/>
+  <arg name="rgb_camera_info_url" value="file://$(find freetail_config)/config/kinect_calibration_rgb.yaml"/>
   <arg name="depth_camera_info_url" value=""/>
   <arg name="camera" default="camera" />
   <arg name="launch_prefix" default="" />
