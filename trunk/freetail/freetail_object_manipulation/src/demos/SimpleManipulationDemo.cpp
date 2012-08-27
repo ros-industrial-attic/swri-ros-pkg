@@ -7,6 +7,12 @@
 
 #include "freetail_object_manipulation/SimpleManipulationDemo.h"
 
+// node names
+std::string NODE_NAME = "freetail_manipulation";
+
+// planning scene
+const std::string MANIPULATOR_GROUP_NAME = "sia20d_arm";
+
 // service default names
 const static std::string DEFAULT_PLANNER_SERVICE = "/ompl_planning/plan_kinematic_path";
 const static std::string DEFAULT_SEGMENTATION_SERVICE = "/tabletop_segmentation";
@@ -89,7 +95,7 @@ void SimpleManipulationDemo::setup()
 	// setting up execution monitors
 	{
 		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
-		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler("manipulator","/joint_trajectory_action"));
+		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(MANIPULATOR_GROUP_NAME,"/joint_trajectory_action"));
 		gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("end_effector","/grasp_execution_action"));
 
 		trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
@@ -311,7 +317,7 @@ bool SimpleManipulationDemo::moveArm(const std::string& group_name,const std::ve
   ter_reqs.push_back(ter);
 
   ros::WallTime start_execution = ros::WallTime::now();
-  ROS_INFO_STREAM("Should be trying to move arm");
+  ROS_INFO_STREAM(NODE_NAME<<": Should be trying to move arm");
   trajectory_execution_monitor_.executeTrajectories(ter_reqs,trajectories_finished_function_);
 
   boost::unique_lock<boost::mutex> lock(execution_mutex_);
@@ -322,10 +328,12 @@ bool SimpleManipulationDemo::moveArm(const std::string& group_name,const std::ve
   if(trajectories_succeeded_)
   {
     error_code.val = error_code.SUCCESS;
+    ROS_INFO_STREAM(NODE_NAME<<": Trajectory execution has succeeded");
   }
   else
   {
     error_code.val = error_code.PLANNING_FAILED;
+    ROS_INFO_STREAM(NODE_NAME<<": Trajectory execution has failed");
   }
 
   return trajectories_succeeded_;
@@ -395,7 +403,7 @@ bool SimpleManipulationDemo::moveArmToSide()
     joint_angles.push_back(-0.17949093878269196);
     joint_angles.push_back(-1.6554385423660278);
     joint_angles.push_back(-1.7431133985519409);
-    return moveArm("manipulator",joint_angles);
+    return moveArm(MANIPULATOR_GROUP_NAME,joint_angles);
 }
 
 void SimpleManipulationDemo::addDetectedTableToPlanningSceneDiff(const tabletop_object_detector::Table &table) {
@@ -504,9 +512,14 @@ bool SimpleManipulationDemo::segmentAndRecognize() {
     ROS_INFO_STREAM("Recognition took " << (ros::WallTime::now()-after_seg));
     ROS_INFO_STREAM("Got " << recognition_srv.response.models.size() << " models");
     object_models_ = recognition_srv.response.models;
-    for(unsigned int i = 0; i < 1; i++) { //recognition_srv.response.models.size(); i++) {
+
+    std::stringstream stdOut;
+    for(unsigned int i = 0; i < 1; i++)
+    { //recognition_srv.response.models.size(); i++) {
       got_recognition = true;
       addDetectedObjectToPlanningSceneDiff(recognition_srv.response.models[0]);
+      stdOut<<"freetail manipulation: "<<"added Model Id: "<<object_models_[i].model_list[0].model_id<<"\n";
+      ROS_INFO("%s",stdOut.str().c_str());
     }
     //response.detection.models = recognition_srv.response.models;
     //response.detection.cluster_model_indices = recognition_srv.response.cluster_model_indices;
@@ -616,6 +629,8 @@ bool SimpleManipulationDemo::selectGraspableObject(const std::string& arm_name,
                            object_manipulation_msgs::PickupGoal& pickup_goal,
                            std::vector<object_manipulation_msgs::Grasp>& grasps)
 {
+  std::stringstream logStream;
+
   if(object_models_.size() == 0) return false;
   if(object_models_[0].model_list.size() == 0) return false;
 
@@ -631,14 +646,20 @@ bool SimpleManipulationDemo::selectGraspableObject(const std::string& arm_name,
   pickup_goal.allow_gripper_support_collision = true;
   pickup_goal.collision_support_surface_name = "table";
 
+  // printing request
+  logStream<<"\nfreetail manipulation: "<<"Household object database query request"<<"\n";
+  logStream<<"freetail manipulation: "<<"\t-Arm Name:\t"<<pickup_goal.arm_name<<"\n";
+  logStream<<"freetail manipulation: "<<"\t-Collision Object Name:\t"<<pickup_goal.collision_object_name<<"\n";
+  logStream<<"freetail manipulation: "<<"\t-Target Ref Frame Id:\t"<<pickup_goal.target.reference_frame_id<<"\n";
+  logStream<<"freetail manipulation: "<<"\t-World Ref Frame Id:\t"<<pickup_goal.lift.direction.header.frame_id<<"\n";
+
+  ROS_INFO("%s",logStream.str().c_str());
 
   household_objects_database_msgs::DatabaseModelPose dmp_copy = dmp;
   dmp_copy.pose = transformed_recognition_poses_[pickup_goal.collision_object_name];
   pickup_goal.target.potential_models.push_back(dmp_copy);
-  return getObjectGrasps(arm_name,
-                         dmp,
-			   last_clusters_[0],
-			   grasps);
+
+  return getObjectGrasps(arm_name, dmp, last_clusters_[0], grasps);
 }
 
 bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
@@ -992,6 +1013,7 @@ bool SimpleManipulationDemo::getObjectGrasps(const std::string& arm_name,
   tf::Transform first_grasp_in_world_tf;
   tf::poseMsgToTF(response.grasps[0].grasp_pose, first_grasp_in_world_tf);
 
+  ROS_INFO_STREAM("Recognition pose frame " << dmp.pose.header.frame_id);
   planning_models::KinematicState state(*current_robot_state_);
   state.updateKinematicStateWithLinkAt("palm", first_grasp_in_world_tf);
 
@@ -1002,15 +1024,15 @@ bool SimpleManipulationDemo::getObjectGrasps(const std::string& arm_name,
   col_pregrasp.a = 1.0;
   visualization_msgs::MarkerArray arr;
 
+  ROS_INFO_STREAM(NODE_NAME<<": Getting kinematic model group under 'end_effector'");
   std::vector<std::string> links = cm_.getKinematicModel()->getModelGroup("end_effector")->getGroupLinkNames();
 
-  cm_.getRobotMarkersGivenState(state, arr, col_pregrasp,
-				  "first_grasp",
-				  ros::Duration(0.0),
-				  &links);
+  ROS_INFO_STREAM(NODE_NAME<<": Obtaining robot marker from state and publishing");
+  cm_.getRobotMarkersGivenState(state, arr, col_pregrasp,"first_grasp", ros::Duration(0.0), &links);
   vis_marker_array_publisher_.publish(arr);
 
   //TODO - actually deal with the different cases here, especially for the cluster planner
+  ROS_INFO_STREAM(NODE_NAME<<": Published markers");
   grasps = response.grasps;
   if(request.target.reference_frame_id != des_res.name) {
     if(request.target.reference_frame_id != dmp.pose.header.frame_id) {
@@ -1219,11 +1241,16 @@ const arm_navigation_msgs::CollisionObject* SimpleManipulationDemo::getCollision
 
 void SimpleManipulationDemo::runDemo()
 {
+	// getting and storing node name
+	NODE_NAME = ros::this_node::getName();
+
 	setup();// full setup
 
 	ros::AsyncSpinner spinner(4);
 	spinner.start();
 	srand(time(NULL));
+
+
 
 	//ros::NodeHandle nh;
 	moveArmToSide();
@@ -1237,13 +1264,17 @@ void SimpleManipulationDemo::runDemo()
 	      continue;
 	    }
 
-	    if(!pickUpSomething("manipulator"))
+	    if(!pickUpSomething(MANIPULATOR_GROUP_NAME))
 	    {
-	      ROS_WARN_STREAM("Pick up failed");
+	      ROS_WARN_STREAM(NODE_NAME + ": Pick up failed");
 	      break;
 	    }
+	    else
+	    {
+	    	ROS_INFO_STREAM(NODE_NAME + ": Pick up was successful");
+	    }
 
-	    if(!putDownSomething("manipulator"))
+	    if(!putDownSomething(MANIPULATOR_GROUP_NAME))
 	    {
 	      ROS_WARN_STREAM("Put down failed");
 	    }
