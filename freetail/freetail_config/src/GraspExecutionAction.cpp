@@ -53,7 +53,7 @@ public:
   {
     ros::NodeHandle pn("~");
     action_server_.start();
-    ROS_INFO("Grasp execution action node started");
+    ROS_INFO_STREAM("Grasp execution action node started");
   }
 
   ~GraspExecutionAction()

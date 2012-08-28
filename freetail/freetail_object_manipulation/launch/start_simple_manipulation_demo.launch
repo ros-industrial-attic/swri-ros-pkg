@@ -9,6 +9,7 @@
 		<param name="mesh_database_service_name" value="/objects_database_node/get_model_mesh"/>
 		<param name="model_database_service_name" value="/objects_database_node/get_model_description"/>	
 		<param name="planning_scene_service_name" value="/environment_server/set_planning_scene_diff"/>	
-		<param name="arm_inverse_kinematics_plugin" value="SIA20D_Mesh_manipulator_kinematics/IKFastKinematicsPlugin"/>		
+		<!--param name="arm_inverse_kinematics_plugin" value="SIA20D_Mesh_manipulator_kinematics/IKFastKinematicsPlugin"/-->	
+		<param name="arm_inverse_kinematics_plugin" value="longhorn_manipulator_kinematics/IKFastKinematicsPlugin"/>	
 	</node>  
 </launch>
