@@ -94,6 +94,8 @@ public:
 			ROS_INFO("%s",std::string(nodeName + ": Could not find parameter " + JOINT_NAMES_PARAM_NAME).c_str());
 		}
 
+		sensor_msgs::JointState st = _LastJointState;
+		updateLastStateFeedbackMessages(st);
 
 		_JointTrajSubscriber = nh.subscribe(_JointTrajSubsTopic,1,&SimulatedController::callbackJointTrajectory,this);
 		_ControllerStatePublisher = nh.advertise<pr2_controllers_msgs::JointTrajectoryControllerState>(_CntrlStatePubTopic,
@@ -106,16 +108,17 @@ public:
 
 	void broadcastState(const ros::TimerEvent &evnt)
 	{
-		pr2_controllers_msgs::JointTrajectoryControllerState state;
+		//pr2_controllers_msgs::JointTrajectoryControllerState state;
 		if(_ProcessingRequest)
 		{
 			return;
 		}
 		else
 		{
-			state.header.stamp = ros::Time::now();
+			_LastControllerJointState.header.stamp = _LastControllerTrajState.header.stamp =  ros::Time::now();
 			_LastJointState.header.stamp = ros::Time::now();
-			_ControllerStatePublisher.publish(state);
+			_ControllerStatePublisher.publish(_LastControllerJointState);
+			_ControllerFeedbackPublisher.publish(_LastControllerTrajState);
 			_JointStatePublisher.publish(_LastJointState);
 		}
 	}
@@ -168,6 +171,8 @@ public:
 			state.header.stamp = feedback.header.stamp = ros::Time::now();
 			jointState.header.stamp = ros::Time::now();
 
+			ROS_INFO_STREAM(nodeName<<": publishing trajectory feedback messages");
+
 			_ControllerStatePublisher.publish(state);
 			_ControllerFeedbackPublisher.publish(feedback);
 			_JointStatePublisher.publish(jointState);
@@ -177,11 +182,33 @@ public:
 
 		ROS_INFO_STREAM(nodeName<<": Finished joint trajectory execution, ");
 
-		_LastJointState = jointState;
+		updateLastStateFeedbackMessages(jointState);
+		//_LastJointState = jointState;
 		_ProcessingRequest = false;
 	}
 
 protected:
+
+	void updateLastStateFeedbackMessages(const sensor_msgs::JointState &st)
+	{
+		_LastJointState = st;
+
+		trajectory_msgs::JointTrajectoryPoint error;
+		error.positions = std::vector<double>(st.name.size(),0.0f);
+		error.velocities = std::vector<double>(st.name.size(),0.0f);
+
+		_LastControllerTrajState.joint_names = st.name;
+		_LastControllerTrajState.actual.positions = _LastControllerTrajState.desired.positions = st.position;
+		_LastControllerTrajState.actual.velocities = _LastControllerTrajState.desired.velocities = st.velocity;
+		_LastControllerTrajState.actual.time_from_start = _LastControllerTrajState.desired.time_from_start = ros::Duration(0.0f);
+		_LastControllerTrajState.error = error;
+
+		_LastControllerJointState.joint_names = st.name;
+		_LastControllerJointState.actual.positions = _LastControllerJointState.desired.positions = st.position;
+		_LastControllerJointState.actual.velocities = _LastControllerJointState.desired.velocities = st.velocity;
+		_LastControllerJointState.actual.time_from_start = _LastControllerJointState.desired.time_from_start = ros::Duration(0.0f);
+		_LastControllerJointState.error = error;
+	}
 
 	// ros comm
 	ros::Subscriber _JointTrajSubscriber;
@@ -201,6 +228,8 @@ protected:
 
 	// last states
 	sensor_msgs::JointState _LastJointState;
+	control_msgs::FollowJointTrajectoryFeedback _LastControllerTrajState;
+	pr2_controllers_msgs::JointTrajectoryControllerState _LastControllerJointState;
 
 	// others
 	bool _ProcessingRequest;

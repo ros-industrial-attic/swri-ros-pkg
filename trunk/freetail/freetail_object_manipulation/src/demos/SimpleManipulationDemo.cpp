@@ -348,8 +348,10 @@ bool SimpleManipulationDemo::fastFilterTrajectory(const std::string& group_name,
   ROS_INFO_STREAM("Incoming number of joints: " << jt.joint_names.size());
   ROS_INFO_STREAM("Incoming number of points: " << jt.points.size());
   std::map<std::string, double> jvals;
-  for(unsigned int i = 0; i < jt.joint_names.size(); i++) {
+  for(unsigned int i = 0; i < jt.joint_names.size(); i++)
+  {
     jvals[jt.joint_names[i]] = jt.points[0].positions[i];
+
     ROS_INFO_STREAM("Populating joint names: " << jt.joint_names[i]
                     << ", jvals: " << jvals[jt.joint_names[i]]
                     << ", jt.points: " << jt.points[0].positions[i]);
@@ -784,26 +786,34 @@ bool SimpleManipulationDemo::pickUpSomething(const std::string& arm_name) {
   {
     planning_models::KinematicState state(*current_robot_state_);
     grasp_tester_->setPlanningSceneState(&state);
-    ROS_INFO_STREAM("Pickup goal arm name is " << pickup_goal.arm_name);
-    grasp_tester_->testGrasps(pickup_goal,
-                              grasps,
-                              grasp_execution_info,
-                              true);
+
+    ROS_INFO_STREAM(NODE_NAME<<": Pickup goal arm name is " << pickup_goal.arm_name);
+    ROS_INFO_STREAM(NODE_NAME<<": Evaluating grasps with grasp tester");
+    grasp_tester_->testGrasps(pickup_goal, grasps, grasp_execution_info, true);
+    ROS_INFO_STREAM(NODE_NAME<<": Returned valid grasps: "<<grasp_execution_info.size());
   }
 
   grasp_planning_duration_ += ros::WallTime::now()-start_time;
 
   for(unsigned int i = 0; i < grasp_execution_info.size(); i++) {
-    if(grasp_execution_info[i].result_.result_code == object_manipulation_msgs::GraspResult::SUCCESS) {
+    if(grasp_execution_info[i].result_.result_code == object_manipulation_msgs::GraspResult::SUCCESS)
+    {
       current_grasped_object_name_[arm_name] = pickup_goal.collision_object_name;
       current_grasp_map_[arm_name] = grasps[i];
+
+      ROS_INFO_STREAM(NODE_NAME<<": Attempting grasp sequence");
       bool grasped =  attemptGraspSequence(arm_name, grasp_execution_info[i]);
-      if(!grasped) {
-        ROS_WARN_STREAM("Grasp failed");
+
+      if(!grasped)
+      {
+        ROS_WARN_STREAM(NODE_NAME<<"Grasp failed");
         current_grasped_object_name_.erase(arm_name);
         current_grasp_map_.erase(arm_name);
-	  return false;
-      } else {
+        return false;
+      }
+      else
+      {
+	  ROS_INFO_STREAM(NODE_NAME<<": Attempting grasp sequence succeeded");
         return true;
       }
     }
@@ -848,6 +858,7 @@ bool SimpleManipulationDemo::attemptGraspSequence(const std::string& group_name,
     boost::unique_lock<boost::mutex> lock(execution_mutex_);
     execution_completed_.wait(lock);
   }
+
   execution_duration_ += (ros::WallTime::now()-start_execution);
   ROS_INFO_STREAM("Opened gripper");
   ter_reqs.clear();
@@ -863,7 +874,7 @@ bool SimpleManipulationDemo::attemptGraspSequence(const std::string& group_name,
 
   //now do approach
 
-  ROS_INFO_STREAM("Setting up approach for group" << group_name);
+  ROS_INFO_STREAM(NODE_NAME<<"Setting up approach for group " << group_name);
   TrajectoryExecutionRequest arm_ter;
   arm_ter.group_name_ = group_name;
   arm_ter.controller_name_ = arm_controller_handler_->getControllerName();
@@ -877,22 +888,26 @@ bool SimpleManipulationDemo::attemptGraspSequence(const std::string& group_name,
   ter_reqs.push_back(arm_ter);
 
   //now close the gripper
-  ROS_INFO_STREAM("Setting close gripper for group" << group_name);
+  ROS_INFO_STREAM(NODE_NAME<<": Setting close gripper for group " << group_name);
   gripper_ter.trajectory_ = getGripperTrajectory(group_name, false);
   ter_reqs.push_back(gripper_ter);
+  ROS_INFO_STREAM(NODE_NAME<<": Added trajectory close grasp trajectory with " << gripper_ter.trajectory_.points.size());
 
   //and do the lift
-  ROS_INFO_STREAM("Setting do the lift for group" << group_name);
+  ROS_INFO_STREAM(NODE_NAME<<": Setting do the lift for group " << group_name);
   arm_ter.trajectory_ = gei.lift_trajectory_;
   fastFilterTrajectory(group_name, arm_ter.trajectory_);
   arm_ter.callback_function_ = 0;
   ter_reqs.push_back(arm_ter);
+  ROS_INFO_STREAM(NODE_NAME<<": Added trajectory lift trajectory with " << arm_ter.trajectory_.points.size());
 
   start_execution = ros::WallTime::now();
+  ROS_INFO_STREAM(NODE_NAME<<": Attempting to execute all trajectories for group " << group_name);
   trajectory_execution_monitor_.executeTrajectories(ter_reqs,
                                                     trajectories_finished_function_);
   boost::unique_lock<boost::mutex> lock(execution_mutex_);
   execution_completed_.wait(lock);
+  ROS_INFO_STREAM(NODE_NAME<<": All trajectories successfully executed for group" << group_name);
 
   execution_duration_ += (ros::WallTime::now()-start_execution);
   std::vector<std::string> segment_names;
@@ -1258,30 +1273,41 @@ void SimpleManipulationDemo::runDemo()
 	while(ros::ok())
 	{
 	    startCycleTimer();
+
+	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation and recognition stage started");
 	    if(!segmentAndRecognize())
 	    {
 	      ROS_WARN_STREAM("Segment and recognized failed");
 	      continue;
 	    }
+	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation and recognition stage completed");
 
+	    ROS_INFO_STREAM(NODE_NAME + ": grasp pickup stage started");
 	    if(!pickUpSomething(MANIPULATOR_GROUP_NAME))
 	    {
-	      ROS_WARN_STREAM(NODE_NAME + ": Pick up failed");
+	      ROS_WARN_STREAM(NODE_NAME + " grasp pickup stage failed");
 	      break;
 	    }
 	    else
 	    {
-	    	ROS_INFO_STREAM(NODE_NAME + ": Pick up was successful");
+	    	//ROS_INFO_STREAM(NODE_NAME + ": Pick up was successful");
+	    	ROS_INFO_STREAM(NODE_NAME + ": grasp pickup stage completed");
 	    }
 
+
+	    ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
 	    if(!putDownSomething(MANIPULATOR_GROUP_NAME))
 	    {
-	      ROS_WARN_STREAM("Put down failed");
+	      ROS_WARN_STREAM(NODE_NAME + ": grasp place stage failed");
+	    }
+	    else
+	    {
+	    	ROS_INFO_STREAM(NODE_NAME + ": grasp place stage completed");
 	    }
 
 	    if(!moveArmToSide())
 	    {
-	      ROS_WARN_STREAM("Final side moved failed");
+	      ROS_WARN_STREAM(NODE_NAME + "Final side moved failed");
 	      break;
 	    }
 
