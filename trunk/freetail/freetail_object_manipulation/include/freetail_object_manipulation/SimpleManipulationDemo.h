@@ -11,6 +11,9 @@
 #include <ros/ros.h>
 #include <algorithm>
 
+#include <trajectory_execution_monitor/joint_state_recorder.h>
+#include <trajectory_execution_monitor/follow_joint_trajectory_controller_handler.h>
+#include <trajectory_execution_monitor/trajectory_execution_monitor.h>
 #include <tabletop_object_detector/TabletopSegmentation.h>
 #include <tabletop_object_detector/TabletopObjectRecognition.h>
 #include <planning_environment/models/collision_models.h>
@@ -22,10 +25,7 @@
 #include <arm_navigation_msgs/FilterJointTrajectoryWithConstraints.h>
 #include <object_manipulator/grasp_execution/grasp_tester_fast.h>
 #include <object_manipulator/place_execution/place_tester_fast.h>
-#include <trajectory_execution_monitor/trajectory_execution_monitor.h>
 #include <actionlib/client/simple_action_client.h>
-#include <trajectory_execution_monitor/joint_state_recorder.h>
-#include <trajectory_execution_monitor/follow_joint_trajectory_controller_handler.h>
 #include <household_objects_database_msgs/GetModelMesh.h>
 #include <household_objects_database_msgs/GetModelDescription.h>
 #include <object_manipulation_msgs/GraspPlanning.h>
@@ -94,6 +94,8 @@ public:
 	void updateCurrentJointStateToLastTrajectoryPoint(const trajectory_msgs::JointTrajectory& traj);
 	bool getAndSetPlanningScene();
 	bool moveArm(const std::string& group_name,const std::vector<double>& joint_positions);
+	void printJointTrajectory(const trajectory_msgs::JointTrajectory &jt);
+	bool validateJointTrajectory(trajectory_msgs::JointTrajectory &jt); // checks for null arrays
 	bool fastFilterTrajectory(const std::string& group_name,trajectory_msgs::JointTrajectory& jt);
 	bool moveArmToSide();
 	void addDetectedTableToPlanningSceneDiff(const tabletop_object_detector::Table &table);

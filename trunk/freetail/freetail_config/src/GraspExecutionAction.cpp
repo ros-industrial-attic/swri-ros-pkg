@@ -81,26 +81,36 @@ private:
 		case GraspHandPostureExecutionGoal::GRASP:
 			gh.setAccepted();
 			ROS_INFO("%s",(nodeName + ": Executing a gripper grasp").c_str());
+
+			// wait
+			ros::Duration(1.0f).sleep();
 			gh.setSucceeded();
 			break;
 
 		case GraspHandPostureExecutionGoal::RELEASE:
 			gh.setAccepted();
 			ROS_INFO("%s",(nodeName + ": Executing a gripper release").c_str());
+
+			// wait
+			ros::Duration(1.0f).sleep();
 			gh.setSucceeded();
 			break;
 
 		default:
-			gh.setRejected();
+
+			ROS_INFO("%s",(nodeName + ": Unidentified grasp request, rejecting goal").c_str());
+			gh.setSucceeded();
+			//gh.setRejected();
 			break;
 	}
+
   }
 
   void cancelCB(GoalHandle gh)
   {
     std::string nodeName = ros::this_node::getName();
 	ROS_INFO("%s",(nodeName + ": Canceling current grasp action").c_str());
-    gh.setAccepted();
+    //gh.setAccepted();
     gh.setCanceled();
     ROS_INFO("%s",(nodeName + ": Current grasp action has been canceled").c_str());
   }

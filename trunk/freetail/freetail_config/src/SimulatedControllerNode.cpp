@@ -157,6 +157,9 @@ public:
 
 		// publishing controller and joint states
 		ros::Duration duration(0.0f);
+		const ros::Duration printInterval(2.0f);
+		ros::Time printStartTime = ros::Time::now();
+		int counter = 0;
 		BOOST_FOREACH(trajectory_msgs::JointTrajectoryPoint point,msg->points)
 		{
 			//trajectory_msgs::JointTrajectoryPoint point = msg->points[i];
@@ -171,13 +174,17 @@ public:
 			state.header.stamp = feedback.header.stamp = ros::Time::now();
 			jointState.header.stamp = ros::Time::now();
 
-			ROS_INFO_STREAM(nodeName<<": publishing trajectory feedback messages");
-
 			_ControllerStatePublisher.publish(state);
 			_ControllerFeedbackPublisher.publish(feedback);
 			_JointStatePublisher.publish(jointState);
 
-			ROS_INFO_STREAM(nodeName<<": Executed joint point at "<<duration.sec<<" seconds");
+			if(ros::Time::now() - printStartTime > printInterval)
+			{
+				ROS_INFO_STREAM(nodeName<<": Executed "<<
+						counter<<" joint trajectory points after "<<point.time_from_start.sec<<" seconds");
+				printStartTime = ros::Time::now();
+			}
+			counter++;
 		}
 
 		ROS_INFO_STREAM(nodeName<<": Finished joint trajectory execution, ");

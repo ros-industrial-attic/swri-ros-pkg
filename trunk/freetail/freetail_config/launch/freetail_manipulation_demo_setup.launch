@@ -34,7 +34,7 @@
 
 <!-- grasp planner -->
   <rosparam command="load" file="$(find freetail_config)/config/freetail_hand_descriptions.yaml"/>
-  <include file="$(find pr2_gripper_grasp_planner_cluster)/launch/robotiq_hand_grasp_planner_cluster_server.launch"/>
+  <include file="$(find freetail_grasp_planning)/launch/robotiq_hand_grasp_planner_cluster_server.launch"/>
 
 <!-- object database -->
   <rosparam command="load" file="$(find freetail_object_manipulation)/config/localhost.yaml"/>
