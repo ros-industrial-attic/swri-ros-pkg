@@ -1,3 +1,4 @@
+<?xml version="1.0" ?>
 <launch>  
 <!-- notes -->
 	<!-- needs to edit "freetail_chomp_config.yaml" -->
@@ -14,10 +15,10 @@
 		<param name="animate_endeffector_segment" value="r_gripper_tool_frame"/>
 	  	<param name="use_signed_environment_field" value="true"/>
 	  	<param name="use_signed_self_field" value="false"/>
-		<param name="trajectory_duration" value="5.0"/>
+		<param name="trajectory_duration" value="4.0"/>
 		<param name="trajectory_discretization" value="0.05"/>
 		<param name="learning_rate" value="100.0" />
-		<param name="max_iterations" value="250"/>
+		<param name="max_iterations" value="500"/>
 		<param name="max_iterations_after_collision_free" value="5" />
 		<param name="smoothness_cost_weight" value="0.00001"/>
 		<param name="obstacle_cost_weight" value="1.0" />
@@ -39,7 +40,8 @@
 
     		<param name="use_stochastic_descent" value="false"/>
   
-  		<remap from="filter_trajectory" to="trajectory_filter/filter_trajectory_with_constraints" />		
+  		<remap from="filter_trajectory" to="trajectory_filter/filter_trajectory_with_constraints" />	
+		<!--remap from="filter_trajectory" to="/trajectory_filter_server/filter_trajectory_with_constraints" /-->
 
 		<!-- (replaced element) loading robot padding for sia20d -->
 		<rosparam command="load" file="$(find freetail_config)/config/robot_padding.yaml"/>
