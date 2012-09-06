@@ -14,15 +14,15 @@ TERMINAL 1:
 
 TERMINAL 2: 
   - If using real motoman robot:
-	roslaunch freetail_config freetail_motoman_bringup.launch
+	roslaunch freetail_config freetail_motoman_bringup.launch sim_only:=false
   - If using simulated robot:
 	roslaunch freetail_config freetail_motoman_bringup.launch sim_only:=true
 
-TERMINAL 3: 
-	roslaunch freetail_object_manipulation freetail_visualize_environment.launch
-
 TERMINAL 4: 
 	roslaunch freetail_object_manipulation start_simple_manipulation_demo.launch
+
+TERMINAL 5: 
+	roslaunch freetail_object_manipulation freetail_visualize_environment.launch
 
 ROBOT INSTRUCTIONS (Not needed for simulation)
 1. Turn ON
