@@ -14,6 +14,7 @@
 #include <ros/package.h>
 #include <planners/OverheadGraspPlanner.h>
 #include <geometry_msgs/Polygon.h>
+#include <geometry_msgs/PolygonStamped.h>
 
 const std::string SERVICE_NAME = "plan_point_cluster_grasp";
 const std::string POSE_PUBLISH_TOPIC_NAME = "grasp_poses";
@@ -29,6 +30,8 @@ public:
 	bool serviceCallback(object_manipulation_msgs::GraspPlanning::Request &request,
 			object_manipulation_msgs::GraspPlanning::Response &response);
 
+	void timerCallback(const ros::TimerEvent &evnt);
+
 	static geometry_msgs::Polygon createPlanePolygon(const tf::Transform &transform,
 			tfScalar width = 0.1, tfScalar length = 0.1);
 
@@ -38,6 +41,8 @@ protected:
 	ros::ServiceServer _ServiceServer;
 	ros::Publisher _PosePublisher;
 	ros::Publisher _PlanePublisher;
+	ros::Timer _PublishTimer;
+	double _PublishInterval;
 
 	std::string _PosePubTopic;
 	std::string _PlanePubTopic;
@@ -45,6 +50,11 @@ protected:
 
 	// from ros parameter server
 	bool _PublishResults;
+
+	// last set of valid messages
+	bool _ResultsSet;
+	geometry_msgs::PolygonStamped _LastValidTablePolygonMsg;
+	geometry_msgs::PoseStamped _LastValidGraspPoseMsg;
 };
 
 #endif /* GRASPPLANNERSERVER_H_ */

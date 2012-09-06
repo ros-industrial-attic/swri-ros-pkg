@@ -16,7 +16,9 @@ _GraspPlanner(0),
 _ServiceName(SERVICE_NAME),
 _PublishResults(false),
 _PosePubTopic(POSE_PUBLISH_TOPIC_NAME),
-_PlanePubTopic(PLANE_PUBLISH_TOPIC_NAME)
+_PlanePubTopic(PLANE_PUBLISH_TOPIC_NAME),
+_PublishInterval(0.4f),
+_ResultsSet(false)
 {
 	// TODO Auto-generated constructor stub
 }
@@ -36,13 +38,16 @@ void GraspPlannerServer::init()
 	std::string nameSpace = "/" + ros::this_node::getName();
 	ros::param::param(nameSpace + "/" + PARAM_NAME_PUBLISH_RESULTS,_PublishResults,false);
 
-	// seting up ros server
+	// setting up ros server
 	_ServiceServer = nh.advertiseService(_ServiceName,&GraspPlannerServer::serviceCallback,this);
 	ROS_INFO("%s",std::string(_GraspPlanner->getPlannerName() + " advertising service: " + _ServiceName).c_str());
 
+	// setting up ros timer
+	_PublishTimer = nh.createTimer(ros::Duration(_PublishInterval),&GraspPlannerServer::timerCallback,this);
+
 	// setting up ros publishers
-	_PlanePublisher = nh.advertise<geometry_msgs::Polygon>(nameSpace + "/" + _PlanePubTopic,1);
-	_PosePublisher = nh.advertise<geometry_msgs::PoseArray>(nameSpace + "/" + _PosePubTopic,1);
+	_PlanePublisher = nh.advertise<geometry_msgs::PolygonStamped>(nameSpace + "/" + _PlanePubTopic,1);
+	_PosePublisher = nh.advertise<geometry_msgs::PoseStamped>(nameSpace + "/" + _PosePubTopic,1);
 	ros::spin();
 }
 
@@ -62,40 +67,50 @@ bool GraspPlannerServer::serviceCallback(object_manipulation_msgs::GraspPlanning
 	{
 		bool success = _GraspPlanner->planGrasp(req,res);
 
-		// retrieving parameter from ros
-		std::string nameSpace = "/" + ros::this_node::getName();
-		ros::param::param(nameSpace + "/" + PARAM_NAME_PUBLISH_RESULTS,_PublishResults,_PublishResults);
-		if(success && _PublishResults)
+		if(success)
 		{
-			// retrieving frameid
 			std::string worldFrameId = req.target.reference_frame_id;
 
-			// publishing poses
-			geometry_msgs::PoseArray poses_msg;
-			poses_msg.header.frame_id = worldFrameId;
-			poses_msg.header.stamp = ros::Time::now();
-			poses_msg.poses = std::vector<geometry_msgs::Pose>();
-			BOOST_FOREACH(object_manipulation_msgs::Grasp grasp,res.grasps)
-			{
-				poses_msg.poses.push_back(grasp.grasp_pose);
-			}
-			_PosePublisher.publish(poses_msg);
+			// storing last valid grasp pose
+			_LastValidGraspPoseMsg.header.frame_id = worldFrameId;
+			_LastValidGraspPoseMsg.pose = geometry_msgs::Pose();
 
-			// publishing grasp contact plane
+			if(res.grasps.size() > 0)
+			{
+				_LastValidGraspPoseMsg.pose = res.grasps[0].grasp_pose;
+			}
+
+			// storing last valid contact plane grasp contact plane
 			tf::Transform transform = tf::Transform::getIdentity();
-			object_manipulation_msgs::Grasp &grasp = res.grasps[0];
-			tf::poseMsgToTF(grasp.grasp_pose,transform);
-			geometry_msgs::PolygonStamped polygon_msg;
-			polygon_msg.header.frame_id = worldFrameId;
-			polygon_msg.header.stamp = ros::Time::now();
-			polygon_msg.polygon = GraspPlannerServer::createPlanePolygon(transform,0.2f,0.2f);
-			_PlanePublisher.publish(polygon_msg);
+			tf::poseMsgToTF(res.grasps[0].grasp_pose,transform);
+			_LastValidTablePolygonMsg.header.frame_id = worldFrameId;
+			_LastValidTablePolygonMsg.polygon = GraspPlannerServer::createPlanePolygon(transform,0.2f,0.2f);
+
+			_ResultsSet = true;
 		}
+
 		return success;
 	}
 	else
 	{
 		return false;
+	}
+}
+
+void GraspPlannerServer::timerCallback(const ros::TimerEvent &evnt)
+{
+	// retrieving parameter from ros
+	std::string nameSpace = "/" + ros::this_node::getName();
+	ros::param::param(nameSpace + "/" + PARAM_NAME_PUBLISH_RESULTS,_PublishResults,_PublishResults);
+
+	if(_PublishResults && _ResultsSet)
+	{
+		ros::Time pubTime = ros::Time::now();
+		_LastValidGraspPoseMsg.header.stamp = pubTime;
+		_LastValidTablePolygonMsg.header.stamp = pubTime;
+
+		_PosePublisher.publish(_LastValidGraspPoseMsg);
+		_PlanePublisher.publish(_LastValidTablePolygonMsg);
 	}
 }
 
