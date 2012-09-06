@@ -1,7 +1,7 @@
 Background\ ColorB=1
 Background\ ColorG=0.364706
 Background\ ColorR=0
-Camera\ Config=0.099797 1.24066 9.66131 1.77074 -1.5178 0.364298
+Camera\ Config=0.0947973 2.25065 4.94311 2.86057 0.639398 1.4527
 Camera\ Type=rviz::OrbitViewController
 Fixed\ Frame=/camera_link
 Grid.Alpha=0.5
@@ -32,11 +32,11 @@ PointCloud2..IntensityChannel\ Name=x
 PointCloud2..IntensityMax\ ColorB=1
 PointCloud2..IntensityMax\ ColorG=1
 PointCloud2..IntensityMax\ ColorR=1
-PointCloud2..IntensityMax\ Intensity=1.97772
+PointCloud2..IntensityMax\ Intensity=2.03262
 PointCloud2..IntensityMin\ ColorB=0
 PointCloud2..IntensityMin\ ColorG=0
 PointCloud2..IntensityMin\ ColorR=0
-PointCloud2..IntensityMin\ Intensity=-2.15165
+PointCloud2..IntensityMin\ Intensity=-2.04433
 PointCloud2..IntensityUse\ full\ RGB\ spectrum=1
 PointCloud2.Alpha=1
 PointCloud2.Billboard\ Size=0.01
@@ -48,9 +48,20 @@ PointCloud2.Queue\ Size=10
 PointCloud2.Selectable=1
 PointCloud2.Style=0
 PointCloud2.Topic=/camera/depth/points
+Polygon.Alpha=1
+Polygon.ColorB=0
+Polygon.ColorG=1
+Polygon.ColorR=0.1
+Polygon.Enabled=1
+Polygon.Topic=/suction_gripper_grasp_planner/contact_plane
+Pose.Axes\ Length=0.4
+Pose.Axes\ Radius=0.02
+Pose.Enabled=1
+Pose.Shape=1
+Pose.Topic=/suction_gripper_grasp_planner/grasp_poses
 Property\ Grid\ Splitter=743,78
-Property\ Grid\ State=expanded=.Global Options,Grid.Enabled,PointCloud2.Enabled,TF.Enabled,TF.Frames,TF.Frames./camera_depth_frame,TF.Frames./camera_depth_optical_frame,TF.Frames./camera_link,TF.Frames./camera_rgb_frame,TF.Frames./camera_rgb_optical_frame;splitterratio=0.5
-QMainWindow=000000ff00000000fd00000003000000000000011d00000387fc0200000001fb000000100044006900730070006c006100790073010000001d00000387000000ee00ffffff000000010000016800000387fc0200000003fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073010000001d000000ea0000006700fffffffb0000000a00560069006500770073010000010d000001a7000000bb00fffffffb0000001200530065006c0065006300740069006f006e01000002ba000000ea0000006700ffffff00000003000005000000003efc0100000001fb0000000800540069006d0065010000000000000500000002bf00ffffff0000026f0000038700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+Property\ Grid\ State=expanded=.Global Options,Grid.Enabled,PointCloud2.Enabled,Pose.Enabled,Pose.Shape Properties,Polygon.Enabled;splitterratio=0.5
+QMainWindow=000000ff00000000fd00000003000000000000011d00000387fc0200000001fb000000100044006900730070006c006100790073010000001d00000387000000ee00ffffff000000010000016800000387fc0200000003fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000001d000000ea0000006700fffffffb0000000a00560069006500770073000000001d00000242000000bb00fffffffb0000001200530065006c0065006300740069006f006e000000001d000003870000006700ffffff00000003000005000000003efc0100000001fb0000000800540069006d0065010000000000000500000002bf00ffffff000003dd0000038700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
 TF.All\ Enabled=0
 TF.Enabled=1
 TF.Frame\ Timeout=15
@@ -71,6 +82,12 @@ Name=PointCloud2
 [Display2]
 ClassName=rviz::TFDisplay
 Name=TF
+[Display3]
+ClassName=rviz::PoseDisplay
+Name=Pose
+[Display4]
+ClassName=rviz::PolygonDisplay
+Name=Polygon
 [TF.Frames.]
 camera_depth_frame.Enabled=0
 camera_depth_optical_frame.Enabled=0

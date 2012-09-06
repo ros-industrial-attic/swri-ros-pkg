@@ -4,4 +4,4 @@ default_pregrasp_distance: 0.1 #meters
 plane_proximity_threshold: 0.005 #meters
 num_returned_candidate_grasps: 8
 grasp_pose_in_world_coordinates: True
-approach_vector: [0.2,0.0,-1.0]
+approach_vector: [0.0,0.0,-1.0]

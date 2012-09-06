@@ -1389,7 +1389,7 @@ void SimpleManipulationDemo::runDemo()
 	    if(!pickUpSomething(MANIPULATOR_GROUP_NAME))
 	    {
 	      ROS_WARN_STREAM(NODE_NAME + " grasp pickup stage failed");
-	      break;
+	      continue;
 	    }
 	    else
 	    {
