@@ -63,9 +63,9 @@ JointRelayHandler::JointRelayHandler(ros::NodeHandle &n) :
   this->joint_control_state_.joint_names.push_back("joint_5");
   this->joint_control_state_.joint_names.push_back("joint_6");
   // TODO: Again, this should be more generic.
-  this->joint_control_state_.actual.set_positions_size(NUM_OF_JOINTS_);
-  this->joint_control_state_.desired.set_positions_size(NUM_OF_JOINTS_);
-  this->joint_control_state_.error.set_positions_size(NUM_OF_JOINTS_);
+  this->joint_control_state_.actual.positions.resize(NUM_OF_JOINTS_);
+  this->joint_control_state_.desired.positions.resize(NUM_OF_JOINTS_);
+  this->joint_control_state_.error.positions.resize(NUM_OF_JOINTS_);
 
   // Copy from control state to sensor state
   this->joint_sensor_state_.name = this->joint_control_state_.joint_names;
