@@ -51,6 +51,8 @@ void OverheadGraspPlanner::fetchParameters(bool useNodeNamespace)
 			PARAM_DEFAULT_PREGRASP_DISTANCE);
 	ros::param::param(paramNamespace + PARAM_NAME_PLANE_PROXIMITY_THRESHOLD,_ParamVals.PlaneProximityThreshold,
 			PARAM_DEFAULT_PLANE_PROXIMITY_THRESHOLD);
+	ros::param::param(paramNamespace + PARAM_NAME_SEARCH_RADIUS,_ParamVals.SearchRadius,
+			PARAM_DEFAULT_SEARCH_RADIUS);
 	ros::param::param(paramNamespace + PARAM_NAME_NUM_CANDIDATE_GRASPS,_ParamVals.NumCandidateGrasps,
 				PARAM_DEFAULT_NUM_CANDIDATE_GRASPS);
 	ros::param::param(paramNamespace + PARAM_NAME_GRASP_IN_WORLD_COORDINATES,_ParamVals.GraspInWorldCoordinates,
@@ -252,24 +254,55 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 	projectObj.setModelCoefficients(coefficients);
 	projectObj.filter(*projectedCloud);
 
-//	// finding all points within a search radius
-//	pcl::search::KdTree<pcl::PointXYZ>::Ptr searchTree = boost::make_shared<pcl::search::KdTree<pcl::PointXYZ> >();
-//	std::vector<int> indices;
-//	std::vector<float> sqDistances;
-//	searchTree->setInputCloud(projectedCloud);
-//	searchTree->radiusSearch(pcl::PointXYZ(0.0f,0.0f,maxZ),_ParamVals.PlaneProximityThreshold,indices,sqDistances);
-//
-//	// extracting points
-//	pcl::PointIndices::Ptr inliers = boost::make_shared<pcl::PointIndices>();
-//	inliers->indices = indices;
-//	pcl::ExtractIndices<pcl::PointXYZ> extractObj;
-//	extractObj.setInputCloud(projectedCloud);
-//	extractObj.setIndices(inliers);
-//	extractObj.setNegative(false);
-//	extractObj.filter(*projectedCloud);
-//
-//	stdOut << getPlannerName() << ": Found " << projectedCloud->size() << " points within search radius: " << _ParamVals.PlaneProximityThreshold;
-//	ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
+	// finding all points within a search radius
+	/*	This search attempts to find points that belong to the same object while removing those that are not part
+	 * of the object of interest but were found to be close enough to the plane.
+	*/
+
+	bool continueSearch = true;
+	unsigned int index = 0;
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr searchTree = boost::make_shared<pcl::search::KdTree<pcl::PointXYZ> >();
+	std::vector<int> indices;
+	std::vector<float> sqDistances;
+	searchTree->setInputCloud(projectedCloud);
+
+	while(continueSearch)
+	{
+		int found = searchTree->radiusSearch(projectedCloud->points[index],
+				_ParamVals.SearchRadius,indices,sqDistances);
+
+		if(found > 0)
+		{
+			continueSearch = false;
+		}
+		else
+		{
+			index++;
+			if(index == projectedCloud->points.size())
+			{
+				ROS_ERROR_STREAM(getPlannerName() << ": Did not find points within search radius: " <<
+						_ParamVals.SearchRadius <<",  exiting");
+
+				res.grasps = std::vector<object_manipulation_msgs::Grasp>();
+				res.error_code.value = object_manipulation_msgs::GraspPlanningErrorCode::OTHER_ERROR;
+
+				return false;
+			}
+		}
+	}
+
+	// extracting points
+	pcl::PointIndices::Ptr inliers = boost::make_shared<pcl::PointIndices>();
+	inliers->indices = indices;
+	pcl::ExtractIndices<pcl::PointXYZ> extractObj;
+	extractObj.setInputCloud(projectedCloud);
+	extractObj.setIndices(inliers);
+	extractObj.setNegative(false);
+	extractObj.filter(*projectedCloud);
+
+	stdOut << getPlannerName() << ": Found " << projectedCloud->size() << " points within search radius: " <<
+			_ParamVals.SearchRadius;
+	ROS_INFO("%s",stdOut.str().c_str());stdOut.str("");
 
 	// finding centroid of projected point cloud (should work well for objects with relative degree of symmetry)
 	Eigen::Vector4f centroid;
