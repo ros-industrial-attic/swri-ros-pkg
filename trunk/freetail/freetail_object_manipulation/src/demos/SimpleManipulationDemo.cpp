@@ -1154,17 +1154,28 @@ bool SimpleManipulationDemo::getObjectGrasps(const std::string& arm_name,
   //TODO - actually deal with the different cases here, especially for the cluster planner
   ROS_INFO_STREAM(NODE_NAME<<": Published markers");
   grasps = response.grasps;
-  if(request.target.reference_frame_id != des_res.name) {
-    if(request.target.reference_frame_id != dmp.pose.header.frame_id) {
+  if(request.target.reference_frame_id != des_res.name)
+  {
+    if(request.target.reference_frame_id != dmp.pose.header.frame_id)
+    {
       ROS_WARN_STREAM("Cluster does not match recognition");
-    } else {
+    }
+    else
+    {
       tf::Transform object_in_world_tf;
       tf::poseMsgToTF(dmp.pose.pose, object_in_world_tf);
 
-      tf::Transform object_in_world_inverse_tf = object_in_world_tf.inverse();
+
       //poses are positions of the wrist link in terms of the world
       //we need to get them in terms of the object
-      for(unsigned int i = 0; i < grasps.size(); i++) {
+
+      // needs to apply this transform if the gripper used isn't the default (Robotiq), it should describe the actual TCP relative to the default TCP
+      tf::Transform defaultToActualTcpTf = tf::Transform::getIdentity();
+      tf::Transform object_in_world_inverse_tf = object_in_world_tf.inverse()*defaultToActualTcpTf;
+
+
+      for(unsigned int i = 0; i < grasps.size(); i++)
+      {
         tf::Transform grasp_in_world_tf;
         tf::poseMsgToTF(grasps[i].grasp_pose, grasp_in_world_tf);
         tf::poseTFToMsg(object_in_world_inverse_tf*grasp_in_world_tf, grasps[i].grasp_pose);
