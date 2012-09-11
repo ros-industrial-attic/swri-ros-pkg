@@ -6,6 +6,10 @@
   <arg name="use_chomp" default="false" />
   <arg name="use_vfh_recognition" default="false"/>
   <arg name="use_overhead_grasp_planner" default="false"/>
+  
+<!-- gripper selection -->
+  <arg name="use_vacuum_gripper" default="false"/>
+  <arg name="use_robotiq_gripper" default="true"/>
 
 <!-- general setup -->  
   <param name="warehouse_host" value="prn2.willowgarage.com"/>
@@ -14,11 +18,17 @@
        <param name="overwrite" value="false"/>
        <param name="database_path" value="arm_navigation_dbs/pr2_manip_db"/>
   </node>
+
 <!-- sensor setup -->
   <include file="$(find freetail_config)/launch/openni_try.launch"/>
 
-<!-- enviroment server -->
-  <include file="$(find freetail_arm_navigation)/launch/freetail_planning_environment.launch"/>
+<!-- planning enviroment parameter setup-->
+  <include file="$(find freetail_arm_navigation)/launch/freetail_planning_environment_setup.launch">
+	<arg if="$(arg use_vacuum_gripper)" name="robot_description" value="$(find freetail_config)/urdf/freetail_vacuum_gripper_conf.urdf"/>
+	<arg if="$(arg use_vacuum_gripper)" name="planning_description" value="$(find freetail_arm_navigation)/config/freetail_planning_desc_vacuum_gripper_conf.yaml"/>
+  </include>	
+
+<!-- planning environment server start -->
   <include file="$(find planning_environment)/launch/environment_server.launch">
     <arg name="use_collision_map" value="false"/>
   </include>  
@@ -40,7 +50,7 @@
   </node>
 
 <!-- grasp planner -->
-  <rosparam command="load" file="$(find freetail_config)/config/freetail_hand_descriptions.yaml"/>
+  <rosparam unless="$(arg use_overhead_grasp_planner)" command="load" file="$(find freetail_config)/config/freetail_hand_descriptions.yaml"/>
 
   <include unless="$(arg use_overhead_grasp_planner)" file="$(find freetail_grasp_planning)/launch/robotiq_hand_grasp_planner_cluster_server.launch"/>
   <include if="$(arg use_overhead_grasp_planner)" file="$(find freetail_grasp_planning)/launch/suction_gripper_grasp_planner_server.launch"/>
