@@ -31,6 +31,7 @@
 #include <object_manipulation_msgs/GraspPlanning.h>
 #include <planning_environment/util/construct_object.h>
 #include <freetail_object_manipulation/grasp_posture_trajectory_controller_handler.h>
+#include <tf/transform_listener.h>
 
 using namespace trajectory_execution_monitor;
 
@@ -189,6 +190,8 @@ protected:
 
 	  ros::Publisher vis_marker_array_publisher_;
 	  ros::Publisher vis_marker_publisher_;
+
+	  tf::TransformListener _TfListener;
 };
 
 #endif /* SIMPLEMANIPULATIONDEMO_H_ */

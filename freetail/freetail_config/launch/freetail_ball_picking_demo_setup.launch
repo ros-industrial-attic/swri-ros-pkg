@@ -2,10 +2,20 @@
 <launch>
 
 <!-- input arguments -->
-  <arg name="log_to_warehouse" default="false" />
-  <arg name="use_chomp" default="false" />
-  <arg name="use_vfh_recognition" default="false"/>
-  <arg name="use_overhead_grasp_planner" default="false"/>
+  <arg name="use_chomp" default="true" />
+  <arg name="sim_only" default="true"/>
+
+<!-- fixed parameters -->
+  <arg name="use_vfh_recognition" value="false"/>
+  <arg name="use_overhead_grasp_planner" value="true"/>
+  <arg name="log_to_warehouse" value="false" />
+  <arg name="robot_description" value="$(find freetail_config)/urdf/freetail_vacuum_gripper_conf.urdf"/>
+ 
+<!-- arm setup -->
+  <include file="$(find freetail_config)/launch/freetail_motoman_bringup.launch">
+	<arg name="sim_only" value="$(arg sim_only)"/>
+	<arg name="robot_description" value="$(arg robot_description)"/>
+  </include>
 
 <!-- general setup -->  
   <param name="warehouse_host" value="prn2.willowgarage.com"/>
@@ -19,7 +29,10 @@
   <include file="$(find freetail_config)/launch/openni_try.launch"/>
 
 <!-- planning enviroment parameter setup-->
-  <include file="$(find freetail_arm_navigation)/launch/freetail_planning_environment_setup.launch"/>	
+  <include file="$(find freetail_arm_navigation)/launch/freetail_planning_environment_setup.launch">
+	<arg name="robot_description" value="$(arg robot_description)"/>
+	<arg name="planning_description" value="$(find freetail_arm_navigation)/config/freetail_planning_desc_vacuum_griper_conf.yaml"/>
+  </include>	
 
 <!-- planning environment server start -->
   <include file="$(find planning_environment)/launch/environment_server.launch">
@@ -31,9 +44,9 @@
   <remap if="$(arg use_chomp)" from="/chomp_planner_longrange/plan_path" to="/path_planning/plan_kinematic_path"/>
   <include if="$(arg use_chomp)" file="$(find freetail_config)/launch/chomp_planning.launch"/>
 
-  <!-- if ompl was selected -->
+   <!-- if ompl was selected -->
   <remap unless="$(arg use_chomp)" from="/ompl_planning/plan_kinematic_path" to="/path_planning/plan_kinematic_path"/>
-  <include unless="$(arg use_chomp)" file="$(find freetail_config)/launch/ompl_planning.launch"/>  
+  <include unless="$(arg use_chomp)" file="$(find freetail_config)/launch/ompl_planning.launch"/> 
 
 <!-- trajectory filter -->
   <node pkg="trajectory_filter_server" name="trajectory_filter_server" type="trajectory_filter_server" output="screen">
@@ -43,8 +56,7 @@
   </node>
 
 <!-- grasp planner -->
-  <!-- hand description parameters are used by the grasp tester during evaluation of candidate grasps -->
-  <rosparam command="load" file="$(find freetail_config)/config/freetail_hand_descriptions.yaml"/>
+  <rosparam command="load" file="$(find freetail_config)/config/freetail_vacuum_gripper_description.yaml"/>
 
   <include unless="$(arg use_overhead_grasp_planner)" file="$(find freetail_grasp_planning)/launch/robotiq_hand_grasp_planner_cluster_server.launch"/>
   <include if="$(arg use_overhead_grasp_planner)" file="$(find freetail_grasp_planning)/launch/suction_gripper_grasp_planner_server.launch"/>

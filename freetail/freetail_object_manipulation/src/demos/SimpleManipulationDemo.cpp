@@ -15,6 +15,10 @@ std::string NODE_NAME = "freetail_manipulation";
 // planning scene
 const std::string MANIPULATOR_GROUP_NAME = "sia20d_arm";
 
+// arm-manipulator names
+const std::string WRIST_LINK = "/link_t"; // last link in arm
+const std::string TCP_LINK = "/palm"; // gripper link whose transform is referred to as the TCP
+
 // service default names
 const static std::string DEFAULT_PLANNER_SERVICE = "/ompl_planning/plan_kinematic_path";
 const static std::string DEFAULT_SEGMENTATION_SERVICE = "/tabletop_segmentation";
@@ -748,9 +752,18 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
 
   if(!object_in_hand_map_[arm_name]) return false;
 
+  // needs to apply this transform so that the frame of the arm wrist relative to the object is obtained
+  tf::StampedTransform gripperTcpToWrist = tf::StampedTransform();
+  tf::Transform objToTcp,objToWrist;
+  objToTcp, objToWrist = tf::Transform::getIdentity();
+  _TfListener.lookupTransform(WRIST_LINK,TCP_LINK,ros::Time(0),gripperTcpToWrist);
+  tf::poseMsgToTF(current_grasp_map_[arm_name].grasp_pose,objToWrist);
+  objToTcp = objToWrist*(gripperTcpToWrist.inverse());
+
   object_manipulation_msgs::PlaceGoal place_goal;
   place_goal.arm_name = arm_name;
   place_goal.grasp = current_grasp_map_[arm_name];
+  //tf::poseTFToMsg(objToWrist*(gripperTcpToWrist.inverse()),place_goal.grasp.grasp_pose); // T(Obj -> Wrist) x T(Wrist -> TCP) = T(Obj -> TCP)
   place_goal.desired_retreat_distance = .1;
   place_goal.min_retreat_distance = .1;
   place_goal.approach.desired_distance = .1;
@@ -762,7 +775,6 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
   place_goal.collision_object_name = "attached_"+current_grasped_object_name_[arm_name];
   place_goal.allow_gripper_support_collision = true;
   place_goal.collision_support_surface_name = "table";
-  place_goal.allow_gripper_support_collision = true;
   place_goal.place_padding = .02;
 
   geometry_msgs::PoseStamped table_pose;
@@ -772,6 +784,7 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
   double l = table_.shapes[0].dimensions[0]-.2;
   double w = table_.shapes[0].dimensions[1]-.2;
   double d = table_.shapes[0].dimensions[2];
+  //double d = 0.01f;
 
   double spacing = .1;
 
@@ -807,7 +820,7 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
         tf::Transform trans;
         tf::poseMsgToTF(place_pose.pose, trans);
         trans = trans*rot;
-        tf::poseTFToMsg(trans, place_pose.pose);
+        tf::poseTFToMsg(trans*objToTcp*(objToWrist.inverse()), place_pose.pose);
         ROS_INFO_STREAM("Place location " << i << " " << j << " "
                          << place_pose.pose.position.x << " "
                          << place_pose.pose.position.y << " "
@@ -830,15 +843,22 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
   grasp_planning_duration_ += ros::WallTime::now()-start_time;
 
   for(unsigned int i = 0; i < place_execution_info.size(); i++) {
-    if(place_execution_info[i].result_.result_code == object_manipulation_msgs::PlaceLocationResult::SUCCESS) {
+    if(place_execution_info[i].result_.result_code == object_manipulation_msgs::PlaceLocationResult::SUCCESS)
+    {
       current_place_location_ = place_locations[i];
-      bool placed = attemptPlaceSequence(arm_name,
-                                         place_execution_info[i]);
-      if(!placed) {
-        ROS_WARN_STREAM("Place failed");
-      } else {
+      bool placed = attemptPlaceSequence(arm_name, place_execution_info[i]);
+      if(!placed)
+      {
+        ROS_WARN_STREAM(NODE_NAME<<": Place failed");
+      }
+      else
+      {
         return true;
       }
+    }
+    else
+    {
+    	//ROS_WARN_STREAM(NODE_NAME<<": Goal Location "<< i + 1 <<" is unreachable");
     }
   }
   return false;
@@ -866,12 +886,13 @@ bool SimpleManipulationDemo::pickUpSomething(const std::string& arm_name) {
     ROS_INFO_STREAM(NODE_NAME<<": Pickup goal arm name is " << pickup_goal.arm_name);
     ROS_INFO_STREAM(NODE_NAME<<": Evaluating grasps with grasp tester");
     grasp_tester_->testGrasps(pickup_goal, grasps, grasp_execution_info, true);
-    ROS_INFO_STREAM(NODE_NAME<<": Returned valid grasps: "<<grasp_execution_info.size());
+    ROS_INFO_STREAM(NODE_NAME<<": Returned "<< grasp_execution_info.size() <<" grasps candidates ");
   }
 
   grasp_planning_duration_ += ros::WallTime::now()-start_time;
 
-  for(unsigned int i = 0; i < grasp_execution_info.size(); i++) {
+  for(unsigned int i = 0; i < grasp_execution_info.size(); i++)
+  {
     if(grasp_execution_info[i].result_.result_code == object_manipulation_msgs::GraspResult::SUCCESS)
     {
       current_grasped_object_name_[arm_name] = pickup_goal.collision_object_name;
@@ -892,6 +913,10 @@ bool SimpleManipulationDemo::pickUpSomething(const std::string& arm_name) {
     	  ROS_INFO_STREAM(NODE_NAME<<": Attempting grasp sequence succeeded");
     	  return true;
       }
+    }
+    else
+    {
+    	ROS_INFO_STREAM(NODE_NAME<<": Grasp candidate "<<i+1<<" is unreachable");
     }
   }
   return false;
@@ -1169,16 +1194,18 @@ bool SimpleManipulationDemo::getObjectGrasps(const std::string& arm_name,
       //poses are positions of the wrist link in terms of the world
       //we need to get them in terms of the object
 
-      // needs to apply this transform if the gripper used isn't the default (Robotiq), it should describe the actual TCP relative to the default TCP
-      tf::Transform defaultToActualTcpTf = tf::Transform::getIdentity();
-      tf::Transform object_in_world_inverse_tf = object_in_world_tf.inverse()*defaultToActualTcpTf;
+      // needs to apply this transform so that the frame of the arm wrist relative to the object is obtained
+      tf::StampedTransform gripperTcpToWrist = tf::StampedTransform();
+      _TfListener.lookupTransform(TCP_LINK,WRIST_LINK,ros::Time(0),gripperTcpToWrist);
 
+      // object pose
+      tf::Transform object_in_world_inverse_tf = object_in_world_tf.inverse();
 
       for(unsigned int i = 0; i < grasps.size(); i++)
       {
         tf::Transform grasp_in_world_tf;
         tf::poseMsgToTF(grasps[i].grasp_pose, grasp_in_world_tf);
-        tf::poseTFToMsg(object_in_world_inverse_tf*grasp_in_world_tf, grasps[i].grasp_pose);
+        tf::poseTFToMsg(object_in_world_inverse_tf*(grasp_in_world_tf*gripperTcpToWrist), grasps[i].grasp_pose);
       }
     }
   }
