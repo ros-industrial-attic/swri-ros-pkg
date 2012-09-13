@@ -1,9 +1,5 @@
 <?xml version="1.0" ?>
 <launch>  
-<!-- notes -->
-	<!-- needs to edit "freetail_chomp_config.yaml" -->
-<!--	   -->
-
  <!--include file="$(find pr2_machine)/$(env ROBOT).machine" /-->
 
 	<!--node machine="c2"  pkg="chomp_motion_planner" name="chomp_planner_longrange" type="chomp_planner_node" respawn="false" output="screen"-->

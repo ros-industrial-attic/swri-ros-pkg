@@ -2,10 +2,11 @@
 <launch>
   <!-- ____________________________ Input Arguments ____________________________  -->
   <arg name="sim_only" default="true"/>
+  <arg name="robot_description" default="$(find freetail_config)/urdf/freetail.urdf"/>
 
   <!-- ____________________________ General Launch ____________________________  -->
   <!-- URDF loaded to parameter server -->
-  <param name="robot_description"  textfile="$(find freetail_config)/urdf/freetail.urdf"/>
+  <param name="robot_description"  textfile="$(arg robot_description)"/>
   <!-- Get TF -->
   <node pkg="robot_state_publisher" name="st_pub" type="state_publisher"/>
   
