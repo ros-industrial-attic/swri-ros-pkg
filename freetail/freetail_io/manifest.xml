@@ -1,0 +1,19 @@
+<package>
+  <description brief="freetail_io">
+
+     freetail_io
+
+  </description>
+  <author>Shaun Edwards</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/freetail_io</url>
+
+  <depend package="roscpp"/>
+  <!--For SOEM installation, see
+  http://ros.org/wiki/Industrial/Tutorials/Simple_EtherCAT_Network_IO-->
+  <depend package="soem"/>  
+
+</package>
+
+
