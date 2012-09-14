@@ -1,0 +1,3 @@
+<launch>
+  <node ns="io" name="soem_master" pkg="ocl" type="deployer-gnulinux" args="-s $(find freetail_io)/launch/io_config_script.ops --" output="screen"/>
+</launch>
