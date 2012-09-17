@@ -3,7 +3,7 @@
   <author>Maintained by sedwards</author>
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/adept</url>
+  <url>http://ros.org/wiki/freetail</url>
   <depend stack="ros" />
 
 </stack>
