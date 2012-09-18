@@ -4,7 +4,7 @@
  *  Created on: Aug 7, 2012
  *      Author: jnicho
  */
-#include <freetail_object_manipulation/SimpleManipulationDemo.h>
+#include <freetail_object_manipulation/demos/SimpleManipulationDemo.h>
 
 int main(int argc,char** argv)
 {
