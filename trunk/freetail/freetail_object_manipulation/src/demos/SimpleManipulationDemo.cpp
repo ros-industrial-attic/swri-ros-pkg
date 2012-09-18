@@ -5,7 +5,7 @@
  *      Author: coky
  */
 
-#include "freetail_object_manipulation/SimpleManipulationDemo.h"
+#include "freetail_object_manipulation/demos/SimpleManipulationDemo.h"
 #include <boost/foreach.hpp>
 
 using namespace trajectory_execution_monitor;
@@ -16,8 +16,8 @@ std::string NODE_NAME = "freetail_manipulation";
 const std::string MANIPULATOR_GROUP_NAME = "sia20d_arm";
 
 // arm-manipulator names
-const std::string WRIST_LINK = "/link_t"; // last link in arm
-const std::string TCP_LINK = "/palm"; // gripper link whose transform is referred to as the TCP
+const std::string WRIST_LINK = "link_t"; // last link in arm
+const std::string TCP_LINK = "palm"; // gripper link whose transform is referred to as the TCP
 
 // service default names
 const static std::string DEFAULT_PLANNER_SERVICE = "/ompl_planning/plan_kinematic_path";
@@ -116,7 +116,7 @@ void SimpleManipulationDemo::setup()
 		rec_srv_ = nh.serviceClient<tabletop_object_detector::TabletopObjectRecognition>(RosParamsList::Values::RecognitionService, true);
 		object_database_model_mesh_client_ = nh.serviceClient<household_objects_database_msgs::GetModelMesh>(RosParamsList::Values::MeshDatabaseService, true);
 		object_database_model_description_client_ = nh.serviceClient<household_objects_database_msgs::GetModelDescription>(RosParamsList::Values::ModelDatabaseService, true);
-		object_database_grasp_client_ = nh.serviceClient<object_manipulation_msgs::GraspPlanning>(RosParamsList::Values::GraspPlanningService, true);
+		grasp_planning_client = nh.serviceClient<object_manipulation_msgs::GraspPlanning>(RosParamsList::Values::GraspPlanningService, true);
 		planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>(RosParamsList::Values::PathPlannerService);
 		trajectory_filter_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>(RosParamsList::Values::TrajectoryFilterService);
 		ROS_INFO("%s",(nodeName + ": Waiting for trajectory filter service").c_str());
@@ -137,7 +137,7 @@ void SimpleManipulationDemo::setup()
     ROS_INFO("%s",(nodeName + ": Setting up dynamic libraries").c_str());
     // others
     grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, RosParamsList::Values::InverseKinematicsPlugin);
-    place_tester_ = new object_manipulator::PlaceTesterFast(&cm_, RosParamsList::Values::InverseKinematicsPlugin);
+    place_tester_ = new CustomPlaceTester(&cm_, RosParamsList::Values::InverseKinematicsPlugin);
     trajectories_finished_function_ = boost::bind(&SimpleManipulationDemo::trajectoriesFinishedCallbackFunction, this, _1);
 
     ROS_INFO("%s",(nodeName + ": Finished setup").c_str());
@@ -477,14 +477,17 @@ bool SimpleManipulationDemo::moveArmToSide()
 
     //-3.0410828590393066, 0.10696959495544434, 2.117098093032837, -1.466621994972229, -0.17949093878269196, -1.6554234027862549, -1.7430833578109741
 
+    //position: [0.16656530392591254, 0.46065822721369176, 2.4644586717834467, 0.49449136755439443, -0.2900361153401066, 1.4113548618662812, 2.3286899342716625]
+
+
     std::vector<double> joint_angles;
-    joint_angles.push_back(-3.0410828590393066);
-    joint_angles.push_back(0.1069866344332695);
-    joint_angles.push_back(2.1171059608459473);
-    joint_angles.push_back(-1.4666222333908081);
-    joint_angles.push_back(-0.17949093878269196);
-    joint_angles.push_back(-1.6554385423660278);
-    joint_angles.push_back(-1.7431133985519409);
+    joint_angles.push_back(-1.0410828590393066);
+    joint_angles.push_back(0.46065822721369176);
+    joint_angles.push_back(2.4644586717834467);
+    joint_angles.push_back(0.49449136755439443);
+    joint_angles.push_back(-0.2900361153401066);
+    joint_angles.push_back(1.4113548618662812);
+    joint_angles.push_back(2.3286899342716625);
     return moveArm(MANIPULATOR_GROUP_NAME,joint_angles);
 }
 
@@ -549,7 +552,10 @@ void SimpleManipulationDemo::addDetectedObjectToPlanningSceneDiff(const househol
   planning_scene_diff_.collision_objects.push_back(obj);
 }
 
-bool SimpleManipulationDemo::segmentAndRecognize() {
+bool SimpleManipulationDemo::segmentAndRecognize()
+{
+
+  // tabletop segmentation
   ros::WallTime start = ros::WallTime::now();
   planning_scene_diff_.collision_objects.clear();
   transformed_recognition_poses_.clear();
@@ -559,6 +565,7 @@ bool SimpleManipulationDemo::segmentAndRecognize() {
     ROS_ERROR("Call to segmentation service failed");
     return false;
   }
+
   ros::WallTime after_seg = ros::WallTime::now();
   ROS_INFO_STREAM("Seg took " << (after_seg-start).toSec());
   if (segmentation_srv.response.result != segmentation_srv.response.SUCCESS)
@@ -568,12 +575,13 @@ bool SimpleManipulationDemo::segmentAndRecognize() {
   }
   addDetectedTableToPlanningSceneDiff(segmentation_srv.response.table);
   ROS_INFO("Segmentation service succeeded. Detected %d clusters", (int)segmentation_srv.response.clusters.size());
+
   bool got_recognition = false;
   object_models_.clear();
-  if(!segmentation_srv.response.clusters.empty()) {
+  if(!segmentation_srv.response.clusters.empty())
+  {
 
     last_clusters_ = segmentation_srv.response.clusters;
-
     tabletop_object_detector::TabletopObjectRecognition recognition_srv;
     recognition_srv.request.table = segmentation_srv.response.table;
     recognition_srv.request.clusters = segmentation_srv.response.clusters;
@@ -583,9 +591,9 @@ bool SimpleManipulationDemo::segmentAndRecognize() {
     {
       ROS_ERROR("Call to recognition service failed");
       return false;
-      //response.detection.result = response.detection.OTHER_ERROR;
     }
 
+    // tabletop recognition
     if(recognition_srv.response.models.size() == 0)
     {
     	ROS_ERROR("Recognition found no objects");
@@ -665,7 +673,8 @@ bool SimpleManipulationDemo::getMeshFromDatabasePose(const household_objects_dat
   household_objects_database_msgs::GetModelMesh::Response res;
 
   req.model_id = model_pose.model_id;
-  if(!object_database_model_mesh_client_.call(req, res)) {
+  if(!object_database_model_mesh_client_.call(req, res))
+  {
     ROS_WARN_STREAM("Call to objects database for getMesh failed");
     return false;
   }
@@ -752,18 +761,31 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
 
   if(!object_in_hand_map_[arm_name]) return false;
 
-  // needs to apply this transform so that the frame of the arm wrist relative to the object is obtained
+  /* Applying transforms
+   * Since the IK solver for the arm ignores the influence of the TCP's frame when finding a solution, then the grasp pose
+   * must describe the pose of the arm's wrist in terms of the object.
+   * However, the place tester obj assumes that the grasp pose describes the relative placement of the gripper in object
+   * coordinates and so it incorrectly places the gripper in collision states during the evaluation of the various place moves,
+   * causing the place stage to fail at each goal candidate.
+   * Thus, a set of transforms must be applied to each candidate goal configuration in order to
+   * provide correct transform data to each evaluator.
+   * Then the resulting candidate goal transform ( T(World -> Object) ) must be transformed as follows:
+   * T_final = T(World -> Object) x T(Object -> GripperTCP) x T(Wrist -> Object)
+   *
+   * Thus, the last component of the above computation ( T(Wrist -> Object) ) produces an intermediate Identity matrix when the
+   * "place tester" obj applies it to the grasp pose and so the resulting transform is the pose of the TCP relative to the world.
+   */
+
   tf::StampedTransform gripperTcpToWrist = tf::StampedTransform();
   tf::Transform objToTcp,objToWrist;
-  objToTcp, objToWrist = tf::Transform::getIdentity();
-  _TfListener.lookupTransform(WRIST_LINK,TCP_LINK,ros::Time(0),gripperTcpToWrist);
+  objToTcp = objToWrist = tf::Transform::getIdentity();
+  _TfListener.lookupTransform(TCP_LINK,WRIST_LINK,ros::Time(0),gripperTcpToWrist);
   tf::poseMsgToTF(current_grasp_map_[arm_name].grasp_pose,objToWrist);
   objToTcp = objToWrist*(gripperTcpToWrist.inverse());
 
   object_manipulation_msgs::PlaceGoal place_goal;
   place_goal.arm_name = arm_name;
   place_goal.grasp = current_grasp_map_[arm_name];
-  //tf::poseTFToMsg(objToWrist*(gripperTcpToWrist.inverse()),place_goal.grasp.grasp_pose); // T(Obj -> Wrist) x T(Wrist -> TCP) = T(Obj -> TCP)
   place_goal.desired_retreat_distance = .1;
   place_goal.min_retreat_distance = .1;
   place_goal.approach.desired_distance = .1;
@@ -786,7 +808,7 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
   double d = table_.shapes[0].dimensions[2];
   //double d = 0.01f;
 
-  double spacing = .1;
+  double spacing = .4;
 
   unsigned int lnum = ceil(l/spacing);
   unsigned int wnum = ceil(w/spacing);
@@ -815,12 +837,15 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
         geometry_msgs::PoseStamped place_pose = table_pose;
         place_pose.pose.position.x += -(l/2.0)+((i*1.0)*spacing);
         place_pose.pose.position.y += -(w/2.0)+((j*1.0)*spacing);
-        place_pose.pose.position.z += (d/2.0);
+        //place_pose.pose.position.z += (d/2.0);
+        place_pose.pose.position.z = 0.08f;
         tf::Transform rot(tf::Quaternion(tf::Vector3(0.0,0.0,1.0), angles[k]), tf::Vector3(0.0,0.0,0.0));
         tf::Transform trans;
         tf::poseMsgToTF(place_pose.pose, trans);
         trans = trans*rot;
-        tf::poseTFToMsg(trans*objToTcp*(objToWrist.inverse()), place_pose.pose);
+
+        //tf::poseTFToMsg(trans*objToTcp*(objToWrist.inverse()), place_pose.pose);
+        tf::poseTFToMsg(trans, place_pose.pose);
         ROS_INFO_STREAM("Place location " << i << " " << j << " "
                          << place_pose.pose.position.x << " "
                          << place_pose.pose.position.y << " "
@@ -833,6 +858,7 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
   std::vector<object_manipulator::PlaceExecutionInfo> place_execution_info;
   {
     planning_models::KinematicState state(*current_robot_state_);
+    place_tester_->setTcpToWristTransform(gripperTcpToWrist);
     place_tester_->setPlanningSceneState(&state);
     place_tester_->testPlaces(place_goal,
                               place_locations,
@@ -891,12 +917,24 @@ bool SimpleManipulationDemo::pickUpSomething(const std::string& arm_name) {
 
   grasp_planning_duration_ += ros::WallTime::now()-start_time;
 
+  // finding wrist pose relative to gripper
+  tf::StampedTransform gripperTcpToWrist = tf::StampedTransform();
+  _TfListener.lookupTransform(TCP_LINK,WRIST_LINK,ros::Time(0),gripperTcpToWrist);
+
   for(unsigned int i = 0; i < grasp_execution_info.size(); i++)
   {
     if(grasp_execution_info[i].result_.result_code == object_manipulation_msgs::GraspResult::SUCCESS)
     {
       current_grasped_object_name_[arm_name] = pickup_goal.collision_object_name;
-      current_grasp_map_[arm_name] = grasps[i];
+
+      // temp grasp
+      object_manipulation_msgs::Grasp tempGrasp;
+
+      // storing gripper grasp pose (gripper tcp relative to object)
+      tf::Transform wristInObjPose;
+      tf::poseMsgToTF(grasps[i].grasp_pose,wristInObjPose);
+      tf::poseTFToMsg(wristInObjPose*(gripperTcpToWrist.inverse()),tempGrasp.grasp_pose);
+      current_grasp_map_[arm_name] = tempGrasp;
 
       ROS_INFO_STREAM(NODE_NAME<<": Attempting grasp sequence");
       bool grasped =  attemptGraspSequence(arm_name, grasp_execution_info[i]);
@@ -1133,7 +1171,7 @@ bool SimpleManipulationDemo::getObjectGrasps(const std::string& arm_name,
   request.target.reference_frame_id = cloud.header.frame_id;
   request.target.cluster = cloud;
 
-  if(!object_database_grasp_client_.call(request, response)) {
+  if(!grasp_planning_client.call(request, response)) {
     ROS_WARN_STREAM("Call to objects database for GraspPlanning failed");
     return false;
   }
@@ -1160,7 +1198,7 @@ bool SimpleManipulationDemo::getObjectGrasps(const std::string& arm_name,
 
   ROS_INFO_STREAM("Recognition pose frame " << dmp.pose.header.frame_id);
   planning_models::KinematicState state(*current_robot_state_);
-  state.updateKinematicStateWithLinkAt("palm", first_grasp_in_world_tf);
+  state.updateKinematicStateWithLinkAt(TCP_LINK, first_grasp_in_world_tf);
 
   std_msgs::ColorRGBA col_pregrasp;
   col_pregrasp.r = 0.0;
@@ -1195,8 +1233,8 @@ bool SimpleManipulationDemo::getObjectGrasps(const std::string& arm_name,
       //we need to get them in terms of the object
 
       // needs to apply this transform so that the frame of the arm wrist relative to the object is obtained
-      tf::StampedTransform gripperTcpToWrist = tf::StampedTransform();
-      _TfListener.lookupTransform(TCP_LINK,WRIST_LINK,ros::Time(0),gripperTcpToWrist);
+      tf::StampedTransform wristInGripperTcp = tf::StampedTransform();
+      _TfListener.lookupTransform(TCP_LINK,WRIST_LINK,ros::Time(0),wristInGripperTcp);
 
       // object pose
       tf::Transform object_in_world_inverse_tf = object_in_world_tf.inverse();
@@ -1205,7 +1243,7 @@ bool SimpleManipulationDemo::getObjectGrasps(const std::string& arm_name,
       {
         tf::Transform grasp_in_world_tf;
         tf::poseMsgToTF(grasps[i].grasp_pose, grasp_in_world_tf);
-        tf::poseTFToMsg(object_in_world_inverse_tf*(grasp_in_world_tf*gripperTcpToWrist), grasps[i].grasp_pose);
+        tf::poseTFToMsg(object_in_world_inverse_tf*(grasp_in_world_tf*wristInGripperTcp), grasps[i].grasp_pose);
       }
     }
   }
@@ -1238,23 +1276,32 @@ trajectory_msgs::JointTrajectory SimpleManipulationDemo::getGripperTrajectory(co
 bool SimpleManipulationDemo::attachCollisionObject(const std::string& group_name,
                            const std::string& collision_object_name,
                            const object_manipulation_msgs::Grasp& grasp) {
+
+  // removing object from planning scene first if it is found
   arm_navigation_msgs::AttachedCollisionObject att;
   bool found = false;
   for(std::vector<arm_navigation_msgs::CollisionObject>::iterator it = planning_scene_diff_.collision_objects.begin();
       it != planning_scene_diff_.collision_objects.end();
-      it++) {
-    if((*it).id == collision_object_name) {
+      it++)
+  {
+
+    if((*it).id == collision_object_name)
+    {
       found = true;
       att.object = (*it);
       planning_scene_diff_.collision_objects.erase(it);
       break;
     }
   }
-  if(!found) {
+
+
+  if(!found)
+  {
     ROS_ERROR_STREAM("No object with id " << collision_object_name);
     return false;
   }
-  att.link_name = "palm";
+
+  att.link_name = TCP_LINK;
   att.touch_links.push_back("end_effector");
 
   planning_models::KinematicState state(*current_robot_state_);
@@ -1262,19 +1309,20 @@ bool SimpleManipulationDemo::attachCollisionObject(const std::string& group_name
   tf::poseMsgToTF(grasp.grasp_pose, t);
 
   std::map<std::string, double> grasp_vals;
-  for(unsigned int i = 0; i < grasp.grasp_posture.name.size(); i ++) {
+  for(unsigned int i = 0; i < grasp.grasp_posture.name.size(); i ++)
+  {
      grasp_vals[grasp.grasp_posture.name[i]] = grasp.grasp_posture.position[i];
   }
   state.setKinematicState(grasp_vals);
 
   tf::Transform obj_pose;
-  tf::poseMsgToTF(transformed_recognition_poses_[collision_object_name].pose, obj_pose);
+  tf::poseMsgToTF(transformed_recognition_poses_[collision_object_name].pose, obj_pose);// store object pose in world coordinates
 
   //assumes that the grasp is in the object frame
   tf::Transform grasp_pose = obj_pose*t;
 
   // //need to do this second, otherwise it gets wiped out
-  state.updateKinematicStateWithLinkAt("palm",
+  state.updateKinematicStateWithLinkAt(TCP_LINK,
                                        grasp_pose);
   // ROS_DEBUG_STREAM("Object pose is frame " << att.object.header.frame_id << " "
   //                 << att.object.poses[0].position.x << " "
@@ -1301,16 +1349,17 @@ bool SimpleManipulationDemo::attachCollisionObject(const std::string& group_name
                                      att.object.header,
                                      att.object.poses[0],
                                      ps);
+
   att.object.id = "attached_"+att.object.id;
   att.object.header = ps.header;
   att.object.poses[0] = ps.pose;
 
-  ROS_INFO_STREAM("Res pose is "
+  ROS_INFO_STREAM("object pose is relative to " + TCP_LINK + ": "
                   << ps.pose.position.x << " "
                   << ps.pose.position.y << " "
                   << ps.pose.position.z);
 
-  ROS_INFO_STREAM("Trying to add " << att.object.id << " mode " << att.object.operation.operation);
+  ROS_INFO_STREAM("Attaching  " << att.object.id << " mode " << att.object.operation.operation);
   planning_scene_diff_.attached_collision_objects.push_back(att);
 
   attached_object_publisher_.publish(att);
@@ -1332,7 +1381,7 @@ bool SimpleManipulationDemo::detachCollisionObject(const std::string& group_name
 
   place_pose_tf = place_pose_tf*grasp_trans;
 
-  state.updateKinematicStateWithLinkAt("palm",
+  state.updateKinematicStateWithLinkAt(TCP_LINK,
                                        place_pose_tf);
 
   if(planning_scene_diff_.attached_collision_objects.size() == 0) {

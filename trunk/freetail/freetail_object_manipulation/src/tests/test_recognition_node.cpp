@@ -4,7 +4,7 @@
  *  Created on: Aug 7, 2012
  *      Author: jnicho
  */
-#include <freetail_object_manipulation/SimpleManipulationDemo.h>
+#include <freetail_object_manipulation/demos/SimpleManipulationDemo.h>
 
 // ros parameters
 const std::string PARAM_NAME_LOOP_RATE = "loop_rate";

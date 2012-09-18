@@ -30,7 +30,8 @@
 #include <household_objects_database_msgs/GetModelDescription.h>
 #include <object_manipulation_msgs/GraspPlanning.h>
 #include <planning_environment/util/construct_object.h>
-#include <freetail_object_manipulation/grasp_posture_trajectory_controller_handler.h>
+#include <freetail_object_manipulation/utils/grasp_posture_trajectory_controller_handler.h>
+#include <freetail_object_manipulation/utils/CustomPlaceTester.h>
 #include <tf/transform_listener.h>
 
 using namespace trajectory_execution_monitor;
@@ -143,7 +144,7 @@ protected:
 	  //ros::ServiceClient trajectory_filter_fast_service_client_;
 
 	  ros::ServiceClient object_database_model_mesh_client_;
-	  ros::ServiceClient object_database_grasp_client_;
+	  ros::ServiceClient grasp_planning_client;
 	  ros::ServiceClient object_database_model_description_client_;
 
 	  ros::ServiceClient set_planning_scene_diff_client_;
@@ -157,7 +158,8 @@ protected:
 	  boost::function<bool(TrajectoryExecutionDataVector)> trajectories_finished_function_;
 
 	  object_manipulator::GraspTesterFast* grasp_tester_;
-	  object_manipulator::PlaceTesterFast* place_tester_;
+	  CustomPlaceTester *place_tester_;
+	  //object_manipulator::PlaceTesterFast* place_tester_;
 
 	  arm_navigation_msgs::PlanningScene current_planning_scene_;
 	  arm_navigation_msgs::PlanningScene planning_scene_diff_;
