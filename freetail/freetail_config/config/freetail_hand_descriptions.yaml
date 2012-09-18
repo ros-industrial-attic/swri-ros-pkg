@@ -9,7 +9,8 @@ hand_description:
     hand_database_name: ROBOTIQ
     hand_joints: []
     hand_touch_links: [palm,finger_1,finger_2,finger_3]
-    hand_fingertip_links: [finger_1]
+    #hand_fingertip_links: [finger_1]
+    hand_fingertip_links: [finger_1,finger_2,finger_3]
     hand_approach_direction: [0.0,0.0,1.0]
     arm_joints: [joint_s,joint_l,joint_e,joint_u,joint_r,joint_b,joint_t]
 
