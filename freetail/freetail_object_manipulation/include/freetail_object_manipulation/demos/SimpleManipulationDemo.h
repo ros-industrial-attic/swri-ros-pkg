@@ -33,6 +33,7 @@
 #include <freetail_object_manipulation/utils/grasp_posture_trajectory_controller_handler.h>
 #include <freetail_object_manipulation/utils/CustomPlaceTester.h>
 #include <tf/transform_listener.h>
+#include <freetail_object_manipulation/segmentation/SphereSegmentation.h>
 
 using namespace trajectory_execution_monitor;
 
@@ -102,6 +103,8 @@ public:
 	bool moveArmToSide();
 	void addDetectedTableToPlanningSceneDiff(const tabletop_object_detector::Table &table);
 	void addDetectedObjectToPlanningSceneDiff(const household_objects_database_msgs::DatabaseModelPoseList& model);
+	void addDetectedObjectToPlanningSceneDiff(arm_navigation_msgs::CollisionObject &obj);
+	bool segmentSpheres();
 	bool segmentAndRecognize();
 	bool recognize();
 	bool getMeshFromDatabasePose(const household_objects_database_msgs::DatabaseModelPose &model_pose,arm_navigation_msgs::CollisionObject& obj,const geometry_msgs::PoseStamped& pose);
@@ -194,6 +197,9 @@ protected:
 	  ros::Publisher vis_marker_publisher_;
 
 	  tf::TransformListener _TfListener;
+
+	  // sphere segmentation
+	  SphereSegmentation _SphereSeg;
 };
 
 #endif /* SIMPLEMANIPULATIONDEMO_H_ */
