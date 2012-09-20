@@ -28,9 +28,17 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
-rosbuild_add_library(ManipulationDemo src/demos/SimpleManipulationDemo.cpp src/utils/CustomPlaceTester.cpp)
+
+rosbuild_add_library(ManipulationDemo src/demos/SimpleManipulationDemo.cpp src/utils/CustomPlaceTester.cpp
+src/segmentation/SphereSegmentation.cpp)
+
 rosbuild_add_executable(fast_demo_app_swri src/demos/fast_demo_app_swri.cpp)
+
 rosbuild_add_executable(manipulation_demo_node src/demos/manipulation_demo_node.cpp)
 target_link_libraries(manipulation_demo_node ManipulationDemo)
+
 rosbuild_add_executable(test_recognition_node src/tests/test_recognition_node.cpp)
 target_link_libraries(test_recognition_node ManipulationDemo)
+
+rosbuild_add_executable(test_sphere_segmentation src/tests/test_sphere_segmentation.cpp 
+src/segmentation/SphereSegmentation.cpp)

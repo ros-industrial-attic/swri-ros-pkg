@@ -531,11 +531,16 @@ void SimpleManipulationDemo::addDetectedTableToPlanningSceneDiff(const tabletop_
   table_ = table_object;
 }
 
+void SimpleManipulationDemo::addDetectedObjectToPlanningSceneDiff(arm_navigation_msgs::CollisionObject &obj)
+{
+  obj.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
+  planning_scene_diff_.collision_objects.push_back(obj);
+}
+
 void SimpleManipulationDemo::addDetectedObjectToPlanningSceneDiff(const household_objects_database_msgs::DatabaseModelPoseList& model) {
   arm_navigation_msgs::CollisionObject obj;
 
   obj.id = makeCollisionObjectNameFromModelId(model.model_list[0].model_id);
-
   geometry_msgs::PoseStamped obj_world;
 
   cm_.convertPoseGivenWorldTransform(*current_robot_state_,
@@ -550,6 +555,84 @@ void SimpleManipulationDemo::addDetectedObjectToPlanningSceneDiff(const househol
                           obj_world);
   ROS_INFO_STREAM("Pushing back " << obj.id << " frame " << obj.header.frame_id);
   planning_scene_diff_.collision_objects.push_back(obj);
+}
+
+bool SimpleManipulationDemo::segmentSpheres()
+{
+	  // tabletop segmentation
+	  ros::WallTime start = ros::WallTime::now();
+	  planning_scene_diff_.collision_objects.clear();
+	  transformed_recognition_poses_.clear();
+	  tabletop_object_detector::TabletopSegmentation segmentation_srv;
+	  if (!seg_srv_.call(segmentation_srv))
+	  {
+	    ROS_ERROR("Call to segmentation service failed");
+	    return false;
+	  }
+
+	  // checking result
+	  ros::WallTime after_seg = ros::WallTime::now();
+	  ROS_INFO_STREAM("Seg took " << (after_seg-start).toSec());
+	  if (segmentation_srv.response.result != segmentation_srv.response.SUCCESS)
+	  {
+	    ROS_ERROR("Segmentation service returned error %d", segmentation_srv.response.result);
+	    return false;
+	  }
+
+	  // adding table to environment
+	  addDetectedTableToPlanningSceneDiff(segmentation_srv.response.table);
+	  ROS_INFO("Segmentation service succeeded. Detected %d clusters", (int)segmentation_srv.response.clusters.size());
+
+	  // store segmented clusters for planning
+	  if(segmentation_srv.response.clusters.size() > 0)
+	  {
+		  ROS_INFO_STREAM(NODE_NAME<<": Tabletop segmentation found "<<segmentation_srv.response.clusters.size()<<" clusters");
+		  last_clusters_ = segmentation_srv.response.clusters;
+	  }
+	  else
+	  {
+		  ROS_ERROR_STREAM(NODE_NAME<<": Tabletop segmentation returned 0 clusters");
+		  return false;
+	  }
+
+	  // sphere segmentation
+	  arm_navigation_msgs::CollisionObject obj;
+	  _SphereSeg.fetchParameters("/" + NODE_NAME);
+	  if(_SphereSeg.segment(segmentation_srv.response.clusters,obj))
+	  {
+		  arm_navigation_msgs::Shape &shape = obj.shapes[0];
+		  geometry_msgs::Pose &pose = obj.poses[0];
+
+		  ROS_INFO_STREAM("\n"<<NODE_NAME<<": Sphere found:\n");
+		  ROS_INFO_STREAM("\tRadius: "<<shape.dimensions[0]<<"\n");
+		  ROS_INFO_STREAM("\tx: "<<pose.position.x<<", y: "<<pose.position.y<<", z: "<<pose.position.z<<"\n");
+	  }
+	  else
+	  {
+		  ROS_ERROR_STREAM(NODE_NAME<<": Sphere segmentation did not succeed");
+		  return false;
+	  }
+
+	  // creating object array for planning
+	  household_objects_database_msgs::DatabaseModelPoseList models;
+	  household_objects_database_msgs::DatabaseModelPose model;
+	  model.model_id = 0;
+	  model.pose.pose = obj.poses[0];
+	  model.confidence = 1.0f;
+	  model.detector_name = "sphere_segmentation";
+	  models.model_list.push_back(model);
+
+	  // storing model for planning
+	  object_models_.clear();
+	  object_models_.push_back(models);
+
+	  // storing pose
+	  transformed_recognition_poses_[obj.id] = obj.poses[0];
+
+	  // adding to planning scene
+	  addDetectedObjectToPlanningSceneDiff(obj);
+
+	return true;
 }
 
 bool SimpleManipulationDemo::segmentAndRecognize()
