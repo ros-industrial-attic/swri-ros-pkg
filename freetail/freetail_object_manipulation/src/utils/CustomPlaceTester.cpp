@@ -70,8 +70,9 @@ void CustomPlaceTester::testPlaces(const object_manipulation_msgs::PlaceGoal &pl
   if(place_goal.allow_gripper_support_collision) {
     if(place_goal.collision_support_surface_name == "\"all\"")
     {
-      for(unsigned int i = 0; i < end_effector_links.size(); i++){
-	object_support_disable_acm.changeEntry(end_effector_links[i], true);
+      for(unsigned int i = 0; i < end_effector_links.size(); i++)
+      {
+    	  object_support_disable_acm.changeEntry(end_effector_links[i], true);
       }
     }
     else
@@ -112,7 +113,8 @@ void CustomPlaceTester::testPlaces(const object_manipulation_msgs::PlaceGoal &pl
   std::map<std::string, double> planning_scene_state_values_post_grasp = planning_scene_state_values_post_grasp;
   std::map<std::string, double> post_grasp_joint_vals;
   std::map<std::string, double> grasp_joint_vals;
-  for(unsigned int j = 0; j < place_goal.grasp.pre_grasp_posture.name.size(); j++) {
+  for(unsigned int j = 0; j < place_goal.grasp.pre_grasp_posture.name.size(); j++)
+  {
     planning_scene_state_values_post_grasp[place_goal.grasp.pre_grasp_posture.name[j]] = place_goal.grasp.pre_grasp_posture.position[j];
     post_grasp_joint_vals[place_goal.grasp.pre_grasp_posture.name[j]] = place_goal.grasp.pre_grasp_posture.position[j];
     grasp_joint_vals[place_goal.grasp.pre_grasp_posture.name[j]] = planning_scene_state_values[place_goal.grasp.pre_grasp_posture.name[j]];
@@ -158,7 +160,7 @@ void CustomPlaceTester::testPlaces(const object_manipulation_msgs::PlaceGoal &pl
     }
     else
     {
-    	ROS_INFO_STREAM("gripper at place move is collision free");
+    	//ROS_INFO_STREAM("gripper at place move is collision free");
         execution_info[i].result_.result_code = 0;
     }
   }
@@ -182,22 +184,14 @@ void CustomPlaceTester::testPlaces(const object_manipulation_msgs::PlaceGoal &pl
     if(cm->isKinematicStateInCollision(*state))
     {
       ROS_INFO_STREAM("gripper at pre-place is in collision");
-      // std::vector<arm_navigation_msgs::ContactInformation> contacts;
-      // cm->getAllCollisionsForState(*state, contacts,1);
-      // if(contacts.size() == 0) {
-      //   ROS_WARN_STREAM("Collision reported but no contacts");
-      // }
-      // for(unsigned int j = 0; j < contacts.size(); j++) {
-      //   ROS_INFO_STREAM("Collision between " << contacts[j].contact_body_1
-      //                   << " and " << contacts[j].contact_body_2);
-      // }
+
       execution_info[i].result_.result_code = PlaceLocationResult::PREPLACE_IN_COLLISION;
       outcome_count[PlaceLocationResult::PREPLACE_IN_COLLISION]++;
       continue;
     }
     else
     {
-    	ROS_INFO_STREAM("gripper at pre-place move is collision free");
+    	//ROS_INFO_STREAM("gripper at pre-place move is collision free");
     }
   }
 
@@ -239,7 +233,7 @@ void CustomPlaceTester::testPlaces(const object_manipulation_msgs::PlaceGoal &pl
     }
     else
     {
-    	ROS_INFO_STREAM("gripper at retreat move is collision free");
+    	//ROS_INFO_STREAM("gripper at retreat move is collision free");
     }
   }
 

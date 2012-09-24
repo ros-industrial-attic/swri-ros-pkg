@@ -19,11 +19,12 @@
 	<node name="test_sphere_segmentation" pkg="freetail_object_manipulation" type="test_sphere_segmentation" output="screen">
 		<param name="world_frame_id" value="base_link"/>
 		<param name="k_nearest" value="100"/>
-		<param name="max_iterations" value="200"/>
+		<param name="max_iterations" value="400"/>
 		<param name="sac_method" value="6"/> <!-- ransac = 0 -->
 		<param name="normal_distance_weight" value="0.2"/>
 		<param name="distance_threshold" value="0.0005"/>
 		<param name="max_radius" value="0.028"/>
+		<param name="min_fitness_score" value="0.2"/>
 		<param name="align_to_top_centroid" value="true"/>
 		<param name="x_max" value="1.5"/>
 		<param name="x_min" value="0.5"/>

@@ -58,7 +58,6 @@ bool SphereSegmentation::segment(const sensor_msgs::PointCloud &cloudMsg,arm_nav
 
 bool SphereSegmentation::segment(const sensor_msgs::PointCloud2 &cloudMsg,arm_navigation_msgs::CollisionObject &obj)
 {
-
 	// cloud objs
 	Cloud3D cluster = Cloud3D();
 
@@ -68,25 +67,32 @@ bool SphereSegmentation::segment(const sensor_msgs::PointCloud2 &cloudMsg,arm_na
 	return segment(cluster,obj);
 }
 
-bool SphereSegmentation::segment(const std::vector<sensor_msgs::PointCloud> &clusters, arm_navigation_msgs::CollisionObject &obj)
+bool SphereSegmentation::segment(const std::vector<sensor_msgs::PointCloud> &clusters, arm_navigation_msgs::CollisionObject &obj,
+		int &bestClusterIndex)
 {
-	// concatenating all clouds first
-	sensor_msgs::PointCloud2 tempCloudMsg;
-	Cloud3D cluster = Cloud3D(), tempCloud = Cloud3D();
-	cluster.header.frame_id = clusters.begin()->header.frame_id;
-
-	BOOST_FOREACH(sensor_msgs::PointCloud clusterMsg,clusters)
+	// find best fitting cloud
+	double score = 0.0f;
+	bool success = false;
+	arm_navigation_msgs::CollisionObject currentObj;
+	for(int i = 0; i < clusters.size(); i++)
 	{
-		sensor_msgs::convertPointCloudToPointCloud2(clusterMsg,tempCloudMsg);
-
-		// converting cloud msg to pcl cloud
-		pcl::fromROSMsg(tempCloudMsg,tempCloud);
-
-		// concatenating
-		cluster += tempCloud;
+		success = segment(clusters[i],currentObj);
+		if(success)
+		{
+			if(_LastSegmentationScore > score)
+			{
+				bestClusterIndex = i;
+				obj.header.frame_id = currentObj.header.frame_id;
+				obj.id = currentObj.id;
+				obj.poses = currentObj.poses;
+				obj.padding = currentObj.padding;
+				obj.shapes = currentObj.shapes;
+				score = _LastSegmentationScore;
+			}
+		}
 	}
 
-	return segment(cluster,obj);
+	return success;
 }
 
 bool SphereSegmentation::segment(const Cloud3D &cluster,arm_navigation_msgs::CollisionObject &obj)
@@ -142,9 +148,13 @@ bool SphereSegmentation::segment(const Cloud3D &cluster,arm_navigation_msgs::Col
 
 	if(!performSphereSegmentation(cloud,coefficients,inliers))
 	{
-
+		ROS_INFO_STREAM(nodeName<<": current cluster scored: "<<_LastSegmentationScore);
 		ROS_INFO_STREAM(nodeName<<": segmentation failed, Using top point in cluster");
 		return false;
+	}
+	else
+	{
+		ROS_INFO_STREAM(nodeName<<": current cluster scored: "<<_LastSegmentationScore);
 	}
 
 	if(_Parameters.AlignToTopCentroid && centroidFound)
@@ -199,7 +209,10 @@ bool SphereSegmentation::performSphereSegmentation(const Cloud3D &cloud,pcl::Mod
 	seg.setInputNormals(cloudNormals);
 	seg.segment(*inliers,*coefficients);
 
-	if(inliers->indices.size() == 0)
+	// computing score
+	_LastSegmentationScore = ((double)inliers->indices.size())/((double)cloud.points.size());
+
+	if(inliers->indices.size() == 0 || _LastSegmentationScore < _Parameters.MinFitnessScore)
 	{
 		return false;
 	}
@@ -533,6 +546,28 @@ void SphereSegmentation::filterWithPolygonalPrism(Cloud3D &cloud,pcl::PointXYZ &
 	indexExtractor.setNegative(false);
 	indexExtractor.filter(cloud);
 
+}
+
+void SphereSegmentation::concatenateClouds(const std::vector<sensor_msgs::PointCloud> &clusters,Cloud3D &cluster)
+{
+	// clearing cloud
+	cluster.clear();
+	cluster.header.frame_id = clusters.begin()->header.frame_id;
+
+	// concatenating all clouds first
+	sensor_msgs::PointCloud2 tempCloudMsg;
+	Cloud3D tempCloud = Cloud3D();
+
+	BOOST_FOREACH(sensor_msgs::PointCloud clusterMsg,clusters)
+	{
+		sensor_msgs::convertPointCloudToPointCloud2(clusterMsg,tempCloudMsg);
+
+		// converting cloud msg to pcl cloud
+		pcl::fromROSMsg(tempCloudMsg,tempCloud);
+
+		// concatenating
+		cluster += tempCloud;
+	}
 }
 
 void SphereSegmentation::createObject(const pcl::ModelCoefficients &coeffs,arm_navigation_msgs::CollisionObject &obj)
