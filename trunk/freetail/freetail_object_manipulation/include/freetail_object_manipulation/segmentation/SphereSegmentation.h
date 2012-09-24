@@ -42,6 +42,7 @@ public:
 		 NormalDistanceWeight(0.1f),
 		 DistanceThreshold(0.05f),
 		 MaxRadius(0.02),// 2cm
+		 MinFitnessScore(0.0f),
 		 AlignToTopCentroid(true),
 		 Xmax(1.5),
 		 Xmin(0.5),
@@ -62,6 +63,7 @@ public:
 			ros::param::get(nameSpace + "/normal_distance_weight",NormalDistanceWeight);
 			ros::param::get(nameSpace + "/distance_threshold",DistanceThreshold);
 			ros::param::get(nameSpace + "/max_radius",MaxRadius);
+			ros::param::get(nameSpace + "/min_fitness_score",MinFitnessScore);
 			ros::param::get(nameSpace + "/x_max",Xmax);
 			ros::param::get(nameSpace + "/x_min",Xmin);
 			ros::param::get(nameSpace + "/y_max",Ymax);
@@ -79,6 +81,7 @@ public:
 		double NormalDistanceWeight;
 		double DistanceThreshold;
 		double MaxRadius;
+		double MinFitnessScore; // ratio of inliers to total points
 		bool AlignToTopCentroid;
 
 		// bounds
@@ -105,7 +108,7 @@ public:
 	 */
 	bool segment(const sensor_msgs::PointCloud &cloudMsg,arm_navigation_msgs::CollisionObject &obj);
 	bool segment(const sensor_msgs::PointCloud2 &cloudMsg,arm_navigation_msgs::CollisionObject &obj);
-	bool segment(const std::vector<sensor_msgs::PointCloud> &clusters,arm_navigation_msgs::CollisionObject &obj);
+	bool segment(const std::vector<sensor_msgs::PointCloud> &clusters,arm_navigation_msgs::CollisionObject &obj,int &bestClusterIndex);
 	bool segment(const Cloud3D &cluster,arm_navigation_msgs::CollisionObject &obj);
 
 protected:
@@ -126,6 +129,8 @@ protected:
 	// creates polygon with "point" at its center and extract all points that fall within the bounds of the extruded body
 	void filterWithPolygonalPrism(Cloud3D &cloud,pcl::PointXYZ &point,int nSides,double radius,double heightMax,double heightMin);
 
+	void concatenateClouds(const std::vector<sensor_msgs::PointCloud> &clusters,Cloud3D &cluster);
+
 	void createObject(const pcl::ModelCoefficients &coeffs,arm_navigation_msgs::CollisionObject &obj);
 
 	// parameters
@@ -133,6 +138,9 @@ protected:
 
 	// transform resolution
 	tf::TransformListener _TfListener;
+
+	// results from last segmentation
+	double _LastSegmentationScore;
 
 };
 

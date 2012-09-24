@@ -143,6 +143,71 @@ void SimpleManipulationDemo::setup()
     ROS_INFO("%s",(nodeName + ": Finished setup").c_str());
 }
 
+void SimpleManipulationDemo::setupBallPickingDemo()
+{
+	ros::NodeHandle nh;
+	std::string nodeName = ros::this_node::getName();
+
+	ROS_INFO("Loading ros parameters");
+	// getting ros parametets
+	RosParamsList::fetchParams(nh);
+
+
+	ROS_INFO("%s",(nodeName + ": Setting up execution Monitors").c_str());
+	// setting up execution monitors
+	{
+		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
+		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(MANIPULATOR_GROUP_NAME,"/joint_trajectory_action"));
+		gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("end_effector","/grasp_execution_action"));
+
+		trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
+		trajectory_execution_monitor_.addTrajectoryControllerHandler(arm_controller_handler_);
+		trajectory_execution_monitor_.addTrajectoryControllerHandler(gripper_controller_handler_);
+	}
+
+	ROS_INFO("%s",(nodeName + ": Setting up Service Clients").c_str());
+    // setting up service clients
+	{
+		// segmentation service
+		seg_srv_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>(RosParamsList::Values::SegmentationService, true);
+
+		// grasp planning
+		grasp_planning_client = nh.serviceClient<object_manipulation_msgs::GraspPlanning>(RosParamsList::Values::GraspPlanningService, true);
+
+		// arm path planning service
+		planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>(RosParamsList::Values::PathPlannerService);
+
+		// arm trajectory filter service
+		trajectory_filter_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>(RosParamsList::Values::TrajectoryFilterService);
+		ROS_INFO("%s",(nodeName + ": Waiting for trajectory filter service").c_str());
+		trajectory_filter_service_client_.waitForExistence();
+		ROS_INFO("%s",(nodeName + ": Trajectory filter service connected").c_str());
+
+		// planing scene
+		ROS_INFO("%s",(nodeName + ": Waiting for " + RosParamsList::Values::PlanningSceneService + " service").c_str());
+		ros::service::waitForService(RosParamsList::Values::PlanningSceneService);
+		set_planning_scene_diff_client_ = nh.serviceClient<arm_navigation_msgs::SetPlanningSceneDiff>(RosParamsList::Values::PlanningSceneService);
+	}
+
+	{
+
+		ROS_INFO("%s",(nodeName + ": Setting up ros publishers").c_str());
+		// setting up ros publishers
+		vis_marker_publisher_ = nh.advertise<visualization_msgs::Marker> ("swri", 128);
+		vis_marker_array_publisher_ = nh.advertise<visualization_msgs::MarkerArray> ("swri_array", 128);
+		attached_object_publisher_ = nh.advertise<arm_navigation_msgs::AttachedCollisionObject> ("attached_collision_object_alternate", 1);
+
+		ROS_INFO("%s",(nodeName + ": Setting up dynamic libraries").c_str());
+		// others
+		grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, RosParamsList::Values::InverseKinematicsPlugin);
+		place_tester_ = new CustomPlaceTester(&cm_, RosParamsList::Values::InverseKinematicsPlugin);
+		trajectories_finished_function_ = boost::bind(&SimpleManipulationDemo::trajectoriesFinishedCallbackFunction, this, _1);
+
+		ROS_INFO("%s",(nodeName + ": Finished setup").c_str());
+
+	}
+}
+
 void SimpleManipulationDemo::setupRecognitionOnly()
 {
 	ros::NodeHandle nh;
@@ -371,6 +436,8 @@ bool SimpleManipulationDemo::validateJointTrajectory(trajectory_msgs::JointTraje
 			p.accelerations = std::vector<double>(jt.joint_names.size(),0.0f);
 		}
 	}
+
+	return true;
 }
 
 void SimpleManipulationDemo::printJointTrajectory(const trajectory_msgs::JointTrajectory &jt)
@@ -541,6 +608,7 @@ void SimpleManipulationDemo::addDetectedObjectToPlanningSceneDiff(const househol
   arm_navigation_msgs::CollisionObject obj;
 
   obj.id = makeCollisionObjectNameFromModelId(model.model_list[0].model_id);
+
   geometry_msgs::PoseStamped obj_world;
 
   cm_.convertPoseGivenWorldTransform(*current_robot_state_,
@@ -559,10 +627,14 @@ void SimpleManipulationDemo::addDetectedObjectToPlanningSceneDiff(const househol
 
 bool SimpleManipulationDemo::segmentSpheres()
 {
-	  // tabletop segmentation
+	  // starting timer
 	  ros::WallTime start = ros::WallTime::now();
+
+	  // clearing arrays
 	  planning_scene_diff_.collision_objects.clear();
 	  transformed_recognition_poses_.clear();
+
+
 	  tabletop_object_detector::TabletopSegmentation segmentation_srv;
 	  if (!seg_srv_.call(segmentation_srv))
 	  {
@@ -587,7 +659,7 @@ bool SimpleManipulationDemo::segmentSpheres()
 	  if(segmentation_srv.response.clusters.size() > 0)
 	  {
 		  ROS_INFO_STREAM(NODE_NAME<<": Tabletop segmentation found "<<segmentation_srv.response.clusters.size()<<" clusters");
-		  last_clusters_ = segmentation_srv.response.clusters;
+		  //last_clusters_ = segmentation_srv.response.clusters;
 	  }
 	  else
 	  {
@@ -597,13 +669,19 @@ bool SimpleManipulationDemo::segmentSpheres()
 
 	  // sphere segmentation
 	  arm_navigation_msgs::CollisionObject obj;
+	  int bestClusterIndex = -1;
 	  _SphereSeg.fetchParameters("/" + NODE_NAME);
-	  if(_SphereSeg.segment(segmentation_srv.response.clusters,obj))
+	  if(_SphereSeg.segment(segmentation_srv.response.clusters,obj,bestClusterIndex))
 	  {
+		  // storing best cluster
+		  last_clusters_.clear();
+		  last_clusters_.push_back(segmentation_srv.response.clusters[bestClusterIndex]);
+
 		  arm_navigation_msgs::Shape &shape = obj.shapes[0];
 		  geometry_msgs::Pose &pose = obj.poses[0];
 
 		  ROS_INFO_STREAM("\n"<<NODE_NAME<<": Sphere found:\n");
+		  ROS_INFO_STREAM("\tFrame id: "<<obj.header.frame_id<<"\n");
 		  ROS_INFO_STREAM("\tRadius: "<<shape.dimensions[0]<<"\n");
 		  ROS_INFO_STREAM("\tx: "<<pose.position.x<<", y: "<<pose.position.y<<", z: "<<pose.position.z<<"\n");
 	  }
@@ -613,24 +691,35 @@ bool SimpleManipulationDemo::segmentSpheres()
 		  return false;
 	  }
 
+	  // reassigning id
+	  obj.id = makeCollisionObjectNameFromModelId(0);
+
+	  // adding to planning scene
+	  addDetectedObjectToPlanningSceneDiff(obj);
+
+	  // storing pose
+	  geometry_msgs::PoseStamped pose;
+	  pose.header.frame_id = obj.header.frame_id;
+	  pose.pose = obj.poses[0];
+	  transformed_recognition_poses_[std::string(obj.id)] = pose;
+
 	  // creating object array for planning
 	  household_objects_database_msgs::DatabaseModelPoseList models;
 	  household_objects_database_msgs::DatabaseModelPose model;
 	  model.model_id = 0;
-	  model.pose.pose = obj.poses[0];
+	  model.pose = pose;
 	  model.confidence = 1.0f;
 	  model.detector_name = "sphere_segmentation";
 	  models.model_list.push_back(model);
+
 
 	  // storing model for planning
 	  object_models_.clear();
 	  object_models_.push_back(models);
 
-	  // storing pose
-	  transformed_recognition_poses_[obj.id] = obj.poses[0];
 
-	  // adding to planning scene
-	  addDetectedObjectToPlanningSceneDiff(obj);
+	  // storing final total time
+	  perception_duration_ += ros::WallTime::now()-start;
 
 	return true;
 }
@@ -670,6 +759,7 @@ bool SimpleManipulationDemo::segmentAndRecognize()
     recognition_srv.request.clusters = segmentation_srv.response.clusters;
     recognition_srv.request.num_models = 1;
     recognition_srv.request.perform_fit_merge = false;
+
     if (!rec_srv_.call(recognition_srv))
     {
       ROS_ERROR("Call to recognition service failed");
@@ -682,21 +772,21 @@ bool SimpleManipulationDemo::segmentAndRecognize()
     	ROS_ERROR("Recognition found no objects");
     	return false;
     }
+
     ROS_INFO_STREAM("Recognition took " << (ros::WallTime::now()-after_seg));
     ROS_INFO_STREAM("Got " << recognition_srv.response.models.size() << " models");
     object_models_ = recognition_srv.response.models;
 
     std::stringstream stdOut;
     for(unsigned int i = 0; i < 1; i++)
-    { //recognition_srv.response.models.size(); i++) {
+    {
       got_recognition = true;
       addDetectedObjectToPlanningSceneDiff(recognition_srv.response.models[0]);
       stdOut<<"freetail manipulation: "<<"added Model Id: "<<object_models_[i].model_list[0].model_id<<"\n";
       ROS_INFO("%s",stdOut.str().c_str());
     }
-    //response.detection.models = recognition_srv.response.models;
-    //response.detection.cluster_model_indices = recognition_srv.response.cluster_model_indices;
   }
+
   perception_duration_ += ros::WallTime::now()-start;
   return got_recognition;
 }
@@ -920,7 +1010,7 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
         geometry_msgs::PoseStamped place_pose = table_pose;
         place_pose.pose.position.x += -(l/2.0)+((i*1.0)*spacing);
         place_pose.pose.position.y += -(w/2.0)+((j*1.0)*spacing);
-        //place_pose.pose.position.z += (d/2.0);
+        place_pose.pose.position.z += (d/2.0);
         place_pose.pose.position.z = 0.08f;
         tf::Transform rot(tf::Quaternion(tf::Vector3(0.0,0.0,1.0), angles[k]), tf::Vector3(0.0,0.0,0.0));
         tf::Transform trans;
@@ -1529,7 +1619,7 @@ const arm_navigation_msgs::CollisionObject* SimpleManipulationDemo::getCollision
     return NULL;
 }
 
-void SimpleManipulationDemo::runDemo()
+void SimpleManipulationDemo::runSimpleManipulationDemo()
 {
 	// getting and storing node name
 	NODE_NAME = ros::this_node::getName();
@@ -1554,6 +1644,65 @@ void SimpleManipulationDemo::runDemo()
 	      continue;
 	    }
 	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation and recognition stage completed");
+
+	    ROS_INFO_STREAM(NODE_NAME + ": grasp pickup stage started");
+	    if(!pickUpSomething(MANIPULATOR_GROUP_NAME))
+	    {
+	      ROS_WARN_STREAM(NODE_NAME + " grasp pickup stage failed");
+	      continue;
+	    }
+	    else
+	    {
+	    	//ROS_INFO_STREAM(NODE_NAME + ": Pick up was successful");
+	    	ROS_INFO_STREAM(NODE_NAME + ": grasp pickup stage completed");
+	    }
+
+
+	    ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
+	    if(!putDownSomething(MANIPULATOR_GROUP_NAME))
+	    {
+	      ROS_WARN_STREAM(NODE_NAME + ": grasp place stage failed");
+	    }
+	    else
+	    {
+	    	ROS_INFO_STREAM(NODE_NAME + ": grasp place stage completed");
+	    }
+
+	    if(!moveArmToSide())
+	    {
+	      ROS_WARN_STREAM(NODE_NAME + ": Final side moved failed");
+	      break;
+	    }
+
+	    printTiming();
+	  }
+}
+
+void SimpleManipulationDemo::runBallPickingDemo()
+{
+	// getting and storing node name
+	NODE_NAME = ros::this_node::getName();
+
+	ros::AsyncSpinner spinner(4);
+	spinner.start();
+	srand(time(NULL));
+
+	setupBallPickingDemo();// full setup
+
+	//ros::NodeHandle nh;
+	moveArmToSide();
+
+	while(ros::ok())
+	{
+	    startCycleTimer();
+
+	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation and recognition stage started");
+	    if(!segmentSpheres())
+	    {
+	      ROS_WARN_STREAM("Segment and recognized failed");
+	      continue;
+	    }
+	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation of spheres stage completed");
 
 	    ROS_INFO_STREAM(NODE_NAME + ": grasp pickup stage started");
 	    if(!pickUpSomething(MANIPULATOR_GROUP_NAME))

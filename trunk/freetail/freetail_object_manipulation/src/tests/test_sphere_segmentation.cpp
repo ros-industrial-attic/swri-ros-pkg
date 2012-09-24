@@ -92,12 +92,13 @@ int main(int argc,char** argv)
 
 			sphereSeg.fetchParameters("/" + nodeName);
 			//if(sphereSeg.segment(cluster,obj))
-			if(sphereSeg.segment(res.clusters,obj))
+			int indexToBestCluster = -1;
+			if(sphereSeg.segment(res.clusters,obj,indexToBestCluster))
 			{
 				arm_navigation_msgs::Shape &shape = obj.shapes[0];
 				geometry_msgs::Pose &pose = obj.poses[0];
 
-				ROS_INFO_STREAM("\n"<<nodeName<<": Sphere found:\n");
+				ROS_INFO_STREAM("\n"<<nodeName<<": Sphere found in cluster "<<indexToBestCluster<<"\n");
 				ROS_INFO_STREAM("\tRadius: "<<shape.dimensions[0]<<"\n");
 				ROS_INFO_STREAM("\tx: "<<pose.position.x<<", y: "<<pose.position.y<<", z: "<<pose.position.z<<"\n");
 

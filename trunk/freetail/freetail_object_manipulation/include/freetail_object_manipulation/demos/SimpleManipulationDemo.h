@@ -32,8 +32,8 @@
 #include <planning_environment/util/construct_object.h>
 #include <freetail_object_manipulation/utils/grasp_posture_trajectory_controller_handler.h>
 #include <freetail_object_manipulation/utils/CustomPlaceTester.h>
-#include <tf/transform_listener.h>
 #include <freetail_object_manipulation/segmentation/SphereSegmentation.h>
+#include <tf/transform_listener.h>
 
 using namespace trajectory_execution_monitor;
 
@@ -88,45 +88,64 @@ public:
 	SimpleManipulationDemo();
 	virtual ~SimpleManipulationDemo();
 
-	// methods
+	// setup
 	void setup();
+	void setupBallPickingDemo();
 	void setupRecognitionOnly();
+
+	// arm trajectory
 	bool trajectoriesFinishedCallbackFunction(TrajectoryExecutionDataVector tedv);
-	void revertPlanningScene();
-	std::vector<std::string> getJointNames(const std::string& group);
-	void updateCurrentJointStateToLastTrajectoryPoint(const trajectory_msgs::JointTrajectory& traj);
-	bool getAndSetPlanningScene();
-	bool moveArm(const std::string& group_name,const std::vector<double>& joint_positions);
-	void printJointTrajectory(const trajectory_msgs::JointTrajectory &jt);
-	bool validateJointTrajectory(trajectory_msgs::JointTrajectory &jt); // checks for null arrays
 	bool fastFilterTrajectory(const std::string& group_name,trajectory_msgs::JointTrajectory& jt);
-	bool moveArmToSide();
-	void addDetectedTableToPlanningSceneDiff(const tabletop_object_detector::Table &table);
-	void addDetectedObjectToPlanningSceneDiff(const household_objects_database_msgs::DatabaseModelPoseList& model);
-	void addDetectedObjectToPlanningSceneDiff(arm_navigation_msgs::CollisionObject &obj);
-	bool segmentSpheres();
+
+	// segmentation/recognition
 	bool segmentAndRecognize();
+	bool segmentSpheres();
 	bool recognize();
+
+	// household database
 	bool getMeshFromDatabasePose(const household_objects_database_msgs::DatabaseModelPose &model_pose,arm_navigation_msgs::CollisionObject& obj,const geometry_msgs::PoseStamped& pose);
+
+	// grasp planning
 	bool selectGraspableObject(const std::string& arm_name,object_manipulation_msgs::PickupGoal& pickup_goal,std::vector<object_manipulation_msgs::Grasp>& grasps);
-	bool putDownSomething(const std::string& arm_name);
-	bool pickUpSomething(const std::string& arm_name);
-	void attachCollisionObjectCallback(const std::string& group_name);
-	void detachCollisionObjectCallback(const std::string& group_name);
-	bool attemptGraspSequence(const std::string& group_name,const object_manipulator::GraspExecutionInfo& gei);
-	bool attemptPlaceSequence(const std::string& group_name,const object_manipulator::PlaceExecutionInfo& pei);
 	bool getObjectGrasps(const std::string& arm_name,const household_objects_database_msgs::DatabaseModelPose& dmp,const sensor_msgs::PointCloud& cloud,std::vector<object_manipulation_msgs::Grasp>& grasps);
 	trajectory_msgs::JointTrajectory getGripperTrajectory(const std::string& arm_name,bool open);
+
+	// arm command
+	bool putDownSomething(const std::string& arm_name);
+	bool pickUpSomething(const std::string& arm_name);
+	bool moveArm(const std::string& group_name,const std::vector<double>& joint_positions);
+	bool moveArmToSide();
+
+	// planning scene
+	void attachCollisionObjectCallback(const std::string& group_name);
+	void detachCollisionObjectCallback(const std::string& group_name);
 	bool attachCollisionObject(const std::string& group_name,const std::string& collision_object_name, const object_manipulation_msgs::Grasp& grasp);
 	bool detachCollisionObject(const std::string& group_name,const geometry_msgs::PoseStamped& place_pose,const object_manipulation_msgs::Grasp& grasp);
+	void revertPlanningScene();
+	void updateCurrentJointStateToLastTrajectoryPoint(const trajectory_msgs::JointTrajectory& traj);
+	bool getAndSetPlanningScene();
+	void addDetectedTableToPlanningSceneDiff(const tabletop_object_detector::Table &table);
+	void addDetectedObjectToPlanningSceneDiff(arm_navigation_msgs::CollisionObject &obj);
+	void addDetectedObjectToPlanningSceneDiff(const household_objects_database_msgs::DatabaseModelPoseList& model);
+
+	// grasp execution
+	bool attemptGraspSequence(const std::string& group_name,const object_manipulator::GraspExecutionInfo& gei);
+	bool attemptPlaceSequence(const std::string& group_name,const object_manipulator::PlaceExecutionInfo& pei);
+
+	// demo monitoring
 	void startCycleTimer();
 	void printTiming();
 
-	void runDemo();
+	// demo
+	void runSimpleManipulationDemo();
+	void runBallPickingDemo();
 
 	// utilities
 	static std::string makeCollisionObjectNameFromModelId(unsigned int model_id);
 	const arm_navigation_msgs::CollisionObject* getCollisionObject(unsigned int model_id);
+	void printJointTrajectory(const trajectory_msgs::JointTrajectory &jt);
+	bool validateJointTrajectory(trajectory_msgs::JointTrajectory &jt); // checks for null arrays
+	std::vector<std::string> getJointNames(const std::string& group);
 
 protected:
 	// members
@@ -198,7 +217,7 @@ protected:
 
 	  tf::TransformListener _TfListener;
 
-	  // sphere segmentation
+	  // segmentation
 	  SphereSegmentation _SphereSeg;
 };
 

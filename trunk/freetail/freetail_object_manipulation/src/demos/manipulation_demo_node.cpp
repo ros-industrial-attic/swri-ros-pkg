@@ -11,7 +11,7 @@ int main(int argc,char** argv)
 	ros::init(argc,argv,"manipulation_demo",ros::init_options::NoSigintHandler);
 
 	SimpleManipulationDemo demo;
-	demo.runDemo();
+	demo.runSimpleManipulationDemo();
 
 	ros::shutdown();
 
