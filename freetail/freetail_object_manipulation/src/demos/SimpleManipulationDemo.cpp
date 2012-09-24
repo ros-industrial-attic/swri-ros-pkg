@@ -671,11 +671,16 @@ bool SimpleManipulationDemo::segmentSpheres()
 	  arm_navigation_msgs::CollisionObject obj;
 	  int bestClusterIndex = -1;
 	  _SphereSeg.fetchParameters("/" + NODE_NAME);
+	  sensor_msgs::PointCloud sphereCluster;
 	  if(_SphereSeg.segment(segmentation_srv.response.clusters,obj,bestClusterIndex))
 	  {
+		  // retrieving segmented sphere cluster
+		  _SphereSeg.getSphereCluster(sphereCluster);
+
 		  // storing best cluster
 		  last_clusters_.clear();
-		  last_clusters_.push_back(segmentation_srv.response.clusters[bestClusterIndex]);
+		  last_clusters_.push_back(sphereCluster);
+		  //last_clusters_.push_back(segmentation_srv.response.clusters[bestClusterIndex]);
 
 		  arm_navigation_msgs::Shape &shape = obj.shapes[0];
 		  geometry_msgs::Pose &pose = obj.poses[0];
@@ -773,17 +778,25 @@ bool SimpleManipulationDemo::segmentAndRecognize()
     	return false;
     }
 
-    ROS_INFO_STREAM("Recognition took " << (ros::WallTime::now()-after_seg));
-    ROS_INFO_STREAM("Got " << recognition_srv.response.models.size() << " models");
+    ROS_INFO_STREAM(NODE_NAME<<": Recognition took " << (ros::WallTime::now()-after_seg));
+    ROS_INFO_STREAM(NODE_NAME<<": Got " << recognition_srv.response.models.size() << " models");
     object_models_ = recognition_srv.response.models;
+	std::stringstream stdout;
+	stdout<<"Retrieved models:";
+    BOOST_FOREACH(household_objects_database_msgs::DatabaseModelPose model,recognition_srv.response.models[0].model_list)
+    {
+    	stdout<<"\n\tModel id: "<<model.model_id;
+    	stdout<<"\n\tPose frame id: "<<model.pose.header.frame_id;
+    	stdout<<"\n\tdetector name: "<<model.detector_name;
+    	stdout<<"\n";
+    }
+    ROS_INFO_STREAM(stdout.str());
 
-    std::stringstream stdOut;
+
     for(unsigned int i = 0; i < 1; i++)
     {
       got_recognition = true;
       addDetectedObjectToPlanningSceneDiff(recognition_srv.response.models[0]);
-      stdOut<<"freetail manipulation: "<<"added Model Id: "<<object_models_[i].model_list[0].model_id<<"\n";
-      ROS_INFO("%s",stdOut.str().c_str());
     }
   }
 
@@ -1320,19 +1333,33 @@ bool SimpleManipulationDemo::getObjectGrasps(const std::string& arm_name,
   household_objects_database_msgs::GetModelDescription::Response des_res;
 
   des_req.model_id = dmp.model_id;
-  if(!object_database_model_description_client_.call(des_req, des_res)) {
-    ROS_WARN_STREAM("Call to objects database for getModelDescription failed");
-    return false;
+
+  if(ros::service::exists(RosParamsList::Values::ModelDatabaseService,false))
+  {
+	  if(!object_database_model_description_client_.call(des_req, des_res)) {
+		ROS_WARN_STREAM("Call to objects database for getModelDescription failed");
+		return false;
+	  }
+	  if(des_res.return_code.code != des_res.return_code.SUCCESS) {
+		ROS_WARN_STREAM("Object database gave non-success code " << des_res.return_code.code << " for model id " << des_req.model_id);
+		return false;
+	  }
+
+	  ROS_INFO_STREAM(NODE_NAME<<" model database service returned description with name: "<<des_res.name);
   }
-  if(des_res.return_code.code != des_res.return_code.SUCCESS) {
-    ROS_WARN_STREAM("Object database gave non-success code " << des_res.return_code.code << " for model id " << des_req.model_id);
-    return false;
+  else
+  {
+	  ROS_INFO_STREAM(NODE_NAME<<": Model database service "<< RosParamsList::Values::ModelDatabaseService
+			  <<" not found, skipping service call");
   }
+
   household_objects_database_msgs::DatabaseModelPose dmp_copy = dmp;
   dmp_copy.pose = geometry_msgs::PoseStamped();
   dmp_copy.pose.pose.orientation.w = 1.0;
   dmp_copy.pose.header.frame_id = des_res.name;
   dmp_copy.pose.header.stamp = ros::Time::now();
+
+
 
 
   object_manipulation_msgs::GraspPlanning::Request request;
