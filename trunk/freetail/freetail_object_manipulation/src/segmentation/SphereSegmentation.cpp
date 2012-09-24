@@ -23,7 +23,11 @@
 
 
 SphereSegmentation::SphereSegmentation()
-:_Parameters()
+:_Parameters(),
+ _LastSphereSegCluster(),
+ _LastCoefficients(),
+ _LastIndices(),
+ _LastSphereSegSuccess(false)
 {
 	// TODO Auto-generated constructor stub
 
@@ -56,6 +60,17 @@ bool SphereSegmentation::segment(const sensor_msgs::PointCloud &cloudMsg,arm_nav
 	return segment(intermediateCloudMsg,obj);
 }
 
+void SphereSegmentation::getSphereCluster(sensor_msgs::PointCloud &cluster)
+{
+	if(_LastSphereSegSuccess)
+	{
+		cluster.points.clear();
+		sensor_msgs::PointCloud2 tempCloud;
+		pcl::toROSMsg(_LastSphereSegCluster,tempCloud);
+		sensor_msgs::convertPointCloud2ToPointCloud(tempCloud,cluster);
+	}
+}
+
 bool SphereSegmentation::segment(const sensor_msgs::PointCloud2 &cloudMsg,arm_navigation_msgs::CollisionObject &obj)
 {
 	// cloud objs
@@ -74,7 +89,12 @@ bool SphereSegmentation::segment(const std::vector<sensor_msgs::PointCloud> &clu
 	double score = 0.0f;
 	bool success = false;
 	arm_navigation_msgs::CollisionObject currentObj;
-	for(int i = 0; i < clusters.size(); i++)
+	Cloud3D bestCluster;
+	pcl::PointIndices bestIndices;
+	pcl::ModelCoefficients bestCoefficients;
+	bool bestSeg;
+
+	for(unsigned int i = 0; i < clusters.size(); i++)
 	{
 		success = segment(clusters[i],currentObj);
 		if(success)
@@ -87,10 +107,20 @@ bool SphereSegmentation::segment(const std::vector<sensor_msgs::PointCloud> &clu
 				obj.poses = currentObj.poses;
 				obj.padding = currentObj.padding;
 				obj.shapes = currentObj.shapes;
+				bestCluster = _LastSphereSegCluster;
+				bestIndices = _LastIndices;
+				bestCoefficients = _LastCoefficients;
 				score = _LastSegmentationScore;
+
 			}
 		}
 	}
+
+	// saving best cluster found
+	_LastSphereSegCluster = bestCluster;
+	_LastIndices = bestIndices;
+	_LastCoefficients = bestCoefficients;
+	_LastSphereSegSuccess = success;
 
 	return success;
 }
@@ -148,13 +178,34 @@ bool SphereSegmentation::segment(const Cloud3D &cluster,arm_navigation_msgs::Col
 
 	if(!performSphereSegmentation(cloud,coefficients,inliers))
 	{
-		ROS_INFO_STREAM(nodeName<<": current cluster scored: "<<_LastSegmentationScore);
-		ROS_INFO_STREAM(nodeName<<": segmentation failed, Using top point in cluster");
+		ROS_ERROR_STREAM(nodeName<<": segmentation failed, exiting");
+
+		// resetting results
+		_LastIndices = pcl::PointIndices();
+		_LastCoefficients = pcl::ModelCoefficients();
+		_LastSphereSegCluster.clear();
+		_LastSphereSegSuccess = false;
+
+
 		return false;
 	}
 	else
 	{
 		ROS_INFO_STREAM(nodeName<<": current cluster scored: "<<_LastSegmentationScore);
+
+		// storing segmented sphere cluster
+		pcl::ExtractIndices<pcl::PointXYZ> extract;
+		extract.setIndices(inliers);
+		extract.setInputCloud(boost::make_shared<Cloud3D>(cloud));
+		extract.setNegative(false);
+		_LastSphereSegCluster.clear();
+		extract.filter(_LastSphereSegCluster);
+		_LastSphereSegCluster.header = cloud.header;
+
+		// storing results
+		_LastIndices = *inliers;
+		_LastCoefficients = *coefficients;
+		_LastSphereSegSuccess = true;
 	}
 
 	if(_Parameters.AlignToTopCentroid && centroidFound)
@@ -214,6 +265,7 @@ bool SphereSegmentation::performSphereSegmentation(const Cloud3D &cloud,pcl::Mod
 
 	if(inliers->indices.size() == 0 || _LastSegmentationScore < _Parameters.MinFitnessScore)
 	{
+		//_LastSegmentationScore = 0.0f;
 		return false;
 	}
 	else

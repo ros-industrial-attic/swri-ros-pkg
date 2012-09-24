@@ -111,6 +111,8 @@ public:
 	bool segment(const std::vector<sensor_msgs::PointCloud> &clusters,arm_navigation_msgs::CollisionObject &obj,int &bestClusterIndex);
 	bool segment(const Cloud3D &cluster,arm_navigation_msgs::CollisionObject &obj);
 
+	void getSphereCluster(sensor_msgs::PointCloud &cluster);
+
 protected:
 
 	/*
@@ -141,6 +143,10 @@ protected:
 
 	// results from last segmentation
 	double _LastSegmentationScore;
+	pcl::PointIndices _LastIndices;
+	pcl::ModelCoefficients _LastCoefficients;
+	Cloud3D _LastSphereSegCluster;
+	bool _LastSphereSegSuccess;
 
 };
 
