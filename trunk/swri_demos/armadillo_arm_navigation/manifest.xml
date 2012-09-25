@@ -18,7 +18,7 @@
   <depend package="move_arm"/>
   <depend package="chomp_motion_planner"/>
   <depend package="armadillo"/>
-  <depend package="motoman"/>
+  <depend package="dx100"/>
 
   <export>
     <kinematics_base plugin="${prefix}/kinematics_plugins.xml"/>
