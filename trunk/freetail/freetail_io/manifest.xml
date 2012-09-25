@@ -12,7 +12,8 @@
   <depend package="roscpp"/>
   <!--For SOEM installation, see
   http://ros.org/wiki/Industrial/Tutorials/Simple_EtherCAT_Network_IO-->
-  <depend package="soem"/>  
+  <depend package="soem_master"/>  
+  <depend package="ocl"/>
 
 </package>
 
