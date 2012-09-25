@@ -78,9 +78,70 @@ public:
 	RosParamsList(){};
 
 
-	static void fetchParams(ros::NodeHandle &hn,bool useNodeNamespace = true);
-	static void fetchParams(bool useNodeNamespace = true);
+	static void fetchParams(std::string nameSpace = "");
+};
 
+struct GoalLocation
+{
+public:
+	GoalLocation()
+	:FrameId("base_link"),
+	 ChildFrameId("goal"),
+	 GoalTransform()
+	{
+
+	}
+	~GoalLocation()
+	{
+
+	}
+
+	void fetchParameters(std::string nameSpace)
+	{
+		double x = 0.0f,y = 0.0f,z = 0.0f, angle = 0;
+		tf::Vector3 pos, axis;
+
+		// position parameters
+		ros::param::get(nameSpace + "/position/x",x);
+		ros::param::get(nameSpace + "/position/y",y);
+		ros::param::get(nameSpace + "/position/z",y);
+		pos = tf::Vector3(x,y,z);
+
+		// orientation parameters, should be provided in the form of angle-axiz
+		ros::param::get(nameSpace + "/orientation/axis/x",x);
+		ros::param::get(nameSpace + "/orientation/axis/y",y);
+		ros::param::get(nameSpace + "/orientation/axis/z",z);
+		ros::param::get(nameSpace + "/orientation/angle",angle);
+		axis = tf::Vector3(x,y,z);
+
+		// goal frame
+		ros::param::get(nameSpace + "/frame_id",FrameId);
+		ros::param::get(nameSpace + "/child_frame_id",ChildFrameId);
+
+		tf::Transform t = tf::Transform(tf::Quaternion(axis,angle),pos);
+		GoalTransform .setData(t);
+		GoalTransform.frame_id_ = FrameId;
+		GoalTransform.child_frame_id_ = ChildFrameId;
+	}
+
+	std::string FrameId;
+	std::string ChildFrameId;
+	tf::StampedTransform GoalTransform;
+
+};
+
+struct JointConfiguration
+{
+public:
+	JointConfiguration()
+	{
+
+	}
+
+	~JointConfiguration()
+	{
+
+	}
 };
 
 class SimpleManipulationDemo {
@@ -112,6 +173,7 @@ public:
 
 	// arm command
 	bool putDownSomething(const std::string& arm_name);
+	bool placeAtGoalLocation(const std::string &armName);
 	bool pickUpSomething(const std::string& arm_name);
 	bool moveArm(const std::string& group_name,const std::vector<double>& joint_positions);
 	bool moveArmToSide();
@@ -219,6 +281,9 @@ protected:
 
 	  // segmentation
 	  SphereSegmentation _SphereSeg;
+
+	  // parameters
+	  GoalLocation _GoalParameters;
 };
 
 #endif /* SIMPLEMANIPULATIONDEMO_H_ */

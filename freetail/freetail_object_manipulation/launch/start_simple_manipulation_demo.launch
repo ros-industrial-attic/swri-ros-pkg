@@ -1,17 +1,6 @@
 <?xml version="1.0" ?>
 <launch>
-	<!-- arg name="use_chomp" default="false" /-->
 	<node name="freetail_manipulation" pkg="freetail_object_manipulation" type="manipulation_demo_node" output="screen">
-	
-		<param name="planner_service_name" value="/path_planning/plan_kinematic_path"/>
-		<param name="trajectory_filter_service_name" value="/trajectory_filter_server/filter_trajectory_with_constraints"/>
-		<param name="recognition_service_name" value="/tabletop_object_recognition"/>
-		<param name="segmentation_service_name" value="/tabletop_segmentation"/>
-		<param name="grasp_planning_service_name" value="/plan_point_cluster_grasp"/>
-		<param name="mesh_database_service_name" value="/objects_database_node/get_model_mesh"/>
-		<param name="model_database_service_name" value="/objects_database_node/get_model_description"/>	
-		<param name="planning_scene_service_name" value="/environment_server/set_planning_scene_diff"/>	
-		<param name="arm_inverse_kinematics_plugin" value="SIA20D_Mesh_manipulator_kinematics/IKFastKinematicsPlugin"/>	
-		<!-- param name="arm_inverse_kinematics_plugin" value="longhorn_manipulator_kinematics/IKFastKinematicsPlugin"/-->	
+		<rosparam command="load" file="$(find freetail_object_manipulation)/config/manipulation_demo.yaml"/>	
 	</node>  
 </launch>
