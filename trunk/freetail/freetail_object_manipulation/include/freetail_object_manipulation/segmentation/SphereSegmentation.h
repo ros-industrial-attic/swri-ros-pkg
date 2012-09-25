@@ -111,6 +111,7 @@ public:
 	bool segment(const std::vector<sensor_msgs::PointCloud> &clusters,arm_navigation_msgs::CollisionObject &obj,int &bestClusterIndex);
 	bool segment(const Cloud3D &cluster,arm_navigation_msgs::CollisionObject &obj);
 
+	// returns the cluster corresponding to the inliers of the last sphere model found
 	void getSphereCluster(sensor_msgs::PointCloud &cluster);
 
 protected:
@@ -138,7 +139,7 @@ protected:
 	// parameters
 	Parameters _Parameters;
 
-	// transform resolution
+	// transform mapping
 	tf::TransformListener _TfListener;
 
 	// results from last segmentation

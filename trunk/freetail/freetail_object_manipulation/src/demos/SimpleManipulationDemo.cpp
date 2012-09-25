@@ -12,6 +12,12 @@ using namespace trajectory_execution_monitor;
 // node names
 std::string NODE_NAME = "freetail_manipulation";
 
+// namespaces
+std::string MAIN_NAMESPACE = "main";
+std::string SEGMENTATION_NAMESPACE = "segmentation";
+std::string GOAL_NAMESPACE = "goal";
+std::string JOINT_CONFIGURATIONS_NAMESPACE = "joints";
+
 // planning scene
 const std::string MANIPULATOR_GROUP_NAME = "sia20d_arm";
 
@@ -50,13 +56,10 @@ std::string RosParamsList::Values::ModelDatabaseService = DEFAULT_MODEL_DATABASE
 std::string RosParamsList::Values::PlanningSceneService = DEFAULT_PLANNING_SCENE_SERVICE;
 std::string RosParamsList::Values::InverseKinematicsPlugin = DEFAULT_IK_PLUGING;
 
-void RosParamsList::fetchParams(ros::NodeHandle &nh,bool useNodeNamespace)
+void RosParamsList::fetchParams(std::string nameSpace)
 {
-	std::string namespaceName = "";
-	if(useNodeNamespace)
-	{
-		namespaceName = ros::this_node::getName() + "/";
-	}
+	std::string namespaceName = nameSpace + "/";
+	ros::NodeHandle nh;
 
 	nh.param<std::string>(namespaceName + Names::GraspPlanningService,Values::GraspPlanningService,DEFAULT_GRASP_PLANNING_SERVICE);
 	nh.param<std::string>(namespaceName + Names::PathPlannerService,Values::PathPlannerService,DEFAULT_PLANNER_SERVICE);
@@ -69,18 +72,19 @@ void RosParamsList::fetchParams(ros::NodeHandle &nh,bool useNodeNamespace)
 	nh.param<std::string>(namespaceName + Names::InverseKinematicsPlugin,Values::InverseKinematicsPlugin,DEFAULT_IK_PLUGING);
 }
 
-void RosParamsList::fetchParams(bool useNodeNamespace)
-{
-	ros::NodeHandle nh;
-	fetchParams(nh,useNodeNamespace);
-}
-
 SimpleManipulationDemo::SimpleManipulationDemo()
 :cm_("robot_description"),
  current_robot_state_(NULL)
 {
 	// TODO Auto-generated constructor stub
 	//setup();
+	ros::NodeHandle nh;
+
+	// initializing namespaces
+	NODE_NAME = ros::this_node::getName();
+	MAIN_NAMESPACE = NODE_NAME + "/" + MAIN_NAMESPACE;
+	SEGMENTATION_NAMESPACE = NODE_NAME + "/" + SEGMENTATION_NAMESPACE;
+	JOINT_CONFIGURATIONS_NAMESPACE = NODE_NAME + "/" + JOINT_CONFIGURATIONS_NAMESPACE;
 }
 
 SimpleManipulationDemo::~SimpleManipulationDemo() {
@@ -94,10 +98,11 @@ void SimpleManipulationDemo::setup()
 
 	ROS_INFO("Loading ros parameters");
 	// getting ros parametets
-	RosParamsList::fetchParams(nh);
+	MAIN_NAMESPACE = NODE_NAME + "/" + MAIN_NAMESPACE;
+	RosParamsList::fetchParams(MAIN_NAMESPACE);
 
 
-	ROS_INFO("%s",(nodeName + ": Setting up execution Monitors").c_str());
+	ROS_INFO_STREAM(NODE_NAME<<": Setting up execution Monitors");
 	// setting up execution monitors
 	{
 		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
@@ -109,7 +114,7 @@ void SimpleManipulationDemo::setup()
 		trajectory_execution_monitor_.addTrajectoryControllerHandler(gripper_controller_handler_);
 	}
 
-	ROS_INFO("%s",(nodeName + ": Setting up Service Clients").c_str());
+	ROS_INFO_STREAM(NODE_NAME<<": Setting up Service Clients");
     // setting up service clients
 	{
 		seg_srv_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>(RosParamsList::Values::SegmentationService, true);
@@ -118,29 +123,32 @@ void SimpleManipulationDemo::setup()
 		object_database_model_description_client_ = nh.serviceClient<household_objects_database_msgs::GetModelDescription>(RosParamsList::Values::ModelDatabaseService, true);
 		grasp_planning_client = nh.serviceClient<object_manipulation_msgs::GraspPlanning>(RosParamsList::Values::GraspPlanningService, true);
 		planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>(RosParamsList::Values::PathPlannerService);
-		trajectory_filter_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>(RosParamsList::Values::TrajectoryFilterService);
-		ROS_INFO("%s",(nodeName + ": Waiting for trajectory filter service").c_str());
-		trajectory_filter_service_client_.waitForExistence();
-		ROS_INFO("%s",(nodeName + ": Trajectory filter service connected").c_str());
 
-		ROS_INFO("%s",(nodeName + ": Waiting for " + RosParamsList::Values::PlanningSceneService + " service").c_str());
+		// arm trajectory filter service
+		trajectory_filter_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>(RosParamsList::Values::TrajectoryFilterService);
+		ROS_INFO_STREAM(NODE_NAME<<": Waiting for trajectory filter service");
+		trajectory_filter_service_client_.waitForExistence();
+		ROS_INFO_STREAM(NODE_NAME<<": Trajectory filter service connected");
+
+		// planing scene
+		ROS_INFO_STREAM(NODE_NAME <<": Waiting for " + RosParamsList::Values::PlanningSceneService + " service");
 		ros::service::waitForService(RosParamsList::Values::PlanningSceneService);
 		set_planning_scene_diff_client_ = nh.serviceClient<arm_navigation_msgs::SetPlanningSceneDiff>(RosParamsList::Values::PlanningSceneService);
 	}
 
-	ROS_INFO("%s",(nodeName + ": Setting up ros publishers").c_str());
+	ROS_INFO_STREAM(NODE_NAME<<": Setting up ros publishers");
     // setting up ros publishers
     vis_marker_publisher_ = nh.advertise<visualization_msgs::Marker> ("swri", 128);
     vis_marker_array_publisher_ = nh.advertise<visualization_msgs::MarkerArray> ("swri_array", 128);
     attached_object_publisher_ = nh.advertise<arm_navigation_msgs::AttachedCollisionObject> ("attached_collision_object_alternate", 1);
 
-    ROS_INFO("%s",(nodeName + ": Setting up dynamic libraries").c_str());
+    ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
     // others
     grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, RosParamsList::Values::InverseKinematicsPlugin);
     place_tester_ = new CustomPlaceTester(&cm_, RosParamsList::Values::InverseKinematicsPlugin);
     trajectories_finished_function_ = boost::bind(&SimpleManipulationDemo::trajectoriesFinishedCallbackFunction, this, _1);
 
-    ROS_INFO("%s",(nodeName + ": Finished setup").c_str());
+    ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 }
 
 void SimpleManipulationDemo::setupBallPickingDemo()
@@ -149,11 +157,11 @@ void SimpleManipulationDemo::setupBallPickingDemo()
 	std::string nodeName = ros::this_node::getName();
 
 	ROS_INFO("Loading ros parameters");
+
 	// getting ros parametets
-	RosParamsList::fetchParams(nh);
+	RosParamsList::fetchParams(MAIN_NAMESPACE);
 
-
-	ROS_INFO("%s",(nodeName + ": Setting up execution Monitors").c_str());
+	ROS_INFO_STREAM(NODE_NAME<<": Setting up execution Monitors");
 	// setting up execution monitors
 	{
 		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
@@ -165,7 +173,7 @@ void SimpleManipulationDemo::setupBallPickingDemo()
 		trajectory_execution_monitor_.addTrajectoryControllerHandler(gripper_controller_handler_);
 	}
 
-	ROS_INFO("%s",(nodeName + ": Setting up Service Clients").c_str());
+	ROS_INFO_STREAM(NODE_NAME<<": Setting up Service Clients");
     // setting up service clients
 	{
 		// segmentation service
@@ -179,31 +187,31 @@ void SimpleManipulationDemo::setupBallPickingDemo()
 
 		// arm trajectory filter service
 		trajectory_filter_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>(RosParamsList::Values::TrajectoryFilterService);
-		ROS_INFO("%s",(nodeName + ": Waiting for trajectory filter service").c_str());
+		ROS_INFO_STREAM(NODE_NAME<<": Waiting for trajectory filter service");
 		trajectory_filter_service_client_.waitForExistence();
-		ROS_INFO("%s",(nodeName + ": Trajectory filter service connected").c_str());
+		ROS_INFO_STREAM(NODE_NAME<<": Trajectory filter service connected");
 
 		// planing scene
-		ROS_INFO("%s",(nodeName + ": Waiting for " + RosParamsList::Values::PlanningSceneService + " service").c_str());
+		ROS_INFO_STREAM(NODE_NAME <<": Waiting for " + RosParamsList::Values::PlanningSceneService + " service");
 		ros::service::waitForService(RosParamsList::Values::PlanningSceneService);
 		set_planning_scene_diff_client_ = nh.serviceClient<arm_navigation_msgs::SetPlanningSceneDiff>(RosParamsList::Values::PlanningSceneService);
 	}
 
 	{
 
-		ROS_INFO("%s",(nodeName + ": Setting up ros publishers").c_str());
+		ROS_INFO_STREAM(NODE_NAME<<": Setting up ros publishers");
 		// setting up ros publishers
 		vis_marker_publisher_ = nh.advertise<visualization_msgs::Marker> ("swri", 128);
 		vis_marker_array_publisher_ = nh.advertise<visualization_msgs::MarkerArray> ("swri_array", 128);
 		attached_object_publisher_ = nh.advertise<arm_navigation_msgs::AttachedCollisionObject> ("attached_collision_object_alternate", 1);
 
-		ROS_INFO("%s",(nodeName + ": Setting up dynamic libraries").c_str());
+		ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
 		// others
 		grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, RosParamsList::Values::InverseKinematicsPlugin);
 		place_tester_ = new CustomPlaceTester(&cm_, RosParamsList::Values::InverseKinematicsPlugin);
 		trajectories_finished_function_ = boost::bind(&SimpleManipulationDemo::trajectoriesFinishedCallbackFunction, this, _1);
 
-		ROS_INFO("%s",(nodeName + ": Finished setup").c_str());
+		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 
 	}
 }
@@ -213,8 +221,9 @@ void SimpleManipulationDemo::setupRecognitionOnly()
 	ros::NodeHandle nh;
 
 	ROS_INFO("Loading ros parameters");
+
 	// getting ros parametets
-	RosParamsList::fetchParams(nh);
+	RosParamsList::fetchParams(MAIN_NAMESPACE);
 
 	ROS_INFO("Setting up Service Clients");
     // setting up service clients
@@ -670,7 +679,7 @@ bool SimpleManipulationDemo::segmentSpheres()
 	  // sphere segmentation
 	  arm_navigation_msgs::CollisionObject obj;
 	  int bestClusterIndex = -1;
-	  _SphereSeg.fetchParameters("/" + NODE_NAME);
+	  _SphereSeg.fetchParameters(SEGMENTATION_NAMESPACE);
 	  sensor_msgs::PointCloud sphereCluster;
 	  if(_SphereSeg.segment(segmentation_srv.response.clusters,obj,bestClusterIndex))
 	  {
@@ -939,6 +948,97 @@ bool SimpleManipulationDemo::selectGraspableObject(const std::string& arm_name,
   return getObjectGrasps(arm_name, dmp, last_clusters_[0], grasps);
 }
 
+bool SimpleManipulationDemo::placeAtGoalLocation(const std::string &armName)
+{
+	// resetting scene
+	getAndSetPlanningScene();
+
+	// getting parameters
+	_GoalParameters.fetchParameters(GOAL_NAMESPACE);
+
+	// starting timer
+	ros::WallTime start_time = ros::WallTime::now();
+
+	// cancel if object is not held by gripper
+	if(!object_in_hand_map_[armName]) return false;
+
+	// find transform of wrist relative to the gripper's tcp
+	tf::StampedTransform gripperTcpToWrist = tf::StampedTransform();
+	_TfListener.lookupTransform(TCP_LINK,WRIST_LINK,ros::Time(0),gripperTcpToWrist);
+
+	object_manipulation_msgs::PlaceGoal place_goal;
+	place_goal.arm_name = armName;
+	place_goal.grasp = current_grasp_map_[armName];
+	place_goal.desired_retreat_distance = .1;
+	place_goal.min_retreat_distance = .1;
+	place_goal.approach.desired_distance = .1;
+	place_goal.approach.min_distance = .1;
+	place_goal.approach.direction.header.frame_id = cm_.getWorldFrameId();
+	place_goal.approach.direction.vector.x = 0.0;
+	place_goal.approach.direction.vector.y = 0.0;
+	place_goal.approach.direction.vector.z = -1.0;
+	place_goal.collision_object_name = "attached_"+current_grasped_object_name_[armName];
+	place_goal.allow_gripper_support_collision = true;
+	place_goal.collision_support_surface_name = "table";
+	place_goal.place_padding = .02;
+
+	// creating place locations array
+	int numCandidatePoses = 8;
+	std::vector<geometry_msgs::PoseStamped> place_locations;
+	geometry_msgs::PoseStamped pose;
+	pose.header.frame_id = _GoalParameters.GoalTransform.frame_id_;
+
+	// rotate about z axis and apply to original goal pose in order to create candidates;
+	for(int i = 0; i < numCandidatePoses; i++)
+	{
+		double ratio = ((double)i)/((double)numCandidatePoses);
+		double angle = 2*M_PI*ratio;
+		tf::Quaternion q = tf::Quaternion(tf::Vector3(0,0,1),angle);
+		tf::Vector3 p = tf::Vector3(0,0,0);
+		tf::Transform candidateTransform = _GoalParameters.GoalTransform*tf::Transform(q,p);
+		tf::poseTFToMsg(candidateTransform,pose.pose);
+		place_locations.push_back(pose);
+	}
+
+
+	std::vector<object_manipulator::PlaceExecutionInfo> place_execution_info;
+	{
+		planning_models::KinematicState state(*current_robot_state_);
+		place_tester_->setTcpToWristTransform(gripperTcpToWrist);
+		place_tester_->setPlanningSceneState(&state);
+		place_tester_->testPlaces(place_goal,
+								  place_locations,
+								  place_execution_info,
+								  true);
+	}
+
+	grasp_planning_duration_ += ros::WallTime::now()-start_time;
+
+	for(unsigned int i = 0; i < place_execution_info.size(); i++)
+	{
+		if(place_execution_info[i].result_.result_code == object_manipulation_msgs::PlaceLocationResult::SUCCESS)
+		{
+		  current_place_location_ = place_locations[i];
+		  bool placed = attemptPlaceSequence(armName, place_execution_info[i]);
+
+		  if(!placed)
+		  {
+			ROS_WARN_STREAM(NODE_NAME<<": Place failed");
+		  }
+		  else
+		  {
+			return true;
+		  }
+		}
+		else
+		{
+			//ROS_WARN_STREAM(NODE_NAME<<": Goal Location "<< i + 1 <<" is unreachable");
+		}
+	}
+
+	return false;
+}
+
 bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
 
   getAndSetPlanningScene();
@@ -947,27 +1047,8 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
 
   if(!object_in_hand_map_[arm_name]) return false;
 
-  /* Applying transforms
-   * Since the IK solver for the arm ignores the influence of the TCP's frame when finding a solution, then the grasp pose
-   * must describe the pose of the arm's wrist in terms of the object.
-   * However, the place tester obj assumes that the grasp pose describes the relative placement of the gripper in object
-   * coordinates and so it incorrectly places the gripper in collision states during the evaluation of the various place moves,
-   * causing the place stage to fail at each goal candidate.
-   * Thus, a set of transforms must be applied to each candidate goal configuration in order to
-   * provide correct transform data to each evaluator.
-   * Then the resulting candidate goal transform ( T(World -> Object) ) must be transformed as follows:
-   * T_final = T(World -> Object) x T(Object -> GripperTCP) x T(Wrist -> Object)
-   *
-   * Thus, the last component of the above computation ( T(Wrist -> Object) ) produces an intermediate Identity matrix when the
-   * "place tester" obj applies it to the grasp pose and so the resulting transform is the pose of the TCP relative to the world.
-   */
-
   tf::StampedTransform gripperTcpToWrist = tf::StampedTransform();
-  tf::Transform objToTcp,objToWrist;
-  objToTcp = objToWrist = tf::Transform::getIdentity();
   _TfListener.lookupTransform(TCP_LINK,WRIST_LINK,ros::Time(0),gripperTcpToWrist);
-  tf::poseMsgToTF(current_grasp_map_[arm_name].grasp_pose,objToWrist);
-  objToTcp = objToWrist*(gripperTcpToWrist.inverse());
 
   object_manipulation_msgs::PlaceGoal place_goal;
   place_goal.arm_name = arm_name;
@@ -980,7 +1061,7 @@ bool SimpleManipulationDemo::putDownSomething(const std::string& arm_name) {
   place_goal.approach.direction.vector.x = 0.0;
   place_goal.approach.direction.vector.y = 0.0;
   place_goal.approach.direction.vector.z = -1.0;
-  place_goal.collision_object_name = "attached_"+current_grasped_object_name_[arm_name];
+  place_goal.collision_object_name = "attached_"+ current_grasped_object_name_[arm_name];
   place_goal.allow_gripper_support_collision = true;
   place_goal.collision_support_surface_name = "table";
   place_goal.place_padding = .02;
@@ -1745,7 +1826,8 @@ void SimpleManipulationDemo::runBallPickingDemo()
 
 
 	    ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
-	    if(!putDownSomething(MANIPULATOR_GROUP_NAME))
+	    //if(!putDownSomething(MANIPULATOR_GROUP_NAME))
+	    if(!placeAtGoalLocation(MANIPULATOR_GROUP_NAME))
 	    {
 	      ROS_WARN_STREAM(NODE_NAME + ": grasp place stage failed");
 	    }
