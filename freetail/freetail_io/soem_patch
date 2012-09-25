@@ -20,3 +20,4 @@ index e166ad0..dc6b460 100644
                              << endlog();
                      //Adding driver's services to master component
                      this->provides()->addService(driver->provides());
+

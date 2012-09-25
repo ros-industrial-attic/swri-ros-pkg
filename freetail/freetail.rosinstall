@@ -1,46 +1,9 @@
-- hg: 
-    local-name: cyphy_ros_pkg
-    uri: https://cyphy-ros-pkg.googlecode.com/hg/cyphy_ros_pkg
-    meta:
-        repo_name: cyphy_ros_pkg
-- hg:
-    local-name: cyphy_vis_slam
-    uri: https://cyphy-vis-slam.googlecode.com/hg/cyphy_vis_slam 
-    meta:
-        repo-name: cyphy_ros_pkg
-    version: default
-- hg:
-    local-name: cyphy_elas_ros
-    uri: https://cyphy-elas-ros.googlecode.com/hg/cyphy_elas_ros 
-    meta:
-        repo-name: cyphy_ros_pkg
-    version: default
-- hg:
-    local-name: cyphy_people_mapping
-    uri: https://cyphy-people-mapping.googlecode.com/hg/cyphy_people_mapping 
-    meta:
-        repo-name: cyphy_ros_pkg
-    version: default
-- svn:
-    local-name: ratslam_ros
-    uri: https://ratslam.googlecode.com/svn/branches/ratslam_ros/
-    meta:
-        repo-name: cyphy_ros_pkg
-    version: default
-- bzr:
-    local-name: cyphy_legacy
-    uri: http://launchpad.net/cyphy 
-    meta:
-        repo-name: cyphy_ros_pkg
+# OROCOS STACKS
+- git: {local-name: orocos/orocos_toolchain,             uri: 'http://git.gitorious.org/orocos-toolchain/orocos_toolchain.git'}
+- git: {local-name: orocos/rtt_ros_integration,          uri: 'http://git.mech.kuleuven.be/robotics/rtt_ros_integration.git'}
+- git: {local-name: orocos/rtt_ros_comm,                 uri: 'http://git.mech.kuleuven.be/robotics/rtt_ros_comm.git'}
+- git: {local-name: orocos/rtt_common_msgs,              uri: 'http://git.mech.kuleuven.be/robotics/rtt_common_msgs.git'}
+- git: {local-name: orocos/rtt_geometry.git,             uri: 'http://git.mech.kuleuven.be/robotics/rtt_geometry.git'}
 
-- tar: {local-name: visualization, version: visualization-1.8.13, uri: 'https://code.ros.org/svn/release/download/stacks/visualization/visualization-1.8.13/visualization-1.8.13.tar.bz2'}
-- tar: {local-name: robot_model, version: robot_model-1.8.0, uri: 'https://code.ros.org/svn/release/download/stacks/robot_model/robot_model-1.8.0/robot_model-1.8.0.tar.bz2'}
-- svn: {local-name: swri/marti_gps_common, uri: 'http://129.162.112.231/svn/MARTI/ros/marti_gps_common'}
-- svn: {local-name: swri/marti_can_common, uri: 'http://129.162.112.231/svn/MARTI/ros/marti_can_common'}
-- svn: {local-name: swri/marti_common, uri: 'http://129.162.112.231/svn/MARTI/ros/marti_common'}
-- svn: {local-name: swri/marti_datatypes, uri: 'http://129.162.112.231/svn/MARTI/ros/marti_datatypes'}
-- svn: {local-name: swri/marti_rndf_tools, uri: 'http://129.162.112.231/svn/MARTI/ros/marti_rndf_tools'}
-- svn: {local-name: swri/marti_math_tools, uri: 'http://129.162.112.231/svn/MARTI/ros/marti_math_tools'}
-- svn: {local-name: swri/marti_localization, uri: 'http://129.162.112.231/svn/MARTI/ros/marti_localization'}
-- svn: {local-name: swri/marti_visualization, uri: 'http://129.162.112.231/svn/MARTI/ros/marti_visualization'}
-- svn: {local-name: swri/external, uri: 'http://129.162.112.231/svn/MARTI/ros/external'}
+# SOEM STACKS
+- git: {local-name: soem,             uri: 'http://git.mech.kuleuven.be/robotics/soem.git'}
