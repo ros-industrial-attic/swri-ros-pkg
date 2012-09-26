@@ -17,12 +17,14 @@ segmentation:
   align_to_top_centroid: true
 goal:
   position:
-    x: 0
-    y: 0
-    z: 0
+    x: 0.451
+    y: -0.493
+    z: 0.1
   orientation:
     axis:
       x: 0
       y: 0
       z: 1
     angle: 0
+joints:
+  side_position: [-0.40, 0.7696149698397733, 2.4644586717834467, 1.4488290264370607, -0.5103473687459795, 1.1029933176470637, 0.64659533791017]
