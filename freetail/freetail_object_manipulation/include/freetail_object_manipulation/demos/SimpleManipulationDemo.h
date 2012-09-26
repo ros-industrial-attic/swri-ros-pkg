@@ -87,9 +87,13 @@ public:
 	GoalLocation()
 	:FrameId("base_link"),
 	 ChildFrameId("goal"),
-	 GoalTransform()
+	 GoalTransform(),
+	 NumGoalCandidates(8),
+	 Axis(0,0,1.0f)
 	{
-
+		tf::Vector3 pos = tf::Vector3(0.5,-0.48,0.1);
+		GoalTransform.setOrigin(pos);
+		GoalTransform.setRotation(tf::Quaternion::getIdentity());
 	}
 	~GoalLocation()
 	{
@@ -98,35 +102,51 @@ public:
 
 	void fetchParameters(std::string nameSpace)
 	{
-		double x = 0.0f,y = 0.0f,z = 0.0f, angle = 0;
-		tf::Vector3 pos, axis;
+		double x = 0.0f,y = 0.0f,z = 0.0f, angle = GoalTransform.getRotation().getAngle();
+		tf::Vector3 pos = GoalTransform.getOrigin(), axis = GoalTransform.getRotation().getAxis();
 
 		// position parameters
-		ros::param::get(nameSpace + "/position/x",x);
-		ros::param::get(nameSpace + "/position/y",y);
-		ros::param::get(nameSpace + "/position/z",y);
+		ros::param::param(nameSpace + "/position/x",x,pos.getX());
+		ros::param::param(nameSpace + "/position/y",y,pos.getY());
+		ros::param::param(nameSpace + "/position/z",z,pos.getZ());
 		pos = tf::Vector3(x,y,z);
 
-		// orientation parameters, should be provided in the form of angle-axiz
-		ros::param::get(nameSpace + "/orientation/axis/x",x);
-		ros::param::get(nameSpace + "/orientation/axis/y",y);
-		ros::param::get(nameSpace + "/orientation/axis/z",z);
-		ros::param::get(nameSpace + "/orientation/angle",angle);
+		// orientation parameters, should be provided in the form of angle-axis
+		ros::param::param(nameSpace + "/orientation/axis/x",x,axis.getX());
+		ros::param::param(nameSpace + "/orientation/axis/y",y,axis.getY());
+		ros::param::param(nameSpace + "/orientation/axis/z",z,axis.getZ());
+		ros::param::param(nameSpace + "/orientation/angle",angle,angle);
 		axis = tf::Vector3(x,y,z);
 
 		// goal frame
-		ros::param::get(nameSpace + "/frame_id",FrameId);
-		ros::param::get(nameSpace + "/child_frame_id",ChildFrameId);
+		ros::param::param(nameSpace + "/frame_id",FrameId,FrameId);
+		ros::param::param(nameSpace + "/child_frame_id",ChildFrameId,ChildFrameId);
 
 		tf::Transform t = tf::Transform(tf::Quaternion(axis,angle),pos);
 		GoalTransform .setData(t);
 		GoalTransform.frame_id_ = FrameId;
 		GoalTransform.child_frame_id_ = ChildFrameId;
+
+		// number of candidates
+		ros::param::param(nameSpace + "/goal_candidates",NumGoalCandidates,NumGoalCandidates);
+		if(NumGoalCandidates <= 0)
+		{
+			NumGoalCandidates = 1;
+		}
+
+		// axis for producing additional candidates
+		ros::param::param(nameSpace + "/goal_rotation_axis/x",x,Axis.x());
+		ros::param::param(nameSpace + "/goal_rotation_axis/y",y,Axis.y());
+		ros::param::param(nameSpace + "/goal_rotation_axis/z",z,Axis.z());
+		Axis = tf::Vector3(x,y,z).normalized();
 	}
 
 	std::string FrameId;
 	std::string ChildFrameId;
 	tf::StampedTransform GoalTransform;
+	int NumGoalCandidates; // number of total goal transforms, each additional transform is produced by rotating
+							// about an axis by a specified angle
+	tf::Vector3 Axis; // used in producing additional goal candidates
 
 };
 
@@ -134,14 +154,43 @@ struct JointConfiguration
 {
 public:
 	JointConfiguration()
+	:SideAngles()
 	{
-
+		SideAngles.push_back(-1.0410828590393066);
+		SideAngles.push_back(0.46065822721369176);
+		SideAngles.push_back(2.4644586717834467);
+		SideAngles.push_back(0.49449136755439443);
+		SideAngles.push_back(-0.2900361153401066);
+		SideAngles.push_back(1.4113548618662812);
+		SideAngles.push_back(2.3286899342716625);
 	}
 
 	~JointConfiguration()
 	{
 
 	}
+
+	void fetchParameters(std::string nameSpace = "")
+	{
+		XmlRpc::XmlRpcValue list;
+		if(ros::param::get(nameSpace + "/side_position",list))
+		{
+			if(list.getType()==XmlRpc::XmlRpcValue::TypeArray && list.size() > 0)
+			{
+				SideAngles.clear();
+				for(int i = 0; i < list.size(); i++)
+				{
+					XmlRpc::XmlRpcValue &val = list[i];
+					if(val.getType() == XmlRpc::XmlRpcValue::TypeDouble)
+					{
+						SideAngles.push_back(static_cast<double>(val));
+					}
+				}
+			}
+		}
+	}
+
+	std::vector<double> SideAngles;
 };
 
 class SimpleManipulationDemo {
@@ -284,6 +333,7 @@ protected:
 
 	  // parameters
 	  GoalLocation _GoalParameters;
+	  JointConfiguration _JointConfigurations;
 };
 
 #endif /* SIMPLEMANIPULATIONDEMO_H_ */

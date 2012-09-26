@@ -19,7 +19,7 @@ std::string GOAL_NAMESPACE = "goal";
 std::string JOINT_CONFIGURATIONS_NAMESPACE = "joints";
 
 // planning scene
-const std::string MANIPULATOR_GROUP_NAME = "sia20d_arm";
+const std::string ARM_GROUP_NAME = "sia20d_arm";
 
 // arm-manipulator names
 const std::string WRIST_LINK = "link_t"; // last link in arm
@@ -83,6 +83,7 @@ SimpleManipulationDemo::SimpleManipulationDemo()
 	// initializing namespaces
 	NODE_NAME = ros::this_node::getName();
 	MAIN_NAMESPACE = NODE_NAME + "/" + MAIN_NAMESPACE;
+	GOAL_NAMESPACE = NODE_NAME + "/" + GOAL_NAMESPACE;
 	SEGMENTATION_NAMESPACE = NODE_NAME + "/" + SEGMENTATION_NAMESPACE;
 	JOINT_CONFIGURATIONS_NAMESPACE = NODE_NAME + "/" + JOINT_CONFIGURATIONS_NAMESPACE;
 }
@@ -106,7 +107,7 @@ void SimpleManipulationDemo::setup()
 	// setting up execution monitors
 	{
 		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
-		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(MANIPULATOR_GROUP_NAME,"/joint_trajectory_action"));
+		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(ARM_GROUP_NAME,"/joint_trajectory_action"));
 		gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("end_effector","/grasp_execution_action"));
 
 		trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
@@ -165,7 +166,7 @@ void SimpleManipulationDemo::setupBallPickingDemo()
 	// setting up execution monitors
 	{
 		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
-		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(MANIPULATOR_GROUP_NAME,"/joint_trajectory_action"));
+		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(ARM_GROUP_NAME,"/joint_trajectory_action"));
 		gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("end_effector","/grasp_execution_action"));
 
 		trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
@@ -556,15 +557,16 @@ bool SimpleManipulationDemo::moveArmToSide()
     //position: [0.16656530392591254, 0.46065822721369176, 2.4644586717834467, 0.49449136755439443, -0.2900361153401066, 1.4113548618662812, 2.3286899342716625]
 
 
-    std::vector<double> joint_angles;
-    joint_angles.push_back(-1.0410828590393066);
-    joint_angles.push_back(0.46065822721369176);
-    joint_angles.push_back(2.4644586717834467);
-    joint_angles.push_back(0.49449136755439443);
-    joint_angles.push_back(-0.2900361153401066);
-    joint_angles.push_back(1.4113548618662812);
-    joint_angles.push_back(2.3286899342716625);
-    return moveArm(MANIPULATOR_GROUP_NAME,joint_angles);
+//    std::vector<double> joint_angles;
+//    joint_angles.push_back(-1.0410828590393066);
+//    joint_angles.push_back(0.46065822721369176);
+//    joint_angles.push_back(2.4644586717834467);
+//    joint_angles.push_back(0.49449136755439443);
+//    joint_angles.push_back(-0.2900361153401066);
+//    joint_angles.push_back(1.4113548618662812);
+//    joint_angles.push_back(2.3286899342716625);
+    _JointConfigurations.fetchParameters(JOINT_CONFIGURATIONS_NAMESPACE);
+    return moveArm(ARM_GROUP_NAME,_JointConfigurations.SideAngles);
 }
 
 void SimpleManipulationDemo::addDetectedTableToPlanningSceneDiff(const tabletop_object_detector::Table &table) {
@@ -983,7 +985,8 @@ bool SimpleManipulationDemo::placeAtGoalLocation(const std::string &armName)
 	place_goal.place_padding = .02;
 
 	// creating place locations array
-	int numCandidatePoses = 8;
+	int numCandidatePoses = _GoalParameters.NumGoalCandidates;
+	const tf::Vector3 &axisRotation = _GoalParameters.Axis;
 	std::vector<geometry_msgs::PoseStamped> place_locations;
 	geometry_msgs::PoseStamped pose;
 	pose.header.frame_id = _GoalParameters.GoalTransform.frame_id_;
@@ -993,11 +996,15 @@ bool SimpleManipulationDemo::placeAtGoalLocation(const std::string &armName)
 	{
 		double ratio = ((double)i)/((double)numCandidatePoses);
 		double angle = 2*M_PI*ratio;
-		tf::Quaternion q = tf::Quaternion(tf::Vector3(0,0,1),angle);
+		tf::Quaternion q = tf::Quaternion(axisRotation,angle);
 		tf::Vector3 p = tf::Vector3(0,0,0);
 		tf::Transform candidateTransform = _GoalParameters.GoalTransform*tf::Transform(q,p);
 		tf::poseTFToMsg(candidateTransform,pose.pose);
 		place_locations.push_back(pose);
+
+		ROS_INFO_STREAM(NODE_NAME<<" :Goal Position.Pos = ["<<pose.pose.position.x<<", "
+				<<pose.pose.position.y<<", "<<pose.pose.position.z<<"]");
+		ROS_INFO_STREAM(NODE_NAME<<" :Goal Position.Frame_Id = "<<pose.header.frame_id);
 	}
 
 
@@ -1754,7 +1761,7 @@ void SimpleManipulationDemo::runSimpleManipulationDemo()
 	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation and recognition stage completed");
 
 	    ROS_INFO_STREAM(NODE_NAME + ": grasp pickup stage started");
-	    if(!pickUpSomething(MANIPULATOR_GROUP_NAME))
+	    if(!pickUpSomething(ARM_GROUP_NAME))
 	    {
 	      ROS_WARN_STREAM(NODE_NAME + " grasp pickup stage failed");
 	      continue;
@@ -1767,7 +1774,7 @@ void SimpleManipulationDemo::runSimpleManipulationDemo()
 
 
 	    ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
-	    if(!putDownSomething(MANIPULATOR_GROUP_NAME))
+	    if(!putDownSomething(ARM_GROUP_NAME))
 	    {
 	      ROS_WARN_STREAM(NODE_NAME + ": grasp place stage failed");
 	    }
@@ -1813,7 +1820,7 @@ void SimpleManipulationDemo::runBallPickingDemo()
 	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation of spheres stage completed");
 
 	    ROS_INFO_STREAM(NODE_NAME + ": grasp pickup stage started");
-	    if(!pickUpSomething(MANIPULATOR_GROUP_NAME))
+	    if(!pickUpSomething(ARM_GROUP_NAME))
 	    {
 	      ROS_WARN_STREAM(NODE_NAME + " grasp pickup stage failed");
 	      continue;
@@ -1826,8 +1833,8 @@ void SimpleManipulationDemo::runBallPickingDemo()
 
 
 	    ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
-	    //if(!putDownSomething(MANIPULATOR_GROUP_NAME))
-	    if(!placeAtGoalLocation(MANIPULATOR_GROUP_NAME))
+	    //if(!putDownSomething(ARM_GROUP_NAME))
+	    if(!placeAtGoalLocation(ARM_GROUP_NAME))
 	    {
 	      ROS_WARN_STREAM(NODE_NAME + ": grasp place stage failed");
 	    }
