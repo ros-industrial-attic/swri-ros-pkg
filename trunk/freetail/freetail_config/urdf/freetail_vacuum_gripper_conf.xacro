@@ -31,12 +31,12 @@
 	<joint name="tool-coupler" type="fixed">
 		<parent link="link_t"/>
 		<child link="coupler"/>
-		<origin xyz="0 0 0" rpy="1.570 0 0"/>
+		<origin xyz="0 0 0" rpy="1.570 0 1.57"/>
 	</joint>
 	<joint name="coupler-hand" type="fixed">
 		<parent link="coupler"/>
 		<child link="palm"/>
-		<origin xyz="0 0.196 0.019" rpy="-1.570 0 0"/>
+		<origin xyz="-0.013 0.182 -0.013" rpy="-1.570 -2.36 0"/>
 	</joint>
 
   <!-- environment list -->
