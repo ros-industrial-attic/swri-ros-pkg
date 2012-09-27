@@ -1,33 +1,24 @@
-IMPORTANT: THE DEMO REQUIRES THE HOUSEHOLD OBJECT DATABASE TO BE INSTALLED.
+BALL PICKING DEMO INSTRUCTIONS
+TERMINAL 1:
+  - For Simulation
+	roslaunch freetail_config freetail_motoman_vacuum_bringup.launch
+  - With Robot
+	roslaunch freetail_config freetail_motoman_vacuum_bringup.launch sim_only:=false
 
-PICK AND PLACE DEMO INSTRUCTIONS
+TERMINAL 2:
+	roslaunch freetail_config freetail_ball_picking_demo_setup.launch 
 
-TERMINAL 1: 	
-  - If using default path and grasp planner (ompl path planner and ros default cluster grasp planner):
-	roslaunch freetail_config freetail_manipulation_demo_setup.launch
-  - If using chomp path planner:
-	roslaunch freetail_config freetail_manipulation_demo_setup.launch roslaunch use_chomp:=true
-  - If using overhead grasp planner:
-	roslaunch freetail_config freetail_manipulation_demo_setup.launch use_overhead_grasp_planner:=true
-  - If using chomp path planner and overhead grasp planner
-	roslaunch freetail_config freetail_manipulation_demo_setup.launch use_chomp:=true use_overhead_grasp_planner:=true
+TERMINAL 3: 
+ 	roslaunch freetail_object_manipulation freetail_visualize_environment.launch
 
-TERMINAL 2: 
-  - If using real motoman robot:
-	roslaunch freetail_config freetail_motoman_bringup.launch sim_only:=false
-  - If using simulated robot:
-	roslaunch freetail_config freetail_motoman_bringup.launch sim_only:=true
+TERMINAL 4:
+	roslaunch freetail_object_manipulation start_ball_picking_demo.launch
 
-TERMINAL 4: 
-	roslaunch freetail_object_manipulation start_simple_manipulation_demo.launch
-
-TERMINAL 5: 
-	roslaunch freetail_object_manipulation freetail_visualize_environment.launch
 
 ROBOT INSTRUCTIONS (Not needed for simulation)
 1. Turn ON
-2. Place in TEACH mode
-3. Initialize Robot Gripper (Set Universal OUT#0033 to TRUE, Hold INTERLOACK + SELECT)
-4. Place in PLAY mode.
+2. Place in PLAY mode.
+3. Enable actuators
+4. Press Play
 
  
