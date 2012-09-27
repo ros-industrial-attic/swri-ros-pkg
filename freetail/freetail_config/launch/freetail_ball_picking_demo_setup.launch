@@ -8,22 +8,12 @@
 <!-- fixed parameters -->
   <arg name="use_vfh_recognition" value="false"/>
   <arg name="use_overhead_grasp_planner" value="true"/>
-  <arg name="log_to_warehouse" value="false" />
   <arg name="robot_description" value="$(find freetail_config)/urdf/freetail_vacuum_gripper_conf.urdf"/>
  
-<!-- arm setup -->
-  <include file="$(find freetail_config)/launch/freetail_motoman_bringup.launch">
+<!-- arm/vacuum setup -->
+  <!--include file="$(find freetail_config)/launch/freetail_motoman_vacuum_bringup.launch">
 	<arg name="sim_only" value="$(arg sim_only)"/>
-	<arg name="robot_description" value="$(arg robot_description)"/>
-  </include>
-
-<!-- general setup -->  
-  <param name="warehouse_host" value="prn2.willowgarage.com"/>
-  <param name="warehouse_port" value="27021"/>
-  <node if="$(arg log_to_warehouse)" name="mongo" type="wrapper.py" pkg="mongodb">
-       <param name="overwrite" value="false"/>
-       <param name="database_path" value="arm_navigation_dbs/pr2_manip_db"/>
-  </node>
+  </include-->
 
 <!-- sensor setup -->
   <include file="$(find freetail_config)/launch/openni_try.launch"/>
@@ -60,20 +50,6 @@
 
   <include unless="$(arg use_overhead_grasp_planner)" file="$(find freetail_grasp_planning)/launch/robotiq_hand_grasp_planner_cluster_server.launch"/>
   <include if="$(arg use_overhead_grasp_planner)" file="$(find freetail_grasp_planning)/launch/suction_gripper_grasp_planner_server.launch"/>
-
-<!-- object database -->
-  <rosparam command="load" file="$(find freetail_object_manipulation)/config/localhost.yaml"/>
-  <node pkg="household_objects_database" name="objects_database_node" type="objects_database_node" 
-  	respawn="true" output="screen">
-    <param name="prune_table_clearance" value="-1.0"/>
-  </node>
-
-<!-- object recognition -->
-  <include if="$(arg use_vfh_recognition)" file="$(find vfh_recognition)/launch/vfh_recognition.launch"/>  
-
-<!-- table top recognition expects the household objects database to be active -->
-  <include unless="$(arg use_vfh_recognition)" file="$(find tabletop_object_detector)/launch/tabletop_object_recognition.launch"/>
-  <!--include unless="$(arg use_vfh_recognition)" file="$(find household_objects_database)/launch/objects_database_remote_client.launch"/-->
 
 <!-- segmentation -->
   <include file="$(find freetail_object_manipulation)/launch/tabletop_segmentation.launch">

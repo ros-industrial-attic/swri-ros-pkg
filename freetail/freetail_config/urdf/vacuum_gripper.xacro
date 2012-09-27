@@ -3,18 +3,18 @@
 	<xacro:macro name="vacuum_gripper" params="prefix">
 		<link name="${prefix}palm">
 			<visual>
-				<origin xyz="0 0.019 -0.0543" rpy="0 0 0"/>
+				<origin xyz="0 0.019 -0.0473" rpy="0 0 0"/>
 				<geometry>
-					<box size="0.040 0.080 0.1086"/>
+					<box size="0.040 0.080 0.0946"/>
 				</geometry>
 				<material name="another_blue1">
 					<color rgba="0.40 0.40 0.80 1"/>
 				</material>
 			</visual>
 			<collision>
-				<origin xyz="0 0.019 -0.0543" rpy="0 0 0"/>
+				<origin xyz="0 0.019 -0.0473" rpy="0 0 0"/>
 				<geometry>
-					<box size="0.040 0.080 0.1086"/>
+					<box size="0.040 0.080 0.0946"/>
 				</geometry>
 				<material name="another_blue2">
 					<color rgba="0.38 0.54 0.83 1"/>

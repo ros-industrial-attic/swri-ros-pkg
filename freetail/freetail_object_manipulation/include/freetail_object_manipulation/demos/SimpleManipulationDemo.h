@@ -156,13 +156,13 @@ public:
 	JointConfiguration()
 	:SideAngles()
 	{
-		SideAngles.push_back(-1.0410828590393066);
-		SideAngles.push_back(0.46065822721369176);
-		SideAngles.push_back(2.4644586717834467);
-		SideAngles.push_back(0.49449136755439443);
-		SideAngles.push_back(-0.2900361153401066);
-		SideAngles.push_back(1.4113548618662812);
-		SideAngles.push_back(2.3286899342716625);
+		SideAngles.push_back(-0.40f);
+		SideAngles.push_back(0.8f);
+		SideAngles.push_back(2.5f);
+		SideAngles.push_back(1.5f);
+		SideAngles.push_back(-0.5f);
+		SideAngles.push_back(1.1f);
+		SideAngles.push_back(0.6f);
 	}
 
 	~JointConfiguration()
@@ -257,6 +257,10 @@ public:
 	void printJointTrajectory(const trajectory_msgs::JointTrajectory &jt);
 	bool validateJointTrajectory(trajectory_msgs::JointTrajectory &jt); // checks for null arrays
 	std::vector<std::string> getJointNames(const std::string& group);
+	void collisionObjToMarker(const arm_navigation_msgs::CollisionObject &obj, visualization_msgs::Marker &marker);
+
+	// callbacks
+	void callbackPublishMarkers(const ros::TimerEvent &evnt);
 
 protected:
 	// members
@@ -323,8 +327,12 @@ protected:
 
 	  ros::Publisher attached_object_publisher_;
 
+	  // marker publishers
 	  ros::Publisher vis_marker_array_publisher_;
 	  ros::Publisher vis_marker_publisher_;
+
+	  // timer to publish markers periodically
+	  ros::Timer _MarkerPubTimer;
 
 	  tf::TransformListener _TfListener;
 

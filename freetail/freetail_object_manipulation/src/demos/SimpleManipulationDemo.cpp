@@ -25,6 +25,11 @@ const std::string ARM_GROUP_NAME = "sia20d_arm";
 const std::string WRIST_LINK = "link_t"; // last link in arm
 const std::string TCP_LINK = "palm"; // gripper link whose transform is referred to as the TCP
 
+// marker map
+std::map<std::string,visualization_msgs::Marker> MarkerMap;
+const std::string MARKER_ATTACHED_OBJ = "attached_obj";
+const std::string MARKER_SEGMENTED_OBJ = "segmented_obj";
+
 // service default names
 const static std::string DEFAULT_PLANNER_SERVICE = "/ompl_planning/plan_kinematic_path";
 const static std::string DEFAULT_SEGMENTATION_SERVICE = "/tabletop_segmentation";
@@ -138,10 +143,10 @@ void SimpleManipulationDemo::setup()
 	}
 
 	ROS_INFO_STREAM(NODE_NAME<<": Setting up ros publishers");
-    // setting up ros publishers
-    vis_marker_publisher_ = nh.advertise<visualization_msgs::Marker> ("swri", 128);
-    vis_marker_array_publisher_ = nh.advertise<visualization_msgs::MarkerArray> ("swri_array", 128);
-    attached_object_publisher_ = nh.advertise<arm_navigation_msgs::AttachedCollisionObject> ("attached_collision_object_alternate", 1);
+	// setting up ros publishers
+	vis_marker_publisher_ = nh.advertise<visualization_msgs::Marker> ("freetail_object", 1);
+	vis_marker_array_publisher_ = nh.advertise<visualization_msgs::MarkerArray> ("freetail_object_array", 1);
+	attached_object_publisher_ = nh.advertise<arm_navigation_msgs::AttachedCollisionObject> ("attached_collision_object_alternate", 1);
 
     ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
     // others
@@ -202,9 +207,12 @@ void SimpleManipulationDemo::setupBallPickingDemo()
 
 		ROS_INFO_STREAM(NODE_NAME<<": Setting up ros publishers");
 		// setting up ros publishers
-		vis_marker_publisher_ = nh.advertise<visualization_msgs::Marker> ("swri", 128);
-		vis_marker_array_publisher_ = nh.advertise<visualization_msgs::MarkerArray> ("swri_array", 128);
+		vis_marker_publisher_ = nh.advertise<visualization_msgs::Marker> ("freetail_object", 1);
+		vis_marker_array_publisher_ = nh.advertise<visualization_msgs::MarkerArray> ("freetail_object_array", 1);
 		attached_object_publisher_ = nh.advertise<arm_navigation_msgs::AttachedCollisionObject> ("attached_collision_object_alternate", 1);
+
+		// setting up timer obj
+		_MarkerPubTimer = nh.createTimer(ros::Duration(0.4f),&SimpleManipulationDemo::callbackPublishMarkers,this);
 
 		ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
 		// others
@@ -214,6 +222,20 @@ void SimpleManipulationDemo::setupBallPickingDemo()
 
 		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 
+	}
+
+	{
+		ROS_INFO_STREAM(NODE_NAME<<": Setting up published markers");
+		visualization_msgs::Marker marker;
+		marker.header.frame_id = cm_.getWorldFrameId();
+		marker.ns = NODE_NAME;
+		marker.type = visualization_msgs::Marker::SPHERE;
+		marker.action = visualization_msgs::Marker::DELETE;
+		tf::poseTFToMsg(tf::Transform::getIdentity(),marker.pose);
+
+		// adding marker to map
+		marker.id = 0; MarkerMap.insert(std::make_pair(MARKER_SEGMENTED_OBJ,marker));
+		marker.id = 1; MarkerMap.insert(std::make_pair(MARKER_ATTACHED_OBJ,marker));
 	}
 }
 
@@ -737,6 +759,21 @@ bool SimpleManipulationDemo::segmentSpheres()
 	  // storing final total time
 	  perception_duration_ += ros::WallTime::now()-start;
 
+	  // update markers
+	  visualization_msgs::Marker &segMarker = MarkerMap[MARKER_SEGMENTED_OBJ];
+	  visualization_msgs::Marker &attachedMarker = MarkerMap[MARKER_ATTACHED_OBJ];
+
+	  // segmented object
+	  collisionObjToMarker(obj,segMarker);
+	  segMarker.action = visualization_msgs::Marker::ADD;
+	  //MarkerMap[MARKER_SEGMENTED_OBJ] = segMarker;
+
+	  // attached object, hide for now until gripper is close
+	  collisionObjToMarker(obj,attachedMarker);
+	  attachedMarker.action = visualization_msgs::Marker::DELETE;
+	  attachedMarker.header.frame_id = TCP_LINK;
+	  //MarkerMap[MARKER_ATTACHED_OBJ] = attachedMarker;
+
 	return true;
 }
 
@@ -1210,6 +1247,14 @@ bool SimpleManipulationDemo::pickUpSomething(const std::string& arm_name) {
       tf::poseTFToMsg(wristInObjPose*(gripperTcpToWrist.inverse()),tempGrasp.grasp_pose);
       current_grasp_map_[arm_name] = tempGrasp;
 
+      // updating attached objt marker pose
+      if(MarkerMap.find(MARKER_ATTACHED_OBJ) != MarkerMap.end())
+      {
+    	  visualization_msgs::Marker &m = MarkerMap[MARKER_ATTACHED_OBJ];
+    	  tf::poseTFToMsg(wristInObjPose.inverse(),m.pose);
+    	  m.header.frame_id = TCP_LINK;
+      }
+
       ROS_INFO_STREAM(NODE_NAME<<": Attempting grasp sequence");
       bool grasped =  attemptGraspSequence(arm_name, grasp_execution_info[i]);
 
@@ -1310,6 +1355,13 @@ bool SimpleManipulationDemo::attemptGraspSequence(const std::string& group_name,
   ter_reqs.push_back(gripper_ter);
   segment_names.push_back("close");
 
+  // updating attached  marker operation
+  if(MarkerMap.find(MARKER_ATTACHED_OBJ) != MarkerMap.end())
+  {
+	  visualization_msgs::Marker &m = MarkerMap[MARKER_ATTACHED_OBJ];
+	  m.action = visualization_msgs::Marker::ADD;
+  }
+
   //and do the lift
   arm_ter.trajectory_ = gei.lift_trajectory_;
   validateJointTrajectory(arm_ter.trajectory_);
@@ -1379,6 +1431,13 @@ bool SimpleManipulationDemo::attemptPlaceSequence(const std::string& group_name,
   gripper_ter.test_for_close_enough_ = false;
   ter_reqs.push_back(gripper_ter);
   segment_names.push_back("open_gripper");
+
+  // updating attached objt marker operation
+  if(MarkerMap.find(MARKER_ATTACHED_OBJ) != MarkerMap.end())
+  {
+	  visualization_msgs::Marker &m = MarkerMap[MARKER_ATTACHED_OBJ];
+	  m.action = visualization_msgs::Marker::DELETE;
+  }
 
   //do the retreat
   arm_ter.trajectory_ = pei.retreat_trajectory_;
@@ -1695,6 +1754,46 @@ bool SimpleManipulationDemo::detachCollisionObject(const std::string& group_name
   planning_scene_diff_.collision_objects.push_back(obj);
   planning_scene_diff_.attached_collision_objects.clear();
   return true;
+}
+
+void SimpleManipulationDemo::callbackPublishMarkers(const ros::TimerEvent &evnt)
+{
+	for(std::map<std::string,visualization_msgs::Marker>::iterator i = MarkerMap.begin(); i != MarkerMap.end(); i++)
+	{
+		visualization_msgs::Marker &m = i->second;
+		m.header.stamp = ros::Time::now();
+		vis_marker_publisher_.publish(m);
+	}
+}
+
+void SimpleManipulationDemo::collisionObjToMarker(const arm_navigation_msgs::CollisionObject &obj,visualization_msgs::Marker &marker)
+{
+	// only converts to a sphere marker for now
+	const arm_navigation_msgs::Shape &shape = obj.shapes[0];
+
+	switch(shape.type)
+	{
+		case arm_navigation_msgs::Shape::SPHERE:
+
+			marker.header.frame_id = obj.header.frame_id;
+			marker.type = visualization_msgs::Marker::SPHERE;
+			marker.pose = obj.poses[0];
+			marker.scale.x = 2*shape.dimensions[0];// 2 x radius
+			marker.scale.y =2*shape.dimensions[0];
+			marker.scale.z =2*shape.dimensions[0];
+			marker.color.a = 1.0;
+			marker.color.r = 0.0;
+			marker.color.g = 1.0;
+			marker.color.b = 0.0;
+
+			break;
+
+		default:
+
+			break;
+
+	}
+
 }
 
 void SimpleManipulationDemo::startCycleTimer() {
