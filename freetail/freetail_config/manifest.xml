@@ -18,6 +18,7 @@
   <depend package="actionlib"/>
   <depend package="roscpp"/>
   <depend package="object_manipulation_msgs"/>
+  <depend package="freetail_grasp_planning"/>
 </package>
 
 
