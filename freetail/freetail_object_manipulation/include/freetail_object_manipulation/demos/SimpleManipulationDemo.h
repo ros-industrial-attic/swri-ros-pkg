@@ -266,6 +266,8 @@ protected:
 	// members
 
 	  planning_environment::CollisionModels cm_;
+
+	  // ids
 	  unsigned int current_planning_scene_id_;
 	  unsigned int last_mpr_id_;
 	  unsigned int max_mpr_id_;
@@ -273,26 +275,29 @@ protected:
 
 	  TrajectoryExecutionDataVector last_trajectory_execution_data_vector_;
 
+	  // service clients
 	  ros::ServiceClient seg_srv_;
 	  ros::ServiceClient rec_srv_;
-
 	  ros::ServiceClient planning_service_client_;
 	  ros::ServiceClient trajectory_filter_service_client_;
 	  //ros::ServiceClient trajectory_filter_fast_service_client_;
-
 	  ros::ServiceClient object_database_model_mesh_client_;
 	  ros::ServiceClient grasp_planning_client;
 	  ros::ServiceClient object_database_model_description_client_;
-
 	  ros::ServiceClient set_planning_scene_diff_client_;
 
+	  // trajectory handlers and recorders
 	  boost::shared_ptr<TrajectoryRecorder> joint_state_recorder_;
-
 	  boost::shared_ptr<TrajectoryControllerHandler> arm_controller_handler_;
 	  boost::shared_ptr<TrajectoryControllerHandler> gripper_controller_handler_;
 
 	  trajectory_execution_monitor::TrajectoryExecutionMonitor trajectory_execution_monitor_;
 	  boost::function<bool(TrajectoryExecutionDataVector)> trajectories_finished_function_;
+
+	  // action services
+	  // will use grasp execution client to request pre-grasp action since the default gripper controller handler
+	  // ignores this step.
+	  actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPostureExecutionAction> grasp_exec_action_client_;
 
 	  object_manipulator::GraspTesterFast* grasp_tester_;
 	  CustomPlaceTester *place_tester_;

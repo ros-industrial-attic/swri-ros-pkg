@@ -178,7 +178,6 @@ bool SphereSegmentation::segment(const Cloud3D &cluster,arm_navigation_msgs::Col
 
 	if(!performSphereSegmentation(cloud,coefficients,inliers))
 	{
-		ROS_ERROR_STREAM(nodeName<<": segmentation failed, exiting");
 
 		// resetting results
 		_LastIndices = pcl::PointIndices();
@@ -186,12 +185,13 @@ bool SphereSegmentation::segment(const Cloud3D &cluster,arm_navigation_msgs::Col
 		_LastSphereSegCluster.clear();
 		_LastSphereSegSuccess = false;
 
+		ROS_ERROR_STREAM(nodeName<<": insufficient inliers found "<<inliers->indices.size()<<", exiting segmentation");
 
 		return false;
 	}
 	else
 	{
-		ROS_INFO_STREAM(nodeName<<": current cluster scored: "<<_LastSegmentationScore);
+		ROS_INFO_STREAM(nodeName<<": found "<<inliers->indices.size()<<" total inliers");
 
 		// storing segmented sphere cluster
 		pcl::ExtractIndices<pcl::PointXYZ> extract;
@@ -261,7 +261,8 @@ bool SphereSegmentation::performSphereSegmentation(const Cloud3D &cloud,pcl::Mod
 	seg.segment(*inliers,*coefficients);
 
 	// computing score
-	_LastSegmentationScore = ((double)inliers->indices.size())/((double)cloud.points.size());
+	//_LastSegmentationScore = ((double)inliers->indices.size())/((double)cloud.points.size());
+	_LastSegmentationScore = (double)inliers->indices.size(); // using number of inliers as score
 
 	if(inliers->indices.size() == 0 || _LastSegmentationScore < _Parameters.MinFitnessScore)
 	{
@@ -277,7 +278,7 @@ bool SphereSegmentation::performSphereSegmentation(const Cloud3D &cloud,pcl::Mod
 bool SphereSegmentation::findSphereUsingTopPoint(const Cloud3D &cloud,pcl::ModelCoefficients::Ptr coefficients,
 		pcl::PointIndices::Ptr inliers)
 {
-	std::string nodeName = ros::this_node::getName();
+	std::string nodeName = ros::this_node::getName() + "/segmentation";
 	std::stringstream stdOut;
 
 	pcl::PointXYZ centroid;
@@ -303,7 +304,7 @@ bool SphereSegmentation::findSphereUsingTopPoint(const Cloud3D &cloud,pcl::Model
 
 bool SphereSegmentation::findTopCentroid(const Cloud3D &cloud,pcl::PointXYZ &topCentroid)
 {
-	std::string nodeName = ros::this_node::getName();
+	std::string nodeName = ros::this_node::getName() + "/segmentation";
 	std::stringstream stdOut;
 
 	// finding bounding box
@@ -624,6 +625,8 @@ void SphereSegmentation::concatenateClouds(const std::vector<sensor_msgs::PointC
 
 void SphereSegmentation::createObject(const pcl::ModelCoefficients &coeffs,arm_navigation_msgs::CollisionObject &obj)
 {
+	const std::string nodeName = ros::this_node::getName() + "/segmentation";
+
 	std::string name = "sphere_object";
 	obj.id = name;
 	obj.header.frame_id = _Parameters.WorldFrameId;
@@ -632,13 +635,13 @@ void SphereSegmentation::createObject(const pcl::ModelCoefficients &coeffs,arm_n
 	obj.poses = std::vector<geometry_msgs::Pose>();
 
 	// creating shape
-	ROS_INFO_STREAM("creating sphere shape");
+	ROS_INFO_STREAM(nodeName<<": creating sphere shape");
 	arm_navigation_msgs::Shape shape;
 	shape.type = arm_navigation_msgs::Shape::SPHERE;
 	shape.dimensions.push_back(coeffs.values[3]); // radius;
 
 	// creating pose (in world coordinates)
-	ROS_INFO_STREAM("creating sphere pose");
+	ROS_INFO_STREAM(nodeName<<": creating sphere pose");
 	geometry_msgs::Pose pose;
 	tf::poseTFToMsg(tf::Transform(tf::Quaternion::getIdentity(),tf::Vector3(coeffs.values[0],
 			coeffs.values[1], coeffs.values[2])),pose);

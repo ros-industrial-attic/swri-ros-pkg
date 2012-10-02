@@ -13,7 +13,7 @@ segmentation:
   normal_distance_weight: 0.2
   distance_threshold: 0.0005
   max_radius: 0.028
-  min_fitness_score: 0.12
+  min_fitness_score: 40 # minimum number of inliers
   align_to_top_centroid: true
 goal:
   position:

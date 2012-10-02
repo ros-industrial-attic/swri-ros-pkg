@@ -30,6 +30,10 @@ std::map<std::string,visualization_msgs::Marker> MarkerMap;
 const std::string MARKER_ATTACHED_OBJ = "attached_obj";
 const std::string MARKER_SEGMENTED_OBJ = "segmented_obj";
 
+// action services
+const std::string GRASP_COMMAND_ACTION_SERVICE = "/grasp_execution_action";
+const std::string JOINT_TRAJECTORY_ACTION_SERVICE = "/joint_trajectory_action";
+
 // service default names
 const static std::string DEFAULT_PLANNER_SERVICE = "/ompl_planning/plan_kinematic_path";
 const static std::string DEFAULT_SEGMENTATION_SERVICE = "/tabletop_segmentation";
@@ -79,7 +83,8 @@ void RosParamsList::fetchParams(std::string nameSpace)
 
 SimpleManipulationDemo::SimpleManipulationDemo()
 :cm_("robot_description"),
- current_robot_state_(NULL)
+ current_robot_state_(NULL),
+ grasp_exec_action_client_(GRASP_COMMAND_ACTION_SERVICE,true)
 {
 	// TODO Auto-generated constructor stub
 	//setup();
@@ -112,8 +117,8 @@ void SimpleManipulationDemo::setup()
 	// setting up execution monitors
 	{
 		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
-		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(ARM_GROUP_NAME,"/joint_trajectory_action"));
-		gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("end_effector","/grasp_execution_action"));
+		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(ARM_GROUP_NAME,JOINT_TRAJECTORY_ACTION_SERVICE));
+		gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("end_effector",GRASP_COMMAND_ACTION_SERVICE));
 
 		trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
 		trajectory_execution_monitor_.addTrajectoryControllerHandler(arm_controller_handler_);
@@ -140,6 +145,18 @@ void SimpleManipulationDemo::setup()
 		ROS_INFO_STREAM(NODE_NAME <<": Waiting for " + RosParamsList::Values::PlanningSceneService + " service");
 		ros::service::waitForService(RosParamsList::Values::PlanningSceneService);
 		set_planning_scene_diff_client_ = nh.serviceClient<arm_navigation_msgs::SetPlanningSceneDiff>(RosParamsList::Values::PlanningSceneService);
+	}
+
+	// will use grasp execution client to request pre-grasp action since the default gripper controller handler
+	// ignores this step.
+	ROS_INFO_STREAM(NODE_NAME << ": Setting up Service Action Clients");
+	{
+		//grasp_exec_action_client_ = actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPostureExecutionAction>(GRASP_COMMAND_ACTION_SERVICE,true);
+		while(!grasp_exec_action_client_.waitForServer(ros::Duration(0.5)))
+		{
+			ROS_INFO_STREAM(NODE_NAME << "Waiting for action service "<< GRASP_COMMAND_ACTION_SERVICE);
+		}
+		ROS_INFO_STREAM(NODE_NAME<<" : Connected to action service "<<GRASP_COMMAND_ACTION_SERVICE);
 	}
 
 	ROS_INFO_STREAM(NODE_NAME<<": Setting up ros publishers");
@@ -171,8 +188,8 @@ void SimpleManipulationDemo::setupBallPickingDemo()
 	// setting up execution monitors
 	{
 		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
-		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(ARM_GROUP_NAME,"/joint_trajectory_action"));
-		gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("end_effector","/grasp_execution_action"));
+		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(ARM_GROUP_NAME,JOINT_TRAJECTORY_ACTION_SERVICE));
+		gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("end_effector",GRASP_COMMAND_ACTION_SERVICE));
 
 		trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
 		trajectory_execution_monitor_.addTrajectoryControllerHandler(arm_controller_handler_);
@@ -203,9 +220,20 @@ void SimpleManipulationDemo::setupBallPickingDemo()
 		set_planning_scene_diff_client_ = nh.serviceClient<arm_navigation_msgs::SetPlanningSceneDiff>(RosParamsList::Values::PlanningSceneService);
 	}
 
+	// will use grasp execution client to request pre-grasp action since the default gripper controller handler
+	// ignores this step.
+	ROS_INFO_STREAM(NODE_NAME << ": Setting up Service Action Clients");
 	{
+		//grasp_exec_action_client_ = actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPostureExecutionAction>(GRASP_COMMAND_ACTION_SERVICE,true);
+		while(!grasp_exec_action_client_.waitForServer(ros::Duration(0.5)))
+		{
+			ROS_INFO_STREAM(NODE_NAME << "Waiting for action service "<< GRASP_COMMAND_ACTION_SERVICE);
+		}
+		ROS_INFO_STREAM(NODE_NAME<<" : Connected to action service "<<GRASP_COMMAND_ACTION_SERVICE);
+	}
 
-		ROS_INFO_STREAM(NODE_NAME<<": Setting up ros publishers");
+	ROS_INFO_STREAM(NODE_NAME<<": Setting up ros publishers");
+	{
 		// setting up ros publishers
 		vis_marker_publisher_ = nh.advertise<visualization_msgs::Marker> ("freetail_object", 1);
 		vis_marker_array_publisher_ = nh.advertise<visualization_msgs::MarkerArray> ("freetail_object_array", 1);
@@ -221,11 +249,10 @@ void SimpleManipulationDemo::setupBallPickingDemo()
 		trajectories_finished_function_ = boost::bind(&SimpleManipulationDemo::trajectoriesFinishedCallbackFunction, this, _1);
 
 		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
-
 	}
 
+	ROS_INFO_STREAM(NODE_NAME<<": Setting up published markers");
 	{
-		ROS_INFO_STREAM(NODE_NAME<<": Setting up published markers");
 		visualization_msgs::Marker marker;
 		marker.header.frame_id = cm_.getWorldFrameId();
 		marker.ns = NODE_NAME;
@@ -1306,7 +1333,7 @@ bool SimpleManipulationDemo::attemptGraspSequence(const std::string& group_name,
   std::vector<TrajectoryExecutionRequest> ter_reqs;
   TrajectoryExecutionRequest gripper_ter;
   gripper_ter.group_name_ = "end_effector";
-  gripper_ter.controller_name_ = "/grasp_execution_action";
+  gripper_ter.controller_name_ = GRASP_COMMAND_ACTION_SERVICE;
   gripper_ter.trajectory_ = getGripperTrajectory(group_name, true);
   gripper_ter.failure_ok_ = true;
   gripper_ter.test_for_close_enough_ = false;
@@ -1333,6 +1360,29 @@ bool SimpleManipulationDemo::attemptGraspSequence(const std::string& group_name,
   }
   ROS_INFO_STREAM(NODE_NAME << ": arm approach trajectory completed");
   trajectories_succeeded_ = false;
+
+  // request gripper pre-grasp command
+  object_manipulation_msgs::GraspHandPostureExecutionGoal graspGoal;
+  graspGoal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP;
+
+  ROS_INFO_STREAM(NODE_NAME << ": Requesting pre-grasp");
+  grasp_exec_action_client_.sendGoal(graspGoal);
+  if(!grasp_exec_action_client_.waitForResult(ros::Duration(2.0f)))
+  {
+	  ROS_ERROR_STREAM(NODE_NAME << ": Pre-grasp request timeout, exiting");
+	  return false;
+  }
+
+  if(grasp_exec_action_client_.getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
+  {
+	  ROS_ERROR_STREAM(NODE_NAME << ": Pre-grasp request unsuccessful, exiting");
+	  return false;
+  }
+  else
+  {
+	  ROS_INFO_STREAM(NODE_NAME << ": Pre-grasp completed");
+  }
+
 
   //now do approach
   TrajectoryExecutionRequest arm_ter;
@@ -1424,7 +1474,7 @@ bool SimpleManipulationDemo::attemptPlaceSequence(const std::string& group_name,
   //open gripper
   TrajectoryExecutionRequest gripper_ter;
   gripper_ter.group_name_ = "end_effector";
-  gripper_ter.controller_name_ = "/grasp_execution_action";
+  gripper_ter.controller_name_ = GRASP_COMMAND_ACTION_SERVICE;
   gripper_ter.trajectory_ = getGripperTrajectory(group_name, true);
   validateJointTrajectory(gripper_ter.trajectory_);
   gripper_ter.failure_ok_ = true;
