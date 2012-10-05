@@ -13,13 +13,13 @@ groups:
       - coupler-hand
 default_collision_operations:
   - object1: table_keepout_2
-    object2: manipulator
+    object2: sia20d_arm
     operation: disable  # Temporarily added
   - object1: table_keepout_2
     object2: end_effector
     operation: disable  # Temporarily added
   - object1: table_keepout_1
-    object2: manipulator
+    object2: sia20d_arm
     operation: disable  # Temporarily added
   - object1: table_keepout_1
     object2: end_effector
