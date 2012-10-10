@@ -2,7 +2,38 @@
  * RobotPickPlaceNavigator.cpp
  *
  *  Created on: Oct 8, 2012
- *      Author: coky
+ *      Author: jnicho
+ */
+
+/*
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2011, Southwest Research Institute
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *       * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *       * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *       * Neither the name of the Southwest Research Institute, nor the names
+ *       of its contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <arm_navigators/RobotPickPlaceNavigator.h>
@@ -91,7 +122,7 @@ void RobotPickPlaceNavigator::setup()
 	{
 		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
 		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(arm_group_name_,trajectory_action_service_));
-		gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("end_effector",grasp_action_service_));
+		gripper_controller_handler_.reset(new GraspPoseControllerHandler("end_effector",grasp_action_service_));
 
 		trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
 		trajectory_execution_monitor_.addTrajectoryControllerHandler(arm_controller_handler_);
@@ -103,7 +134,7 @@ void RobotPickPlaceNavigator::setup()
 	{
 		switch(configuration_type_)
 		{
-		case SETUP_SPHERE_SEGMENTATION:
+		case SETUP_SPHERE_PICK_PLACE:
 
 			seg_srv_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>(segmentation_service_, true);
 			break;
@@ -118,6 +149,11 @@ void RobotPickPlaceNavigator::setup()
 			object_database_model_description_client_ = nh.serviceClient<household_objects_database_msgs::GetModelDescription>(
 					model_database_service_, true);
 			break;
+
+		case SETUP_OTHER:
+
+			ROS_ERROR_STREAM(NODE_NAME<<": This configuration option is not supported");
+			exit(0);
 		}
 
 		grasp_planning_client = nh.serviceClient<object_manipulation_msgs::GraspPlanning>(grasp_planning_service_, true);
@@ -159,7 +195,7 @@ void RobotPickPlaceNavigator::setup()
 		ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
 		// others
 		grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_);
-		place_tester_ = new CustomPlaceTester(&cm_, ik_plugin_name_);
+		place_tester_ = new PlaceSequenceValidator(&cm_, ik_plugin_name_);
 		trajectories_finished_function_ = boost::bind(&RobotPickPlaceNavigator::trajectoriesFinishedCallbackFunction, this, _1);
 
 		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
@@ -195,7 +231,7 @@ void RobotPickPlaceNavigator::setupBallPickingDemo()
 	{
 		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
 		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(arm_group_name_,trajectory_action_service_));
-		gripper_controller_handler_.reset(new GraspPostureTrajectoryControllerHandler("end_effector",grasp_action_service_));
+		gripper_controller_handler_.reset(new GraspPoseControllerHandler("end_effector",grasp_action_service_));
 
 		trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
 		trajectory_execution_monitor_.addTrajectoryControllerHandler(arm_controller_handler_);
@@ -251,7 +287,7 @@ void RobotPickPlaceNavigator::setupBallPickingDemo()
 		ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
 		// others
 		grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_);
-		place_tester_ = new CustomPlaceTester(&cm_, ik_plugin_name_);
+		place_tester_ = new PlaceSequenceValidator(&cm_, ik_plugin_name_);
 		trajectories_finished_function_ = boost::bind(&RobotPickPlaceNavigator::trajectoriesFinishedCallbackFunction, this, _1);
 
 		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
@@ -1903,6 +1939,24 @@ const arm_navigation_msgs::CollisionObject* RobotPickPlaceNavigator::getCollisio
     return NULL;
 }
 
+void RobotPickPlaceNavigator::run()
+{
+	switch(configuration_type_)
+	{
+	case SETUP_FULL:
+		runFullNavigation();
+		break;
+
+	case SETUP_SPHERE_PICK_PLACE:
+		runSpherePickingDemo();
+		break;
+
+	default:
+		break;
+
+	}
+}
+
 void RobotPickPlaceNavigator::runFullNavigation()
 {
 	// getting and storing node name
@@ -1924,37 +1978,36 @@ void RobotPickPlaceNavigator::runFullNavigation()
 	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation and recognition stage started");
 	    if(!segmentAndRecognize())
 	    {
-	      ROS_WARN_STREAM("Segment and recognized failed");
+	      ROS_WARN_STREAM(NODE_NAME<<": Segment and recognized failed");
 	      continue;
 	    }
-	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation and recognition stage completed");
+	    ROS_INFO_STREAM(NODE_NAME << " Segmentation and recognition stage completed");
 
-	    ROS_INFO_STREAM(NODE_NAME + ": grasp pickup stage started");
+	    ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
 	    if(!pickUpSomething(arm_group_name_))
 	    {
-	      ROS_WARN_STREAM(NODE_NAME + " grasp pickup stage failed");
+	      ROS_WARN_STREAM(NODE_NAME << ": grasp pickup stage failed");
 	      continue;
 	    }
 	    else
 	    {
-	    	//ROS_INFO_STREAM(NODE_NAME + ": Pick up was successful");
-	    	ROS_INFO_STREAM(NODE_NAME + ": grasp pickup stage completed");
+	    	ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
 	    }
 
 
 	    ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
 	    if(!putDownSomething(arm_group_name_))
 	    {
-	      ROS_WARN_STREAM(NODE_NAME + ": grasp place stage failed");
+	      ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
 	    }
 	    else
 	    {
-	    	ROS_INFO_STREAM(NODE_NAME + ": grasp place stage completed");
+	    	ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
 	    }
 
 	    if(!moveArmToSide())
 	    {
-	      ROS_WARN_STREAM(NODE_NAME + ": Final side moved failed");
+	      ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
 	      break;
 	    }
 
@@ -1980,41 +2033,39 @@ void RobotPickPlaceNavigator::runSpherePickingDemo()
 	{
 	    startCycleTimer();
 
-	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation and recognition stage started");
+	    ROS_INFO_STREAM(NODE_NAME << ": Segmentation and recognition stage started");
 	    if(!segmentSpheres())
 	    {
 	      ROS_WARN_STREAM("Segment and recognized failed");
 	      continue;
 	    }
-	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation of spheres stage completed");
+	    ROS_INFO_STREAM(NODE_NAME << ": Segmentation of spheres stage completed");
 
-	    ROS_INFO_STREAM(NODE_NAME + ": grasp pickup stage started");
+	    ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
 	    if(!pickUpSomething(arm_group_name_))
 	    {
-	      ROS_WARN_STREAM(NODE_NAME + " grasp pickup stage failed");
+	      ROS_WARN_STREAM(NODE_NAME << " grasp pickup stage failed");
 	      continue;
 	    }
 	    else
 	    {
-	    	//ROS_INFO_STREAM(NODE_NAME + ": Pick up was successful");
-	    	ROS_INFO_STREAM(NODE_NAME + ": grasp pickup stage completed");
+	    	ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
 	    }
 
 
-	    ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
-	    //if(!putDownSomething(arm_group_name_))
+	    ROS_INFO_STREAM(NODE_NAME << ": grasp place stage started");
 	    if(!placeAtGoalLocation(arm_group_name_))
 	    {
-	      ROS_WARN_STREAM(NODE_NAME + ": grasp place stage failed");
+	      ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
 	    }
 	    else
 	    {
-	    	ROS_INFO_STREAM(NODE_NAME + ": grasp place stage completed");
+	    	ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
 	    }
 
 	    if(!moveArmToSide())
 	    {
-	      ROS_WARN_STREAM(NODE_NAME + ": Final side moved failed");
+	      ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
 	      break;
 	    }
 

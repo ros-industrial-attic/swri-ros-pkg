@@ -15,7 +15,8 @@
   <depend package="visualization_msgs"/>
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
-  <depend package="freetail_object_manipulation"/>
+  <depend package="object_manipulation_tools"/>
+  <depend package="perception_tools"/>
 
 </package>
 
