@@ -1,0 +1,67 @@
+#summary Provides guidelines for ROS node functionality, to improve cross-platform compatibility.
+
+= Motivation =
+
+One of the primary benefits of ROS-Industrial is that it enables interoperability between robots from different vendors, by integrating their control with the common ROS framework.  Even though ROS integration is a good start, even better compatibility is achieved when these different ROS nodes all utilize a common set of interfaces for control and feedback.
+
+This page attempts to provide some guidelines on what specific ROS interfaces should be provided by a ROS-Industrial robot to ensure maximum compatibility.  It is expected that vendor-specific implementation details may require compromises in some areas, but this will hopefully provide a “gold standard” implementation description.  See below for details on a [ReferenceImplementation Reference Implementation] following these guidelines and a [HardwareCompatibility Hardware Compatibility List] that provides platform-specific information.
+----
+= Operation =
+----
+This section describes how the robot is expected to respond to high-level operational activities (e.g. startup, shutdown, etc.).
+
+== Initialization ==
+ * the ROS node should automatically initialize all connections to the robot controller
+   * _no manual `connect` service-call should be required_
+ * it is preferred to have any robot-side code automatically running on controller startup
+   * e.g. in a background, always-on task
+   * any startup requirements should be explicitly stated in the node's documentation
+
+== Communications ==
+ * both sides of the robot-ROS connection should handle communications-loss scenarios:
+   * the *ROS node* should...
+     * automatically try to reconnect to the robot (at ~1Hz intervals)
+     * stop publishing most messages (e.g. position feedback)
+     * continue publishing state messages, with `connected=false`
+   * the *robot* should...
+     * stop motion and power off the drives
+     * reinitialize all communications to wait for a new connection
+   * if the interface cannot detect comms-loss directly, it may be necessary to implement a heartbeat message between the robot/ROS sides
+ * no mechanism is specified to flag something as *unsupported*
+   * topics should not be published (or subscribed to) if unsupported
+   * if a service call is advertised by a node, it is assumed to be supported (i.e. return valid results)
+     * _standard ROS mechanisms will ensure the client gets an error if it calls an unimplemented service_
+----
+= ROS API =
+----
+This section describes specific ROS interfaces (topics, services, and parameters) that the robot should provide.  These capabilities may be provided by a single node or multiple nodes, as needed by the robot communications architecture.
+
+It is also possible that different nodes may be used to provide the same capabilities with different assumptions, communications methods, etc.  ROS launch files can be used to control which nodes are appropriate to run for a given application.
+
+== General ==
+
+ === Parameters ===
+  * `~ip` (`string`)
+    IP address of robot connection
+  * `robot_description` (`urdf map`)
+    The [http://www.ros.org/wiki/urdf urdf] xml robot description
+
+ === Services ===
+  * `reset` ([http://www.ros.org/doc/api/std_srvs/html/srv/Empty.html std_srvs/Empty])
+    Re-initialize the robot connection (disconnect/reconnect)
+
+== State Feedback ==
+
+ === Published Topics ===
+  * `feedback_states` ([http://ros.org/doc/fuerte/api/control_msgs/html/msg/FollowJointTrajectoryFeedback.html control_msgs/FollowJointTrajectoryFeedback])
+    * used by ROS-I's [http://code.google.com/p/swri-ros-pkg/source/browse/trunk/motoman/dx100/src/joint_trajectory_action.cpp joint_trajectory_action] to monitor in-progress motions
+    * joint names, ordering, and scale should match ROS conventions (_e.g. radians_)
+    * if `desired` and `error` values unavailable, leave arrays *empty*
+    * if `velocities` and `accelerations` unavailable, leave arrays *empty*<BR><BR>
+  * `joint_states` ([http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html sensor_msgs/JointState])
+    * used by the [http://www.ros.org/wiki/robot_state_publisher robot_state_publisher] node to broadcast kinematic transforms
+    * joint names, ordering, and scale should match ROS conventions (_e.g. radians_)
+    * if `velocity` and `effort` unavailable, leave arrays *empty*<BR><BR>
+  * `robot_status` ([http://code.google.com/p/swri-ros-pkg/source/browse/trunk/industrial_core/industrial_msgs/msg/RobotStatus.msg industrial_msgs/RobotStatus])
+    * we prefer using explicit message-fields (instead of [http://www.ros.org/wiki/diagnostics Diagnostics] package) for better client-code usability
+    * status values should be set to -1 if not yet available/implemented
