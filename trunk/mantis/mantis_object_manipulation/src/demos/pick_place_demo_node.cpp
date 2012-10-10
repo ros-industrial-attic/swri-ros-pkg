@@ -10,7 +10,7 @@ int main(int argc,char** argv)
 {
 	ros::init(argc,argv,"pick_place_demo_node");
 	ros::NodeHandle nh;
-	RobotPickPlaceNavigator navigator;
-	navigator.setup();
+	RobotPickPlaceNavigator navigator(RobotPickPlaceNavigator::SETUP_SPHERE_PICK_PLACE);
+	navigator.run();
 	return 0;
 }

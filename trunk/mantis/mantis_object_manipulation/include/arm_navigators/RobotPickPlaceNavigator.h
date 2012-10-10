@@ -2,7 +2,38 @@
  * RobotPickPlaceNavigator.h
  *
  *  Created on: Oct 8, 2012
- *      Author: coky
+ *      Author: jnicho
+ */
+
+/*
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2011, Southwest Research Institute
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *       * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *       * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *       * Neither the name of the Southwest Research Institute, nor the names
+ *       of its contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef ROBOTPICKPLACENAVIGATOR_H_
@@ -29,9 +60,9 @@
 #include <household_objects_database_msgs/GetModelDescription.h>
 #include <object_manipulation_msgs/GraspPlanning.h>
 #include <planning_environment/util/construct_object.h>
-#include <freetail_object_manipulation/utils/grasp_posture_trajectory_controller_handler.h>
-#include <freetail_object_manipulation/utils/CustomPlaceTester.h>
-#include <freetail_object_manipulation/segmentation/SphereSegmentation.h>
+#include <object_manipulation_tools/controller_utils/GraspPoseControllerHandler.h>
+#include <object_manipulation_tools/manipulation_utils/PlaceSequenceValidator.h>
+#include <perception_tools/segmentation/SphereSegmentation.h>
 #include <tf/transform_listener.h>
 
 using namespace trajectory_execution_monitor;
@@ -191,13 +222,18 @@ public:
 	enum ConfigurationFlags
 	{
 		SETUP_FULL,
-		SETUP_SPHERE_SEGMENTATION,
+		SETUP_SPHERE_PICK_PLACE,
 		SETUP_OTHER,
 	};
 
-	RobotPickPlaceNavigator(ConfigurationFlags flag = SETUP_SPHERE_SEGMENTATION);
+	RobotPickPlaceNavigator(ConfigurationFlags flag = SETUP_SPHERE_PICK_PLACE);
 	virtual ~RobotPickPlaceNavigator();
 
+
+	// demo start
+	void run();
+
+protected:
 	// setup
 	void setup();
 	void setupBallPickingDemo(); // will be removed
@@ -247,10 +283,6 @@ public:
 	void startCycleTimer();
 	void printTiming();
 
-	// demo
-	void runFullNavigation();
-	void runSpherePickingDemo();
-
 	// utilities
 	static std::string makeCollisionObjectNameFromModelId(unsigned int model_id);
 	const arm_navigation_msgs::CollisionObject* getCollisionObject(unsigned int model_id);
@@ -265,7 +297,14 @@ public:
 	// ros parameters
 	void fetchParameters(std::string nameSpace = "");
 
+	// run demos
+	void runFullNavigation();
+	void runSpherePickingDemo();
+
 protected:
+
+
+
 	// setup flag
 	ConfigurationFlags configuration_type_;
 
@@ -305,7 +344,7 @@ protected:
 	  actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPostureExecutionAction> grasp_exec_action_client_;
 
 	  object_manipulator::GraspTesterFast* grasp_tester_;
-	  CustomPlaceTester *place_tester_;
+	  PlaceSequenceValidator *place_tester_;
 	  //object_manipulator::PlaceTesterFast* place_tester_;
 
 	  arm_navigation_msgs::PlanningScene current_planning_scene_;

@@ -30,21 +30,23 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(example ${PROJECT_NAME})
 
 # finding required freetail source files
-rosbuild_find_ros_package(freetail_object_manipulation)
-if(DEFINED freetail_object_manipulation_PACKAGE_PATH)
-	message(STATUS "Found freetail library")
-	set(FREETAIL_PATH ${freetail_object_manipulation_PACKAGE_PATH})
-	set(FREETAIL_SRC ${freetail_object_manipulation_PACKAGE_PATH}/src)
-	set(FREETAIL_INCLUDE ${freetail_object_manipulation_PACKAGE_PATH}/include)
+#rosbuild_find_ros_package(freetail_object_manipulation)
+#if(DEFINED freetail_object_manipulation_PACKAGE_PATH)
+#	message(STATUS "Found freetail library")
+#	set(FREETAIL_PATH ${freetail_object_manipulation_PACKAGE_PATH})
+#	set(FREETAIL_SRC ${freetail_object_manipulation_PACKAGE_PATH}/src)
+#	set(FREETAIL_INCLUDE ${freetail_object_manipulation_PACKAGE_PATH}/include)
 #	include_directories(${FREETAIL_PATH})
 #	include_directories(${FREETAIL_INCLUDE})	
 #	include_directories(${FREETAIL_SRC})
-else(DEFINED freetail_object_manipulation_PACKAGE_PATH)
-	message(FATAL_ERROR "Failed to find freetail library")
-endif(DEFINED freetail_object_manipulation_PACKAGE_PATH)	
+#else(DEFINED freetail_object_manipulation_PACKAGE_PATH)
+#	message(FATAL_ERROR "Failed to find freetail library")
+#endif(DEFINED freetail_object_manipulation_PACKAGE_PATH)
 
-rosbuild_add_library(RobotNavigator src/arm_navigators/RobotPickPlaceNavigator.cpp 
-${FREETAIL_SRC}/utils/CustomPlaceTester.cpp ${FREETAIL_SRC}/segmentation/SphereSegmentation.cpp)
+#rosbuild_add_library(RobotNavigator src/arm_navigators/RobotPickPlaceNavigator.cpp 
+#${FREETAIL_SRC}/utils/CustomPlaceTester.cpp ${FREETAIL_SRC}/segmentation/SphereSegmentation.cpp)
+
+rosbuild_add_library(RobotNavigator src/arm_navigators/RobotPickPlaceNavigator.cpp)
 
 rosbuild_add_executable(mantis_pick_place_node src/demos/pick_place_demo_node.cpp)
 target_link_libraries(mantis_pick_place_node RobotNavigator)
