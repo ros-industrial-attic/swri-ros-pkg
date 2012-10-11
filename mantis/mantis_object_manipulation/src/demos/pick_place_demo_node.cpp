@@ -2,7 +2,7 @@
  * arm_pick_place_demo.cpp
  *
  *  Created on: Oct 10, 2012
- *      Author: coky
+ *      Author: jnicho
  */
 #include <arm_navigators/RobotPickPlaceNavigator.h>
 

@@ -50,21 +50,11 @@ std::string SEGMENTATION_NAMESPACE = "segmentation";
 std::string GOAL_NAMESPACE = "goal";
 std::string JOINT_CONFIGURATIONS_NAMESPACE = "joints";
 
-// planning scene
-//const std::string ARM_GROUP_NAME = "sia20d_arm";
-
-// arm-manipulator names
-//const std::string WRIST_LINK = "link_t"; // last link in arm
-//const std::string TCP_LINK = "palm"; // gripper link whose transform is referred to as the TCP
-
 // marker map
 std::map<std::string,visualization_msgs::Marker> MarkerMap;
 const std::string MARKER_ATTACHED_OBJ = "attached_obj";
 const std::string MARKER_SEGMENTED_OBJ = "segmented_obj";
 
-// action services
-//const std::string GRASP_COMMAND_ACTION_SERVICE = "/grasp_execution_action";
-//const std::string JOINT_TRAJECTORY_ACTION_SERVICE = "/joint_trajectory_action";
 
 void RobotPickPlaceNavigator::fetchParameters(std::string nameSpace)
 {
@@ -75,7 +65,7 @@ void RobotPickPlaceNavigator::fetchParameters(std::string nameSpace)
 	ros::param::param(nameSpace + "/" + PARAM_NAME_GRIPPER_LINK,gripper_link_name_,DEFAULT_GRIPPER_LINK);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_GRASP_ACTION_SERVICE,grasp_action_service_,DEFAULT_GRASP_ACTION_SERVICE );
 	ros::param::param(nameSpace + "/" + PARAM_NAME_TRAJECTORY_ACTION_SERVICE,trajectory_action_service_,DEFAULT_TRAJECTORY_ACTION_SERVICE);
-	ros::param::param(nameSpace + "/" + PARAM_NAME_PLANNER_SERVICE,path_planner_service_,DEFAULT_PLANNER_SERVICE);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_PATH_PLANNER_SERVICE,path_planner_service_,DEFAULT_PATH_PLANNER_SERVICE);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_TRAJECTORY_FILTER_SERVICE,trajectory_filter_service_,DEFAULT_TRAJECTORY_FILTER_SERVICE);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_SEGMENTATION_SERVICE,segmentation_service_,DEFAULT_SEGMENTATION_SERVICE);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_RECOGNITION_SERVICE,recognition_service_,DEFAULT_RECOGNITION_SERVICE);
@@ -84,6 +74,7 @@ void RobotPickPlaceNavigator::fetchParameters(std::string nameSpace)
 	ros::param::param(nameSpace + "/" + PARAM_NAME_MODEL_DATABASE_SERVICE,model_database_service_,DEFAULT_MODEL_DATABASE_SERVICE);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_PLANNING_SCENE_SERVICE,planning_scene_service_,DEFAULT_ARM_GROUP);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_IK_PLUGING,ik_plugin_name_,DEFAULT_IK_PLUGING);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_JOINT_STATES_TOPIC,joint_states_topic_,DEFAULT_JOINT_STATES_TOPIC);
 }
 
 RobotPickPlaceNavigator::RobotPickPlaceNavigator(ConfigurationFlags flag)
@@ -120,9 +111,9 @@ void RobotPickPlaceNavigator::setup()
 	ROS_INFO_STREAM(NODE_NAME<<": Setting up execution Monitors");
 	// setting up execution monitors
 	{
-		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
+		joint_state_recorder_.reset(new JointStateTrajectoryRecorder(joint_states_topic_));
 		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(arm_group_name_,trajectory_action_service_));
-		gripper_controller_handler_.reset(new GraspPoseControllerHandler("end_effector",grasp_action_service_));
+		gripper_controller_handler_.reset(new GraspPoseControllerHandler(gripper_group_name_,grasp_action_service_));
 
 		trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
 		trajectory_execution_monitor_.addTrajectoryControllerHandler(arm_controller_handler_);
@@ -229,9 +220,9 @@ void RobotPickPlaceNavigator::setupBallPickingDemo()
 	ROS_INFO_STREAM(NODE_NAME<<": Setting up execution Monitors");
 	// setting up execution monitors
 	{
-		joint_state_recorder_.reset(new JointStateTrajectoryRecorder("/joint_states"));
+		joint_state_recorder_.reset(new JointStateTrajectoryRecorder(joint_states_topic_));
 		arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(arm_group_name_,trajectory_action_service_));
-		gripper_controller_handler_.reset(new GraspPoseControllerHandler("end_effector",grasp_action_service_));
+		gripper_controller_handler_.reset(new GraspPoseControllerHandler(gripper_group_name_,grasp_action_service_));
 
 		trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
 		trajectory_execution_monitor_.addTrajectoryControllerHandler(arm_controller_handler_);
@@ -378,14 +369,18 @@ std::vector<std::string> RobotPickPlaceNavigator::getJointNames(const std::strin
 
 void RobotPickPlaceNavigator::updateCurrentJointStateToLastTrajectoryPoint(const trajectory_msgs::JointTrajectory& traj)
 {
-  if(traj.points.size() == 0) {
-    ROS_ERROR_STREAM("No points in trajectory for setting current state");
+  if(traj.points.size() == 0)
+  {
+    ROS_ERROR_STREAM(NODE_NAME<<": No points in trajectory for setting current state");
     return;
   }
+
   std::map<std::string, double> joint_vals;
-  for(unsigned int i = 0; i < traj.joint_names.size(); i++) {
+  for(unsigned int i = 0; i < traj.joint_names.size(); i++)
+  {
     joint_vals[traj.joint_names[i]] = traj.points.back().positions[i];
   }
+
   current_robot_state_->setKinematicState(joint_vals);
 }
 
@@ -412,7 +407,7 @@ bool RobotPickPlaceNavigator::getAndSetPlanningScene()
 
   if(current_robot_state_ == NULL)
   {
-    ROS_WARN_STREAM(NODE_NAME<<": Problems setting local state");
+    ROS_WARN_STREAM(NODE_NAME<<": Problems setting robot kinematic state");
     return false;
   }
 
@@ -742,6 +737,186 @@ void RobotPickPlaceNavigator::addDetectedObjectToPlanningSceneDiff(const househo
   planning_scene_diff_.collision_objects.push_back(obj);
 }
 
+bool RobotPickPlaceNavigator::performSegmentation()
+{
+	//  ===================================== saving current time stamp =====================================
+	ros::WallTime start  = ros::WallTime::now();
+
+	//  ===================================== clearing results from last call =====================================
+	planning_scene_diff_.collision_objects.clear();
+	recognized_obj_pose_map_.clear();
+
+	//  ===================================== calling service =====================================
+	tabletop_object_detector::TabletopSegmentation segmentation_srv;
+	bool success = seg_srv_.call(segmentation_srv);
+
+	// printing timing
+	ros::WallTime after_seg = ros::WallTime::now();
+	ROS_INFO_STREAM(NODE_NAME<<": Seg took " << (after_seg-start).toSec());
+
+	// ===================================== checking results ========================================
+	if (!success)
+	{
+		ROS_ERROR_STREAM(NODE_NAME<<": Call to segmentation service failed");
+		return false;
+	}
+
+	if (segmentation_srv.response.result != segmentation_srv.response.SUCCESS)
+	{
+		ROS_ERROR_STREAM(NODE_NAME<<": Segmentation service returned error "<< segmentation_srv.response.result);
+		return false;
+	}
+
+	if(segmentation_srv.response.clusters.size() == 0)
+	{
+		ROS_ERROR_STREAM(NODE_NAME<<": Tabletop segmentation returned 0 clusters, exiting");
+		return false;
+	}
+
+	//  ===================================== storing results =====================================
+	segmentation_results_ = segmentation_srv.response;
+	segmented_clusters_ = segmentation_srv.response.clusters;
+
+	//  ===================================== updating local planning scene =====================================
+	addDetectedTableToPlanningSceneDiff(segmentation_srv.response.table);
+
+	// ===================================== printing completion info message =====================================
+	ROS_INFO_STREAM(NODE_NAME<<": Segmentation service succeeded. Detected "<<(int)segmentation_srv.response.clusters.size()<<" clusters");
+
+	return true;
+}
+
+
+
+bool RobotPickPlaceNavigator::performSphereSegmentation()
+{
+	//  ===================================== preparing result objects =====================================
+	  arm_navigation_msgs::CollisionObject obj;
+	  int bestClusterIndex = -1;
+	  sensor_msgs::PointCloud sphereCluster;
+
+	  //  ===================================== calling segmentation =====================================
+	  _SphereSeg.fetchParameters(SEGMENTATION_NAMESPACE);
+	  bool success = _SphereSeg.segment(segmented_clusters_,obj,bestClusterIndex);
+
+	  // ===================================== checking results ========================================
+	  if(!success)
+	  {
+		  ROS_ERROR_STREAM(NODE_NAME<<": Sphere segmentation did not succeed");
+		  return false;
+	  }
+
+	  //  ===================================== storing results =====================================
+	  // assigning id first
+	  obj.id = makeCollisionObjectNameFromModelId(0);
+
+	  // retrieving segmented sphere cluster
+	  _SphereSeg.getSphereCluster(sphereCluster);
+
+	  // storing best cluster
+	  segmented_clusters_.clear();
+	  segmented_clusters_.push_back(sphereCluster);
+
+	  // storing pose
+	  geometry_msgs::PoseStamped pose;
+	  pose.header.frame_id = obj.header.frame_id;
+	  pose.pose = obj.poses[0];
+	  recognized_obj_pose_map_[std::string(obj.id)] = pose;
+
+	  // storing recognized object as model for planning
+	  household_objects_database_msgs::DatabaseModelPoseList models;
+	  household_objects_database_msgs::DatabaseModelPose model;
+	  model.model_id = 0;
+	  model.pose = pose;
+	  model.confidence = 1.0f;
+	  model.detector_name = "sphere_segmentation";
+	  models.model_list.push_back(model);
+	  recognized_models_.clear();
+	  recognized_models_.push_back(models);
+
+	  //  ===================================== updating local planning scene =====================================
+	  addDetectedObjectToPlanningSceneDiff(obj);
+
+	  //  ===================================== updating markers =====================================
+	  // update markers
+	  visualization_msgs::Marker &segMarker = MarkerMap[MARKER_SEGMENTED_OBJ];
+	  visualization_msgs::Marker &attachedMarker = MarkerMap[MARKER_ATTACHED_OBJ];
+
+	  // segmented object
+	  collisionObjToMarker(obj,segMarker);
+	  segMarker.action = visualization_msgs::Marker::ADD;
+
+	  // attached object, hide for now until gripper is close
+	  collisionObjToMarker(obj,attachedMarker);
+	  attachedMarker.action = visualization_msgs::Marker::DELETE;
+	  attachedMarker.header.frame_id = gripper_link_name_;
+
+	  // ===================================== printing completion info message =====================================
+	  arm_navigation_msgs::Shape &shape = obj.shapes[0];
+	  ROS_INFO_STREAM("\n"<<NODE_NAME<<": Sphere Segmentation completed:\n");
+	  ROS_INFO_STREAM("\tFrame id: "<<obj.header.frame_id<<"\n");
+	  ROS_INFO_STREAM("\tRadius: "<<shape.dimensions[0]<<"\n");
+	  ROS_INFO_STREAM("\tx: "<<pose.pose.position.x<<", y: "<<pose.pose.position.y
+			  <<", z: "<<pose.pose.position.z<<"\n");
+
+	return true;
+}
+
+bool RobotPickPlaceNavigator::performRecognition()
+{
+	//  ===================================== saving current time stamp =====================================
+	ros::WallTime start = ros::WallTime::now();
+
+	//  ===================================== clearing results from last call =====================================
+	planning_scene_diff_.collision_objects.clear();
+	recognized_obj_pose_map_.clear();
+
+	//  ===================================== calling service =====================================
+	tabletop_object_detector::TabletopObjectRecognition recognition_srv;
+	recognition_srv.request.table = segmentation_results_.table;
+	recognition_srv.request.clusters = segmented_clusters_;
+	recognition_srv.request.num_models = 1;
+	recognition_srv.request.perform_fit_merge = false;
+
+	bool success = rec_srv_.call(recognition_srv);
+
+	// ===================================== checking results ========================================
+	if (!success)
+	{
+		ROS_ERROR_STREAM(NODE_NAME<<": Call to recognition service " <<recognition_service_.c_str()<<" failed.");
+		return false;
+	}
+
+    if(recognition_srv.response.models.size() == 0)
+    {
+    	ROS_ERROR_STREAM(NODE_NAME<<": Recognition found no objects");
+    	return false;
+    }
+
+	//  ===================================== storing results =====================================
+    recognized_models_ = recognition_srv.response.models;
+
+	//  ===================================== updating local planning scene =====================================
+    addDetectedObjectToPlanningSceneDiff(recognition_srv.response.models[0]);
+
+	// ===================================== printing completion info message =====================================
+    ROS_INFO_STREAM(NODE_NAME<<": Recognition took " << (ros::WallTime::now()-start));
+    ROS_INFO_STREAM(NODE_NAME<<": Got " << recognition_srv.response.models.size() << " models");
+    recognized_models_ = recognition_srv.response.models;
+	std::stringstream stdout;
+	stdout<<"\nRetrieved models:";
+    BOOST_FOREACH(household_objects_database_msgs::DatabaseModelPose model,recognition_srv.response.models[0].model_list)
+    {
+    	stdout<<"\n\tModel id: "<<model.model_id;
+    	stdout<<"\n\tPose frame id: "<<model.pose.header.frame_id;
+    	stdout<<"\n\tdetector name: "<<model.detector_name;
+    	stdout<<"\n";
+    }
+    ROS_INFO_STREAM(stdout.str());
+
+	return true;
+}
+
 bool RobotPickPlaceNavigator::segmentSpheres()
 {
 	  // starting timer
@@ -749,7 +924,7 @@ bool RobotPickPlaceNavigator::segmentSpheres()
 
 	  // clearing arrays
 	  planning_scene_diff_.collision_objects.clear();
-	  transformed_recognition_poses_.clear();
+	  recognized_obj_pose_map_.clear();
 
 
 	  tabletop_object_detector::TabletopSegmentation segmentation_srv;
@@ -776,7 +951,7 @@ bool RobotPickPlaceNavigator::segmentSpheres()
 	  if(segmentation_srv.response.clusters.size() > 0)
 	  {
 		  ROS_INFO_STREAM(NODE_NAME<<": Tabletop segmentation found "<<segmentation_srv.response.clusters.size()<<" clusters");
-		  //last_clusters_ = segmentation_srv.response.clusters;
+		  //segmented_clusters_ = segmentation_srv.response.clusters;
 	  }
 	  else
 	  {
@@ -795,9 +970,9 @@ bool RobotPickPlaceNavigator::segmentSpheres()
 		  _SphereSeg.getSphereCluster(sphereCluster);
 
 		  // storing best cluster
-		  last_clusters_.clear();
-		  last_clusters_.push_back(sphereCluster);
-		  //last_clusters_.push_back(segmentation_srv.response.clusters[bestClusterIndex]);
+		  segmented_clusters_.clear();
+		  segmented_clusters_.push_back(sphereCluster);
+		  //segmented_clusters_.push_back(segmentation_srv.response.clusters[bestClusterIndex]);
 
 		  arm_navigation_msgs::Shape &shape = obj.shapes[0];
 		  geometry_msgs::Pose &pose = obj.poses[0];
@@ -823,7 +998,7 @@ bool RobotPickPlaceNavigator::segmentSpheres()
 	  geometry_msgs::PoseStamped pose;
 	  pose.header.frame_id = obj.header.frame_id;
 	  pose.pose = obj.poses[0];
-	  transformed_recognition_poses_[std::string(obj.id)] = pose;
+	  recognized_obj_pose_map_[std::string(obj.id)] = pose;
 
 	  // creating object array for planning
 	  household_objects_database_msgs::DatabaseModelPoseList models;
@@ -835,8 +1010,8 @@ bool RobotPickPlaceNavigator::segmentSpheres()
 	  models.model_list.push_back(model);
 
 	  // storing model for planning
-	  object_models_.clear();
-	  object_models_.push_back(models);
+	  recognized_models_.clear();
+	  recognized_models_.push_back(models);
 
 	  // storing final total time
 	  perception_duration_ += ros::WallTime::now()-start;
@@ -861,15 +1036,14 @@ bool RobotPickPlaceNavigator::segmentSpheres()
 
 bool RobotPickPlaceNavigator::segmentAndRecognize()
 {
-
   // tabletop segmentation
   ros::WallTime start = ros::WallTime::now();
   planning_scene_diff_.collision_objects.clear();
-  transformed_recognition_poses_.clear();
+  recognized_obj_pose_map_.clear();
   tabletop_object_detector::TabletopSegmentation segmentation_srv;
   if (!seg_srv_.call(segmentation_srv))
   {
-    ROS_ERROR("Call to segmentation service failed");
+    ROS_ERROR_STREAM(NODE_NAME<<": Call to segmentation service failed");
     return false;
   }
 
@@ -877,19 +1051,20 @@ bool RobotPickPlaceNavigator::segmentAndRecognize()
   ROS_INFO_STREAM("Seg took " << (after_seg-start).toSec());
   if (segmentation_srv.response.result != segmentation_srv.response.SUCCESS)
   {
-    ROS_ERROR("Segmentation service returned error %d", segmentation_srv.response.result);
+    ROS_ERROR_STREAM(NODE_NAME<<": Segmentation service returned error "<< segmentation_srv.response.result);
     return false;
   }
+
   addDetectedTableToPlanningSceneDiff(segmentation_srv.response.table);
-  ROS_INFO("Segmentation service succeeded. Detected %d clusters", (int)segmentation_srv.response.clusters.size());
+  ROS_INFO_STREAM(NODE_NAME<<": Segmentation service succeeded. Detected "
+		  <<(int)segmentation_srv.response.clusters.size()<<" clusters");
 
   // proceed with recognition
   bool got_recognition = false;
-  object_models_.clear();
+  recognized_models_.clear();
   if(!segmentation_srv.response.clusters.empty())
   {
-
-    last_clusters_ = segmentation_srv.response.clusters;
+    segmented_clusters_ = segmentation_srv.response.clusters;
     tabletop_object_detector::TabletopObjectRecognition recognition_srv;
     recognition_srv.request.table = segmentation_srv.response.table;
     recognition_srv.request.clusters = segmentation_srv.response.clusters;
@@ -898,20 +1073,20 @@ bool RobotPickPlaceNavigator::segmentAndRecognize()
 
     if (!rec_srv_.call(recognition_srv))
     {
-      ROS_ERROR("Call to recognition service failed");
+      ROS_ERROR_STREAM(NODE_NAME<<": Call to recognition service failed");
       return false;
     }
 
     // tabletop recognition
     if(recognition_srv.response.models.size() == 0)
     {
-    	ROS_ERROR("Recognition found no objects");
+    	ROS_ERROR_STREAM(NODE_NAME<<": Recognition found no objects");
     	return false;
     }
 
     ROS_INFO_STREAM(NODE_NAME<<": Recognition took " << (ros::WallTime::now()-after_seg));
     ROS_INFO_STREAM(NODE_NAME<<": Got " << recognition_srv.response.models.size() << " models");
-    object_models_ = recognition_srv.response.models;
+    recognized_models_ = recognition_srv.response.models;
 	std::stringstream stdout;
 	stdout<<"Retrieved models:";
     BOOST_FOREACH(household_objects_database_msgs::DatabaseModelPose model,recognition_srv.response.models[0].model_list)
@@ -939,7 +1114,7 @@ bool RobotPickPlaceNavigator::recognize()
 {
 	ros::WallTime start = ros::WallTime::now();
 	planning_scene_diff_.collision_objects.clear();
-	transformed_recognition_poses_.clear();
+	recognized_obj_pose_map_.clear();
 
 	// calling segmentation
 	tabletop_object_detector::TabletopSegmentation segmentation_srv;
@@ -964,15 +1139,15 @@ bool RobotPickPlaceNavigator::recognize()
 
 	ROS_INFO_STREAM("Recognition took " << (ros::WallTime::now()-after_seg));
 	ROS_INFO_STREAM("Got " << recognition_srv.response.models.size() << " models");
-	object_models_ = recognition_srv.response.models;
+	recognized_models_ = recognition_srv.response.models;
 
 	std::stringstream ss;
-	for(unsigned int i = 0; i < object_models_.size(); i++)
+	for(unsigned int i = 0; i < recognized_models_.size(); i++)
 	{
 		success = true;
-		ss<<"\n\nRecognized model #"<<i+1<<" details:"<<"\n\tName:\t"<<object_models_[i].model_list[0].detector_name;
-		ss<<"\n\tModel Id:\t"<<object_models_[i].model_list[0].model_id;
-		ss<<"\n\tConfidence:\t"<<object_models_[i].model_list[0].confidence;
+		ss<<"\n\nRecognized model #"<<i+1<<" details:"<<"\n\tName:\t"<<recognized_models_[i].model_list[0].detector_name;
+		ss<<"\n\tModel Id:\t"<<recognized_models_[i].model_list[0].model_id;
+		ss<<"\n\tConfidence:\t"<<recognized_models_[i].model_list[0].confidence;
 
 	}
 
@@ -1004,7 +1179,7 @@ bool RobotPickPlaceNavigator::getMeshFromDatabasePose(const household_objects_da
   obj.poses.resize(1);
   obj.shapes.resize(1);
 
-  transformed_recognition_poses_[obj.id] = pose;
+  recognized_obj_pose_map_[obj.id] = pose;
 
   bool use_cylinder = true;
 
@@ -1039,10 +1214,10 @@ bool RobotPickPlaceNavigator::selectGraspableObject(const std::string& arm_name,
 {
   std::stringstream logStream;
 
-  if(object_models_.size() == 0) return false;
-  if(object_models_[0].model_list.size() == 0) return false;
+  if(recognized_models_.size() == 0) return false;
+  if(recognized_models_[0].model_list.size() == 0) return false;
 
-  household_objects_database_msgs::DatabaseModelPose& dmp = object_models_[0].model_list[0];
+  household_objects_database_msgs::DatabaseModelPose& dmp = recognized_models_[0].model_list[0];
 
   pickup_goal.arm_name = arm_name;
   pickup_goal.collision_object_name = makeCollisionObjectNameFromModelId(dmp.model_id);
@@ -1050,7 +1225,7 @@ bool RobotPickPlaceNavigator::selectGraspableObject(const std::string& arm_name,
   pickup_goal.lift.direction.vector.z = 1.0;
   pickup_goal.lift.desired_distance = .1;
   pickup_goal.target.reference_frame_id = pickup_goal.collision_object_name;
-  pickup_goal.target.cluster = last_clusters_[0];
+  pickup_goal.target.cluster = segmented_clusters_[0];
   pickup_goal.allow_gripper_support_collision = true;
   pickup_goal.collision_support_surface_name = "table";
 
@@ -1064,10 +1239,29 @@ bool RobotPickPlaceNavigator::selectGraspableObject(const std::string& arm_name,
   ROS_INFO("%s",logStream.str().c_str());
 
   household_objects_database_msgs::DatabaseModelPose dmp_copy = dmp;
-  dmp_copy.pose = transformed_recognition_poses_[pickup_goal.collision_object_name];
+  dmp_copy.pose = recognized_obj_pose_map_[pickup_goal.collision_object_name];
   pickup_goal.target.potential_models.push_back(dmp_copy);
 
-  return getObjectGrasps(arm_name, dmp, last_clusters_[0], grasps);
+  return getObjectGrasps(arm_name, dmp, segmented_clusters_[0], grasps);
+}
+
+bool RobotPickPlaceNavigator::performGraspPlanning()
+{
+	//  ===================================== saving current time stamp =====================================
+
+	//  ===================================== clearing results from last call =====================================
+
+	//  ===================================== calling service =====================================
+
+	// ===================================== checking results ========================================
+
+	//  ===================================== storing results =====================================
+
+	//  ===================================== updating local planning scene =====================================
+
+	// ===================================== printing completion info message =====================================
+
+	return true;
 }
 
 bool RobotPickPlaceNavigator::placeAtGoalLocation(const std::string &armName)
@@ -1388,7 +1582,7 @@ bool RobotPickPlaceNavigator::attemptGraspSequence(const std::string& group_name
   //first open the gripper
   std::vector<TrajectoryExecutionRequest> ter_reqs;
   TrajectoryExecutionRequest gripper_ter;
-  gripper_ter.group_name_ = "end_effector";
+  gripper_ter.group_name_ = gripper_group_name_;
   gripper_ter.controller_name_ = grasp_action_service_;
   gripper_ter.trajectory_ = getGripperTrajectory(group_name, true);
   gripper_ter.failure_ok_ = true;
@@ -1529,7 +1723,7 @@ bool RobotPickPlaceNavigator::attemptPlaceSequence(const std::string& group_name
 
   //open gripper
   TrajectoryExecutionRequest gripper_ter;
-  gripper_ter.group_name_ = "end_effector";
+  gripper_ter.group_name_ = gripper_group_name_;
   gripper_ter.controller_name_ = grasp_action_service_;
   gripper_ter.trajectory_ = getGripperTrajectory(group_name, true);
   validateJointTrajectory(gripper_ter.trajectory_);
@@ -1589,11 +1783,14 @@ bool RobotPickPlaceNavigator::getObjectGrasps(const std::string& arm_name,
 
   if(ros::service::exists(model_database_service_,false))
   {
-	  if(!object_database_model_description_client_.call(des_req, des_res)) {
+	  if(!object_database_model_description_client_.call(des_req, des_res))
+	  {
 		ROS_WARN_STREAM("Call to objects database for getModelDescription failed");
 		return false;
 	  }
-	  if(des_res.return_code.code != des_res.return_code.SUCCESS) {
+
+	  if(des_res.return_code.code != des_res.return_code.SUCCESS)
+	  {
 		ROS_WARN_STREAM("Object database gave non-success code " << des_res.return_code.code << " for model id " << des_req.model_id);
 		return false;
 	  }
@@ -1613,8 +1810,6 @@ bool RobotPickPlaceNavigator::getObjectGrasps(const std::string& arm_name,
   dmp_copy.pose.header.stamp = ros::Time::now();
 
 
-
-
   object_manipulation_msgs::GraspPlanning::Request request;
   object_manipulation_msgs::GraspPlanning::Response response;
 
@@ -1624,32 +1819,38 @@ bool RobotPickPlaceNavigator::getObjectGrasps(const std::string& arm_name,
   request.target.reference_frame_id = cloud.header.frame_id;
   request.target.cluster = cloud;
 
-  if(!grasp_planning_client.call(request, response)) {
-    ROS_WARN_STREAM("Call to objects database for GraspPlanning failed");
-    return false;
-  }
-  if(response.error_code.value != response.error_code.SUCCESS) {
-    ROS_WARN_STREAM("Object database gave non-success code " << response.error_code.value);
+  if(!grasp_planning_client.call(request, response))
+  {
+    ROS_WARN_STREAM(NODE_NAME<<": Call to objects database for GraspPlanning failed");
     return false;
   }
 
-  if(response.grasps.size() == 0) {
-    ROS_WARN_STREAM("No grasps returned in response");
+  if(response.error_code.value != response.error_code.SUCCESS)
+  {
+    ROS_WARN_STREAM(NODE_NAME<<": Object database gave non-success code " << response.error_code.value);
     return false;
   }
-  if(response.grasps.size() > 0) {
-    ROS_INFO_STREAM("Grasp is " << response.grasps[0].grasp_pose.position.x << " "
+
+  // verify grasp plan results
+  if(response.grasps.size() == 0)
+  {
+    ROS_WARN_STREAM(NODE_NAME<<": No grasps returned in response");
+    return false;
+  }
+  if(response.grasps.size() > 0)
+  {
+    ROS_INFO_STREAM(NODE_NAME<<": Grasp is " << response.grasps[0].grasp_pose.position.x << " "
 		      << response.grasps[0].grasp_pose.position.y << " "
 		      << response.grasps[0].grasp_pose.position.z);
   }
 
-  ROS_INFO_STREAM("Cloud header " << cloud.header.frame_id);
-  ROS_INFO_STREAM("Recognition pose frame " << dmp.pose.header.frame_id);
+  ROS_INFO_STREAM(NODE_NAME<<": Cloud header " << cloud.header.frame_id);
+  ROS_INFO_STREAM(NODE_NAME<<": Recognition pose frame " << dmp.pose.header.frame_id);
 
   tf::Transform first_grasp_in_world_tf;
   tf::poseMsgToTF(response.grasps[0].grasp_pose, first_grasp_in_world_tf);
 
-  ROS_INFO_STREAM("Recognition pose frame " << dmp.pose.header.frame_id);
+  ROS_INFO_STREAM(NODE_NAME<<": Recognition pose frame " << dmp.pose.header.frame_id);
   planning_models::KinematicState state(*current_robot_state_);
   state.updateKinematicStateWithLinkAt(gripper_link_name_, first_grasp_in_world_tf);
 
@@ -1661,7 +1862,7 @@ bool RobotPickPlaceNavigator::getObjectGrasps(const std::string& arm_name,
   visualization_msgs::MarkerArray arr;
 
   ROS_INFO_STREAM(NODE_NAME<<": Getting kinematic model group under 'end_effector'");
-  std::vector<std::string> links = cm_.getKinematicModel()->getModelGroup("end_effector")->getGroupLinkNames();
+  std::vector<std::string> links = cm_.getKinematicModel()->getModelGroup(gripper_group_name_)->getGroupLinkNames();
 
   ROS_INFO_STREAM(NODE_NAME<<": Obtaining robot marker from state and publishing");
   cm_.getRobotMarkersGivenState(state, arr, col_pregrasp,"first_grasp", ros::Duration(0.0), &links);
@@ -1755,7 +1956,7 @@ bool RobotPickPlaceNavigator::attachCollisionObject(const std::string& group_nam
   }
 
   att.link_name = gripper_link_name_;
-  att.touch_links.push_back("end_effector");
+  att.touch_links.push_back(gripper_group_name_);
 
   planning_models::KinematicState state(*current_robot_state_);
   tf::Transform t;
@@ -1769,7 +1970,7 @@ bool RobotPickPlaceNavigator::attachCollisionObject(const std::string& group_nam
   state.setKinematicState(grasp_vals);
 
   tf::Transform obj_pose;
-  tf::poseMsgToTF(transformed_recognition_poses_[collision_object_name].pose, obj_pose);// store object pose in world coordinates
+  tf::poseMsgToTF(recognized_obj_pose_map_[collision_object_name].pose, obj_pose);// store object pose in world coordinates
 
   //assumes that the grasp is in the object frame
   tf::Transform grasp_pose = obj_pose*t;
