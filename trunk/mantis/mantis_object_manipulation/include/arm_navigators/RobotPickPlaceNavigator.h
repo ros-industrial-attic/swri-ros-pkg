@@ -74,7 +74,7 @@ const std::string DEFAULT_WRIST_LINK = "link_t";
 const std::string DEFAULT_GRIPPER_LINK = "palm";
 const std::string DEFAULT_GRASP_ACTION_SERVICE = "/grasp_execution_action";
 const std::string DEFAULT_TRAJECTORY_ACTION_SERVICE = "/joint_trajectory_action";
-const std::string DEFAULT_PLANNER_SERVICE = "/ompl_planning/plan_kinematic_path";
+const std::string DEFAULT_PATH_PLANNER_SERVICE = "/ompl_planning/plan_kinematic_path";
 const std::string DEFAULT_SEGMENTATION_SERVICE = "/tabletop_segmentation";
 const std::string DEFAULT_RECOGNITION_SERVICE = "/tabletop_object_recognition";
 const std::string DEFAULT_TRAJECTORY_FILTER_SERVICE = "/trajectory_filter_server/filter_trajectory_with_constraints";
@@ -83,6 +83,7 @@ const std::string DEFAULT_MESH_DATABASE_SERVICE = "/objects_database_node/get_mo
 const std::string DEFAULT_MODEL_DATABASE_SERVICE = "/objects_database_node/get_model_description";
 const std::string DEFAULT_PLANNING_SCENE_SERVICE = "/environment_server/set_planning_scene_diff";
 const std::string DEFAULT_IK_PLUGING = "SIA20D_Mesh_manipulator_kinematics/IKFastKinematicsPlugin";
+const std::string DEFAULT_JOINT_STATES_TOPIC = "/joint_states";
 
 // ros param names
 const std::string PARAM_NAME_ARM_GROUP = "arm_group";
@@ -91,7 +92,7 @@ const std::string PARAM_NAME_WRIST_LINK = "wrist_link";
 const std::string PARAM_NAME_GRIPPER_LINK = "gripper_link";
 const std::string PARAM_NAME_GRASP_ACTION_SERVICE = "grasp_action_service_name";
 const std::string PARAM_NAME_TRAJECTORY_ACTION_SERVICE = "joint_trajectory_service_name";
-const std::string PARAM_NAME_PLANNER_SERVICE = "planner_service_name";
+const std::string PARAM_NAME_PATH_PLANNER_SERVICE = "planner_service_name";
 const std::string PARAM_NAME_TRAJECTORY_FILTER_SERVICE = "trajectory_filter_service_name";
 const std::string PARAM_NAME_SEGMENTATION_SERVICE = "segmentation_service_name";
 const std::string PARAM_NAME_RECOGNITION_SERVICE = "recognition_service_name";
@@ -100,6 +101,7 @@ const std::string PARAM_NAME_MESH_DATABASE_SERVICE = "mesh_database_service_name
 const std::string PARAM_NAME_MODEL_DATABASE_SERVICE = "model_database_service_name";
 const std::string PARAM_NAME_PLANNING_SCENE_SERVICE = "planning_scene_service_name";
 const std::string PARAM_NAME_IK_PLUGING = "arm_inverse_kinematics_plugin";
+const std::string PARAM_NAME_JOINT_STATES_TOPIC = "joint_state_topic";
 
 class RobotPickPlaceNavigator
 {
@@ -235,71 +237,105 @@ public:
 
 protected:
 	// setup
-	void setup();
-	void setupBallPickingDemo(); // will be removed
-	void setupRecognitionOnly(); // will be removed
+		void setup();
+		void setupBallPickingDemo(); // will be removed
+		void setupRecognitionOnly(); // will be removed
 
 	// arm trajectory
-	bool trajectoriesFinishedCallbackFunction(TrajectoryExecutionDataVector tedv);
-	bool fastFilterTrajectory(const std::string& group_name,trajectory_msgs::JointTrajectory& jt);
+		bool trajectoriesFinishedCallbackFunction(TrajectoryExecutionDataVector tedv);
+		bool fastFilterTrajectory(const std::string& group_name,trajectory_msgs::JointTrajectory& jt);
 
 	// segmentation/recognition
-	bool segmentAndRecognize();
-	bool segmentSpheres();
-	bool recognize();
+		bool segmentAndRecognize();
+		bool segmentSpheres();
+		bool recognize();
 
 	// household database
-	bool getMeshFromDatabasePose(const household_objects_database_msgs::DatabaseModelPose &model_pose,arm_navigation_msgs::CollisionObject& obj,const geometry_msgs::PoseStamped& pose);
+		bool getMeshFromDatabasePose(const household_objects_database_msgs::DatabaseModelPose &model_pose,
+				arm_navigation_msgs::CollisionObject& obj,const geometry_msgs::PoseStamped& pose);
 
 	// grasp planning
-	bool selectGraspableObject(const std::string& arm_name,object_manipulation_msgs::PickupGoal& pickup_goal,std::vector<object_manipulation_msgs::Grasp>& grasps);
-	bool getObjectGrasps(const std::string& arm_name,const household_objects_database_msgs::DatabaseModelPose& dmp,const sensor_msgs::PointCloud& cloud,std::vector<object_manipulation_msgs::Grasp>& grasps);
-	trajectory_msgs::JointTrajectory getGripperTrajectory(const std::string& arm_name,bool open);
+		bool selectGraspableObject(const std::string& arm_name,object_manipulation_msgs::PickupGoal& pickup_goal,
+				std::vector<object_manipulation_msgs::Grasp>& grasps);
+		bool getObjectGrasps(const std::string& arm_name,const household_objects_database_msgs::DatabaseModelPose& dmp,
+				const sensor_msgs::PointCloud& cloud,std::vector<object_manipulation_msgs::Grasp>& grasps);
+		trajectory_msgs::JointTrajectory getGripperTrajectory(const std::string& arm_name,bool open);
 
 	// arm navigation
-	bool putDownSomething(const std::string& arm_name);
-	bool placeAtGoalLocation(const std::string &armName);
-	bool pickUpSomething(const std::string& arm_name);
-	bool moveArm(const std::string& group_name,const std::vector<double>& joint_positions);
-	bool moveArmToSide();
+		bool putDownSomething(const std::string& arm_name);
+		bool placeAtGoalLocation(const std::string &armName);
+		bool pickUpSomething(const std::string& arm_name);
+		bool moveArm(const std::string& group_name,const std::vector<double>& joint_positions);
+		bool moveArmToSide();
 
 	// planning scene
-	void attachCollisionObjectCallback(const std::string& group_name);
-	void detachCollisionObjectCallback(const std::string& group_name);
-	bool attachCollisionObject(const std::string& group_name,const std::string& collision_object_name, const object_manipulation_msgs::Grasp& grasp);
-	bool detachCollisionObject(const std::string& group_name,const geometry_msgs::PoseStamped& place_pose,const object_manipulation_msgs::Grasp& grasp);
-	void revertPlanningScene();
-	void updateCurrentJointStateToLastTrajectoryPoint(const trajectory_msgs::JointTrajectory& traj);
-	bool getAndSetPlanningScene();
-	void addDetectedTableToPlanningSceneDiff(const tabletop_object_detector::Table &table);
-	void addDetectedObjectToPlanningSceneDiff(arm_navigation_msgs::CollisionObject &obj);
-	void addDetectedObjectToPlanningSceneDiff(const household_objects_database_msgs::DatabaseModelPoseList& model);
+		void attachCollisionObjectCallback(const std::string& group_name);
+		void detachCollisionObjectCallback(const std::string& group_name);
+		bool attachCollisionObject(const std::string& group_name,const std::string& collision_object_name,
+				const object_manipulation_msgs::Grasp& grasp);
+		bool detachCollisionObject(const std::string& group_name,const geometry_msgs::PoseStamped& place_pose,
+				const object_manipulation_msgs::Grasp& grasp);
+		void revertPlanningScene();
+		void updateCurrentJointStateToLastTrajectoryPoint(const trajectory_msgs::JointTrajectory& traj);
+
+		// adds or removes objects into planning scene through a service call, service returns a copy of the scene in its current state;
+		bool getAndSetPlanningScene();
+
+		// add objects to local copy of the planning scene, however the planning scene service needs to be called in order to push
+		// any changes into the actual planning scene
+		void addDetectedTableToPlanningSceneDiff(const tabletop_object_detector::Table &table);
+		void addDetectedObjectToPlanningSceneDiff(arm_navigation_msgs::CollisionObject &obj);
+		void addDetectedObjectToPlanningSceneDiff(const household_objects_database_msgs::DatabaseModelPoseList& model);
 
 	// grasp execution
-	bool attemptGraspSequence(const std::string& group_name,const object_manipulator::GraspExecutionInfo& gei);
-	bool attemptPlaceSequence(const std::string& group_name,const object_manipulator::PlaceExecutionInfo& pei);
+		bool attemptGraspSequence(const std::string& group_name,const object_manipulator::GraspExecutionInfo& gei);
+		bool attemptPlaceSequence(const std::string& group_name,const object_manipulator::PlaceExecutionInfo& pei);
 
 	// demo monitoring
-	void startCycleTimer();
-	void printTiming();
+		void startCycleTimer();
+		void printTiming();
 
 	// utilities
-	static std::string makeCollisionObjectNameFromModelId(unsigned int model_id);
-	const arm_navigation_msgs::CollisionObject* getCollisionObject(unsigned int model_id);
-	void printJointTrajectory(const trajectory_msgs::JointTrajectory &jt);
-	bool validateJointTrajectory(trajectory_msgs::JointTrajectory &jt); // checks for null arrays and fill with zeros as needed
-	std::vector<std::string> getJointNames(const std::string& group);
-	void collisionObjToMarker(const arm_navigation_msgs::CollisionObject &obj, visualization_msgs::Marker &marker);
+		static std::string makeCollisionObjectNameFromModelId(unsigned int model_id);
+		const arm_navigation_msgs::CollisionObject* getCollisionObject(unsigned int model_id);
+		void printJointTrajectory(const trajectory_msgs::JointTrajectory &jt);
+		bool validateJointTrajectory(trajectory_msgs::JointTrajectory &jt); // checks for null arrays and fill with zeros as needed
+		std::vector<std::string> getJointNames(const std::string& group);
+		void collisionObjToMarker(const arm_navigation_msgs::CollisionObject &obj, visualization_msgs::Marker &marker);
 
 	// callbacks
-	void callbackPublishMarkers(const ros::TimerEvent &evnt);
+		void callbackPublishMarkers(const ros::TimerEvent &evnt);
 
 	// ros parameters
-	void fetchParameters(std::string nameSpace = "");
+		void fetchParameters(std::string nameSpace = "");
 
 	// run demos
-	void runFullNavigation();
-	void runSpherePickingDemo();
+		void runFullNavigation();
+		void runSpherePickingDemo();
+
+	// new methods
+
+
+		/* Service methods
+		 * these methods perform the following:
+		 * 	-  Build request objects,
+		 * 	-  Check results
+		 * 	-  Store results needed for subsequent steps in the manipulation
+		 * 	-  Perform additional post processing stuff such as updating the planning scene or publish data
+		 */
+		bool performSegmentation();
+		bool performSphereSegmentation();// operates on the results produced by performSegmentation
+		bool performRecognition();// operates on the results produced by performSegmentation
+		bool performGraspPlanning();
+//		bool performPathPlanning();
+//		bool performTrajectoryFilter();
+//		bool performPlanningSceneSUpdate(); // this method may not be needed
+
+		/* move sequence creation methods
+		 * These methods generate all the necessary move steps corresponding to each manipulation sequence
+		 */
+//		bool createPickMoveSequence();
+//		bool createPlaceMoveSequence();
 
 protected:
 
@@ -355,11 +391,14 @@ protected:
 	  boost::mutex execution_mutex_;
 	  bool trajectories_succeeded_;
 
-	  // recognition segmentation results
-	  std::map<std::string, geometry_msgs::PoseStamped> transformed_recognition_poses_;
-	  std::vector<household_objects_database_msgs::DatabaseModelPoseList> object_models_;
-	  std::vector<sensor_msgs::PointCloud> last_clusters_;
+	  // segmentation results
+	  tabletop_object_detector::TabletopSegmentation::Response segmentation_results_;
+	  std::vector<sensor_msgs::PointCloud> segmented_clusters_;
 	  arm_navigation_msgs::CollisionObject table_;
+
+	  // recognition results
+	  std::map<std::string, geometry_msgs::PoseStamped> recognized_obj_pose_map_;
+	  std::vector<household_objects_database_msgs::DatabaseModelPoseList> recognized_models_;
 
 	  // grasp results
 	  std::map<std::string, bool> object_in_hand_map_;
@@ -417,6 +456,7 @@ protected:
 	  std::string mesh_database_service_;
 	  std::string model_database_service_;
 	  std::string planning_scene_service_;
+	  std::string joint_states_topic_;
 
 	  // plugins
 	  std::string ik_plugin_name_;
