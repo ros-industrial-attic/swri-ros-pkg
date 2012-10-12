@@ -110,12 +110,26 @@ public:
 	struct GoalLocation
 	{
 	public:
+		/*
+		 * Determines how subsequent goal poses will be generated
+		 */
+		enum SubsequentGoalGenerationMode
+		{
+			FIXED = 0,
+			SHUFFLE = 1,
+			SQUARE_ARRANGEMENT = 2,
+			CIRCULAR_ARRANGEMENT = 3,
+			SPIRAL_ARRANGEMENT = 4
+		};
+
+	public:
 		GoalLocation()
 		:FrameId("base_link"),
 		 ChildFrameId("goal"),
 		 GoalTransform(),
 		 NumGoalCandidates(8),
-		 Axis(0,0,1.0f)
+		 Axis(0,0,1.0f),
+		 NextGoalGenMode(FIXED)
 		{
 			tf::Vector3 pos = tf::Vector3(0.5,-0.48,0.1);
 			GoalTransform.setOrigin(pos);
@@ -173,6 +187,8 @@ public:
 		int NumGoalCandidates; // number of total goal transforms, each additional transform is produced by rotating
 								// about an axis by a specified angle
 		tf::Vector3 Axis; // used in producing additional goal candidates
+
+		SubsequentGoalGenerationMode NextGoalGenMode;
 
 	};
 
@@ -334,8 +350,18 @@ protected:
 		/* move sequence creation methods
 		 * These methods generate all the necessary move steps corresponding to each manipulation sequence
 		 */
-//		bool createPickMoveSequence();
-//		bool createPlaceMoveSequence();
+		void createPickMoveSequence(const object_manipulation_msgs::PickupGoal &pickupGoal,
+				const std::vector<object_manipulation_msgs::Grasp> &grasps,
+				std::vector<object_manipulator::GraspExecutionInfo> &graspSequence);
+		void createPlaceMoveSequence(const object_manipulation_msgs::PlaceGoal &placeGoal,
+				const std::vector<geometry_msgs::PoseStamped> &placePoses,
+				std::vector<object_manipulator::PlaceExecutionInfo> &placeSequence);
+
+		void createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses);
+
+		// move arm methods
+		bool moveArmThroughPickSequence();
+		bool moveArmThroughPlaceSequence();
 
 protected:
 
@@ -379,6 +405,7 @@ protected:
 	  // ignores this step.
 	  actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPostureExecutionAction> grasp_exec_action_client_;
 
+	  // grasp move sequence generators
 	  object_manipulator::GraspTesterFast* grasp_tester_;
 	  PlaceSequenceValidator *place_tester_;
 	  //object_manipulator::PlaceTesterFast* place_tester_;
@@ -399,11 +426,15 @@ protected:
 	  // recognition results
 	  std::map<std::string, geometry_msgs::PoseStamped> recognized_obj_pose_map_;
 	  std::vector<household_objects_database_msgs::DatabaseModelPoseList> recognized_models_;
+	  household_objects_database_msgs::GetModelDescription::Response recognized_model_description_;
 
-	  // grasp results
+	  // grasp planning results
 	  std::map<std::string, bool> object_in_hand_map_;
 	  std::map<std::string, std::string> current_grasped_object_name_;
 	  std::map<std::string, object_manipulation_msgs::Grasp> current_grasp_map_;
+	  object_manipulation_msgs::PickupGoal grasp_pickup_goal_;
+	  object_manipulation_msgs::PlaceGoal grasp_place_goal_;
+	  std::vector<object_manipulation_msgs::Grasp> grasp_candidates_;
 
 	  //
 	  geometry_msgs::PoseStamped current_place_location_;
