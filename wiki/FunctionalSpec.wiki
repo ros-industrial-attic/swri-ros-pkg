@@ -46,8 +46,9 @@ It is also possible that different nodes may be used to provide the same capabil
 == General ==
 
  === Parameters ===
-  * `~ip` (`string`)
-    * IP address of robot connection<P>
+  * `~address` (`string`)
+    * address of robot connection (e.g. IP address)
+      * _see robot-specific implementation for details_<P>
   * `robot_description` (`urdf map`)
     * The [http://www.ros.org/wiki/urdf urdf] xml robot description
 
@@ -61,7 +62,7 @@ It is also possible that different nodes may be used to provide the same capabil
   * `feedback_states` ([http://ros.org/doc/fuerte/api/control_msgs/html/msg/FollowJointTrajectoryFeedback.html control_msgs/FollowJointTrajectoryFeedback])
     * provide feedback of current vs. desired joint position (and velocity/acceleration)
     * used by ROS-I's [http://code.google.com/p/swri-ros-pkg/source/browse/trunk/motoman/dx100/src/joint_trajectory_action.cpp joint_trajectory_action] to monitor in-progress motions
-      * joint names, ordering, and scale should match ROS conventions (_e.g. radians_)
+      * joint names, ordering, and scale should match ROS conventions (_e.g. joints ordered from base-to-tool, angles in radians, etc._)
       * if `desired` and `error` values unavailable, leave arrays *empty*
       * if `velocities` and `accelerations` unavailable, leave arrays *empty*<P>
   * `joint_states` ([http://www.ros.org/doc/api/sensor_msgs/html/msg/JointState.html sensor_msgs/JointState])
@@ -87,15 +88,6 @@ It is also possible that different nodes may be used to provide the same capabil
  === Parameters ===
   * `~state_feedback\port` (`int`)
     * robot-side port number to connect to for state feedback
-
- === Logging ===
-   Messages generated on the robot-controller should be logged into the ROS [http://www.ros.org/wiki/rosout logging framework], to facilitate debugging and status-monitoring from remote PCs.
-     * this logging should include all common message sources:
-        # robot-controller-generated messages
-        # ROS robot-side driver messages (e.g. user code)
-        * _NOTE: different methods may be required to capture these different message sources_<P>
-     * ideally, each message should be logged when first generated/received
-
 
 == Motion Control ==
 This node implements methods to control the robot's movement.
@@ -149,6 +141,14 @@ Several different types of control may be implemented (trajectory download, stre
 
 == Kinematics ==
 To enable real-time motion planning and collision avoidance, the node should provide robot-specific inverse kinematics solutions.  A generic solver is provided in ROS, but it operates too slowly for collision-avoidance path planning.  As described [http://www.ros.org/wiki/arm_navigation/Tutorials/Running%20arm%20navigation%20on%20non-PR2%20arm here] and [http://www.ros.org/wiki/Industrial/Tutorials/Create_a_Fast_IK_Solution here], the [http://openrave.org/docs/latest_stable/openravepy/ikfast/ ikfast] tool can be used to generate the required kinematics files for any 6-DOF serial manipulator.  These files should be integrated with ROS as a *plugin*, not a *service*, to avoid expensive communications-related overhead.  This involves creating a launch file to connect your plugin with the ROS arm_kinematics_constraint_aware node, as described [http://www.ros.org/wiki/arm_kinematics_constraint_aware/Tutorials/Configuring%20kinematics%20for%20your%20arm here].
+
+== Path Accuracy ==
+The motion interfaces outlined above do not specify the required accuracy for following a particular trajectory.  The level of path accuracy achieved will depend on limitations of the specific robot, controller, and ROS-interface driver.
+
+  === Collision Padding ===
+  The ROS path planners and collision checkers use high-order smoothing of trajectories between waypoints.  The resulting trajectory, as executed by the robot controller, will follow a similar “smooth” trajectory, _but may not exactly match the "ideal" planned trajectory_.  For this reason, the ROS path planners add a specified amount of “padding” to the robot models to account for differences between the planned and actual paths.  This results in a very high probability of collision-free motion.   Increasing the level of padding reduces the chance of collisions.
+
+  A closer integration between path planners and robot controllers would reduce both the path-execution error and the collision-padding requirement.  However, this level of integration is beyond the scope of current ROS-Industrial efforts and may require robot-specific solutions.
 <P><BR><BR>
 ----
 = Implementation =
@@ -209,6 +209,14 @@ This section lists a few ideas we have for expanding the functionality of ROS-In
   * allow single-step execution of trajectories
      * stop after each point, waiting for a manual `start_motion` call
   * all reverse motion along trajectories
+<P>
+ * *Logging:*
+  * Messages generated on the robot-controller should be logged into the ROS [http://www.ros.org/wiki/rosout logging framework], to facilitate debugging and status-monitoring from remote PCs.
+     * this logging should include all common message sources:
+        # robot-controller-generated messages
+        # ROS robot-side driver messages (e.g. user code)
+        * _NOTE: different methods may be required to capture these different message sources_<P>
+     * ideally, each message should be logged when first generated/received
 <P>
  * *Other:*
    * set feedback publish rates (for position and status)
