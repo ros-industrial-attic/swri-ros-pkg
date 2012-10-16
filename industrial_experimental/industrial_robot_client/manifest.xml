@@ -1,0 +1,25 @@
+<package>
+  <description brief="industrial_robot_client">
+
+     industrial_robot_client
+
+  </description>
+  <author>Christina Gomez</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/industrial_robot_client</url>
+  <depend package="pcl_ros"/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="control_msgs"/>
+  <depend package="trajectory_msgs"/>
+  <depend package="simple_message"/>
+  <depend package="actionlib_msgs" />
+  <depend package="actionlib"/>
+  
+  <export>
+    <cpp cflags="-I${prefix}/include/"/>
+  </export>
+
+</package>
