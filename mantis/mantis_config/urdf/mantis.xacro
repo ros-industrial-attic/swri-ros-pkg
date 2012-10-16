@@ -1,0 +1,74 @@
+<?xml version="1.0" ?>
+<robot name="motoman_vacumm" xmlns:xacro="http://ros.org/wiki/xacro">
+	<include filename="$(find motoman_config)/cfg/sia20d_mesh_macro.xacro"/>
+	<include filename="$(find mantis_config)/urdf/vacuum_gripper.xacro"/>
+
+	<!-- instantiating arm and gripper -->
+	<xacro:sia20d_mesh prefix=""/>
+	<xacro:vacuum_gripper prefix=""/>
+
+	<!-- property list -->
+	<xacro:property name="table_height" value="1"/>
+	<xacro:property name="table_width" value="1.8"/>
+	<xacro:property name="table_length" value="2"/>
+
+	<!-- link sub-blocks -->
+	<xacro:macro name="table_elements">
+		<origin xyz="0 0 ${0.5 * table_height}"/>
+		<geometry>
+			<box size="${table_width} ${table_length} ${table_height}"/>
+		</geometry>
+		<material name="gray">
+			<color rgba="0.8 0.8 0.5 1"/>
+		</material>
+	</xacro:macro>
+
+	<!-- adding coupling link -->
+	<link name="coupler">
+		<visual>
+			<geometry>
+				<mesh filename="package://longhorn/meshes/coupler/visual/COUPLER.stl" />
+			</geometry>
+			<material name="orange">
+				<color rgba="1 0.5 0 1"/>
+			</material>
+		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://longhorn/meshes/coupler/collision/COUPLER.stl" />
+			</geometry>
+			<material name="yellow">
+				<color rgba="0 1 1 1"/>
+			</material>
+		</collision>
+	</link>
+	
+	<!-- adding joints for coupler/gripper -->
+	<joint name="tool-coupler" type="fixed">
+		<parent link="link_t"/>
+		<child link="coupler"/>
+		<origin xyz="0 0 0" rpy="1.570 0 -0.785"/>
+	</joint>
+	<joint name="coupler-hand" type="fixed">
+		<parent link="coupler"/>
+		<child link="palm"/>
+		<origin xyz="0 0.182 0.036" rpy="-1.570 0 0"/>
+	</joint>
+
+	<!-- environment objects -->
+	<link name="table">
+		<visual>
+			<xacro:table_elements/>
+		</visual>
+		<collision>
+			<xacro:table_elements/>
+		</collision>
+	</link>
+
+	<!-- environment joints -->
+	<joint name="base-table" type="fixed">
+		<parent link="table"/>
+		<child link="base_link"/>
+		<origin xyz="0 ${-0.40 * table_length} ${table_height}" rpy="0 0 1.57"/>
+	</joint>		
+</robot>

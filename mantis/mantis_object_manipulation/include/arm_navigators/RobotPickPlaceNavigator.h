@@ -113,7 +113,7 @@ public:
 		/*
 		 * Determines how subsequent goal poses will be generated
 		 */
-		enum SubsequentGoalGenerationMode
+		enum NextLocationGenerationMode
 		{
 			FIXED = 0,
 			SHUFFLE = 1,
@@ -129,7 +129,10 @@ public:
 		 GoalTransform(),
 		 NumGoalCandidates(8),
 		 Axis(0,0,1.0f),
-		 NextGoalGenMode(FIXED)
+		 NextLocationGenMode(FIXED),
+		 MinObjectSpacing(0.05f),
+		 MaxObjectSpacing(0.08f),
+		 PlaceRegionRadius(0.20f)
 		{
 			tf::Vector3 pos = tf::Vector3(0.5,-0.48,0.1);
 			GoalTransform.setOrigin(pos);
@@ -179,7 +182,15 @@ public:
 			ros::param::param(nameSpace + "/goal_rotation_axis/y",y,Axis.y());
 			ros::param::param(nameSpace + "/goal_rotation_axis/z",z,Axis.z());
 			Axis = tf::Vector3(x,y,z).normalized();
+
+			// next goal location generation parameters
+			ros::param::param(nameSpace + "/next_location/generation_mode",(int&)NextLocationGenMode,(int&)NextLocationGenMode);
+			ros::param::param(nameSpace + "/next_location/min_spacing",MinObjectSpacing,MinObjectSpacing);
+			ros::param::param(nameSpace + "/next_location/max_spacing",MaxObjectSpacing,MaxObjectSpacing);
+			ros::param::param(nameSpace + "/next_location/place_region_radius",PlaceRegionRadius,PlaceRegionRadius);
 		}
+
+		void generateNextLocationCandidates(std::vector<geometry_msgs::PoseStamped> &placePoses);
 
 		std::string FrameId;
 		std::string ChildFrameId;
@@ -188,8 +199,36 @@ public:
 								// about an axis by a specified angle
 		tf::Vector3 Axis; // used in producing additional goal candidates
 
-		SubsequentGoalGenerationMode NextGoalGenMode;
+		// Next goal position generation
+		NextLocationGenerationMode NextLocationGenMode; // generation mode flag
+		double MinObjectSpacing; // minimum distance between two objects inside goal region as measured from their local origins
+		double MaxObjectSpacing; // maximum distance between two objects inside goal region as measured from their local origins
+		double PlaceRegionRadius; // radius of circular region that contains all placed objects
 
+	protected:
+		std::vector<tf::Transform> previous_locations_;
+
+		void createCandidatePosesByRotation(const tf::Transform &startTrans,int numCandidates,tf::Vector3 axis,
+				std::vector<geometry_msgs::PoseStamped> &candidatePoses);
+
+		void generateNextLocationShuffleMode(std::vector<geometry_msgs::PoseStamped> &placePoses);
+		void generateNextLocationSquaredMode(std::vector<geometry_msgs::PoseStamped> &placePoses)
+		{
+			ROS_WARN_STREAM(ros::this_node::getName()<<": Square place mode not implemented, using shuffle place mode");
+			generateNextLocationShuffleMode(placePoses);
+		}
+
+		void generateNextLocationCircularMode(std::vector<geometry_msgs::PoseStamped> &placePoses)
+		{
+			ROS_WARN_STREAM(ros::this_node::getName()<<": Circular place mode not implemented, using shuffle place mode");
+			generateNextLocationShuffleMode(placePoses);
+		}
+
+		void generateNextLocationSpiralMode(std::vector<geometry_msgs::PoseStamped> &placePoses)
+		{
+			ROS_WARN_STREAM(ros::this_node::getName()<<": Spiral place mode not implemented, using shuffle place mode");
+			generateNextLocationShuffleMode(placePoses);
+		}
 	};
 
 	struct JointConfiguration
@@ -326,11 +365,10 @@ protected:
 		void fetchParameters(std::string nameSpace = "");
 
 	// run demos
-		void runFullNavigation();
-		void runSpherePickingDemo();
+		void runFullPickPlace();
+		void runSpherePickPlace();
 
 	// new methods
-
 
 		/* Service methods
 		 * these methods perform the following:
@@ -357,6 +395,7 @@ protected:
 				const std::vector<geometry_msgs::PoseStamped> &placePoses,
 				std::vector<object_manipulator::PlaceExecutionInfo> &placeSequence);
 
+		// will be removed since GoalLocation struct already does this
 		void createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses);
 
 		// move arm methods
@@ -364,8 +403,6 @@ protected:
 		bool moveArmThroughPlaceSequence();
 
 protected:
-
-
 
 	// setup flag
 	ConfigurationFlags configuration_type_;

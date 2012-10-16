@@ -42,10 +42,10 @@
 using namespace trajectory_execution_monitor;
 
 // node name
-std::string NODE_NAME = "robot_pick_place_navigation";
+std::string NODE_NAME = "robot_pick_place";
 
 // name spaces
-std::string MAIN_NAMESPACE = "main";
+std::string NAVIGATOR_NAMESPACE = "navigator";
 std::string SEGMENTATION_NAMESPACE = "segmentation";
 std::string GOAL_NAMESPACE = "goal";
 std::string JOINT_CONFIGURATIONS_NAMESPACE = "joints";
@@ -72,7 +72,7 @@ void RobotPickPlaceNavigator::fetchParameters(std::string nameSpace)
 	ros::param::param(nameSpace + "/" + PARAM_NAME_GRASP_PLANNING_SERVICE,grasp_planning_service_,DEFAULT_GRASP_PLANNING_SERVICE);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_MESH_DATABASE_SERVICE,mesh_database_service_,DEFAULT_MESH_DATABASE_SERVICE);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_MODEL_DATABASE_SERVICE,model_database_service_,DEFAULT_MODEL_DATABASE_SERVICE);
-	ros::param::param(nameSpace + "/" + PARAM_NAME_PLANNING_SCENE_SERVICE,planning_scene_service_,DEFAULT_ARM_GROUP);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_PLANNING_SCENE_SERVICE,planning_scene_service_,DEFAULT_PLANNING_SCENE_SERVICE);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_IK_PLUGING,ik_plugin_name_,DEFAULT_IK_PLUGING);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_JOINT_STATES_TOPIC,joint_states_topic_,DEFAULT_JOINT_STATES_TOPIC);
 }
@@ -87,7 +87,7 @@ RobotPickPlaceNavigator::RobotPickPlaceNavigator(ConfigurationFlags flag)
 
 	// initializing name spaces global strings
 	NODE_NAME = ros::this_node::getName();
-	MAIN_NAMESPACE = NODE_NAME + "/" + MAIN_NAMESPACE;
+	NAVIGATOR_NAMESPACE = NODE_NAME + "/" + NAVIGATOR_NAMESPACE;
 	GOAL_NAMESPACE = NODE_NAME + "/" + GOAL_NAMESPACE;
 	SEGMENTATION_NAMESPACE = NODE_NAME + "/" + SEGMENTATION_NAMESPACE;
 	JOINT_CONFIGURATIONS_NAMESPACE = NODE_NAME + "/" + JOINT_CONFIGURATIONS_NAMESPACE;
@@ -106,7 +106,7 @@ void RobotPickPlaceNavigator::setup()
 	ROS_INFO_STREAM(NODE_NAME<<": Loading ros parameters");
 
 	// getting ros parametets
-	fetchParameters(MAIN_NAMESPACE);
+	fetchParameters(NAVIGATOR_NAMESPACE);
 
 	ROS_INFO_STREAM(NODE_NAME<<": Setting up execution Monitors");
 	// setting up execution monitors
@@ -215,7 +215,7 @@ void RobotPickPlaceNavigator::setupBallPickingDemo()
 	ROS_INFO("Loading ros parameters");
 
 	// getting ros parametets
-	fetchParameters(MAIN_NAMESPACE);
+	fetchParameters(NAVIGATOR_NAMESPACE);
 
 	ROS_INFO_STREAM(NODE_NAME<<": Setting up execution Monitors");
 	// setting up execution monitors
@@ -306,7 +306,7 @@ void RobotPickPlaceNavigator::setupRecognitionOnly()
 	ROS_INFO("Loading ros parameters");
 
 	// getting ros parametets
-	fetchParameters(MAIN_NAMESPACE);
+	fetchParameters(NAVIGATOR_NAMESPACE);
 
 	ROS_INFO("Setting up Service Clients");
     // setting up service clients
@@ -1817,7 +1817,9 @@ bool RobotPickPlaceNavigator::moveArmThroughPlaceSequence()
 
 	// creating candidate grasp place poses
 	std::vector<geometry_msgs::PoseStamped> placePoses;
-	createCandidateGoalPoses(placePoses);
+	_GoalParameters.fetchParameters(GOAL_NAMESPACE);
+	_GoalParameters.generateNextLocationCandidates(placePoses);
+	//createCandidateGoalPoses(placePoses);
 
 	// creating place move sequence
 	std::vector<object_manipulator::PlaceExecutionInfo> placeSequence;
@@ -2470,11 +2472,11 @@ void RobotPickPlaceNavigator::run()
 	switch(configuration_type_)
 	{
 	case SETUP_FULL:
-		runFullNavigation();
+		runFullPickPlace();
 		break;
 
 	case SETUP_SPHERE_PICK_PLACE:
-		runSpherePickingDemo();
+		runSpherePickPlace();
 		break;
 
 	default:
@@ -2483,7 +2485,7 @@ void RobotPickPlaceNavigator::run()
 	}
 }
 
-void RobotPickPlaceNavigator::runFullNavigation()
+void RobotPickPlaceNavigator::runFullPickPlace()
 {
 	// getting and storing node name
 	NODE_NAME = ros::this_node::getName();
@@ -2501,47 +2503,93 @@ void RobotPickPlaceNavigator::runFullNavigation()
 	{
 	    startCycleTimer();
 
-	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation and recognition stage started");
-	    if(!segmentAndRecognize())
-	    {
-	      ROS_WARN_STREAM(NODE_NAME<<": Segment and recognized failed");
-	      continue;
-	    }
-	    ROS_INFO_STREAM(NODE_NAME << " Segmentation and recognition stage completed");
+//	    ROS_INFO_STREAM(NODE_NAME + ": Segmentation and recognition stage started");
+//	    if(!segmentAndRecognize())
+//	    {
+//	      ROS_WARN_STREAM(NODE_NAME<<": Segment and recognized failed");
+//	      continue;
+//	    }
+//	    ROS_INFO_STREAM(NODE_NAME << " Segmentation and recognition stage completed");
+//
+//	    ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
+//	    if(!pickUpSomething(arm_group_name_))
+//	    {
+//	      ROS_WARN_STREAM(NODE_NAME << ": grasp pickup stage failed");
+//	      continue;
+//	    }
+//	    else
+//	    {
+//	    	ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
+//	    }
+//
+//
+//	    ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
+//	    if(!putDownSomething(arm_group_name_))
+//	    {
+//	      ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
+//	    }
+//	    else
+//	    {
+//	    	ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
+//	    }
+//
+//	    if(!moveArmToSide())
+//	    {
+//	      ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
+//	      break;
+//	    }
 
-	    ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
-	    if(!pickUpSomething(arm_group_name_))
-	    {
-	      ROS_WARN_STREAM(NODE_NAME << ": grasp pickup stage failed");
-	      continue;
-	    }
-	    else
-	    {
-	    	ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
-	    }
+		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
+		if(!performSegmentation())
+		{
+		  ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
+		  continue;
+		}
+		ROS_INFO_STREAM(NODE_NAME << " Segmentation stage completed");
 
+		ROS_INFO_STREAM(NODE_NAME << ": Recognition stage started");
+		if(!performRecognition())
+		{
+		  ROS_WARN_STREAM(NODE_NAME << ": Recognition stage failed");
+		  continue;
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME << ": Recognition stage completed");
+		}
 
-	    ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
-	    if(!putDownSomething(arm_group_name_))
-	    {
-	      ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
-	    }
-	    else
-	    {
-	    	ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
-	    }
+		ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
+		if(!moveArmThroughPickSequence())
+		{
+		  ROS_WARN_STREAM(NODE_NAME << ": grasp pickup stage failed");
+		  continue;
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
+		}
 
-	    if(!moveArmToSide())
-	    {
-	      ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
-	      break;
-	    }
+		ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
+		if(!moveArmThroughPlaceSequence())
+		{
+			ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
+		}
+
+		if(!moveArmToSide())
+		{
+			ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
+			break;
+		}
 
 	    printTiming();
 	  }
 }
 
-void RobotPickPlaceNavigator::runSpherePickingDemo()
+void RobotPickPlaceNavigator::runSpherePickPlace()
 {
 	// getting and storing node name
 	NODE_NAME = ros::this_node::getName();
@@ -2559,42 +2607,200 @@ void RobotPickPlaceNavigator::runSpherePickingDemo()
 	{
 	    startCycleTimer();
 
-	    ROS_INFO_STREAM(NODE_NAME << ": Segmentation and recognition stage started");
-	    if(!segmentSpheres())
-	    {
-	      ROS_WARN_STREAM("Segment and recognized failed");
-	      continue;
-	    }
-	    ROS_INFO_STREAM(NODE_NAME << ": Segmentation of spheres stage completed");
+//	    ROS_INFO_STREAM(NODE_NAME << ": Segmentation and recognition stage started");
+//	    if(!segmentSpheres())
+//	    {
+//	      ROS_WARN_STREAM("Segment and recognized failed");
+//	      continue;
+//	    }
+//	    ROS_INFO_STREAM(NODE_NAME << ": Segmentation of spheres stage completed");
+//
+//	    ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
+//	    if(!pickUpSomething(arm_group_name_))
+//	    {
+//	      ROS_WARN_STREAM(NODE_NAME << " grasp pickup stage failed");
+//	      continue;
+//	    }
+//	    else
+//	    {
+//	    	ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
+//	    }
+//
+//
+//	    ROS_INFO_STREAM(NODE_NAME << ": grasp place stage started");
+//	    if(!placeAtGoalLocation(arm_group_name_))
+//	    {
+//	      ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
+//	    }
+//	    else
+//	    {
+//	    	ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
+//	    }
+//
+//	    if(!moveArmToSide())
+//	    {
+//	      ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
+//	      break;
+//	    }
 
-	    ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
-	    if(!pickUpSomething(arm_group_name_))
-	    {
-	      ROS_WARN_STREAM(NODE_NAME << " grasp pickup stage failed");
-	      continue;
-	    }
-	    else
-	    {
-	    	ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
-	    }
+		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
+		if(!performSegmentation() || !performSphereSegmentation())
+		{
+		  ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
+		  continue;
+		}
+		ROS_INFO_STREAM(NODE_NAME << " Segmentation stage completed");
 
+		ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
+		if(!moveArmThroughPickSequence())
+		{
+		  ROS_WARN_STREAM(NODE_NAME << ": grasp pickup stage failed");
+		  continue;
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
+		}
 
-	    ROS_INFO_STREAM(NODE_NAME << ": grasp place stage started");
-	    if(!placeAtGoalLocation(arm_group_name_))
-	    {
-	      ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
-	    }
-	    else
-	    {
-	    	ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
-	    }
+		ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
+		if(!moveArmThroughPlaceSequence())
+		{
+			ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
+		}
 
-	    if(!moveArmToSide())
-	    {
-	      ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
-	      break;
-	    }
+		if(!moveArmToSide())
+		{
+			ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
+			break;
+		}
 
 	    printTiming();
 	  }
+}
+
+void RobotPickPlaceNavigator::GoalLocation::generateNextLocationCandidates(
+		std::vector<geometry_msgs::PoseStamped> &placePoses)
+{
+		switch(NextLocationGenMode)
+		{
+		case GoalLocation::FIXED:
+			createCandidatePosesByRotation(GoalTransform,NumGoalCandidates,Axis,placePoses);
+			break;
+
+		case GoalLocation::CIRCULAR_ARRANGEMENT:
+			generateNextLocationCircularMode(placePoses);
+			break;
+
+		case GoalLocation::SPIRAL_ARRANGEMENT:
+			generateNextLocationSpiralMode(placePoses);
+			break;
+
+		case GoalLocation::SQUARE_ARRANGEMENT:
+			generateNextLocationSquaredMode(placePoses);
+			break;
+
+		case GoalLocation::SHUFFLE:
+			generateNextLocationShuffleMode(placePoses);
+			break;
+
+		default:
+			generateNextLocationShuffleMode(placePoses);
+			break;
+		}
+}
+
+void RobotPickPlaceNavigator::GoalLocation::generateNextLocationShuffleMode(
+		std::vector<geometry_msgs::PoseStamped> &placePoses)
+{
+	// previos pose
+	tf::Transform &lastTf = previous_locations_.back();
+
+	// next pose
+	tf::Transform nextTf;
+	if(previous_locations_.size() == 0)
+	{
+		nextTf = GoalTransform;
+	}
+	else
+	{
+		nextTf = tf::Transform(previous_locations_.back());
+
+		// new location variables
+		int distanceSegments = 20; // number of possible values between min and max object spacing
+		int angleSegments = 8; // number of possible values between 0 and 2pi
+		int randVal;
+		double distance;// meters
+		double angle,angleMin = 0,angleMax = 2*M_PI; // radians
+		double ratio;
+
+		// creating new location relative to the last one
+		int maxIterations = 100;
+		int iter = 0;
+		while(iter < maxIterations)
+		{
+			iter++;
+
+			// computing distance
+			randVal = rand()%distanceSegments + 1;
+			ratio = (double)randVal/(double)distanceSegments;
+			distance = MinObjectSpacing + ratio*(MaxObjectSpacing - MinObjectSpacing);
+			tf::Vector3 trans = tf::Vector3(distance,0.0f,0.0f);
+
+			// computing angle
+			randVal = rand()%angleSegments + 1;
+			ratio = (double)randVal/(double)angleSegments;
+			angle = angleMin + ratio*(angleMax - angleMin);
+			tf::Quaternion quat = tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),angle);
+
+			// computing next pose by rotating and translating from last pose
+			nextTf = lastTf * tf::Transform(quat,tf::Vector3(0.0f,0.0f,0.0f))*tf::Transform(tf::Quaternion::getIdentity(),trans);
+
+			// checking if located inside place region
+			double distFromCenter = (nextTf.getOrigin() - GoalTransform.getOrigin()).length();
+			if((distFromCenter + MinObjectSpacing/2) > PlaceRegionRadius) // falls outside place region, try another
+			{
+				continue;
+			}
+
+			// checking for overlaps against objects already in place region
+			double distFromObj;
+			BOOST_FOREACH(tf::Transform objTf,previous_locations_)
+			{
+				distFromObj = (objTf.getOrigin() - nextTf.getOrigin()).length();
+				if(distFromObj < MinObjectSpacing)// overlap found, try another
+				{
+					continue;
+				}
+			}
+		}
+	}
+
+	// generating candidate poses from next location found
+	createCandidatePosesByRotation(nextTf,NumGoalCandidates,Axis,placePoses);
+
+	// storing next location
+	previous_locations_.push_back(nextTf);
+}
+
+void RobotPickPlaceNavigator::GoalLocation::createCandidatePosesByRotation(const tf::Transform &startTrans,int numCandidates,tf::Vector3 axis,
+		std::vector<geometry_msgs::PoseStamped> &candidatePoses)
+{
+	geometry_msgs::PoseStamped pose;
+	pose.header.frame_id = GoalTransform.frame_id_;
+
+	// rotate about z axis and apply to original goal pose in order to create candidates;
+	for(int i = 0; i < numCandidates; i++)
+	{
+		double ratio = ((double)i)/((double)numCandidates);
+		double angle = 2*M_PI*ratio;
+		tf::Quaternion q = tf::Quaternion(axis,angle);
+		tf::Vector3 p = tf::Vector3(0,0,0);
+		tf::Transform candidateTransform = startTrans*tf::Transform(q,p);
+		tf::poseTFToMsg(candidateTransform,pose.pose);
+		candidatePoses.push_back(pose);
+	}
 }
