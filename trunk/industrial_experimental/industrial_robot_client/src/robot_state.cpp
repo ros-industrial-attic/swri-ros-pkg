@@ -57,7 +57,7 @@ int main(int argc, char** argv)
   JointRelayHandler jr_handler(n);
 
   //if(argc != 1)  //Only one argument, the robot IP address is accepted
-  if (n.getParam("/state_interface/robot_ip_address", s))
+  if (n.getParam("robot_ip_address", s))
   {
     ROS_INFO("Robot state connecting to IP address: %s", s.c_str());
     char* ip_add;
@@ -72,7 +72,7 @@ int main(int argc, char** argv)
   }
   else
   {
-    ROS_ERROR("Failed to get param 'robot_ip_address'");
+    ROS_ERROR("Robot State failed to get param 'robot_state/robot_ip_address'");
   }
 
   manager.spin();
