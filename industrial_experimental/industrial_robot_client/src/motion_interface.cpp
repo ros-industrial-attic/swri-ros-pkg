@@ -42,7 +42,7 @@ int main(int argc, char** argv)
   std::string s;
   ros::NodeHandle node;
   //if(argc != 1)  //Only one argument, the robot IP address is accepted
-  if (node.getParam("robot_ip_address", s))
+  if (node.getParam("/motion_interface/robot_ip_address", s))
   {
     ROS_INFO("Motion interface connecting to IP address: %s", s.c_str());
 
@@ -50,8 +50,8 @@ int main(int argc, char** argv)
     char* ip_add;
     ip_add=(char*)(s.c_str());
     robot.init(ip_add, StandardSocketPorts::MOTION);
-    industrial_robot_client::joint_trajectory_handler::JointTrajectoryHandler jtHandler(ros::NodeHandle node, industrial::tcp_client::TcpClient &robot);
-    //industrial_robot_client::joint_trajectory_handler::JointTrajectoryHandler jtHandler(node, &robot);
+
+    industrial_robot_client::joint_trajectory_handler::JointTrajectoryHandler jthandler(node, &robot);
     ros::spin();
   }
   else
