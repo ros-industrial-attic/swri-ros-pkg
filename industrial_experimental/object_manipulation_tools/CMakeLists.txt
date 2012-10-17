@@ -31,7 +31,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(object_manipulation_tools src/controller_utils/GraspPoseControllerHandler.cpp
 	src/controller_utils/SimulatedController.cpp
-	src/manipulation_utils/PlaceSequenceValidator.cpp)
+	src/manipulation_utils/PlaceSequenceValidator.cpp
+	src/grasp_planners/OverheadGraspPlanner.cpp
+	src/services/GraspPlannerServer.cpp)
 
 rosbuild_add_executable(grasp_action_service src/nodes/grasp_action_service_node.cpp)
 target_link_libraries(grasp_action_service object_manipulation_tools)
@@ -39,3 +41,5 @@ target_link_libraries(grasp_action_service object_manipulation_tools)
 rosbuild_add_executable(simulated_robot_controller src/nodes/simulated_robot_controller_node.cpp)
 target_link_libraries(simulated_robot_controller object_manipulation_tools)
 
+rosbuild_add_executable(overhead_grasp_planner_server src/nodes/overhead_grasp_service_node.cpp) 
+target_link_libraries(overhead_grasp_planner_server object_manipulation_tools)
