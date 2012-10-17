@@ -39,10 +39,8 @@
   </node>
 
 <!-- grasp planner -->
-  <rosparam command="load" file="$(find mantis_config)/config/mantis_vacuum_gripper_description.yaml"/>
-
-  <include unless="$(arg use_overhead_grasp_planner)" file="$(find mantis_grasp_planning)/launch/robotiq_hand_grasp_planner_cluster_server.launch"/>
-  <include if="$(arg use_overhead_grasp_planner)" file="$(find mantis_grasp_planning)/launch/suction_gripper_grasp_planner_server.launch"/>
+  <rosparam command="load" file="$(find mantis_grasp_planning)/config/vacuum_gripper_description_parameters.yaml"/>
+  <include file="$(find mantis_grasp_planning)/launch/vacuum_gripper_grasp_planner_server.launch"/>
 
 <!-- segmentation -->
   <include file="$(find mantis_perception)/launch/tabletop_segmentation.launch">
