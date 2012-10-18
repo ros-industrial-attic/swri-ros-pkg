@@ -3,7 +3,7 @@
 
 <!-- input arguments -->
   <arg name="use_chomp" default="true" />
-  <arg name="sim_only" default="true"/>
+  <!--arg name="sim_only" default="true"/-->
 
 <!-- fixed parameters -->
   <arg name="robot_description" value="$(find mantis_config)/urdf/mantis.urdf"/>
