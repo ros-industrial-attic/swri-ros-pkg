@@ -46,7 +46,7 @@ const static std::string DEFAULT_PLANNING_SCENE_SERVICE = "/environment_server/s
 const static std::string DEFAULT_IK_PLUGING = "SIA20D_Mesh_manipulator_kinematics/IKFastKinematicsPlugin";//"longhorn_manipulator_kinematics/IKFastKinematicsPlugin";
 
 const std::string RosParamsList::Names::PathPlannerService = "planner_service_name";
-const std::string RosParamsList::Names::TrajectoryFilterService = "trajectory_filter_server/filter_trajectory_with_constraints";
+const std::string RosParamsList::Names::TrajectoryFilterService = "trajectory_filter_service_name";
 const std::string RosParamsList::Names::SegmentationService = "segmentation_service_name";
 const std::string RosParamsList::Names::RecognitionService = "recognition_service_name";
 const std::string RosParamsList::Names::GraspPlanningService = "grasp_planning_service_name";
