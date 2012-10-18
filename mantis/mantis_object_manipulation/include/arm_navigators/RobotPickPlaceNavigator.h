@@ -65,6 +65,8 @@
 #include <perception_tools/segmentation/SphereSegmentation.h>
 #include <tf/transform_listener.h>
 
+typedef actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPostureExecutionAction>  GraspActionServerClient;
+
 using namespace trajectory_execution_monitor;
 
 // ros param default values
@@ -300,28 +302,15 @@ protected:
 		bool trajectoriesFinishedCallbackFunction(TrajectoryExecutionDataVector tedv);
 		bool fastFilterTrajectory(const std::string& group_name,trajectory_msgs::JointTrajectory& jt);
 
-	// segmentation/recognition
-		bool segmentAndRecognize();
-		bool segmentSpheres();
-		bool recognize();
-
 	// household database
 		bool getMeshFromDatabasePose(const household_objects_database_msgs::DatabaseModelPose &model_pose,
 				arm_navigation_msgs::CollisionObject& obj,const geometry_msgs::PoseStamped& pose);
 
-	// grasp planning
-		bool selectGraspableObject(const std::string& arm_name,object_manipulation_msgs::PickupGoal& pickup_goal,
-				std::vector<object_manipulation_msgs::Grasp>& grasps);
-		bool getObjectGrasps(const std::string& arm_name,const household_objects_database_msgs::DatabaseModelPose& dmp,
-				const sensor_msgs::PointCloud& cloud,std::vector<object_manipulation_msgs::Grasp>& grasps);
-		trajectory_msgs::JointTrajectory getGripperTrajectory(const std::string& arm_name,bool open);
-
-	// arm navigation
-		bool putDownSomething(const std::string& arm_name);
-		bool placeAtGoalLocation(const std::string &armName);
-		bool pickUpSomething(const std::string& arm_name);
+	// move arm methods
 		bool moveArm(const std::string& group_name,const std::vector<double>& joint_positions);
 		bool moveArmToSide();
+		bool moveArmThroughPickSequence();
+		bool moveArmThroughPlaceSequence();
 
 	// planning scene
 		void attachCollisionObjectCallback(const std::string& group_name);
@@ -357,6 +346,7 @@ protected:
 		bool validateJointTrajectory(trajectory_msgs::JointTrajectory &jt); // checks for null arrays and fill with zeros as needed
 		std::vector<std::string> getJointNames(const std::string& group);
 		void collisionObjToMarker(const arm_navigation_msgs::CollisionObject &obj, visualization_msgs::Marker &marker);
+		trajectory_msgs::JointTrajectory getGripperTrajectory(const std::string& arm_name,bool open);
 
 	// callbacks
 		void callbackPublishMarkers(const ros::TimerEvent &evnt);
@@ -398,10 +388,6 @@ protected:
 		// will be removed since GoalLocation struct already does this
 		void createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses);
 
-		// move arm methods
-		bool moveArmThroughPickSequence();
-		bool moveArmThroughPlaceSequence();
-
 protected:
 
 	// setup flag
@@ -440,7 +426,7 @@ protected:
 	  // action services
 	  // will use grasp execution client to request pre-grasp action since the default gripper controller handler
 	  // ignores this step.
-	  actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPostureExecutionAction> grasp_exec_action_client_;
+	  boost::shared_ptr<GraspActionServerClient> grasp_exec_action_client_;
 
 	  // grasp move sequence generators
 	  object_manipulator::GraspTesterFast* grasp_tester_;

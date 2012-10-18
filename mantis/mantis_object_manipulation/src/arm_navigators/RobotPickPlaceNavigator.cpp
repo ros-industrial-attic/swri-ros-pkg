@@ -80,8 +80,9 @@ void RobotPickPlaceNavigator::fetchParameters(std::string nameSpace)
 RobotPickPlaceNavigator::RobotPickPlaceNavigator(ConfigurationFlags flag)
 :configuration_type_(flag),
  cm_("robot_description"),
- current_robot_state_(NULL),
- grasp_exec_action_client_(grasp_action_service_,true)
+ current_robot_state_(NULL)
+ //grasp_exec_action_client_(DEFAULT_GRASP_ACTION_SERVICE,true)
+ //grasp_exec_action_client_(grasp_action_service_,true)
 {
 	ros::NodeHandle nh;
 
@@ -166,7 +167,9 @@ void RobotPickPlaceNavigator::setup()
 	// ignores this step.
 	ROS_INFO_STREAM(NODE_NAME << ": Setting up Service Action Clients");
 	{
-		while(!grasp_exec_action_client_.waitForServer(ros::Duration(0.5)))
+		grasp_exec_action_client_ =
+				boost::make_shared< GraspActionServerClient >(grasp_action_service_,true);
+		while(!grasp_exec_action_client_->waitForServer(ros::Duration(0.5)))
 		{
 			ROS_INFO_STREAM(NODE_NAME << "Waiting for action service "<< grasp_action_service_);
 		}
@@ -212,7 +215,7 @@ void RobotPickPlaceNavigator::setupBallPickingDemo()
 	ros::NodeHandle nh;
 	std::string nodeName = ros::this_node::getName();
 
-	ROS_INFO("Loading ros parameters");
+	ROS_INFO_STREAM(NODE_NAME<<": Loading ros parameters");
 
 	// getting ros parametets
 	fetchParameters(NAVIGATOR_NAMESPACE);
@@ -257,8 +260,9 @@ void RobotPickPlaceNavigator::setupBallPickingDemo()
 	// ignores this step.
 	ROS_INFO_STREAM(NODE_NAME << ": Setting up Service Action Clients");
 	{
-		//grasp_exec_action_client_ = actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPostureExecutionAction>(grasp_action_service,true);
-		while(!grasp_exec_action_client_.waitForServer(ros::Duration(0.5)))
+		grasp_exec_action_client_ =
+				boost::make_shared< GraspActionServerClient >(grasp_action_service_,true);
+		while(!grasp_exec_action_client_->waitForServer(ros::Duration(0.5)))
 		{
 			ROS_INFO_STREAM(NODE_NAME << "Waiting for action service "<< grasp_action_service_);
 		}
@@ -943,246 +947,6 @@ bool RobotPickPlaceNavigator::performRecognition()
 	return true;
 }
 
-bool RobotPickPlaceNavigator::segmentSpheres()
-{
-	  // starting timer
-	  ros::WallTime start = ros::WallTime::now();
-
-	  // clearing arrays
-	  planning_scene_diff_.collision_objects.clear();
-	  recognized_obj_pose_map_.clear();
-
-
-	  tabletop_object_detector::TabletopSegmentation segmentation_srv;
-	  if (!seg_srv_.call(segmentation_srv))
-	  {
-	    ROS_ERROR_STREAM(NODE_NAME<<": Call to segmentation service failed");
-	    return false;
-	  }
-
-	  // checking result
-	  ros::WallTime after_seg = ros::WallTime::now();
-	  ROS_INFO_STREAM(NODE_NAME<<": Seg took " << (after_seg-start).toSec());
-	  if (segmentation_srv.response.result != segmentation_srv.response.SUCCESS)
-	  {
-	    ROS_ERROR_STREAM(NODE_NAME<<": Segmentation service returned error "<< segmentation_srv.response.result);
-	    return false;
-	  }
-
-	  // adding table to environment
-	  addDetectedTableToPlanningSceneDiff(segmentation_srv.response.table);
-	  ROS_INFO_STREAM(NODE_NAME<<": Segmentation service succeeded. Detected " <<(int)segmentation_srv.response.clusters.size()<<" clusters.");
-
-	  // store segmented clusters for planning
-	  if(segmentation_srv.response.clusters.size() > 0)
-	  {
-		  ROS_INFO_STREAM(NODE_NAME<<": Tabletop segmentation found "<<segmentation_srv.response.clusters.size()<<" clusters");
-		  //segmented_clusters_ = segmentation_srv.response.clusters;
-	  }
-	  else
-	  {
-		  ROS_ERROR_STREAM(NODE_NAME<<": Tabletop segmentation returned 0 clusters");
-		  return false;
-	  }
-
-	  // sphere segmentation
-	  arm_navigation_msgs::CollisionObject obj;
-	  int bestClusterIndex = -1;
-	  _SphereSeg.fetchParameters(SEGMENTATION_NAMESPACE);
-	  sensor_msgs::PointCloud sphereCluster;
-	  if(_SphereSeg.segment(segmentation_srv.response.clusters,obj,bestClusterIndex))
-	  {
-		  // retrieving segmented sphere cluster
-		  _SphereSeg.getSphereCluster(sphereCluster);
-
-		  // storing best cluster
-		  segmented_clusters_.clear();
-		  segmented_clusters_.push_back(sphereCluster);
-		  //segmented_clusters_.push_back(segmentation_srv.response.clusters[bestClusterIndex]);
-
-		  arm_navigation_msgs::Shape &shape = obj.shapes[0];
-		  geometry_msgs::Pose &pose = obj.poses[0];
-
-		  ROS_INFO_STREAM("\n"<<NODE_NAME<<": Sphere found:\n");
-		  ROS_INFO_STREAM("\tFrame id: "<<obj.header.frame_id<<"\n");
-		  ROS_INFO_STREAM("\tRadius: "<<shape.dimensions[0]<<"\n");
-		  ROS_INFO_STREAM("\tx: "<<pose.position.x<<", y: "<<pose.position.y<<", z: "<<pose.position.z<<"\n");
-	  }
-	  else
-	  {
-		  ROS_ERROR_STREAM(NODE_NAME<<": Sphere segmentation did not succeed");
-		  return false;
-	  }
-
-	  // reassigning id
-	  obj.id = makeCollisionObjectNameFromModelId(0);
-
-	  // adding to planning scene
-	  addDetectedObjectToPlanningSceneDiff(obj);
-
-	  // storing pose
-	  geometry_msgs::PoseStamped pose;
-	  pose.header.frame_id = obj.header.frame_id;
-	  pose.pose = obj.poses[0];
-	  recognized_obj_pose_map_[std::string(obj.id)] = pose;
-
-	  // creating object array for planning
-	  household_objects_database_msgs::DatabaseModelPoseList models;
-	  household_objects_database_msgs::DatabaseModelPose model;
-	  model.model_id = 0;
-	  model.pose = pose;
-	  model.confidence = 1.0f;
-	  model.detector_name = "sphere_segmentation";
-	  models.model_list.push_back(model);
-
-	  // storing model for planning
-	  recognized_models_.clear();
-	  recognized_models_.push_back(models);
-
-	  // storing final total time
-	  perception_duration_ += ros::WallTime::now()-start;
-
-	  // update markers
-	  visualization_msgs::Marker &segMarker = MarkerMap[MARKER_SEGMENTED_OBJ];
-	  visualization_msgs::Marker &attachedMarker = MarkerMap[MARKER_ATTACHED_OBJ];
-
-	  // segmented object
-	  collisionObjToMarker(obj,segMarker);
-	  segMarker.action = visualization_msgs::Marker::ADD;
-	  //MarkerMap[MARKER_SEGMENTED_OBJ] = segMarker;
-
-	  // attached object, hide for now until gripper is close
-	  collisionObjToMarker(obj,attachedMarker);
-	  attachedMarker.action = visualization_msgs::Marker::DELETE;
-	  attachedMarker.header.frame_id = gripper_link_name_;
-	  //MarkerMap[MARKER_ATTACHED_OBJ] = attachedMarker;
-
-	return true;
-}
-
-bool RobotPickPlaceNavigator::segmentAndRecognize()
-{
-  // tabletop segmentation
-  ros::WallTime start = ros::WallTime::now();
-  planning_scene_diff_.collision_objects.clear();
-  recognized_obj_pose_map_.clear();
-  tabletop_object_detector::TabletopSegmentation segmentation_srv;
-  if (!seg_srv_.call(segmentation_srv))
-  {
-    ROS_ERROR_STREAM(NODE_NAME<<": Call to segmentation service failed");
-    return false;
-  }
-
-  ros::WallTime after_seg = ros::WallTime::now();
-  ROS_INFO_STREAM("Seg took " << (after_seg-start).toSec());
-  if (segmentation_srv.response.result != segmentation_srv.response.SUCCESS)
-  {
-    ROS_ERROR_STREAM(NODE_NAME<<": Segmentation service returned error "<< segmentation_srv.response.result);
-    return false;
-  }
-
-  addDetectedTableToPlanningSceneDiff(segmentation_srv.response.table);
-  ROS_INFO_STREAM(NODE_NAME<<": Segmentation service succeeded. Detected "
-		  <<(int)segmentation_srv.response.clusters.size()<<" clusters");
-
-  // proceed with recognition
-  bool got_recognition = false;
-  recognized_models_.clear();
-  if(!segmentation_srv.response.clusters.empty())
-  {
-    segmented_clusters_ = segmentation_srv.response.clusters;
-    tabletop_object_detector::TabletopObjectRecognition recognition_srv;
-    recognition_srv.request.table = segmentation_srv.response.table;
-    recognition_srv.request.clusters = segmentation_srv.response.clusters;
-    recognition_srv.request.num_models = 1;
-    recognition_srv.request.perform_fit_merge = false;
-
-    if (!rec_srv_.call(recognition_srv))
-    {
-      ROS_ERROR_STREAM(NODE_NAME<<": Call to recognition service failed");
-      return false;
-    }
-
-    // tabletop recognition
-    if(recognition_srv.response.models.size() == 0)
-    {
-    	ROS_ERROR_STREAM(NODE_NAME<<": Recognition found no objects");
-    	return false;
-    }
-
-    ROS_INFO_STREAM(NODE_NAME<<": Recognition took " << (ros::WallTime::now()-after_seg));
-    ROS_INFO_STREAM(NODE_NAME<<": Got " << recognition_srv.response.models.size() << " models");
-    recognized_models_ = recognition_srv.response.models;
-	std::stringstream stdout;
-	stdout<<"Retrieved models:";
-    BOOST_FOREACH(household_objects_database_msgs::DatabaseModelPose model,recognition_srv.response.models[0].model_list)
-    {
-    	stdout<<"\n\tModel id: "<<model.model_id;
-    	stdout<<"\n\tPose frame id: "<<model.pose.header.frame_id;
-    	stdout<<"\n\tdetector name: "<<model.detector_name;
-    	stdout<<"\n";
-    }
-    ROS_INFO_STREAM(stdout.str());
-
-
-    for(unsigned int i = 0; i < 1; i++)
-    {
-      got_recognition = true;
-      addDetectedObjectToPlanningSceneDiff(recognition_srv.response.models[0]);
-    }
-  }
-
-  perception_duration_ += ros::WallTime::now()-start;
-  return got_recognition;
-}
-
-bool RobotPickPlaceNavigator::recognize()
-{
-	ros::WallTime start = ros::WallTime::now();
-	planning_scene_diff_.collision_objects.clear();
-	recognized_obj_pose_map_.clear();
-
-	// calling segmentation
-	tabletop_object_detector::TabletopSegmentation segmentation_srv;
-	if (!seg_srv_.call(segmentation_srv))
-	{
-	ROS_ERROR("Call to segmentation service failed");
-	return false;
-	}
-
-	ros::WallTime after_seg = ros::WallTime::now();
-	bool success = false;
-
-	tabletop_object_detector::TabletopObjectRecognition recognition_srv;
-	recognition_srv.request.table = segmentation_srv.response.table;
-	recognition_srv.request.clusters = segmentation_srv.response.clusters;
-	recognition_srv.request.num_models = 1;
-	recognition_srv.request.perform_fit_merge = false;
-	if (!rec_srv_.call(recognition_srv))
-	{
-		ROS_ERROR_STREAM("Call to recognition service " <<recognition_service_.c_str()<<" failed.");
-	}
-
-	ROS_INFO_STREAM("Recognition took " << (ros::WallTime::now()-after_seg));
-	ROS_INFO_STREAM("Got " << recognition_srv.response.models.size() << " models");
-	recognized_models_ = recognition_srv.response.models;
-
-	std::stringstream ss;
-	for(unsigned int i = 0; i < recognized_models_.size(); i++)
-	{
-		success = true;
-		ss<<"\n\nRecognized model #"<<i+1<<" details:"<<"\n\tName:\t"<<recognized_models_[i].model_list[0].detector_name;
-		ss<<"\n\tModel Id:\t"<<recognized_models_[i].model_list[0].model_id;
-		ss<<"\n\tConfidence:\t"<<recognized_models_[i].model_list[0].confidence;
-
-	}
-
-	//convert returned service response to rviz markers
-
-	perception_duration_ += ros::WallTime::now()-start;
-	return success;
-}
-
 bool RobotPickPlaceNavigator::getMeshFromDatabasePose(const household_objects_database_msgs::DatabaseModelPose &model_pose,
                              arm_navigation_msgs::CollisionObject& obj,
                              const geometry_msgs::PoseStamped& pose)
@@ -1232,43 +996,6 @@ bool RobotPickPlaceNavigator::getMeshFromDatabasePose(const household_objects_da
     obj.poses[0] = pose.pose;
   }
   return true;
-}
-
-bool RobotPickPlaceNavigator::selectGraspableObject(const std::string& arm_name,
-                           object_manipulation_msgs::PickupGoal& pickup_goal,
-                           std::vector<object_manipulation_msgs::Grasp>& grasps)
-{
-  std::stringstream logStream;
-
-  if(recognized_models_.size() == 0) return false;
-  if(recognized_models_[0].model_list.size() == 0) return false;
-
-  household_objects_database_msgs::DatabaseModelPose& dmp = recognized_models_[0].model_list[0];
-
-  pickup_goal.arm_name = arm_name;
-  pickup_goal.collision_object_name = makeCollisionObjectNameFromModelId(dmp.model_id);
-  pickup_goal.lift.direction.header.frame_id = cm_.getWorldFrameId();
-  pickup_goal.lift.direction.vector.z = 1.0;
-  pickup_goal.lift.desired_distance = .1;
-  pickup_goal.target.reference_frame_id = pickup_goal.collision_object_name;
-  pickup_goal.target.cluster = segmented_clusters_[0];
-  pickup_goal.allow_gripper_support_collision = true;
-  pickup_goal.collision_support_surface_name = "table";
-
-  // printing request
-  logStream<<"\nfreetail manipulation: "<<"Household object database query request"<<"\n";
-  logStream<<"freetail manipulation: "<<"\t-Arm Name:\t"<<pickup_goal.arm_name<<"\n";
-  logStream<<"freetail manipulation: "<<"\t-Collision Object Name:\t"<<pickup_goal.collision_object_name<<"\n";
-  logStream<<"freetail manipulation: "<<"\t-Target Ref Frame Id:\t"<<pickup_goal.target.reference_frame_id<<"\n";
-  logStream<<"freetail manipulation: "<<"\t-World Ref Frame Id:\t"<<pickup_goal.lift.direction.header.frame_id<<"\n";
-
-  ROS_INFO("%s",logStream.str().c_str());
-
-  household_objects_database_msgs::DatabaseModelPose dmp_copy = dmp;
-  dmp_copy.pose = recognized_obj_pose_map_[pickup_goal.collision_object_name];
-  pickup_goal.target.potential_models.push_back(dmp_copy);
-
-  return getObjectGrasps(arm_name, dmp, segmented_clusters_[0], grasps);
 }
 
 bool RobotPickPlaceNavigator::performGraspPlanning()
@@ -1397,297 +1124,6 @@ bool RobotPickPlaceNavigator::performGraspPlanning()
 	ROS_INFO_STREAM(NODE_NAME<<": Recognition pose frame " << modelPose.pose.header.frame_id);
 
 	return true;
-}
-
-bool RobotPickPlaceNavigator::placeAtGoalLocation(const std::string &armName)
-{
-	// resetting scene
-	getAndSetPlanningScene();
-
-	// getting parameters
-	_GoalParameters.fetchParameters(GOAL_NAMESPACE);
-
-	// starting timer
-	ros::WallTime start_time = ros::WallTime::now();
-
-	// cancel if object is not held by gripper
-	if(!object_in_hand_map_[armName]) return false;
-
-	// find transform of wrist relative to the gripper's tcp
-	tf::StampedTransform gripperTcpToWrist = tf::StampedTransform();
-	_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),gripperTcpToWrist);
-
-	object_manipulation_msgs::PlaceGoal place_goal;
-	place_goal.arm_name = armName;
-	place_goal.grasp = current_grasp_map_[armName];
-	place_goal.desired_retreat_distance = .1;
-	place_goal.min_retreat_distance = .1;
-	place_goal.approach.desired_distance = .1;
-	place_goal.approach.min_distance = .1;
-	place_goal.approach.direction.header.frame_id = cm_.getWorldFrameId();
-	place_goal.approach.direction.vector.x = 0.0;
-	place_goal.approach.direction.vector.y = 0.0;
-	place_goal.approach.direction.vector.z = -1.0;
-	place_goal.collision_object_name = "attached_"+current_grasped_object_name_[armName];
-	place_goal.allow_gripper_support_collision = true;
-	place_goal.collision_support_surface_name = "table";
-	place_goal.place_padding = .02;
-
-	// creating place locations array
-	int numCandidatePoses = _GoalParameters.NumGoalCandidates;
-	const tf::Vector3 &axisRotation = _GoalParameters.Axis;
-	std::vector<geometry_msgs::PoseStamped> place_locations;
-	geometry_msgs::PoseStamped pose;
-	pose.header.frame_id = _GoalParameters.GoalTransform.frame_id_;
-
-	// rotate about z axis and apply to original goal pose in order to create candidates;
-	for(int i = 0; i < numCandidatePoses; i++)
-	{
-		double ratio = ((double)i)/((double)numCandidatePoses);
-		double angle = 2*M_PI*ratio;
-		tf::Quaternion q = tf::Quaternion(axisRotation,angle);
-		tf::Vector3 p = tf::Vector3(0,0,0);
-		tf::Transform candidateTransform = _GoalParameters.GoalTransform*tf::Transform(q,p);
-		tf::poseTFToMsg(candidateTransform,pose.pose);
-		place_locations.push_back(pose);
-
-		ROS_INFO_STREAM(NODE_NAME<<" :Goal Position.Pos = ["<<pose.pose.position.x<<", "
-				<<pose.pose.position.y<<", "<<pose.pose.position.z<<"]");
-		ROS_INFO_STREAM(NODE_NAME<<" :Goal Position.Frame_Id = "<<pose.header.frame_id);
-	}
-
-
-	std::vector<object_manipulator::PlaceExecutionInfo> place_execution_info;
-	{
-		planning_models::KinematicState state(*current_robot_state_);
-		place_tester_->setTcpToWristTransform(gripperTcpToWrist);
-		place_tester_->setPlanningSceneState(&state);
-		place_tester_->testPlaces(place_goal,place_locations,
-								  place_execution_info,
-								  true);
-	}
-
-	grasp_planning_duration_ += ros::WallTime::now()-start_time;
-
-	for(unsigned int i = 0; i < place_execution_info.size(); i++)
-	{
-		if(place_execution_info[i].result_.result_code == object_manipulation_msgs::PlaceLocationResult::SUCCESS)
-		{
-		  current_place_location_ = place_locations[i];
-		  bool placed = attemptPlaceSequence(armName, place_execution_info[i]);
-
-		  if(!placed)
-		  {
-			ROS_WARN_STREAM(NODE_NAME<<": Place failed");
-		  }
-		  else
-		  {
-			return true;
-		  }
-		}
-		else
-		{
-			//ROS_WARN_STREAM(NODE_NAME<<": Goal Location "<< i + 1 <<" is unreachable");
-		}
-	}
-
-	return false;
-}
-
-bool RobotPickPlaceNavigator::putDownSomething(const std::string& arm_name) {
-
-  getAndSetPlanningScene();
-
-  ros::WallTime start_time = ros::WallTime::now();
-
-  if(!object_in_hand_map_[arm_name]) return false;
-
-  tf::StampedTransform gripperTcpToWrist = tf::StampedTransform();
-  _TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),gripperTcpToWrist);
-
-  object_manipulation_msgs::PlaceGoal place_goal;
-  place_goal.arm_name = arm_name;
-  place_goal.grasp = current_grasp_map_[arm_name];
-  place_goal.desired_retreat_distance = .1;
-  place_goal.min_retreat_distance = .1;
-  place_goal.approach.desired_distance = .1;
-  place_goal.approach.min_distance = .1;
-  place_goal.approach.direction.header.frame_id = cm_.getWorldFrameId();
-  place_goal.approach.direction.vector.x = 0.0;
-  place_goal.approach.direction.vector.y = 0.0;
-  place_goal.approach.direction.vector.z = -1.0;
-  place_goal.collision_object_name = "attached_"+ current_grasped_object_name_[arm_name];
-  place_goal.allow_gripper_support_collision = true;
-  place_goal.collision_support_surface_name = "table";
-  place_goal.place_padding = .02;
-
-  geometry_msgs::PoseStamped table_pose;
-  table_pose.pose = table_.poses[0];
-  table_pose.header.frame_id = table_.header.frame_id;
-
-  double l = table_.shapes[0].dimensions[0]-.2;
-  double w = table_.shapes[0].dimensions[1]-.2;
-  double d = table_.shapes[0].dimensions[2];
-  //double d = 0.01f;
-
-  double spacing = .4;
-
-  unsigned int lnum = ceil(l/spacing);
-  unsigned int wnum = ceil(w/spacing);
-
-  std::vector<double> angles;
-  angles.push_back(0);
-  angles.push_back(M_PI/4.0);
-  angles.push_back(-M_PI/4.0);
-  angles.push_back(M_PI/2.0);
-  angles.push_back(-M_PI/2.0);
-
-  unsigned int total_place_locations = lnum*wnum*angles.size();
-
-  std::vector<unsigned int> random_numbers(total_place_locations);
-  for(unsigned int i = 0; i < total_place_locations; i++) {
-    random_numbers[i] = i;
-  }
-  random_shuffle(random_numbers.begin(), random_numbers.end());
-
-  std::vector<geometry_msgs::PoseStamped> place_locations(total_place_locations);
-  //TODO - make sure that poses are actually on the table
-  unsigned int cur_ind = 0;
-  for(unsigned int i = 0; i < lnum; i++) {
-    for(unsigned int j = 0; j < wnum; j++) {
-      for(unsigned int k = 0; k < angles.size(); k++, cur_ind++) {
-        geometry_msgs::PoseStamped place_pose = table_pose;
-        place_pose.pose.position.x += -(l/2.0)+((i*1.0)*spacing);
-        place_pose.pose.position.y += -(w/2.0)+((j*1.0)*spacing);
-        place_pose.pose.position.z += (d/2.0);
-        place_pose.pose.position.z = 0.08f;
-        tf::Transform rot(tf::Quaternion(tf::Vector3(0.0,0.0,1.0), angles[k]), tf::Vector3(0.0,0.0,0.0));
-        tf::Transform trans;
-        tf::poseMsgToTF(place_pose.pose, trans);
-        trans = trans*rot;
-
-        //tf::poseTFToMsg(trans*objToTcp*(objToWrist.inverse()), place_pose.pose);
-        tf::poseTFToMsg(trans, place_pose.pose);
-        ROS_INFO_STREAM("Place location " << i << " " << j << " "
-                         << place_pose.pose.position.x << " "
-                         << place_pose.pose.position.y << " "
-                         << place_pose.pose.position.z);
-        place_locations[random_numbers[cur_ind]] = place_pose;
-      }
-    }
-  }
-
-  std::vector<object_manipulator::PlaceExecutionInfo> place_execution_info;
-  {
-    planning_models::KinematicState state(*current_robot_state_);
-    place_tester_->setTcpToWristTransform(gripperTcpToWrist);
-    place_tester_->setPlanningSceneState(&state);
-    place_tester_->testPlaces(place_goal,
-                              place_locations,
-                              place_execution_info,
-                              true);
-  }
-
-  grasp_planning_duration_ += ros::WallTime::now()-start_time;
-
-  for(unsigned int i = 0; i < place_execution_info.size(); i++) {
-    if(place_execution_info[i].result_.result_code == object_manipulation_msgs::PlaceLocationResult::SUCCESS)
-    {
-      current_place_location_ = place_locations[i];
-      bool placed = attemptPlaceSequence(arm_name, place_execution_info[i]);
-      if(!placed)
-      {
-        ROS_WARN_STREAM(NODE_NAME<<": Place failed");
-      }
-      else
-      {
-        return true;
-      }
-    }
-    else
-    {
-    	//ROS_WARN_STREAM(NODE_NAME<<": Goal Location "<< i + 1 <<" is unreachable");
-    }
-  }
-  return false;
-}
-
-bool RobotPickPlaceNavigator::pickUpSomething(const std::string& arm_name) {
-
-  getAndSetPlanningScene();
-
-  ros::WallTime start_time = ros::WallTime::now();
-
-  object_manipulation_msgs::PickupGoal pickup_goal;
-  std::vector<object_manipulation_msgs::Grasp> grasps;
-  if(!selectGraspableObject(arm_name,pickup_goal,grasps))
-  {
-	ROS_INFO("%s","freetail manipulation: graspable object selection failed");
-    return false;
-  }
-  std::vector<object_manipulator::GraspExecutionInfo> grasp_execution_info;
-
-  {
-    planning_models::KinematicState state(*current_robot_state_);
-    grasp_tester_->setPlanningSceneState(&state);
-
-    ROS_INFO_STREAM(NODE_NAME<<": Pickup goal arm name is " << pickup_goal.arm_name);
-    ROS_INFO_STREAM(NODE_NAME<<": Evaluating grasps with grasp tester");
-    grasp_tester_->testGrasps(pickup_goal, grasps, grasp_execution_info, true);
-    ROS_INFO_STREAM(NODE_NAME<<": Returned "<< grasp_execution_info.size() <<" grasps candidates ");
-  }
-
-  grasp_planning_duration_ += ros::WallTime::now()-start_time;
-
-  // finding wrist pose relative to gripper
-  tf::StampedTransform gripperTcpToWrist = tf::StampedTransform();
-  _TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),gripperTcpToWrist);
-
-  for(unsigned int i = 0; i < grasp_execution_info.size(); i++)
-  {
-    if(grasp_execution_info[i].result_.result_code == object_manipulation_msgs::GraspResult::SUCCESS)
-    {
-      current_grasped_object_name_[arm_name] = pickup_goal.collision_object_name;
-
-      // temp grasp
-      object_manipulation_msgs::Grasp tempGrasp;
-
-      // storing gripper grasp pose (gripper tcp relative to object)
-      tf::Transform wristInObjPose;
-      tf::poseMsgToTF(grasps[i].grasp_pose,wristInObjPose);
-      tf::poseTFToMsg(wristInObjPose*(gripperTcpToWrist.inverse()),tempGrasp.grasp_pose);
-      current_grasp_map_[arm_name] = tempGrasp;
-
-      // updating attached objt marker pose
-      if(MarkerMap.find(MARKER_ATTACHED_OBJ) != MarkerMap.end())
-      {
-    	  visualization_msgs::Marker &m = MarkerMap[MARKER_ATTACHED_OBJ];
-    	  tf::poseTFToMsg(wristInObjPose.inverse(),m.pose);
-    	  m.header.frame_id = gripper_link_name_;
-      }
-
-      ROS_INFO_STREAM(NODE_NAME<<": Attempting grasp sequence");
-      bool grasped =  attemptGraspSequence(arm_name, grasp_execution_info[i]);
-
-      if(!grasped)
-      {
-        ROS_WARN_STREAM(NODE_NAME<<": Grasp failed");
-        current_grasped_object_name_.erase(arm_name);
-        current_grasp_map_.erase(arm_name);
-        return false;
-      }
-      else
-      {
-    	  ROS_INFO_STREAM(NODE_NAME<<": Attempting grasp sequence succeeded");
-    	  return true;
-      }
-    }
-    else
-    {
-    	ROS_INFO_STREAM(NODE_NAME<<": Grasp candidate "<<i+1<<" is unreachable");
-    }
-  }
-  return false;
 }
 
 void RobotPickPlaceNavigator::createPickMoveSequence(
@@ -1819,7 +1255,6 @@ bool RobotPickPlaceNavigator::moveArmThroughPlaceSequence()
 	std::vector<geometry_msgs::PoseStamped> placePoses;
 	_GoalParameters.fetchParameters(GOAL_NAMESPACE);
 	_GoalParameters.generateNextLocationCandidates(placePoses);
-	//createCandidateGoalPoses(placePoses);
 
 	// creating place move sequence
 	std::vector<object_manipulator::PlaceExecutionInfo> placeSequence;
@@ -1943,14 +1378,14 @@ bool RobotPickPlaceNavigator::attemptGraspSequence(const std::string& group_name
   graspGoal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP;
 
   ROS_INFO_STREAM(NODE_NAME << ": Requesting pre-grasp");
-  grasp_exec_action_client_.sendGoal(graspGoal);
-  if(!grasp_exec_action_client_.waitForResult(ros::Duration(2.0f)))
+  grasp_exec_action_client_->sendGoal(graspGoal);
+  if(!grasp_exec_action_client_->waitForResult(ros::Duration(2.0f)))
   {
 	  ROS_ERROR_STREAM(NODE_NAME << ": Pre-grasp request timeout, exiting");
 	  return false;
   }
 
-  if(grasp_exec_action_client_.getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
+  if(grasp_exec_action_client_->getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
   {
 	  ROS_ERROR_STREAM(NODE_NAME << ": Pre-grasp request unsuccessful, exiting");
 	  return false;
@@ -2096,139 +1531,6 @@ bool RobotPickPlaceNavigator::attemptPlaceSequence(const std::string& group_name
 
   execution_duration_ += (ros::WallTime::now()-start_execution);
   return trajectories_succeeded_;
-}
-
-bool RobotPickPlaceNavigator::getObjectGrasps(const std::string& arm_name,
-                     const household_objects_database_msgs::DatabaseModelPose& dmp,
-                     const sensor_msgs::PointCloud& cloud,
-                     std::vector<object_manipulation_msgs::Grasp>& grasps)
-{
-  household_objects_database_msgs::GetModelDescription::Request des_req;
-  household_objects_database_msgs::GetModelDescription::Response des_res;
-
-  des_req.model_id = dmp.model_id;
-
-  if(ros::service::exists(model_database_service_,false))
-  {
-	  if(!object_database_model_description_client_.call(des_req, des_res))
-	  {
-		ROS_WARN_STREAM("Call to objects database for getModelDescription failed");
-		return false;
-	  }
-
-	  if(des_res.return_code.code != des_res.return_code.SUCCESS)
-	  {
-		ROS_WARN_STREAM("Object database gave non-success code " << des_res.return_code.code << " for model id " << des_req.model_id);
-		return false;
-	  }
-
-	  ROS_INFO_STREAM(NODE_NAME<<" model database service returned description with name: "<<des_res.name);
-  }
-  else
-  {
-	  ROS_INFO_STREAM(NODE_NAME<<": Model database service "<< model_database_service_
-			  <<" not found, skipping service call");
-  }
-
-  household_objects_database_msgs::DatabaseModelPose dmp_copy = dmp;
-  dmp_copy.pose = geometry_msgs::PoseStamped();
-  dmp_copy.pose.pose.orientation.w = 1.0;
-  dmp_copy.pose.header.frame_id = des_res.name;
-  dmp_copy.pose.header.stamp = ros::Time::now();
-
-
-  object_manipulation_msgs::GraspPlanning::Request request;
-  object_manipulation_msgs::GraspPlanning::Response response;
-
-  request.arm_name = arm_name;
-  request.target.potential_models.push_back(dmp_copy);
-  //request.target.reference_frame_id = des_res.name;
-  request.target.reference_frame_id = cloud.header.frame_id;
-  request.target.cluster = cloud;
-
-  if(!grasp_planning_client.call(request, response))
-  {
-    ROS_WARN_STREAM(NODE_NAME<<": Call to objects database for GraspPlanning failed");
-    return false;
-  }
-
-  if(response.error_code.value != response.error_code.SUCCESS)
-  {
-    ROS_WARN_STREAM(NODE_NAME<<": Object database gave non-success code " << response.error_code.value);
-    return false;
-  }
-
-  // verify grasp plan results
-  if(response.grasps.size() == 0)
-  {
-    ROS_WARN_STREAM(NODE_NAME<<": No grasps returned in response");
-    return false;
-  }
-  if(response.grasps.size() > 0)
-  {
-    ROS_INFO_STREAM(NODE_NAME<<": Grasp is " << response.grasps[0].grasp_pose.position.x << " "
-		      << response.grasps[0].grasp_pose.position.y << " "
-		      << response.grasps[0].grasp_pose.position.z);
-  }
-
-  ROS_INFO_STREAM(NODE_NAME<<": Cloud header " << cloud.header.frame_id);
-  ROS_INFO_STREAM(NODE_NAME<<": Recognition pose frame " << dmp.pose.header.frame_id);
-
-  tf::Transform first_grasp_in_world_tf;
-  tf::poseMsgToTF(response.grasps[0].grasp_pose, first_grasp_in_world_tf);
-
-  ROS_INFO_STREAM(NODE_NAME<<": Recognition pose frame " << dmp.pose.header.frame_id);
-  planning_models::KinematicState state(*current_robot_state_);
-  state.updateKinematicStateWithLinkAt(gripper_link_name_, first_grasp_in_world_tf);
-
-  std_msgs::ColorRGBA col_pregrasp;
-  col_pregrasp.r = 0.0;
-  col_pregrasp.g = 1.0;
-  col_pregrasp.b = 1.0;
-  col_pregrasp.a = 1.0;
-  visualization_msgs::MarkerArray arr;
-
-  ROS_INFO_STREAM(NODE_NAME<<": Getting kinematic model group under 'end_effector'");
-  std::vector<std::string> links = cm_.getKinematicModel()->getModelGroup(gripper_group_name_)->getGroupLinkNames();
-
-  ROS_INFO_STREAM(NODE_NAME<<": Obtaining robot marker from state and publishing");
-  cm_.getRobotMarkersGivenState(state, arr, col_pregrasp,"first_grasp", ros::Duration(0.0), &links);
-  vis_marker_array_publisher_.publish(arr);
-
-  //TODO - actually deal with the different cases here, especially for the cluster planner
-  ROS_INFO_STREAM(NODE_NAME<<": Published markers");
-  grasps = response.grasps;
-  if(request.target.reference_frame_id != des_res.name)
-  {
-    if(request.target.reference_frame_id != dmp.pose.header.frame_id)
-    {
-      ROS_WARN_STREAM("Cluster does not match recognition");
-    }
-    else
-    {
-      tf::Transform object_in_world_tf;
-      tf::poseMsgToTF(dmp.pose.pose, object_in_world_tf);
-
-
-      //poses are positions of the wrist link in terms of the world
-      //we need to get them in terms of the object
-
-      // needs to apply this transform so that the frame of the arm wrist relative to the object is obtained
-      tf::StampedTransform wristInGripperTcp = tf::StampedTransform();
-      _TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wristInGripperTcp);
-
-      // object pose
-      tf::Transform object_in_world_inverse_tf = object_in_world_tf.inverse();
-
-      for(unsigned int i = 0; i < grasps.size(); i++)
-      {
-        tf::Transform grasp_in_world_tf;
-        tf::poseMsgToTF(grasps[i].grasp_pose, grasp_in_world_tf);
-        tf::poseTFToMsg(object_in_world_inverse_tf*(grasp_in_world_tf*wristInGripperTcp), grasps[i].grasp_pose);
-      }
-    }
-  }
-  return true;
 }
 
 trajectory_msgs::JointTrajectory RobotPickPlaceNavigator::getGripperTrajectory(const std::string& arm_name,bool open)
@@ -2487,16 +1789,12 @@ void RobotPickPlaceNavigator::run()
 
 void RobotPickPlaceNavigator::runFullPickPlace()
 {
-	// getting and storing node name
-	NODE_NAME = ros::this_node::getName();
-
+	ros::NodeHandle nh;
 	ros::AsyncSpinner spinner(4);
 	spinner.start();
 	srand(time(NULL));
 
 	setup();// full setup
-
-	//ros::NodeHandle nh;
 	moveArmToSide();
 
 	while(ros::ok())
@@ -2591,57 +1889,20 @@ void RobotPickPlaceNavigator::runFullPickPlace()
 
 void RobotPickPlaceNavigator::runSpherePickPlace()
 {
-	// getting and storing node name
-	NODE_NAME = ros::this_node::getName();
-
+	ros::NodeHandle nh;
 	ros::AsyncSpinner spinner(4);
 	spinner.start();
 	srand(time(NULL));
 
-	setupBallPickingDemo();// full setup
+	ROS_INFO_STREAM(NODE_NAME<<" Setup stage started");
+	setupBallPickingDemo();
+	ROS_INFO_STREAM(NODE_NAME<<" Setup stage completed");
 
-	//ros::NodeHandle nh;
 	moveArmToSide();
 
 	while(ros::ok())
 	{
 	    startCycleTimer();
-
-//	    ROS_INFO_STREAM(NODE_NAME << ": Segmentation and recognition stage started");
-//	    if(!segmentSpheres())
-//	    {
-//	      ROS_WARN_STREAM("Segment and recognized failed");
-//	      continue;
-//	    }
-//	    ROS_INFO_STREAM(NODE_NAME << ": Segmentation of spheres stage completed");
-//
-//	    ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
-//	    if(!pickUpSomething(arm_group_name_))
-//	    {
-//	      ROS_WARN_STREAM(NODE_NAME << " grasp pickup stage failed");
-//	      continue;
-//	    }
-//	    else
-//	    {
-//	    	ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
-//	    }
-//
-//
-//	    ROS_INFO_STREAM(NODE_NAME << ": grasp place stage started");
-//	    if(!placeAtGoalLocation(arm_group_name_))
-//	    {
-//	      ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
-//	    }
-//	    else
-//	    {
-//	    	ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
-//	    }
-//
-//	    if(!moveArmToSide())
-//	    {
-//	      ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
-//	      break;
-//	    }
 
 		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 		if(!performSegmentation() || !performSphereSegmentation())

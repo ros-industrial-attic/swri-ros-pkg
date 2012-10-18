@@ -33,7 +33,7 @@ goal:
       z: 1
     angle: 0
   next_location:
-    generation_mode: 1
+    generation_mode: 0
     min_spacing: 0.05 # meters
     max_spacing: 0.08 # meters
     place_region_radius: 0.2 # meters
