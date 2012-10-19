@@ -36,7 +36,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <arm_navigators/RobotPickPlaceNavigator.h>
+#include <mantis_object_manipulation/arm_navigators/RobotPickPlaceNavigator.h>
 #include <boost/foreach.hpp>
 
 using namespace trajectory_execution_monitor;
@@ -81,8 +81,6 @@ RobotPickPlaceNavigator::RobotPickPlaceNavigator(ConfigurationFlags flag)
 :configuration_type_(flag),
  cm_("robot_description"),
  current_robot_state_(NULL)
- //grasp_exec_action_client_(DEFAULT_GRASP_ACTION_SERVICE,true)
- //grasp_exec_action_client_(grasp_action_service_,true)
 {
 	ros::NodeHandle nh;
 
