@@ -11,10 +11,45 @@
 /* continue modifications in move arm
  *
  */
+std::string RobotNavigator::NODE_NAME = "robot_pick_place";
+std::string RobotNavigator::NAVIGATOR_NAMESPACE = "navigator";
+std::string RobotNavigator::MARKER_ARM_LINK = "arm_links";
+std::string RobotNavigator::MARKER_ATTACHED_OBJECT = "attached_object";
+std::string RobotNavigator::VISUALIZATION_TOPIC = "visualization_markers";
+
+void RobotNavigator::fetchParameters(std::string nameSpace)
+{
+	ros::NodeHandle nh;
+	using namespace RobotNavigatorParameters;
+
+	ros::param::param(nameSpace + "/" + PARAM_NAME_ARM_GROUP,arm_group_name_,DEFAULT_ARM_GROUP);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_GRIPPER_GROUP,gripper_group_name_,DEFAULT_GRIPPER_GROUP);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_WRIST_LINK,wrist_link_name_,DEFAULT_WRIST_LINK);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_GRIPPER_LINK,gripper_link_name_,DEFAULT_GRIPPER_LINK);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_GRASP_ACTION_SERVICE,grasp_action_service_,DEFAULT_GRASP_ACTION_SERVICE );
+	ros::param::param(nameSpace + "/" + PARAM_NAME_TRAJECTORY_ACTION_SERVICE,trajectory_action_service_,DEFAULT_TRAJECTORY_ACTION_SERVICE);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_PATH_PLANNER_SERVICE,path_planner_service_,DEFAULT_PATH_PLANNER_SERVICE);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_TRAJECTORY_FILTER_SERVICE,trajectory_filter_service_,DEFAULT_TRAJECTORY_FILTER_SERVICE);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_SEGMENTATION_SERVICE,segmentation_service_,DEFAULT_SEGMENTATION_SERVICE);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_RECOGNITION_SERVICE,recognition_service_,DEFAULT_RECOGNITION_SERVICE);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_GRASP_PLANNING_SERVICE,grasp_planning_service_,DEFAULT_GRASP_PLANNING_SERVICE);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_MESH_DATABASE_SERVICE,mesh_database_service_,DEFAULT_MESH_DATABASE_SERVICE);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_MODEL_DATABASE_SERVICE,model_database_service_,DEFAULT_MODEL_DATABASE_SERVICE);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_PLANNING_SCENE_SERVICE,planning_scene_service_,DEFAULT_PLANNING_SCENE_SERVICE);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_IK_PLUGING,ik_plugin_name_,DEFAULT_IK_PLUGING);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_JOINT_STATES_TOPIC,joint_states_topic_,DEFAULT_JOINT_STATES_TOPIC);
+}
 
 RobotNavigator::RobotNavigator()
+: cm_("robot_description"),
+  current_robot_state_(NULL)
 {
+	ros::NodeHandle nh;
 
+	// initializing name spaces global strings
+	NODE_NAME = ros::this_node::getName();
+	NAVIGATOR_NAMESPACE = NODE_NAME + "/" + NAVIGATOR_NAMESPACE;
+	VISUALIZATION_TOPIC = NODE_NAME + "/" + VISUALIZATION_TOPIC;
 }
 
 RobotNavigator::~RobotNavigator()
@@ -47,6 +82,7 @@ void RobotNavigator::setup()
 	ROS_INFO_STREAM(NODE_NAME<<": Setting up Service Clients");
     // setting up service clients, this is configuration specific
 	{
+		// perception
 		seg_srv_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>(segmentation_service_, true);
 		rec_srv_ = nh.serviceClient<tabletop_object_detector::TabletopObjectRecognition>(
 				recognition_service_, true);
@@ -55,6 +91,7 @@ void RobotNavigator::setup()
 		object_database_model_description_client_ = nh.serviceClient<household_objects_database_msgs::GetModelDescription>(
 				model_database_service_, true);
 
+		// path and grasp plannig
 		grasp_planning_client = nh.serviceClient<object_manipulation_msgs::GraspPlanning>(grasp_planning_service_, true);
 		planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>(path_planner_service_);
 
@@ -86,12 +123,11 @@ void RobotNavigator::setup()
 	ROS_INFO_STREAM(NODE_NAME<<": Setting up ros publishers");
 	{
 		// setting up ros publishers
-		vis_marker_publisher_ = nh.advertise<visualization_msgs::Marker> ("freetail_object", 1);
-		vis_marker_array_publisher_ = nh.advertise<visualization_msgs::MarkerArray> ("freetail_object_array", 1);
+		marker_publisher_ = nh.advertise<visualization_msgs::Marker> (VISUALIZATION_TOPIC, 128);
 		attached_object_publisher_ = nh.advertise<arm_navigation_msgs::AttachedCollisionObject> ("attached_collision_object_alternate", 1);
 
 		// setting up timer obj
-		_MarkerPubTimer = nh.createTimer(ros::Duration(0.4f),&RobotNavigator::callbackPublishMarkers,this);
+		marker_pub_timer_ = nh.createTimer(ros::Duration(0.4f),&RobotNavigator::callbackPublishMarkers,this);
 
 		ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
 		// others
@@ -165,7 +201,7 @@ void RobotNavigator::updateCurrentJointStateToLastTrajectoryPoint(const trajecto
   current_robot_state_->setKinematicState(joint_vals);
 }
 
-bool RobotNavigator::getAndSetPlanningScene()
+bool RobotNavigator::updateChangesToPlanningScene()
 {
   ros::WallTime start_time = ros::WallTime::now();
   arm_navigation_msgs::SetPlanningSceneDiff::Request planning_scene_req;
@@ -423,7 +459,7 @@ bool RobotNavigator::performTrajectoryFiltering(const std::string& group_name,tr
 
 bool RobotNavigator::moveArmToSide()
 {
-    getAndSetPlanningScene();
+    updateChangesToPlanningScene();
 
 	std::vector<double> joint_angles;
 	joint_angles.push_back(-1.0410828590393066);
@@ -437,7 +473,7 @@ bool RobotNavigator::moveArmToSide()
     return moveArm(arm_group_name_,joint_angles);
 }
 
-void RobotNavigator::addDetectedTableToPlanningSceneDiff(const tabletop_object_detector::Table &table)
+void RobotNavigator::addDetectedTableToLocalPlanningScene(const tabletop_object_detector::Table &table)
 {
   arm_navigation_msgs::CollisionObject table_object;
   table_object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
@@ -479,13 +515,13 @@ void RobotNavigator::addDetectedTableToPlanningSceneDiff(const tabletop_object_d
   table_ = table_object;
 }
 
-void RobotNavigator::addDetectedObjectToPlanningSceneDiff(arm_navigation_msgs::CollisionObject &obj)
+void RobotNavigator::addDetectedObjectToLocalPlanningScene(arm_navigation_msgs::CollisionObject &obj)
 {
   obj.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
   planning_scene_diff_.collision_objects.push_back(obj);
 }
 
-void RobotNavigator::addDetectedObjectToPlanningSceneDiff(const household_objects_database_msgs::DatabaseModelPoseList& model)
+void RobotNavigator::addDetectedObjectToLocalPlanningScene(const household_objects_database_msgs::DatabaseModelPoseList& model)
 {
   arm_navigation_msgs::CollisionObject obj;
   obj.id = makeCollisionObjectNameFromModelId(model.model_list[0].model_id);
@@ -546,7 +582,7 @@ bool RobotNavigator::performSegmentation()
 	segmented_clusters_ = segmentation_srv.response.clusters;
 
 	//  ===================================== updating local planning scene =====================================
-	addDetectedTableToPlanningSceneDiff(segmentation_srv.response.table);
+	addDetectedTableToLocalPlanningScene(segmentation_srv.response.table);
 
 	// ===================================== printing completion info message =====================================
 	ROS_INFO_STREAM(NODE_NAME<<": Segmentation service succeeded. Detected "<<(int)segmentation_srv.response.clusters.size()<<" clusters");
@@ -616,7 +652,7 @@ bool RobotNavigator::performRecognition()
 	recognized_model_description_ = des_res;
 
 	//  ===================================== updating local planning scene =====================================
-    addDetectedObjectToPlanningSceneDiff(recognition_srv.response.models[0]);
+    addDetectedObjectToLocalPlanningScene(recognition_srv.response.models[0]);
 
 	// ===================================== printing completion info message =====================================
     ROS_INFO_STREAM(NODE_NAME<<": Recognition took " << (ros::WallTime::now()-start));
@@ -798,17 +834,17 @@ bool RobotNavigator::performGraspPlanning()
 	planning_models::KinematicState state(*current_robot_state_);
 	state.updateKinematicStateWithLinkAt(gripper_link_name_, first_grasp_in_world_tf);
 
-	//  ===================================== publishing results =====================================
+	//  ===================================== generating markers results =====================================
 	// publishing marker of gripper at pre-grasp
-	visualization_msgs::MarkerArray arr;
-	std_msgs::ColorRGBA col_pregrasp;
-	col_pregrasp.r = 0.0;
-	col_pregrasp.g = 1.0;
-	col_pregrasp.b = 1.0;
-	col_pregrasp.a = 1.0;
-	std::vector<std::string> links = cm_.getKinematicModel()->getModelGroup(gripper_group_name_)->getGroupLinkNames();
-	cm_.getRobotMarkersGivenState(state, arr, col_pregrasp,"first_grasp", ros::Duration(0.0), &links);
-	vis_marker_array_publisher_.publish(arr);
+//	visualization_msgs::MarkerArray arr;
+//	std_msgs::ColorRGBA col_pregrasp;
+//	col_pregrasp.r = 0.0;
+//	col_pregrasp.g = 1.0;
+//	col_pregrasp.b = 1.0;
+//	col_pregrasp.a = 1.0;
+//	std::vector<std::string> links = cm_.getKinematicModel()->getModelGroup(gripper_group_name_)->getGroupLinkNames();
+//	cm_.getRobotMarkersGivenState(state, arr, col_pregrasp,"first_grasp", ros::Duration(0.0), &links);
+//	marker_array_publisher_.publish(arr);
 
 	// ===================================== printing completion info message =====================================
 	ROS_INFO_STREAM(NODE_NAME<<": Grasp is " << response.grasps[0].grasp_pose.position.x << " "
@@ -851,7 +887,7 @@ void RobotNavigator::createPlaceMoveSequence(const object_manipulation_msgs::Pla
 bool RobotNavigator::moveArmThroughPickSequence()
 {
 	// pushing local changes to planning scene
-	getAndSetPlanningScene();
+	updateChangesToPlanningScene();
 
 	// grasp planning
 	bool success = performGraspPlanning();
@@ -897,11 +933,12 @@ bool RobotNavigator::moveArmThroughPickSequence()
 			current_grasped_object_name_[arm_group_name_] = grasp_pickup_goal_.collision_object_name;
 
 			// updating attached object marker pose
-			if(marker_map_.find(MARKER_ATTACHED_OBJ) != marker_map_.end())
+			if(hasMarker(MARKER_ATTACHED_OBJECT))
 			{
-			  visualization_msgs::Marker &m = marker_map_[MARKER_ATTACHED_OBJ];
-			  tf::poseTFToMsg(wristInObjPose.inverse(),m.pose);
-			  m.header.frame_id = gripper_link_name_;
+				visualization_msgs::Marker &m = getMarker(MARKER_ATTACHED_OBJECT);
+				tf::poseTFToMsg(wristInObjPose.inverse(),m.pose);
+				m.header.frame_id = gripper_link_name_;
+				addMarker(MARKER_ATTACHED_OBJECT,m);
 			}
 
 			break;
@@ -919,7 +956,7 @@ bool RobotNavigator::moveArmThroughPickSequence()
 bool RobotNavigator::moveArmThroughPlaceSequence()
 {
 	// resetting scene
-	getAndSetPlanningScene();
+	updateChangesToPlanningScene();
 
 	// starting timer
 	ros::WallTime start_time = ros::WallTime::now();
@@ -948,7 +985,6 @@ bool RobotNavigator::moveArmThroughPlaceSequence()
 
 	// creating candidate grasp place poses
 	std::vector<geometry_msgs::PoseStamped> placePoses;
-	_GoalParameters.fetchParameters(GOAL_NAMESPACE);
 	createCandidateGoalPoses(placePoses);
 
 	// creating place move sequence
@@ -983,6 +1019,58 @@ bool RobotNavigator::moveArmThroughPlaceSequence()
 	}
 
 	return success;
+}
+
+void RobotNavigator::addMarker(std::string name,visualization_msgs::Marker &marker)
+{
+	if(marker_map_.count(name) > 0)
+	{
+		marker.id = marker_map_[name].id;
+		marker_map_[name] = marker;
+	}
+	else
+	{
+		marker.id = marker_map_.size();
+		marker_map_.insert(std::make_pair(name,marker));
+	}
+}
+
+void RobotNavigator::addMarker(std::string name,visualization_msgs::MarkerArray &markers)
+{
+	std::stringstream nameStream;
+	for(unsigned int i = 0; i < markers.markers.size(); i++)
+	{
+		nameStream<<name<<i;
+		addMarker(nameStream.str(),markers.markers[i]);
+		nameStream.str("");
+	}
+}
+
+bool RobotNavigator::hasMarker(std::string name)
+{
+	if(marker_map_.count(name) > 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+visualization_msgs::Marker& RobotNavigator::getMarker(std::string name)
+{
+	return marker_map_[name];
+}
+
+void RobotNavigator::callbackPublishMarkers(const ros::TimerEvent &evnt)
+{
+	for(std::map<std::string,visualization_msgs::Marker>::iterator i = marker_map_.begin(); i != marker_map_.end(); i++)
+	{
+		visualization_msgs::Marker &m = i->second;
+		m.header.stamp = ros::Time::now();
+		marker_publisher_.publish(m);
+	}
 }
 
 void RobotNavigator::attachCollisionObjectCallback(const std::string& group_name)
@@ -1084,10 +1172,11 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   segment_names.push_back("close");
 
   // updating attached  marker operation
-  if(marker_map_.find(MARKER_ATTACHED_OBJ) != marker_map_.end())
+  if(hasMarker(MARKER_ATTACHED_OBJECT))
   {
-	  visualization_msgs::Marker &m = marker_map_[MARKER_ATTACHED_OBJ];
+	  visualization_msgs::Marker &m = getMarker(MARKER_ATTACHED_OBJECT);
 	  m.action = visualization_msgs::Marker::ADD;
+	  addMarker(MARKER_ATTACHED_OBJECT,m);
   }
 
   //and do the lift
@@ -1160,11 +1249,12 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
   ter_reqs.push_back(gripper_ter);
   segment_names.push_back("open_gripper");
 
-  // updating attached objt marker operation
-  if(marker_map_.find(MARKER_ATTACHED_OBJ) != marker_map_.end())
+  // updating attached object marker operation
+  if(hasMarker(MARKER_ATTACHED_OBJECT))
   {
-	  visualization_msgs::Marker &m = marker_map_[MARKER_ATTACHED_OBJ];
+	  visualization_msgs::Marker &m = getMarker(MARKER_ATTACHED_OBJECT);
 	  m.action = visualization_msgs::Marker::DELETE;
+	  addMarker(MARKER_ATTACHED_OBJECT,m);
   }
 
   //do the retreat

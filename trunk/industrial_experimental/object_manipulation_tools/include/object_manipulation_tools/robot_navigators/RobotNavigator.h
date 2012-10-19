@@ -41,13 +41,64 @@ typedef actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPosture
 
 using namespace trajectory_execution_monitor;
 
-class RobotNavigator {
+// ros param default values
+namespace RobotNavigatorParameters
+{
+	static const std::string DEFAULT_ARM_GROUP = "sia20d_arm";
+	static const std::string DEFAULT_GRIPPER_GROUP = "end_effector";
+	static const std::string DEFAULT_WRIST_LINK = "link_t";
+	static const std::string DEFAULT_GRIPPER_LINK = "palm";
+	static const std::string DEFAULT_GRASP_ACTION_SERVICE = "/grasp_execution_action";
+	static const std::string DEFAULT_TRAJECTORY_ACTION_SERVICE = "/joint_trajectory_action";
+	static const std::string DEFAULT_PATH_PLANNER_SERVICE = "/ompl_planning/plan_kinematic_path";
+	static const std::string DEFAULT_SEGMENTATION_SERVICE = "/tabletop_segmentation";
+	static const std::string DEFAULT_RECOGNITION_SERVICE = "/tabletop_object_recognition";
+	static const std::string DEFAULT_TRAJECTORY_FILTER_SERVICE = "/trajectory_filter_server/filter_trajectory_with_constraints";
+	static const std::string DEFAULT_GRASP_PLANNING_SERVICE = "/plan_point_cluster_grasp";
+	static const std::string DEFAULT_MESH_DATABASE_SERVICE = "/objects_database_node/get_model_mesh";
+	static const std::string DEFAULT_MODEL_DATABASE_SERVICE = "/objects_database_node/get_model_description";
+	static const std::string DEFAULT_PLANNING_SCENE_SERVICE = "/environment_server/set_planning_scene_diff";
+	static const std::string DEFAULT_IK_PLUGING = "SIA20D_Mesh_manipulator_kinematics/IKFastKinematicsPlugin";
+	static const std::string DEFAULT_JOINT_STATES_TOPIC = "/joint_states";
+
+	// ros param names
+	static const std::string PARAM_NAME_ARM_GROUP = "arm_group";
+	static const std::string PARAM_NAME_GRIPPER_GROUP = "gripper_group";
+	static const std::string PARAM_NAME_WRIST_LINK = "wrist_link";
+	static const std::string PARAM_NAME_GRIPPER_LINK = "gripper_link";
+	static const std::string PARAM_NAME_GRASP_ACTION_SERVICE = "grasp_action_service_name";
+	static const std::string PARAM_NAME_TRAJECTORY_ACTION_SERVICE = "joint_trajectory_service_name";
+	static const std::string PARAM_NAME_PATH_PLANNER_SERVICE = "planner_service_name";
+	static const std::string PARAM_NAME_TRAJECTORY_FILTER_SERVICE = "trajectory_filter_service_name";
+	static const std::string PARAM_NAME_SEGMENTATION_SERVICE = "segmentation_service_name";
+	static const std::string PARAM_NAME_RECOGNITION_SERVICE = "recognition_service_name";
+	static const std::string PARAM_NAME_GRASP_PLANNING_SERVICE = "grasp_planning_service_name";
+	static const std::string PARAM_NAME_MESH_DATABASE_SERVICE = "mesh_database_service_name";
+	static const std::string PARAM_NAME_MODEL_DATABASE_SERVICE = "model_database_service_name";
+	static const std::string PARAM_NAME_PLANNING_SCENE_SERVICE = "planning_scene_service_name";
+	static const std::string PARAM_NAME_IK_PLUGING = "arm_inverse_kinematics_plugin";
+	static const std::string PARAM_NAME_JOINT_STATES_TOPIC = "joint_state_topic";
+}
+
+
+class RobotNavigator
+{
+public:
+
+	typedef boost::shared_ptr<RobotNavigator> Ptr;
+
 public:
 	RobotNavigator();
 	virtual ~RobotNavigator();
 
 	// demo start
 	virtual void run();
+
+	static std::string NODE_NAME;
+	static std::string NAVIGATOR_NAMESPACE;
+	static std::string MARKER_ARM_LINK;
+	static std::string MARKER_ATTACHED_OBJECT;
+	static std::string VISUALIZATION_TOPIC;
 
 protected:
 	// setup
@@ -71,10 +122,6 @@ protected:
 	// goal position: this should be implemented by each specific specialization of the class
 	virtual void createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses) = 0;
 
-	// callbacks
-	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt);
-	virtual bool trajectoriesFinishedCallbackFunction(TrajectoryExecutionDataVector tedv);
-
 	// database comm
 	bool getMeshFromDatabasePose(const household_objects_database_msgs::DatabaseModelPose &model_pose,
 			arm_navigation_msgs::CollisionObject& obj,const geometry_msgs::PoseStamped& pose);
@@ -84,6 +131,10 @@ protected:
 	bool moveArm(const std::string& group_name,const std::vector<double>& joint_positions);
 	bool moveArmThroughPickSequence();
 	bool moveArmThroughPlaceSequence();
+
+	// callbacks
+	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt);
+	virtual bool trajectoriesFinishedCallbackFunction(TrajectoryExecutionDataVector tedv);
 
 	// planning scene
 	void attachCollisionObjectCallback(const std::string& group_name);
@@ -96,13 +147,13 @@ protected:
 	void updateCurrentJointStateToLastTrajectoryPoint(const trajectory_msgs::JointTrajectory& traj);
 
 	// adds or removes objects into planning scene through a service call, service returns a copy of the scene in its current state;
-	bool getAndSetPlanningScene();
+	bool updateChangesToPlanningScene();
 
 	// add objects to local copy of the planning scene, however the planning scene service needs to be called in order to push
 	// any changes into the actual planning scene
-	void addDetectedTableToPlanningSceneDiff(const tabletop_object_detector::Table &table);
-	void addDetectedObjectToPlanningSceneDiff(arm_navigation_msgs::CollisionObject &obj);
-	void addDetectedObjectToPlanningSceneDiff(const household_objects_database_msgs::DatabaseModelPoseList& model);
+	void addDetectedTableToLocalPlanningScene(const tabletop_object_detector::Table &table);
+	void addDetectedObjectToLocalPlanningScene(arm_navigation_msgs::CollisionObject &obj);
+	void addDetectedObjectToLocalPlanningScene(const household_objects_database_msgs::DatabaseModelPoseList& model);
 
 	// grasp execution
 	bool attemptGraspSequence(const std::string& group_name,const object_manipulator::GraspExecutionInfo& gei);
@@ -112,14 +163,22 @@ protected:
 	void startCycleTimer();
 	void printTiming();
 
-	// utilities
+	// general utilities
 	static std::string makeCollisionObjectNameFromModelId(unsigned int model_id);
 	const arm_navigation_msgs::CollisionObject* getCollisionObject(unsigned int model_id);
+
+	// trajectory utilities
+	virtual std::vector<std::string> getJointNames(const std::string& group);
+	virtual trajectory_msgs::JointTrajectory getGripperTrajectory(const std::string& arm_name,bool open);
 	void printJointTrajectory(const trajectory_msgs::JointTrajectory &jt);
 	bool validateJointTrajectory(trajectory_msgs::JointTrajectory &jt); // checks for null arrays and fill with zeros as needed
-	std::vector<std::string> getJointNames(const std::string& group);
+
+	// visual utilities
 	void collisionObjToMarker(const arm_navigation_msgs::CollisionObject &obj, visualization_msgs::Marker &marker);
-	trajectory_msgs::JointTrajectory getGripperTrajectory(const std::string& arm_name,bool open);
+	void addMarker(std::string name,visualization_msgs::Marker &marker);
+	void addMarker(std::string name,visualization_msgs::MarkerArray &marker);
+	bool hasMarker(std::string);
+	visualization_msgs::Marker& getMarker(std::string name);
 
 	/* move sequence creation methods
 	 * These methods generate all the necessary move steps corresponding to each manipulation sequence
@@ -211,14 +270,15 @@ protected:
 	ros::WallDuration trajectory_filtering_duration_;
 	ros::WallDuration grasp_planning_duration_;
 
+	// object publisher
 	ros::Publisher attached_object_publisher_;
 
 	// marker publishers
-	ros::Publisher vis_marker_array_publisher_;
-	ros::Publisher vis_marker_publisher_;
+	ros::Publisher marker_array_publisher_;
+	ros::Publisher marker_publisher_;
 
 	// timer to publish markers periodically
-	ros::Timer _MarkerPubTimer;
+	ros::Timer marker_pub_timer_;
 	std::map<std::string,visualization_msgs::Marker> marker_map_;
 
 	tf::TransformListener _TfListener;

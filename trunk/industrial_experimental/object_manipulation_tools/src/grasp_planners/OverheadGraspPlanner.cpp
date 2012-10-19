@@ -392,11 +392,11 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 		grasps.push_back(candidateGrasp);
 	}
 
-	object_manipulation_msgs::GraspPlanningErrorCode errorCode;
-	errorCode.value = errorCode.SUCCESS;
+//	object_manipulation_msgs::GraspPlanningErrorCode errorCode;
+//	errorCode.value = errorCode.SUCCESS;
 
 	res.grasps = grasps;
-	res.error_code = errorCode;
+	res.error_code.value = object_manipulation_msgs::GraspPlanningErrorCode::SUCCESS;
 	return true;
 }
 
