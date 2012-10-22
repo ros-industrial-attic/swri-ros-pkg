@@ -6,6 +6,10 @@
  */
 
 #include <mantis_object_manipulation/zone_selection/PickPlaceZoneSelector.h>
+#include <sensor_msgs/point_cloud_conversion.h>
+#include <pcl/common/transforms.h> // allows conversions between ros msgs and pcl types
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
 PickPlaceZoneSelector::PickPlaceZoneSelector()
 :pick_zone_index(0),
@@ -40,6 +44,8 @@ bool PickPlaceZoneSelector::isInPickZone(const std::vector<sensor_msgs::PointClo
 
 bool PickPlaceZoneSelector::isInPickZone(const sensor_msgs::PointCloud &cluster)
 {
+
+
 	return true;
 }
 
