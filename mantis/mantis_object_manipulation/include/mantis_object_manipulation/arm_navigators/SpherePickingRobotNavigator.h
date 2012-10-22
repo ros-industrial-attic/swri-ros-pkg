@@ -184,7 +184,7 @@ public:
 	SpherePickingRobotNavigator();
 	virtual ~SpherePickingRobotNavigator();
 
-	virtual void run();// this method may not need to be overridden
+	//virtual void run();
 
 	static std::string MARKER_SEGMENTED_OBJECT;
 	static std::string SEGMENTATION_NAMESPACE;
@@ -196,6 +196,11 @@ protected:
 	virtual void setup();
 	virtual bool performSegmentation();
 	bool performSphereSegmentation();
+
+	virtual bool performRecognition()
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": Skipping Recognition");
+	}
 
 	virtual void createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses);
 	virtual bool moveArmToSide();

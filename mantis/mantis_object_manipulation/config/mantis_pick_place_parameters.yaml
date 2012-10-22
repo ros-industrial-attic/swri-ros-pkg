@@ -12,7 +12,7 @@ navigator:
   joint_state_topic: /joint_states
 segmentation:
   world_frame_id: base_link
-  k_nearest: 100
+  k_nearest: 80
   max_iterations: 400
   sac_method: 6 #ransac = 0
   normal_distance_weight: 0.2
