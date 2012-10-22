@@ -24,6 +24,7 @@ SpherePickingRobotNavigator::SpherePickingRobotNavigator()
 SpherePickingRobotNavigator::~SpherePickingRobotNavigator()
 {
 	// TODO Auto-generated destructor stub
+	ROS_INFO_STREAM(NODE_NAME<<": Exiting navigator");
 }
 
 void SpherePickingRobotNavigator::setup()
@@ -116,61 +117,60 @@ void SpherePickingRobotNavigator::setup()
 	}
 }
 
-void SpherePickingRobotNavigator::run()
-{
-	ros::NodeHandle nh;
-	ros::AsyncSpinner spinner(4);
-	spinner.start();
-	srand(time(NULL));
-
-	ROS_INFO_STREAM(NODE_NAME<<" Setup stage started");
-	setup();
-	ROS_INFO_STREAM(NODE_NAME<<" Setup stage completed");
-
-	moveArmToSide();
-
-	while(ros::ok())
-	{
-	    startCycleTimer();
-
-		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
-		if(!performSegmentation())
-		{
-		  ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
-		  continue;
-		}
-		ROS_INFO_STREAM(NODE_NAME << " Segmentation stage completed");
-
-		ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
-		if(!moveArmThroughPickSequence())
-		{
-		  ROS_WARN_STREAM(NODE_NAME << ": grasp pickup stage failed");
-		  continue;
-		}
-		else
-		{
-			ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
-		}
-
-		ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
-		if(!moveArmThroughPlaceSequence())
-		{
-			ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
-		}
-		else
-		{
-			ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
-		}
-
-		if(!moveArmToSide())
-		{
-			ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
-			break;
-		}
-
-	    printTiming();
-	  }
-}
+//void SpherePickingRobotNavigator::run()
+//{
+//	ros::NodeHandle nh;
+//	ros::AsyncSpinner spinner(4);
+//	spinner.start();
+//	srand(time(NULL));
+//
+//	ROS_INFO_STREAM(NODE_NAME<<" Setup stage started");
+//	setup();
+//	ROS_INFO_STREAM(NODE_NAME<<" Setup stage completed");
+//
+//	while(ros::ok())
+//	{
+//	    startCycleTimer();
+//
+//	    ROS_INFO_STREAM(NODE_NAME + ": Moving arm to side pose");
+//		if(!moveArmToSide())
+//		{
+//			ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
+//			break;
+//		}
+//
+//		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
+//		if(!performSegmentation())
+//		{
+//		  ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
+//		  continue;
+//		}
+//		ROS_INFO_STREAM(NODE_NAME << ": Segmentation stage completed");
+//
+//		ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
+//		if(!moveArmThroughPickSequence())
+//		{
+//		  ROS_WARN_STREAM(NODE_NAME << ": grasp pickup stage failed");
+//		  continue;
+//		}
+//		else
+//		{
+//			ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
+//		}
+//
+//		ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
+//		if(!moveArmThroughPlaceSequence())
+//		{
+//			ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
+//		}
+//		else
+//		{
+//			ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
+//		}
+//
+//	    printTiming();
+//	  }
+//}
 
 bool SpherePickingRobotNavigator::performSphereSegmentation()
 {
@@ -256,12 +256,14 @@ bool SpherePickingRobotNavigator::performSegmentation()
 
 bool SpherePickingRobotNavigator::moveArmToSide()
 {
+
     _JointConfigurations.fetchParameters(JOINT_CONFIGURATIONS_NAMESPACE);
-    return moveArm(arm_group_name_,_JointConfigurations.SideAngles);
+    return updateChangesToPlanningScene() || moveArm(arm_group_name_,_JointConfigurations.SideAngles);
 }
 
 void SpherePickingRobotNavigator::createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses)
 {
+	ROS_INFO_STREAM(NODE_NAME<<": getting place position from ros parameters");
 	_GoalParameters.fetchParameters(GOAL_NAMESPACE);
 	_GoalParameters.generateNextLocationCandidates(placePoses);
 }
