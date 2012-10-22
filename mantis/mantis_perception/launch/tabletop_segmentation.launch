@@ -15,8 +15,8 @@
 	<param name="clustering_voxel_size" value="$(arg tabletop_segmentation_clustering_voxel_size)" />
 	<param name="inlier_threshold" value="300" />
 	<param name="plane_detection_voxel_size" value="0.01" />
-	<param name="cluster_distance" value="0.03" />
-	<param name="min_cluster_size" value="150" />
+	<param name="cluster_distance" value="0.02" /><!-- minimum distance between clusters -->
+	<param name="min_cluster_size" value="100" />
 	<param name="flatten_table" value="$(arg flatten_table)" />
 
 	<!-- processing and filtering frame -->
