@@ -250,8 +250,8 @@ bool SpherePickingRobotNavigator::performSphereSegmentation()
 
 bool SpherePickingRobotNavigator::performSegmentation()
 {
-	RobotNavigator::performSegmentation();
-	return performSphereSegmentation();
+	//RobotNavigator::performSegmentation();
+	return RobotNavigator::performSegmentation() && performSphereSegmentation();
 }
 
 bool SpherePickingRobotNavigator::moveArmToSide()
