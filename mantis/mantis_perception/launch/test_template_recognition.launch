@@ -1,14 +1,25 @@
 <?xml version="1.0" ?>
 <launch>
 
-	<!-- include file="$(find mantis_perception)/launch/mantis_sensor.launch"/>
+	<!-- Instructions >
+		The recognition node uses the tabletop segmentation and the sensor data with 
+		a fixed configuration.  Thus, the following launch files must be called first:
+			- {mantis_config pkg}/launch/mantis_motoman_vacuum_bringup.launch
+			- {mantis_config pkg}/launch/mantis_motoman_vacuum_bringup.launch
+		see below for sintax needed to run these files.
+		
+		<include file="$(find mantis_config)/launch/mantis_motoman_vacuum_bringup.launch"/>
+		<include file="$(find mantis_config)/launch/mantis_pick_place_setup.launch"/>
+	< end of instructions -->
 
-	<include file="$(find mantis_perception)/launch/tabletop_segmentation.launch">
-		<arg name="tabletop_segmentation_points_in" value="camera/depth_registered/points"/>
-	</include -->
+	
+
+	
+	<node name="template_recognition_test_viz" pkg="rviz" type="rviz"
+ args="-d $(find mantis_perception)/config/template_recognition_test_viz.vcg"/>
 
 	<node name="test_cluster_recognition" pkg="mantis_perception" type="test_cluster_recognition" output="screen">		
-		<param name="world_frame" value="base_link"/>
+		<param name="world_frame" value="/base_link"/>
 		<param name="normal_radius" value="0.005"/>
 		<param name="feature_radius" value="0.005"/>
 		<param name="min_sample_distance" value="0.004"/>
