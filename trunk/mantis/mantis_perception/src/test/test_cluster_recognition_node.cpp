@@ -75,6 +75,9 @@ public:
 
 	void spin()
 	{
+		ros::AsyncSpinner spinner(2);
+		spinner.start();
+
 		ros::Duration loopTime(1.0f);
 
 		// data recipients.
@@ -93,12 +96,25 @@ public:
 			ROS_INFO_STREAM(NODE_NAME<<": Waiting for segmentation service");
 		}
 
+		ROS_INFO_STREAM(NODE_NAME<<": Found segmentation service");
+
 		while(ros::ok())
 		{
 			// calling tabletop segmentation service
 			if(!segmentation_client_.call(req,res))
 			{
 				ROS_ERROR_STREAM(NODE_NAME<<": Segmentation request failed, skipping recognition");
+				continue;
+			}
+			else
+			{
+				ROS_INFO_STREAM(NODE_NAME<<": Segmentation request completed, "<<res.clusters.size()<<" cluster found");
+
+			}
+
+			if(res.clusters.empty())
+			{
+				ROS_ERROR_STREAM(NODE_NAME<<": No cluster were returned from the segmentation, skipping");
 				continue;
 			}
 
@@ -109,7 +125,7 @@ public:
 
 			// converting sensor cloud message and transforming points to world coordinates
 			sensor_msgs::convertPointCloudToPointCloud2(cluster,clusterMsg);
-			Cloud::Ptr originalCloudPtr = Cloud::Ptr(), cloudPtr = Cloud::Ptr();
+			Cloud::Ptr originalCloudPtr = Cloud::Ptr(new Cloud()), cloudPtr = Cloud::Ptr(new Cloud());
 			pcl::fromROSMsg(clusterMsg,*originalCloudPtr);
 			pcl::transformPointCloud(*originalCloudPtr,*cloudPtr,Eigen::Affine3f(mat));
 			candidateData.setInputCloud(cloudPtr);
@@ -127,23 +143,18 @@ public:
 			resultStream<<"\tIndex: "<<result.Index_<<"\n";
 			resultStream<<"\tFitness Score: "<<result.FitnessScore_<<"\n";
 			resultStream<<"\tModel Name: "<<data.ModelName_<<"\n";
+			resultStream<<"\tTemplate Points: "<<data.PointCloud_->size()<<"\n";
+			resultStream<<"\tTarget Points: "<<cloudPtr->size()<<"\n";
 
-			// publishing results
-			sensor_msgs::PointCloud2 templateCloudMsg;
-			Cloud cloud;
+			ROS_INFO_STREAM(resultStream.str());
+
+			// saving results for publishing
 			tf::TransformTFToEigen(result.Transform_,mat);
-			pcl::transformPointCloud(*data.PointCloud_,cloud,Eigen::Affine3f(mat));
-			pcl::toROSMsg(cloud,templateCloudMsg);
-
-			templateCloudMsg.header.frame_id = world_frame_;
-			templateCloudMsg.header.stamp = ros::Time::now();
-			cluster.header.stamp = ros::Time::now();
-
-			cloud_template_publisher_.publish(templateCloudMsg);
-			cloud_segmented_publisher_.publish(cluster);
+			matched_cluster_.clear();
+			pcl::transformPointCloud(*data.PointCloud_,matched_cluster_,Eigen::Affine3f(mat));
+			target_cluster_msg_ = cluster;
 
 			loopTime.sleep();
-
 		}
 	}
 
@@ -153,12 +164,18 @@ protected:
 	{
 		ros::NodeHandle nh;
 
+		// initializing data
+		matched_cluster_.clear();
+
 		// initializing subscribers;
 		cloud_template_publisher_ = nh.advertise<sensor_msgs::PointCloud2>(TOPIC_CLOUD_BEST_FIT,1);
 		cloud_segmented_publisher_ = nh.advertise<sensor_msgs::PointCloud>(TOPIC_CLOUD_SEGMENTED_CANDIDATE,1);
 
 		// service client
 		segmentation_client_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>(SEGMENTATION_SERVICE_NAME, true);
+
+		// setting timer
+		timer_publisher_ = nh.createTimer(ros::Duration(0.5f),&RecognitionTest::publishCloudstimerCallback,this);
 
 		// getting parameters
 		fetchParameters(NODE_NAME);
@@ -199,6 +216,25 @@ protected:
 
 	}
 
+	void publishCloudstimerCallback(const ros::TimerEvent &evnt)
+	{
+		if(matched_cluster_.empty() && matched_cluster_.points.empty())
+		{
+			ROS_ERROR_STREAM(NODE_NAME<<": no points in matched cloud, skipping publish");
+			return;
+		}
+
+		sensor_msgs::PointCloud2 matchedClusterMsg;
+		pcl::toROSMsg(matched_cluster_,matchedClusterMsg);
+
+		matchedClusterMsg.header.frame_id = world_frame_;
+		matchedClusterMsg.header.stamp = ros::Time::now();
+		target_cluster_msg_.header.stamp = ros::Time::now();
+
+		cloud_template_publisher_.publish(matchedClusterMsg);
+		cloud_segmented_publisher_.publish(target_cluster_msg_);
+	}
+
 	// ros parameters
 
 		// template alignment
@@ -231,6 +267,13 @@ protected:
 
 	// ros service clients
 	ros::ServiceClient segmentation_client_;
+
+	// timers
+	ros::Timer timer_publisher_;
+
+	// persistent results
+	Cloud matched_cluster_;
+	sensor_msgs::PointCloud target_cluster_msg_;
 
 };
 
