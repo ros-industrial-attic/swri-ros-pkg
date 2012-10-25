@@ -1,0 +1,7 @@
+<?xml version="1.0" ?> 
+<launch>
+	<arg name="master_ip" default="129.162.110.34"/>
+	<arg name="local_ip" default="129.162.110.29"/>
+	<env name="ROS_MASTER_URI" value="http://$(arg master_ip):11311/"/>
+	<env name="ROS_IP" value="$(arg local_ip)"/>
+</launch>
