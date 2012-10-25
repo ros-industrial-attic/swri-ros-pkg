@@ -12,6 +12,9 @@
 #include <tf/tf.h>
 #include <sensor_msgs/PointCloud.h>
 #include <visualization_msgs/Marker.h>
+#include <planning_environment/models/collision_models.h>
+#include <arm_navigation_msgs/Shape.h>
+#include <arm_navigation_msgs/PlanningScene.h>
 #include <ros/ros.h>
 
 // paramters used by the tabletop segmentation service
@@ -37,7 +40,7 @@ public:
 		 MaxObjectSpacing(0.08f),
 		 place_zone_center_(0.0f,0.0f,0.0f),
 		 place_zone_radius_(0.20f),
-		 occupied_locations_(),
+		 bodies_in_zone_(),
 		 grasped_object_size_(0.05,0.05f,0.05f)
 		{
 			srand(time(NULL));
@@ -104,7 +107,7 @@ public:
 
 		tf::Vector3 place_zone_center_; // used as the center of place zone.  Only the x and y values are used
 		double place_zone_radius_;// radius of circular region that contains all placed objects
-		std::vector<tf::Transform> occupied_locations_;
+		std::vector<tf::Transform> bodies_in_zone_;
 		tf::Vector3 grasped_object_size_;
 
 	};
