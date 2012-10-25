@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<launch>
+
+	<!-- include file="$(find mantis_perception)/launch/mantis_sensor.launch"/>
+
+	<include file="$(find mantis_perception)/launch/tabletop_segmentation.launch">
+		<arg name="tabletop_segmentation_points_in" value="camera/depth_registered/points"/>
+	</include -->
+
+	<node name="test_cluster_recognition" pkg="mantis_perception" type="test_cluster_recognition" output="screen">		
+		<param name="world_frame" value="base_link"/>
+		<param name="normal_radius" value="0.005"/>
+		<param name="feature_radius" value="0.005"/>
+		<param name="min_sample_distance" value="0.004"/>
+		<param name="max_correspondance_distance" value="0.0001"/>
+		<param name="max_iterations" value="200"/>
+		<param name="templates_directory" value="$(find mantis_perception)/data/meshes/sampled_parts"/>
+		<rosparam param="template_files">[elec_enclosure_sampled.pcd, pvc_elbow_sampled.pcd, pvc_elbow_sampled.pcd, pvc_t_sampled.pcd, white_plug_sampled.pcd]
+                </rosparam>
+	</node>
+</launch>

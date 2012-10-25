@@ -32,3 +32,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_library(MantisPerception src/template_matching/TemplateAlignment.cpp)
 
 rosbuild_add_executable(test_convert_obj_to_pcd src/test/test_convert_obj_to_pcd.cpp)
+
+rosbuild_add_executable(test_cluster_recognition src/test/test_cluster_recognition_node.cpp)
+target_link_libraries(test_cluster_recognition MantisPerception)
