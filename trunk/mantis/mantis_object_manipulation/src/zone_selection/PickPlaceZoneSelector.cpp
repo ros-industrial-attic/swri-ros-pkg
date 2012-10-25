@@ -201,7 +201,7 @@ void PickPlaceZoneSelector::getPlaceZoneMarker(visualization_msgs::Marker &marke
 void PickPlaceZoneSelector::PlaceZone::resetZone(const tf::Vector3 &zoneCenter)
 {
 	place_zone_center_ = zoneCenter;
-	occupied_locations_.clear();
+	bodies_in_zone_.clear();
 }
 
 void PickPlaceZoneSelector::PlaceZone::setGraspObjectSize(const tf::Vector3 &size)
@@ -250,14 +250,14 @@ geometry_msgs::Pose PickPlaceZoneSelector::PlaceZone::getZoneCenterPose()
 bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePosesInShuffleMode(std::vector<geometry_msgs::PoseStamped> &placePoses)
 {
 	// previos pose
-	tf::Transform &lastTf = occupied_locations_.back();
+	tf::Transform &lastTf = bodies_in_zone_.back();
 
 	// returned bool
 	bool foundNewPlaceLocation = false;
 
 	// next pose
 	tf::Transform nextTf;
-	if(occupied_locations_.size() == 0)
+	if(bodies_in_zone_.size() == 0)
 	{
 		tf::Quaternion rot = tf::Quaternion(Axis,0.0f);
 		// the z component equals the height of the object plus the requested release distance
@@ -267,7 +267,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePosesInShuffleMode(std::
 	}
 	else
 	{
-		nextTf = tf::Transform(occupied_locations_.back());
+		nextTf = tf::Transform(bodies_in_zone_.back());
 
 		// new location variables
 		int distanceSegments = 20; // number of possible values between min and max object spacing
@@ -309,7 +309,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePosesInShuffleMode(std::
 			// checking for overlaps against objects already in place region
 			double distFromObj;
 			bool overlapFound = false;
-			BOOST_FOREACH(tf::Transform objTf,occupied_locations_)
+			BOOST_FOREACH(tf::Transform objTf,bodies_in_zone_)
 			{
 				distFromObj = (objTf.getOrigin() - nextTf.getOrigin()).length();
 				if(distFromObj < MinObjectSpacing)// overlap found, try another
@@ -343,7 +343,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePosesInShuffleMode(std::
 	// generating candidate poses from next location found
 	createPlaceCandidatePosesByRotation(nextTf,NumGoalCandidates,Axis,placePoses);
 	// storing next location
-	occupied_locations_.push_back(nextTf);
+	bodies_in_zone_.push_back(nextTf);
 
 	return foundNewPlaceLocation;
 }
