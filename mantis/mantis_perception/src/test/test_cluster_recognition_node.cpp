@@ -1,0 +1,246 @@
+/*
+ * test_cluster_recognition_node.cpp
+ *
+ *  Created on: Oct 25, 2012
+ */
+
+#include <mantis_perception/template_matching/TemplateAlignment.h>
+#include <tabletop_object_detector/TabletopSegmentation.h>
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/server/simple_action_server.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
+#include <ros/ros.h>
+#include <sensor_msgs/point_cloud_conversion.h>
+#include <boost/foreach.hpp>
+
+typedef pcl::PointCloud<pcl::PointXYZ> Cloud;
+
+const std::string TOPIC_CLOUD_BEST_FIT = "/cloud_best_fit";
+const std::string TOPIC_CLOUD_SEGMENTED_CANDIDATE = "/cloud_segmented";
+const std::string SEGMENTATION_SERVICE_NAME = "/tabletop_segmentation";
+std::string NODE_NAME = "test_cluster_recognition";
+
+class RecognitionTest
+{
+public:
+	RecognitionTest()
+	:world_frame_("base_link"),
+	 templates_directory_(""),
+	 template_files_(),
+	 normal_radius_(0.005f),
+	 feature_radius_(0.005f),
+	 min_sample_distance_(0.004f),
+	 max_correspondance_distance_(0.01f * 0.01f),
+	 max_iterations_(200)
+	{
+		ros::NodeHandle nh;
+		NODE_NAME = ros::this_node::getName();
+
+		setup();
+	}
+
+	~RecognitionTest()
+	{
+
+	}
+
+	void fetchParameters(std::string nameSpace = "")
+	{
+		ros::param::param(NODE_NAME + "/world_frame",world_frame_,world_frame_);
+		ros::param::param(NODE_NAME + "/templates_directory",templates_directory_,templates_directory_);
+		ros::param::param(NODE_NAME + "/normal_radius",normal_radius_,normal_radius_);
+		ros::param::param(NODE_NAME + "/feature_radius",feature_radius_,feature_radius_);
+		ros::param::param(NODE_NAME + "/min_sample_distance",min_sample_distance_,min_sample_distance_);
+		ros::param::param(NODE_NAME + "/max_correspondance_distance",max_correspondance_distance_,max_correspondance_distance_);
+		ros::param::param(NODE_NAME + "/max_iterations",max_iterations_,max_iterations_);
+
+		XmlRpc::XmlRpcValue list;
+		ros::param::param(NODE_NAME + "/template_files",list,list);
+		if(list.getType() == XmlRpc::XmlRpcValue::TypeArray)
+		{
+			//BOOST_FOREACH(std::pair<std::string,XmlRpc::XmlRpcValue > p, list)
+			for(int i = 0; i < list.size(); i++ )
+			{
+				std::string name = static_cast<std::string>(list[i]);
+				template_files_.push_back(name);
+			}
+		}
+		else
+		{
+			ROS_ERROR_STREAM(NODE_NAME<<": template_files param is not a valid array entry");
+		}
+	}
+
+	void spin()
+	{
+		ros::Duration loopTime(1.0f);
+
+		// data recipients.
+		tf::StampedTransform clusterTf;
+		Eigen::Affine3d mat;
+		sensor_msgs::PointCloud2 clusterMsg;
+		TemplateAlignment::ModelFeatureData candidateData;
+		TemplateAlignment::AlignmentResult result;
+
+		// service request
+		tabletop_object_detector::TabletopSegmentation::Request req;
+		tabletop_object_detector::TabletopSegmentation::Response res;
+
+		while(!segmentation_client_.waitForExistence(ros::Duration(4.0f)) && ros::ok())
+		{
+			ROS_INFO_STREAM(NODE_NAME<<": Waiting for segmentation service");
+		}
+
+		while(ros::ok())
+		{
+			// calling tabletop segmentation service
+			if(!segmentation_client_.call(req,res))
+			{
+				ROS_ERROR_STREAM(NODE_NAME<<": Segmentation request failed, skipping recognition");
+				continue;
+			}
+
+			// finding transform
+			sensor_msgs::PointCloud &cluster = res.clusters[0];
+			tf_listener_.lookupTransform(cluster.header.frame_id,world_frame_,ros::Time::now(),clusterTf);
+			tf::TransformTFToEigen(clusterTf,mat);
+
+			// converting sensor cloud message and transforming points to world coordinates
+			sensor_msgs::convertPointCloudToPointCloud2(cluster,clusterMsg);
+			Cloud::Ptr originalCloudPtr = Cloud::Ptr(), cloudPtr = Cloud::Ptr();
+			pcl::fromROSMsg(clusterMsg,*originalCloudPtr);
+			pcl::transformPointCloud(*originalCloudPtr,*cloudPtr,Eigen::Affine3f(mat));
+			candidateData.setInputCloud(cloudPtr);
+
+			template_aligment_.setCandidateModel(candidateData);
+			if(!template_aligment_.findBestAlignment(result))
+			{
+				ROS_ERROR_STREAM(NODE_NAME<<": Recognition failed");
+				continue;
+			}
+
+			const TemplateAlignment::ModelFeatureData &data =  template_aligment_.getModelTemplates()[result.Index_];
+			std::stringstream resultStream;
+			resultStream<<"\nAligment results:\n";
+			resultStream<<"\tIndex: "<<result.Index_<<"\n";
+			resultStream<<"\tFitness Score: "<<result.FitnessScore_<<"\n";
+			resultStream<<"\tModel Name: "<<data.ModelName_<<"\n";
+
+			// publishing results
+			sensor_msgs::PointCloud2 templateCloudMsg;
+			Cloud cloud;
+			tf::TransformTFToEigen(result.Transform_,mat);
+			pcl::transformPointCloud(*data.PointCloud_,cloud,Eigen::Affine3f(mat));
+			pcl::toROSMsg(cloud,templateCloudMsg);
+
+			templateCloudMsg.header.frame_id = world_frame_;
+			templateCloudMsg.header.stamp = ros::Time::now();
+			cluster.header.stamp = ros::Time::now();
+
+			cloud_template_publisher_.publish(templateCloudMsg);
+			cloud_segmented_publisher_.publish(cluster);
+
+			loopTime.sleep();
+
+		}
+	}
+
+protected:
+
+	void setup()
+	{
+		ros::NodeHandle nh;
+
+		// initializing subscribers;
+		cloud_template_publisher_ = nh.advertise<sensor_msgs::PointCloud2>(TOPIC_CLOUD_BEST_FIT,1);
+		cloud_segmented_publisher_ = nh.advertise<sensor_msgs::PointCloud>(TOPIC_CLOUD_SEGMENTED_CANDIDATE,1);
+
+		// service client
+		segmentation_client_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>(SEGMENTATION_SERVICE_NAME, true);
+
+		// getting parameters
+		fetchParameters(NODE_NAME);
+
+		if(template_files_.empty())
+		{
+			ROS_ERROR_STREAM(NODE_NAME<<": no entries found for template models, exiting");
+			ros::shutdown();
+			return;
+		}
+
+		// setting template aligment parameters
+		template_aligment_.setMaxCorrespondanceDistance(max_correspondance_distance_);
+		template_aligment_.setMinSampleDistance(min_sample_distance_);
+		template_aligment_.setMaxIterations(max_iterations_);
+
+		// adding templates to template aligment;
+		BOOST_FOREACH(std::string fileName, template_files_)
+		{
+			Cloud::Ptr cloudPtr = boost::make_shared<Cloud>();
+			TemplateAlignment::ModelFeatureData templateData;
+
+			std::string filePath = templates_directory_ + "/" + fileName;
+			if(pcl::io::loadPCDFile<pcl::PointXYZ>(filePath,*cloudPtr) == -1)
+			{
+				ROS_ERROR_STREAM(NODE_NAME<<": could not read pcd file "<<fileName);
+			}
+			else
+			{
+				ROS_INFO_STREAM(NODE_NAME<<" found pcd file "<<fileName<<" with "<<cloudPtr->size()<<" points, adding data to template list");
+				templateData.NormalRadius_ = normal_radius_;
+				templateData.FeatureRadius_ = feature_radius_;
+				templateData.setInputCloud(cloudPtr);
+				templateData.ModelName_ = fileName;
+				template_aligment_.addModelTemplate(templateData);
+			}
+		}
+
+	}
+
+	// ros parameters
+
+		// template alignment
+		double normal_radius_;
+		double feature_radius_;
+		double min_sample_distance_;
+		double max_correspondance_distance_;
+		int max_iterations_;
+
+		// transform resolution
+		std::string world_frame_;
+
+		// template data
+		std::vector<std::string> template_files_;
+		std::string templates_directory_;
+
+	// end of ros parameters
+
+
+	// transform resolution
+	tf::TransformListener tf_listener_;
+
+
+	// template alignment
+	TemplateAlignment template_aligment_;
+
+	// ros topic publishers
+	ros::Publisher cloud_template_publisher_;
+	ros::Publisher cloud_segmented_publisher_;
+
+	// ros service clients
+	ros::ServiceClient segmentation_client_;
+
+};
+
+int main(int argc,char** argv)
+{
+	ros::init(argc,argv,"test_cluster_recognition");
+	ros::NodeHandle nh;
+
+	RecognitionTest recognition;
+	recognition.spin();
+
+	return 0;
+}

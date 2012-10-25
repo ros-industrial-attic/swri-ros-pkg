@@ -41,11 +41,12 @@ public:
 
 		ModelFeatureData()
 		:SearchMethod_(new SearchMethod()),
-		 NormalRadius_(0.02f),
-		 FeatureRadius_(0.02f),
+		 NormalRadius_(0.005f),
+		 FeatureRadius_(0.005f),
 		 PointCloud_(),
 		 Normals_(),
-		 Features_()
+		 Features_(),
+		 ModelName_("")
 		{
 
 		}
@@ -70,18 +71,23 @@ public:
 		bool loadInputCloud(std::string fileName)
 		{
 			PointCloud_ = boost::make_shared<PtCloud>();
-			pcl::io::loadPCDFile<pcl::PointXYZ>(fileName,*PointCloud_);
+			if(pcl::io::loadPCDFile<pcl::PointXYZ>(fileName,*PointCloud_) == -1)
+			{
+				return false;
+			}
 			processData();
+			return true;
 		}
 
 		// data
+		std::string ModelName_;
 		PtCloud::Ptr PointCloud_;
 		NormalsCloud::Ptr Normals_;
 		LocalFeatures::Ptr Features_;
 		SearchMethod::Ptr SearchMethod_;
 
 		// parameters
-		double NormalRadius_;
+		double NormalRadius_; // this radius defines each points neighborhood for computing normals
 		double FeatureRadius_;
 
 	protected:
@@ -100,15 +106,31 @@ public:
 	struct AlignmentResult
 	{
 		float FitnessScore_;
-		Eigen::Matrix4f Transform_;
+		//Eigen::Matrix4f Transform_;
+		tf::Transform Transform_;
 		int Index_;
 
 	};
 
 
 public:
-	TemplateAlignment();
+	TemplateAlignment(float minSampleDistance = 0.004f, float maxCorrespondanceDistance = 0.01f * 0.01f, int maxIterations = 200);
 	virtual ~TemplateAlignment();
+
+	void setMinSampleDistance(float d)
+	{
+		min_sample_distance_ = d;
+	}
+
+	void setMaxCorrespondanceDistance(float d)
+	{
+		max_correspondance_distance_ = d;
+	}
+
+	void setMaxIterations(int iters)
+	{
+		max_iterations_ = iters;
+	}
 
 	void setCandidateModel(ModelFeatureData &candidate);
 	void addModelTemplate(ModelFeatureData &templateData);
