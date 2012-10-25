@@ -28,3 +28,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
+
+rosbuild_add_library(MantisPerception src/template_matching/TemplateAlignment.cpp)
+
+rosbuild_add_executable(test_convert_obj_to_pcd src/test/test_convert_obj_to_pcd.cpp)
