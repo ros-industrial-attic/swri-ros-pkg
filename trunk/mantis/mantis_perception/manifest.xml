@@ -8,6 +8,15 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/mantis_perception</url>
+  <depend package="tf"/>
+  <depend package="object_manipulator"/>
+  <depend package="object_manipulation_msgs"/>
+  <depend package="planning_environment"/>
+  <depend package="visualization_msgs"/>
+  <depend package="pcl"/>
+  <depend package="pcl_ros"/>
+  <depend package="object_manipulation_tools"/>
+  <depend package="perception_tools"/>
 
 </package>
 
