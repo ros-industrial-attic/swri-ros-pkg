@@ -62,9 +62,21 @@ public:
 			processData();
 		}
 
-		void setInputCloud(PtCloud::Ptr cloudPtr)
+		void setInputCloud(PtCloud::Ptr cloudPtr, bool downsample = false, float voxelSide = 0.005f)
 		{
-			PointCloud_ = cloudPtr;
+			if(downsample)
+			{
+				pcl::VoxelGrid<pcl::PointXYZ> voxelizer;
+				voxelizer.setInputCloud(cloudPtr);
+				voxelizer.setLeafSize(voxelSide,voxelSide,voxelSide);
+
+				PointCloud_ = PtCloud::Ptr(new PtCloud());
+				voxelizer.filter(*PointCloud_);
+			}
+			else
+			{
+				PointCloud_ = cloudPtr;
+			}
 			processData();
 		}
 
@@ -78,6 +90,7 @@ public:
 			processData();
 			return true;
 		}
+
 
 		// data
 		std::string ModelName_;

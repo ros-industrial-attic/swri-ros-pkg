@@ -33,7 +33,9 @@ public:
 	 feature_radius_(0.005f),
 	 min_sample_distance_(0.004f),
 	 max_correspondance_distance_(0.01f * 0.01f),
-	 max_iterations_(200)
+	 max_iterations_(200),
+	 perform_downsampling_(true),
+	 downsampling_voxel_grid_size_(0.005f)
 	{
 		ros::NodeHandle nh;
 		NODE_NAME = ros::this_node::getName();
@@ -55,6 +57,8 @@ public:
 		ros::param::param(NODE_NAME + "/min_sample_distance",min_sample_distance_,min_sample_distance_);
 		ros::param::param(NODE_NAME + "/max_correspondance_distance",max_correspondance_distance_,max_correspondance_distance_);
 		ros::param::param(NODE_NAME + "/max_iterations",max_iterations_,max_iterations_);
+		ros::param::param(NODE_NAME + "/perform_downsampling",perform_downsampling_,perform_downsampling_);
+		ros::param::param(NODE_NAME + "/voxel_side",downsampling_voxel_grid_size_,downsampling_voxel_grid_size_);
 
 		XmlRpc::XmlRpcValue list;
 		ros::param::param(NODE_NAME + "/template_files",list,list);
@@ -71,6 +75,14 @@ public:
 		{
 			ROS_ERROR_STREAM(NODE_NAME<<": template_files param is not a valid array entry");
 		}
+	}
+
+	void updateParameters(std::string nameSpace = "")
+	{
+		ros::param::param(NODE_NAME + "/world_frame",world_frame_,world_frame_);
+		ros::param::param(NODE_NAME + "/min_sample_distance",min_sample_distance_,min_sample_distance_);
+		ros::param::param(NODE_NAME + "/max_correspondance_distance",max_correspondance_distance_,max_correspondance_distance_);
+		ros::param::param(NODE_NAME + "/max_iterations",max_iterations_,max_iterations_);
 	}
 
 	void spin()
@@ -100,6 +112,14 @@ public:
 
 		while(ros::ok())
 		{
+			// updating parameters
+			updateParameters(NODE_NAME);
+
+			// setting template aligment parameters
+			template_aligment_.setMaxCorrespondanceDistance(max_correspondance_distance_);
+			template_aligment_.setMinSampleDistance(min_sample_distance_);
+			template_aligment_.setMaxIterations(max_iterations_);
+
 			// calling tabletop segmentation service
 			if(!segmentation_client_.call(req,res))
 			{
@@ -208,7 +228,7 @@ protected:
 				ROS_INFO_STREAM(NODE_NAME<<" found pcd file "<<fileName<<" with "<<cloudPtr->size()<<" points, adding data to template list");
 				templateData.NormalRadius_ = normal_radius_;
 				templateData.FeatureRadius_ = feature_radius_;
-				templateData.setInputCloud(cloudPtr);
+				templateData.setInputCloud(cloudPtr,perform_downsampling_,downsampling_voxel_grid_size_);
 				templateData.ModelName_ = fileName;
 				template_aligment_.addModelTemplate(templateData);
 			}
@@ -250,6 +270,8 @@ protected:
 		// template data
 		std::vector<std::string> template_files_;
 		std::string templates_directory_;
+		bool perform_downsampling_;
+		double downsampling_voxel_grid_size_;
 
 	// end of ros parameters
 
