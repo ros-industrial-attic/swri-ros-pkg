@@ -70,6 +70,8 @@ bool TemplateAlignment::findBestAlignment(TemplateAlignment::AlignmentResult &re
 
 void TemplateAlignment::align(const FeatureData &templateData,Result &result)
 {
+	ROS_INFO_STREAM(ros::this_node::getName()<<"/TemplateAlignment: Aligning model "<<templateData.ModelName_);
+
 	sac_initial_alignment_.setInputCloud(templateData.PointCloud_);
 	sac_initial_alignment_.setSourceFeatures(templateData.Features_);
 
@@ -90,6 +92,8 @@ void TemplateAlignment::align(const FeatureData &templateData,Result &result)
 	t.setOrigin(tf::Vector3(pos(0),pos(1),pos(2)));
 
 	result.Transform_ = t;
+
+	ROS_INFO_STREAM(ros::this_node::getName()<<"/TemplateAlignment: Finished alignment with score "<<result.FitnessScore_);
 }
 
 void TemplateAlignment::align(const std::vector<FeatureData> &templates,std::vector<Result> &results)
@@ -105,7 +109,7 @@ void TemplateAlignment::align(const std::vector<FeatureData> &templates,std::vec
 	}
 }
 
-const std::vector<TemplateAlignment::ModelFeatureData>& TemplateAlignment::getModelTemplates()
+std::vector<TemplateAlignment::ModelFeatureData>& TemplateAlignment::getModelTemplates()
 {
 	return model_templates_;
 }

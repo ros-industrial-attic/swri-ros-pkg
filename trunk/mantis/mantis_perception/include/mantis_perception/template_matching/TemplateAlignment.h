@@ -147,7 +147,7 @@ public:
 
 	void setCandidateModel(ModelFeatureData &candidate);
 	void addModelTemplate(ModelFeatureData &templateData);
-	const std::vector<ModelFeatureData>& getModelTemplates();
+	std::vector<ModelFeatureData>& getModelTemplates();
 	bool findBestAlignment(AlignmentResult &result);
 
 protected:

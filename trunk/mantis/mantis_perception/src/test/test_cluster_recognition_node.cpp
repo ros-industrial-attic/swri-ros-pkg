@@ -35,7 +35,9 @@ public:
 	 max_correspondance_distance_(0.01f * 0.01f),
 	 max_iterations_(200),
 	 perform_downsampling_(true),
-	 downsampling_voxel_grid_size_(0.005f)
+	 downsampling_voxel_grid_size_(0.005f),
+	 use_template_(false),
+	 template_index_(0)
 	{
 		ros::NodeHandle nh;
 		NODE_NAME = ros::this_node::getName();
@@ -59,6 +61,8 @@ public:
 		ros::param::param(NODE_NAME + "/max_iterations",max_iterations_,max_iterations_);
 		ros::param::param(NODE_NAME + "/perform_downsampling",perform_downsampling_,perform_downsampling_);
 		ros::param::param(NODE_NAME + "/voxel_side",downsampling_voxel_grid_size_,downsampling_voxel_grid_size_);
+		ros::param::param(NODE_NAME + "/use_template_as_target",use_template_,use_template_);
+		ros::param::param(NODE_NAME + "/template_index",template_index_,template_index_);
 
 		XmlRpc::XmlRpcValue list;
 		ros::param::param(NODE_NAME + "/template_files",list,list);
@@ -83,6 +87,8 @@ public:
 		ros::param::param(NODE_NAME + "/min_sample_distance",min_sample_distance_,min_sample_distance_);
 		ros::param::param(NODE_NAME + "/max_correspondance_distance",max_correspondance_distance_,max_correspondance_distance_);
 		ros::param::param(NODE_NAME + "/max_iterations",max_iterations_,max_iterations_);
+		ros::param::param(NODE_NAME + "/use_template_as_target",use_template_,use_template_);
+		ros::param::param(NODE_NAME + "/template_index",template_index_,template_index_);
 	}
 
 	void spin()
@@ -96,12 +102,8 @@ public:
 		tf::StampedTransform clusterTf;
 		Eigen::Affine3d mat;
 		sensor_msgs::PointCloud2 clusterMsg;
-		TemplateAlignment::ModelFeatureData candidateData;
 		TemplateAlignment::AlignmentResult result;
 
-		// service request
-		tabletop_object_detector::TabletopSegmentation::Request req;
-		tabletop_object_detector::TabletopSegmentation::Response res;
 
 		while(!segmentation_client_.waitForExistence(ros::Duration(4.0f)) && ros::ok())
 		{
@@ -120,59 +122,101 @@ public:
 			template_aligment_.setMinSampleDistance(min_sample_distance_);
 			template_aligment_.setMaxIterations(max_iterations_);
 
-			// calling tabletop segmentation service
-			if(!segmentation_client_.call(req,res))
+			if(use_template_ && (template_index_ > -1) && ((unsigned int)template_index_ < template_files_.size()))
 			{
-				ROS_ERROR_STREAM(NODE_NAME<<": Segmentation request failed, skipping recognition");
-				continue;
+				ROS_INFO_STREAM(NODE_NAME<<": Using template file :"<<template_files_[template_index_]);
+				template_aligment_.setCandidateModel(template_aligment_.getModelTemplates()[template_index_]);
+				if(!template_aligment_.findBestAlignment(result))
+				{
+					ROS_ERROR_STREAM(NODE_NAME<<": Recognition failed");
+					continue;
+				}
+
+				const TemplateAlignment::ModelFeatureData &data =  template_aligment_.getModelTemplates()[result.Index_];
+				matched_cluster_ = *data.PointCloud_;
+				pcl::toROSMsg(*template_aligment_.getModelTemplates()[template_index_].PointCloud_,clusterMsg);
+				sensor_msgs::convertPointCloud2ToPointCloud(clusterMsg,target_cluster_msg_);
+				target_cluster_msg_.header.frame_id = world_frame_;
+
 			}
 			else
 			{
-				ROS_INFO_STREAM(NODE_NAME<<": Segmentation request completed, "<<res.clusters.size()<<" cluster found");
+				// service request
+				tabletop_object_detector::TabletopSegmentation::Request req;
+				tabletop_object_detector::TabletopSegmentation::Response res;
 
+				// calling tabletop segmentation service
+				if(!segmentation_client_.call(req,res))
+				{
+					ROS_ERROR_STREAM(NODE_NAME<<": Segmentation request failed, skipping recognition");
+					continue;
+				}
+				else
+				{
+					ROS_INFO_STREAM(NODE_NAME<<": Segmentation request completed, "<<res.clusters.size()<<" cluster found");
+
+				}
+
+				if(res.clusters.empty())
+				{
+					ROS_ERROR_STREAM(NODE_NAME<<": No cluster were returned from the segmentation, skipping");
+					continue;
+				}
+
+				// finding transform
+				sensor_msgs::PointCloud &cluster = res.clusters[0];
+				tf_listener_.lookupTransform(cluster.header.frame_id,world_frame_,ros::Time::now(),clusterTf);
+				tf::TransformTFToEigen(clusterTf,mat);
+
+
+				// converting sensor cloud message and transforming points to world coordinate
+				Cloud::Ptr originalCloudPtr = Cloud::Ptr(new Cloud()), cloudPtr = Cloud::Ptr(new Cloud());
+				sensor_msgs::convertPointCloudToPointCloud2(cluster,clusterMsg);
+				pcl::fromROSMsg(clusterMsg,*originalCloudPtr);
+
+				// transforming cloud points to world coordinates
+				pcl::transformPointCloud(*originalCloudPtr,*cloudPtr,Eigen::Affine3f(mat));
+
+				// finding centroid
+				Eigen::Vector4f centroid;
+				pcl::compute3DCentroid(*originalCloudPtr,centroid);
+
+				// translating cloud to origin
+				tf::TransformTFToEigen(tf::Transform(tf::Quaternion::getIdentity(),
+						-tf::Vector3(centroid[0],centroid[1],centroid[2])),mat);
+				pcl::transformPointCloud(*cloudPtr,*cloudPtr,Eigen::Affine3f(mat));
+				pcl::transformPointCloud(*originalCloudPtr,*cloudPtr,Eigen::Affine3f(mat));
+
+				// storing candidate cluster data
+				TemplateAlignment::ModelFeatureData candidateData;
+				candidateData.setInputCloud(cloudPtr);
+				template_aligment_.setCandidateModel(candidateData);
+				if(!template_aligment_.findBestAlignment(result))
+				{
+					ROS_ERROR_STREAM(NODE_NAME<<": Recognition failed");
+					continue;
+				}
+
+				// saving results for publishing
+				const TemplateAlignment::ModelFeatureData &data =  template_aligment_.getModelTemplates()[result.Index_];
+				tf::TransformTFToEigen(tf::Transform(tf::Quaternion::getIdentity(),
+						tf::Vector3(centroid[0],centroid[1],centroid[2]))*result.Transform_,mat);
+				matched_cluster_.clear();
+				pcl::transformPointCloud(*data.PointCloud_,matched_cluster_,Eigen::Affine3f(mat));
+				target_cluster_msg_ = cluster;
 			}
 
-			if(res.clusters.empty())
-			{
-				ROS_ERROR_STREAM(NODE_NAME<<": No cluster were returned from the segmentation, skipping");
-				continue;
-			}
-
-			// finding transform
-			sensor_msgs::PointCloud &cluster = res.clusters[0];
-			tf_listener_.lookupTransform(cluster.header.frame_id,world_frame_,ros::Time::now(),clusterTf);
-			tf::TransformTFToEigen(clusterTf,mat);
-
-			// converting sensor cloud message and transforming points to world coordinates
-			sensor_msgs::convertPointCloudToPointCloud2(cluster,clusterMsg);
-			Cloud::Ptr originalCloudPtr = Cloud::Ptr(new Cloud()), cloudPtr = Cloud::Ptr(new Cloud());
-			pcl::fromROSMsg(clusterMsg,*originalCloudPtr);
-			pcl::transformPointCloud(*originalCloudPtr,*cloudPtr,Eigen::Affine3f(mat));
-			candidateData.setInputCloud(cloudPtr);
-
-			template_aligment_.setCandidateModel(candidateData);
-			if(!template_aligment_.findBestAlignment(result))
-			{
-				ROS_ERROR_STREAM(NODE_NAME<<": Recognition failed");
-				continue;
-			}
-
-			const TemplateAlignment::ModelFeatureData &data =  template_aligment_.getModelTemplates()[result.Index_];
+			const TemplateAlignment::ModelFeatureData &d=  template_aligment_.getModelTemplates()[result.Index_];
 			std::stringstream resultStream;
 			resultStream<<"\nAligment results:\n";
 			resultStream<<"\tIndex: "<<result.Index_<<"\n";
 			resultStream<<"\tFitness Score: "<<result.FitnessScore_<<"\n";
-			resultStream<<"\tModel Name: "<<data.ModelName_<<"\n";
-			resultStream<<"\tTemplate Points: "<<data.PointCloud_->size()<<"\n";
-			resultStream<<"\tTarget Points: "<<cloudPtr->size()<<"\n";
+			resultStream<<"\tModel Name: "<<d.ModelName_<<"\n";
+			resultStream<<"\tTemplate Points: "<<d.PointCloud_->size()<<"\n";
+			//resultStream<<"\tTarget Points: "<<cloudPtr->size()<<"\n";
 
 			ROS_INFO_STREAM(resultStream.str());
 
-			// saving results for publishing
-			tf::TransformTFToEigen(result.Transform_,mat);
-			matched_cluster_.clear();
-			pcl::transformPointCloud(*data.PointCloud_,matched_cluster_,Eigen::Affine3f(mat));
-			target_cluster_msg_ = cluster;
 
 			loopTime.sleep();
 		}
@@ -272,6 +316,10 @@ protected:
 		std::string templates_directory_;
 		bool perform_downsampling_;
 		double downsampling_voxel_grid_size_;
+
+		// options
+		bool use_template_;
+		int template_index_;
 
 	// end of ros parameters
 
