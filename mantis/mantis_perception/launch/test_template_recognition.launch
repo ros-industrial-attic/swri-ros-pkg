@@ -17,15 +17,17 @@
 
 	<node name="test_cluster_recognition" pkg="mantis_perception" type="test_cluster_recognition" output="screen">		
 		<param name="world_frame" value="/base_link"/>
-		<param name="normal_radius" value="0.005"/>
-		<param name="feature_radius" value="0.005"/>
-		<param name="min_sample_distance" value="0.004"/>
-		<param name="max_correspondance_distance" value="0.0001"/>
-		<param name="max_iterations" value="200"/>
+		<param name="normal_radius" value="0.004"/>
+		<param name="feature_radius" value="0.004"/>
+		<param name="min_sample_distance" value="0.001"/>
+		<param name="max_correspondance_distance" value="0.002"/>
+		<param name="max_iterations" value="500"/>
 		<param name="perform_downsampling" value="True"/>
-		<param name="voxel_side" value="0.005"/>
+		<param name="voxel_side" value="0.001"/>
+		<param name="use_template_as_target" value="False"/>
+		<param name="template_index" value="0"/>
 		<param name="templates_directory" value="$(find mantis_perception)/data/meshes/sampled_parts"/>
-		<rosparam param="template_files">[elec_enclosure_sampled.pcd, pvc_elbow_sampled.pcd, pvc_elbow_sampled.pcd, pvc_t_sampled.pcd, white_plug_sampled.pcd]
+		<rosparam param="template_files">[elec_enclosure_sampled.pcd, pvc_elbow_sampled.pcd, rubber_coupler_clamps_sampled.pcd, pvc_t_sampled.pcd, white_plug_sampled.pcd]
                 </rosparam>
 	</node>
 </launch>
