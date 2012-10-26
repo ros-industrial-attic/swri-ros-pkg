@@ -132,8 +132,8 @@ public:
 					continue;
 				}
 
-				const TemplateAlignment::ModelFeatureData &data =  template_aligment_.getModelTemplates()[result.Index_];
-				matched_cluster_ = *data.PointCloud_;
+				const TemplateAlignment::ModelFeatureData &matchedTemplateData =  template_aligment_.getModelTemplates()[result.Index_];
+				matched_cluster_ = *matchedTemplateData.PointCloud_;
 				pcl::toROSMsg(*template_aligment_.getModelTemplates()[template_index_].PointCloud_,clusterMsg);
 				sensor_msgs::convertPointCloud2ToPointCloud(clusterMsg,target_cluster_msg_);
 				target_cluster_msg_.header.frame_id = world_frame_;
@@ -198,21 +198,21 @@ public:
 				}
 
 				// saving results for publishing
-				const TemplateAlignment::ModelFeatureData &data =  template_aligment_.getModelTemplates()[result.Index_];
+				const TemplateAlignment::ModelFeatureData &matchedTemplateData =  template_aligment_.getModelTemplates()[result.Index_];
 				tf::TransformTFToEigen(tf::Transform(tf::Quaternion::getIdentity(),
 						tf::Vector3(centroid[0],centroid[1],centroid[2]))*result.Transform_,mat);
 				matched_cluster_.clear();
-				pcl::transformPointCloud(*data.PointCloud_,matched_cluster_,Eigen::Affine3f(mat));
+				pcl::transformPointCloud(*matchedTemplateData.PointCloud_,matched_cluster_,Eigen::Affine3f(mat));
 				target_cluster_msg_ = cluster;
 			}
 
-			const TemplateAlignment::ModelFeatureData &d=  template_aligment_.getModelTemplates()[result.Index_];
+			const TemplateAlignment::ModelFeatureData &data=  template_aligment_.getModelTemplates()[result.Index_];
 			std::stringstream resultStream;
 			resultStream<<"\nAligment results:\n";
 			resultStream<<"\tIndex: "<<result.Index_<<"\n";
 			resultStream<<"\tFitness Score: "<<result.FitnessScore_<<"\n";
-			resultStream<<"\tModel Name: "<<d.ModelName_<<"\n";
-			resultStream<<"\tTemplate Points: "<<d.PointCloud_->size()<<"\n";
+			resultStream<<"\tModel Name: "<<data.ModelName_<<"\n";
+			resultStream<<"\tTemplate Points: "<<data.PointCloud_->size()<<"\n";
 			//resultStream<<"\tTarget Points: "<<cloudPtr->size()<<"\n";
 
 			ROS_INFO_STREAM(resultStream.str());
