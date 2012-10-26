@@ -11,9 +11,6 @@
 		<include file="$(find mantis_config)/launch/mantis_motoman_vacuum_bringup.launch"/>
 		<include file="$(find mantis_config)/launch/mantis_pick_place_setup.launch"/>
 	< end of instructions -->
-
-	
-
 	
 	<node name="template_recognition_test_viz" pkg="rviz" type="rviz"
  args="-d $(find mantis_perception)/config/template_recognition_test_viz.vcg"/>
@@ -25,6 +22,8 @@
 		<param name="min_sample_distance" value="0.004"/>
 		<param name="max_correspondance_distance" value="0.0001"/>
 		<param name="max_iterations" value="200"/>
+		<param name="perform_downsampling" value="True"/>
+		<param name="voxel_side" value="0.005"/>
 		<param name="templates_directory" value="$(find mantis_perception)/data/meshes/sampled_parts"/>
 		<rosparam param="template_files">[elec_enclosure_sampled.pcd, pvc_elbow_sampled.pcd, pvc_elbow_sampled.pcd, pvc_t_sampled.pcd, white_plug_sampled.pcd]
                 </rosparam>
