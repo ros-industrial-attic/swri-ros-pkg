@@ -17,14 +17,14 @@
 
 	<node name="test_cluster_recognition" pkg="mantis_perception" type="test_cluster_recognition" output="screen">		
 		<param name="world_frame" value="/base_link"/>
-		<param name="sensor_frame" value="kinect_frame"/>
+		<param name="sensor_frame" value="/camera_link"/>
 		<param name="normal_radius" value="0.01"/>
 		<param name="feature_radius" value="0.01"/>
 		<param name="min_sample_distance" value="0.001"/>
-		<param name="max_correspondance_distance" value="0.01"/>
-		<param name="max_iterations" value="400"/>
+		<param name="max_correspondance_distance" value="0.0004"/>
+		<param name="max_iterations" value="800"/>
 		<param name="perform_downsampling" value="True"/>
-		<param name="voxel_side" value="0.004"/>
+		<param name="voxel_side" value="0.002"/>
 		<param name="use_template_as_target" value="False"/>
 		<param name="template_index" value="0"/>
 		<param name="templates_directory" value="$(find mantis_perception)/data/meshes/sampled_parts"/>

@@ -27,7 +27,7 @@ class RecognitionTest
 public:
 	RecognitionTest()
 	:world_frame_("base_link"),
-	 sensor_frame_("kinect_frame"),
+	 sensor_frame_("camera_link"),
 	 templates_directory_(""),
 	 template_files_(),
 	 normal_radius_(0.01f),
@@ -299,6 +299,7 @@ protected:
 				templateData.FeatureRadius_ = feature_radius_;
 				templateData.ModelName_ = fileName;
 				templateData.ViewPoint_ = tf::Vector3(sensor_transform_.getOrigin());
+				//templateData.ViewPoint_ = tf::Vector3(0.0f,0.0f,5.0f);
 				templateData.setInputCloud(cloudPtr,perform_downsampling_,downsampling_voxel_grid_size_);
 				template_aligment_.addModelTemplate(templateData);
 			}
