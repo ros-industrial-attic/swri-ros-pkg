@@ -27,17 +27,19 @@ class RecognitionTest
 public:
 	RecognitionTest()
 	:world_frame_("base_link"),
+	 sensor_frame_("kinect_frame"),
 	 templates_directory_(""),
 	 template_files_(),
-	 normal_radius_(0.005f),
-	 feature_radius_(0.005f),
-	 min_sample_distance_(0.004f),
-	 max_correspondance_distance_(0.01f * 0.01f),
+	 normal_radius_(0.01f),
+	 feature_radius_(0.01f),
+	 min_sample_distance_(0.001f),
+	 max_correspondance_distance_(0.01f),//max_correspondance_distance_(0.01f * 0.01f),
 	 max_iterations_(200),
 	 perform_downsampling_(true),
 	 downsampling_voxel_grid_size_(0.005f),
 	 use_template_(false),
-	 template_index_(0)
+	 template_index_(0),
+	 sensor_transform_()
 	{
 		ros::NodeHandle nh;
 		NODE_NAME = ros::this_node::getName();
@@ -53,6 +55,7 @@ public:
 	void fetchParameters(std::string nameSpace = "")
 	{
 		ros::param::param(NODE_NAME + "/world_frame",world_frame_,world_frame_);
+		ros::param::param(NODE_NAME + "/sensor_frame",sensor_frame_,sensor_frame_);
 		ros::param::param(NODE_NAME + "/templates_directory",templates_directory_,templates_directory_);
 		ros::param::param(NODE_NAME + "/normal_radius",normal_radius_,normal_radius_);
 		ros::param::param(NODE_NAME + "/feature_radius",feature_radius_,feature_radius_);
@@ -165,9 +168,15 @@ public:
 
 				// finding transform
 				sensor_msgs::PointCloud &cluster = res.clusters[0];
-				tf_listener_.lookupTransform(cluster.header.frame_id,world_frame_,ros::Time::now(),clusterTf);
-				tf::TransformTFToEigen(clusterTf,mat);
-
+				try
+				{
+					tf_listener_.lookupTransform(cluster.header.frame_id,world_frame_,ros::Time::now(),clusterTf);
+					tf::TransformTFToEigen(clusterTf,mat);
+				}
+				catch(tf::TransformException &e)
+				{
+					ROS_ERROR_STREAM(NODE_NAME<<": transform for "<<world_frame_<<" to "<<cluster.header.frame_id<<" not found");
+				}
 
 				// converting sensor cloud message and transforming points to world coordinate
 				Cloud::Ptr originalCloudPtr = Cloud::Ptr(new Cloud()), cloudPtr = Cloud::Ptr(new Cloud());
@@ -184,13 +193,19 @@ public:
 				// translating cloud to origin
 				tf::TransformTFToEigen(tf::Transform(tf::Quaternion::getIdentity(),
 						-tf::Vector3(centroid[0],centroid[1],centroid[2])),mat);
+
 				pcl::transformPointCloud(*cloudPtr,*cloudPtr,Eigen::Affine3f(mat));
-				pcl::transformPointCloud(*originalCloudPtr,*cloudPtr,Eigen::Affine3f(mat));
+				//pcl::transformPointCloud(*originalCloudPtr,*cloudPtr,Eigen::Affine3f(mat));
 
 				// storing candidate cluster data
 				TemplateAlignment::ModelFeatureData candidateData;
-				candidateData.setInputCloud(cloudPtr);
+				candidateData.NormalRadius_ = normal_radius_;
+				candidateData.FeatureRadius_ = feature_radius_;
+				candidateData.ViewPoint_ = tf::Vector3(sensor_transform_.getOrigin());
+				candidateData.ModelName_ = "target";
+				candidateData.setInputCloud(cloudPtr,perform_downsampling_,downsampling_voxel_grid_size_);
 				template_aligment_.setCandidateModel(candidateData);
+
 				if(!template_aligment_.findBestAlignment(result))
 				{
 					ROS_ERROR_STREAM(NODE_NAME<<": Recognition failed");
@@ -251,10 +266,20 @@ protected:
 			return;
 		}
 
-		// setting template aligment parameters
+		// setting template alignment parameters
 		template_aligment_.setMaxCorrespondanceDistance(max_correspondance_distance_);
 		template_aligment_.setMinSampleDistance(min_sample_distance_);
 		template_aligment_.setMaxIterations(max_iterations_);
+
+		// obtaining sensor's frame
+		try
+		{
+			tf_listener_.lookupTransform(sensor_frame_,world_frame_,ros::Time::now(),sensor_transform_);
+		}
+		catch(tf::TransformException &e)
+		{
+			ROS_ERROR_STREAM(NODE_NAME<<": transform from "<<world_frame_<<" to "<<sensor_frame_<<" not found");
+		}
 
 		// adding templates to template aligment;
 		BOOST_FOREACH(std::string fileName, template_files_)
@@ -272,12 +297,12 @@ protected:
 				ROS_INFO_STREAM(NODE_NAME<<" found pcd file "<<fileName<<" with "<<cloudPtr->size()<<" points, adding data to template list");
 				templateData.NormalRadius_ = normal_radius_;
 				templateData.FeatureRadius_ = feature_radius_;
-				templateData.setInputCloud(cloudPtr,perform_downsampling_,downsampling_voxel_grid_size_);
 				templateData.ModelName_ = fileName;
+				templateData.ViewPoint_ = tf::Vector3(sensor_transform_.getOrigin());
+				templateData.setInputCloud(cloudPtr,perform_downsampling_,downsampling_voxel_grid_size_);
 				template_aligment_.addModelTemplate(templateData);
 			}
 		}
-
 	}
 
 	void publishCloudstimerCallback(const ros::TimerEvent &evnt)
@@ -310,6 +335,7 @@ protected:
 
 		// transform resolution
 		std::string world_frame_;
+		std::string sensor_frame_;// use to determine the point cloud's view point
 
 		// template data
 		std::vector<std::string> template_files_;
@@ -323,10 +349,9 @@ protected:
 
 	// end of ros parameters
 
-
 	// transform resolution
 	tf::TransformListener tf_listener_;
-
+	tf::StampedTransform sensor_transform_;
 
 	// template alignment
 	TemplateAlignment template_aligment_;

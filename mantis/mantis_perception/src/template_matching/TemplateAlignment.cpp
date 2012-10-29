@@ -125,6 +125,7 @@ void TemplateAlignment::ModelFeatureData::computeNormals()
 	normEstimator.setInputCloud (PointCloud_);
 	normEstimator.setSearchMethod (SearchMethod_);
 	normEstimator.setRadiusSearch (NormalRadius_);
+	normEstimator.setViewPoint(ViewPoint_.x(),ViewPoint_.y(),ViewPoint_.z());
 	normEstimator.compute (*Normals_);
 
 	ROS_INFO_STREAM(ros::this_node::getName()<<"/TemplateAlignment: finished computing normals");
