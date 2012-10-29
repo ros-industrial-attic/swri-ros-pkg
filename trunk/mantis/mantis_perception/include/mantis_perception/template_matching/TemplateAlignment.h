@@ -41,12 +41,13 @@ public:
 
 		ModelFeatureData()
 		:SearchMethod_(new SearchMethod()),
-		 NormalRadius_(0.005f),
-		 FeatureRadius_(0.005f),
+		 NormalRadius_(0.01f),
+		 FeatureRadius_(0.01f),
 		 PointCloud_(),
 		 Normals_(),
 		 Features_(),
-		 ModelName_("")
+		 ModelName_(""),
+		 ViewPoint_(0.0f,0.0f,0.0f)
 		{
 
 		}
@@ -62,7 +63,7 @@ public:
 			processData();
 		}
 
-		void setInputCloud(PtCloud::Ptr cloudPtr, bool downsample = false, float voxelSide = 0.005f)
+		void setInputCloud(PtCloud::Ptr cloudPtr, bool downsample = false, float voxelSide = 0.002f)
 		{
 			if(downsample)
 			{
@@ -98,6 +99,7 @@ public:
 		NormalsCloud::Ptr Normals_;
 		LocalFeatures::Ptr Features_;
 		SearchMethod::Ptr SearchMethod_;
+		tf::Vector3 ViewPoint_;
 
 		// parameters
 		double NormalRadius_; // this radius defines each points neighborhood for computing normals
@@ -127,7 +129,7 @@ public:
 
 
 public:
-	TemplateAlignment(float minSampleDistance = 0.004f, float maxCorrespondanceDistance = 0.01f * 0.01f, int maxIterations = 200);
+	TemplateAlignment(float minSampleDistance = 0.05f, float maxCorrespondanceDistance = 0.01f * 0.01f, int maxIterations = 200);
 	virtual ~TemplateAlignment();
 
 	void setMinSampleDistance(float d)
