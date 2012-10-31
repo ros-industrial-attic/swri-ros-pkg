@@ -44,7 +44,7 @@ bool segment_cb(nrg_object_recognition::segmentation::Request &seg_request,
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
   seg.setMaxIterations (100);
-  seg.setDistanceThreshold (0.02);
+  seg.setDistanceThreshold (0.0075);
   
   //std::cout << "Spatial filtering...\n";
   //Spatial filter.
@@ -60,7 +60,7 @@ bool segment_cb(nrg_object_recognition::segmentation::Request &seg_request,
  
  for(pcl::PointCloud<pcl::PointXYZ>::iterator position=cloud_filtered_0->begin(); position!=cloud_filtered_0->end(); position++){
      //if(position->x > min_x && position->x < max_x && position->y > min_y && position->y < max_y && position->z > min_z && position->z < max_z)
-     if(position->x > min_x && position->x < max_x && position->y > (2.145*position->z - 3.31) && position->y < (-.466*position->z + .433))
+     if(position->x > min_x && position->x < max_x && position->y > (2.145*position->z - 3.31) && position->y < (-.466*position->z + .400))
      cloud_filtered->push_back(*position);
   }
   sensor_msgs::PointCloud2 cloud_filtered_pc2;
@@ -70,7 +70,7 @@ bool segment_cb(nrg_object_recognition::segmentation::Request &seg_request,
 
   //std::cout << "num points in spatially filtered cloud: " << cloud_filtered->points.size() << std::endl;
   int i=0, nr_points = (int) cloud_filtered->points.size ();
-  while (cloud_filtered->points.size () > 0.3 * nr_points)
+  while (cloud_filtered->points.size () > 0.5 * nr_points)
   {
     // Segment the largest planar component from the remaining cloud
     seg.setInputCloud (cloud_filtered);
@@ -114,7 +114,7 @@ bool segment_cb(nrg_object_recognition::segmentation::Request &seg_request,
 
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance (0.02); // 2cm
+  ec.setClusterTolerance (0.03); // 2cm
   ec.setMinClusterSize (0);
   ec.setMaxClusterSize (25000);
   ec.setSearchMethod (tree);
@@ -131,7 +131,7 @@ bool segment_cb(nrg_object_recognition::segmentation::Request &seg_request,
     cloud_cluster->width = cloud_cluster->points.size ();
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
-    //std::cout << "writing cluster to service response. It has " << cloud_cluster->points.size() << " points.\n";
+    std::cout << "writing cluster to service response. It has " << cloud_cluster->points.size() << " points.\n";
     sensor_msgs::PointCloud2 tempROSMsg;
     pcl::toROSMsg(*cloud_cluster, tempROSMsg);
     seg_response.clusters.push_back(tempROSMsg);

@@ -12,22 +12,34 @@
 
 #include "data_collection/process_cloud.h"
 #include "euclidean_segmentation.h"
+#include "nrg_object_recognition/segmentation.h"
 #include "cph.h"
 
+  ros::ServiceClient seg_client;
+  
 bool cloud_cb(data_collection::process_cloud::Request &req,
 	      data_collection::process_cloud::Response &res)
 {
   //Segment from cloud:
   //May need to tweak segmentation parameters to get just the cluster I'm looking for.
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clouds;
-  SegmentCloud(req.in_cloud, clouds);
+  nrg_object_recognition::segmentation seg_srv;
+
+  seg_srv.request.scene = req.in_cloud;
+  seg_srv.request.min_x = -.75, seg_srv.request.max_x = .4;
+  seg_srv.request.min_y = -5, seg_srv.request.max_y = .5;
+  seg_srv.request.min_z = 0.0, seg_srv.request.max_z = 1.15;
+  seg_client.call(seg_srv);
+  
+  //SegmentCloud(req.in_cloud, clouds);
   
   //For parameter tweaking, may be good to write all cluseters to file here for examination in pcd viewer.
   
   pcl::PointCloud<pcl::PointXYZ>::Ptr cluster (new pcl::PointCloud<pcl::PointXYZ>);
-  cluster = clouds.at(0);
-  std::cout << "found " << clouds.size() << " clusters.\n"; 
-  std::cout << "fist cluster has " << cluster->height*cluster->width << " points.\n";
+  //cluster = clouds.at(0);
+  pcl::fromROSMsg(seg_srv.response.clusters.at(0), *cluster);
+  //std::cout << "found " << clouds.size() << " clusters.\n"; 
+  std::cout << "cluster has " << cluster->height*cluster->width << " points.\n";
   
   //Write raw pcd file (objecName_angle.pcd)
   std::stringstream fileName_ss;
@@ -86,11 +98,13 @@ int main(int argc, char **argv)
 {
   
   ros::init(argc, argv, "feature_extractor");
+  
   ros::NodeHandle n;
   
   
   //Offer services that can be called from the terminal:
   ros::ServiceServer joint_test_serv = n.advertiseService("process_cloud", cloud_cb );
+  seg_client = n.serviceClient<nrg_object_recognition::segmentation>("segmentation");
   
   //Set up service clients:
  
