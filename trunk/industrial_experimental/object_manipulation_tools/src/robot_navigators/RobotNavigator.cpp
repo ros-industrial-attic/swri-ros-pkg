@@ -440,8 +440,8 @@ bool RobotNavigator::performTrajectoryFiltering(const std::string& group_name,tr
 
   if(!trajectory_filter_service_client_.call(filter_req, filter_res))
   {
-    ROS_WARN_STREAM(NODE_NAME<<": Fast Filter service call failed");
-    ROS_WARN_STREAM(NODE_NAME<<": Return true anyway");
+    ROS_INFO_STREAM(NODE_NAME<<": Fast Filter service call failed");
+    ROS_INFO_STREAM(NODE_NAME<<": Return true anyway");
     return true;
   }
 
