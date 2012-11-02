@@ -212,7 +212,7 @@ protected:
 	virtual bool moveArmThroughPickSequence();
 
 	// move execution methods
-	bool attemptGraspSequence(const std::string& group_name,const GraspSequenceValidator::GraspSequenceDetails& gei);
+	virtual bool attemptGraspSequence(const std::string& group_name,const GraspSequenceValidator::GraspSequenceDetails& gei);
 
 	// move generation
 	void createPickMoveSequence(const object_manipulation_msgs::PickupGoal &pickupGoal,
