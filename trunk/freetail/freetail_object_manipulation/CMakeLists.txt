@@ -29,7 +29,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_library(ManipulationDemo src/demos/SimpleManipulationDemo.cpp src/utils/CustomPlaceTester.cpp src/segmentation/SphereSegmentation.cpp)
+rosbuild_add_library(ManipulationDemo src/demos/SimpleManipulationDemo.cpp 
+	src/utils/CustomPlaceTester.cpp 
+	src/segmentation/SphereSegmentation.cpp
+	src/arm_navigators/RobotGripperNavigator.cpp)
 
 rosbuild_add_executable(fast_demo_app_swri src/demos/fast_demo_app_swri.cpp)
 
@@ -42,4 +45,10 @@ target_link_libraries(ball_picking_demo_node ManipulationDemo)
 rosbuild_add_executable(test_recognition_node src/tests/test_recognition_node.cpp)
 target_link_libraries(test_recognition_node ManipulationDemo)
 
-rosbuild_add_executable(test_sphere_segmentation src/tests/test_sphere_segmentation.cpp src/segmentation/SphereSegmentation.cpp)
+rosbuild_add_executable(test_sphere_segmentation 
+	src/tests/test_sphere_segmentation.cpp 
+	src/segmentation/SphereSegmentation.cpp)
+	
+rosbuild_add_executable(robot_pick_shear_node src/demos/robot_pick_shear_node.cpp)
+target_link_libraries(robot_pick_shear_node ManipulationDemo)
+	
