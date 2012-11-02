@@ -180,7 +180,7 @@ bool GraspSequenceValidator::getInterpolatedIK(const std::string& arm_name,
 
 	  // final pose (rotate initial transform by the rotation requested)
 	  geometry_msgs::Pose end_pose;
-	  tf::Transform endTransform = tf::Transform(tf::Transform(rot,tf::Vector3(0.0f,0.0f,0.0f))) * initialTransform;
+	  tf::Transform endTransform =   initialTransform * tf::Transform(tf::Transform(rot,tf::Vector3(0.0f,0.0f,0.0f)));
 	  tf::poseTFToMsg(endTransform,end_pose);
 
 	  // solving ik at final pose
@@ -216,6 +216,7 @@ bool GraspSequenceValidator::getInterpolatedIK(const std::string& arm_name,
 			  point.velocities.push_back(0.0f);
 			  point.velocities.push_back(0.0f);
 		  }
+		  traj.points.push_back(point);
 	  }
 
 	  return true;
@@ -920,7 +921,7 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
 	  pregrasp_dir.normalize();
 
 	  // twist at pick location (rotate about approach direction)
-	  tf::Transform twistTransform = tf::Transform(tf::Quaternion(pregrasp_dir,twistAngle),tf::Vector3(0.0f,0.0f,0.0f));
+	  tf::Transform twistTransform = tf::Transform(tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),twistAngle),tf::Vector3(0.0f,0.0f,0.0f));
 
 	  // lift transform to apply to grasp pose
 	  tf::Vector3 lift_dir;
@@ -1006,7 +1007,7 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
 	    }
 	    state->setKinematicState(grasp_joint_vals);
 
-	    tf::Transform twistPose = twistTransform*grasp_poses[i];
+	    tf::Transform twistPose = grasp_poses[i]*twistTransform;// twistTransform*grasp_poses[i];
 	    state->updateKinematicStateWithLinkAt(handDescription().gripperFrame(pickup_goal.arm_name),twistPose);
 
 	    if(cm->isKinematicStateInCollision(*state))
@@ -1031,7 +1032,7 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
 	    }
 	    state->setKinematicState(grasp_joint_vals);
 
-	    tf::Transform lift_pose = lift_trans*twistTransform*grasp_poses[i];
+	    tf::Transform lift_pose = lift_trans* grasp_poses[i]* twistTransform;
 	    state->updateKinematicStateWithLinkAt(handDescription().gripperFrame(pickup_goal.arm_name),lift_pose);
 
 	    if(cm->isKinematicStateInCollision(*state))
@@ -1117,7 +1118,7 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
 	      geometry_msgs::Pose grasp_geom_pose; // grasp pose at pick location
 	      geometry_msgs::Pose graspTwistPose; // grasp pose after rotating wrist
 	      tf::poseTFToMsg(grasp_poses[i], grasp_geom_pose);
-	      tf::poseTFToMsg(twistTransform * grasp_poses[i],graspTwistPose);
+	      tf::poseTFToMsg(grasp_poses[i] * twistTransform ,graspTwistPose);
 
 	  /*
 	   * ************************************************************************
@@ -1202,7 +1203,7 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
 	        continue;
 	      }
 
-	      ROS_DEBUG_STREAM("Last approach point is " <<
+	      ROS_INFO_STREAM("Last approach point is " <<
 	                       execution_info[i].approach_trajectory_.points.back().positions[0] << " " <<
 	                       execution_info[i].approach_trajectory_.points.back().positions[1] << " " <<
 	                       execution_info[i].approach_trajectory_.points.back().positions[2] << " " <<
@@ -1210,6 +1211,8 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
 	                       execution_info[i].approach_trajectory_.points.back().positions[4] << " " <<
 	                       execution_info[i].approach_trajectory_.points.back().positions[5] << " " <<
 	                       execution_info[i].approach_trajectory_.points.back().positions[6]);
+	      ROS_INFO_STREAM("Total number of points for approach trajectory is "<<
+	    		  execution_info[i].approach_trajectory_.points.size()) ;
 
 	      // end of approach trajectory
 
@@ -1227,6 +1230,8 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
 	      // interpolating joint trajectory for twist move
 	      std::vector<double> &ikSolutionAtGrasp = solution.position;
 	      std::vector<double> ikSolutionAtTwist;
+	      execution_info[i].twist_trajectory_.joint_names = joint_names;
+	      ROS_INFO_STREAM("Finding ik solution for twist move");
 	      if(!getInterpolatedIK(
 	    		  pickup_goal.arm_name,
 	    		  base_link_bullet_grasp_pose,
