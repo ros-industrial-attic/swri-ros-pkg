@@ -2,7 +2,6 @@
  * PlaceSequenceValidator.cpp
  *
  *  Created on: Oct 10, 2012
- *      Author: jnicho
  */
 
 /*

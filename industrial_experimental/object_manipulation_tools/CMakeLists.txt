@@ -31,6 +31,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(object_manipulation_tools src/controller_utils/GraspPoseControllerHandler.cpp
 	src/controller_utils/SimulatedController.cpp
+	src/manipulation_utils/GraspSequenceValidator.cpp
 	src/manipulation_utils/PlaceSequenceValidator.cpp
 	src/grasp_planners/OverheadGraspPlanner.cpp
 	src/services/GraspPlannerServer.cpp
