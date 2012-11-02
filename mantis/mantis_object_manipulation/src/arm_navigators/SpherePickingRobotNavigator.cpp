@@ -95,8 +95,10 @@ void SpherePickingRobotNavigator::setup()
 
 		ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
 		// others
-		grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_);
-		place_tester_ = new PlaceSequenceValidator(&cm_, ik_plugin_name_);
+		grasp_tester_ = GraspTesterPtr(new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_));
+		place_tester_ = PlaceSequencePtr(new PlaceSequenceValidator(&cm_, ik_plugin_name_));
+//		grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_);
+//		place_tester_ = new PlaceSequenceValidator(&cm_, ik_plugin_name_);
 		trajectories_finished_function_ = boost::bind(&SpherePickingRobotNavigator::trajectoriesFinishedCallbackFunction, this, _1);
 
 		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
