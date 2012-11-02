@@ -2,7 +2,6 @@
  * BallPickingDemoNode.cpp
  *
  *  Created on: Sep 21, 2012
- *      Author: jnicho
  */
 
 #include <freetail_object_manipulation/demos/SimpleManipulationDemo.h>
