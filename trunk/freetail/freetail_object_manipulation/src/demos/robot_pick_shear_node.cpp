@@ -13,7 +13,7 @@ int main(int argc,char** argv)
 
 	ROS_INFO_STREAM(ros::this_node::getName()<<": Creating navigator");
 	boost::shared_ptr<RobotNavigator> navigator(new RobotGripperNavigator());
-	ROS_INFO_STREAM(ros::this_node::getName()<<":Starting navigator");
+	ROS_INFO_STREAM(ros::this_node::getName()<<": Starting navigator");
 	navigator->run();
 }
 

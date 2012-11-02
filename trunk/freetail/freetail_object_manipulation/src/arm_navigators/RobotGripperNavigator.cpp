@@ -6,6 +6,7 @@
 
 
 #include <freetail_object_manipulation/arm_navigators/RobotGripperNavigator.h>
+#include <boost/foreach.hpp>
 
 std::string RobotGripperNavigator::MARKER_SEGMENTED_OBJECT = "segmented_obj";
 std::string RobotGripperNavigator::SEGMENTATION_NAMESPACE = "segmentation";
@@ -144,7 +145,7 @@ bool RobotGripperNavigator::moveArmThroughPickSequence()
 		bool proceed = (graspMoves.result_.result_code == object_manipulation_msgs::GraspResult::SUCCESS);
 		if(proceed)
 		{
-			ROS_INFO_STREAM(NODE_NAME<<": Attempting Pick grasp sequence");
+			ROS_INFO_STREAM(NODE_NAME<<": Attempting Pick/Shear/Lift grasp sequence");
 			success = attemptGraspSequence(arm_group_name_,graspMoves);
 			if(!success)
 			{
@@ -320,6 +321,12 @@ bool RobotGripperNavigator::attemptGraspSequence(
 	   * currently this is the only way to execute multiple trajectories in sequence, since the executeTrajectories
 	   * method can only handle a single trajectory at a time.
 	   */
+	  ROS_INFO_STREAM(NODE_NAME<<": attempting the following moves");
+	  BOOST_FOREACH(std::string stateName,segment_names)
+	  {
+		  ROS_INFO_STREAM(NODE_NAME<<" "<<stateName);
+	  }
+
 	  start_execution = ros::WallTime::now();
 	  for(unsigned int i = 0;i < ter_reqs.size(); i++)
 	  {
