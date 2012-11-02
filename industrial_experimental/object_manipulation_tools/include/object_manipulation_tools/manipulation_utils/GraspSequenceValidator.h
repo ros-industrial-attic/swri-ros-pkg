@@ -35,7 +35,7 @@
 
 class GraspSequenceValidator : public object_manipulator::GraspTester
 {
-
+public:
 	struct GraspSequenceDetails: public object_manipulator::GraspExecutionInfo
 	{
 	public:
@@ -99,6 +99,14 @@ protected:
 
   void getGroupLinks(const std::string& group_name,
                      std::vector<std::string>& group_links);
+
+  virtual void testGrasp(const object_manipulation_msgs::PickupGoal &pickup_goal,
+          const object_manipulation_msgs::Grasp &grasp,
+          object_manipulator::GraspExecutionInfo &execution_info)
+  {
+
+
+  }
 
   virtual void testGrasps(const object_manipulation_msgs::PickupGoal &pickup_goal,
                           const std::vector<object_manipulation_msgs::Grasp> &grasps,
