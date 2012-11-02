@@ -38,6 +38,8 @@
 #include <tf/transform_listener.h>
 
 typedef actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPostureExecutionAction>  GraspActionServerClient;
+typedef boost::shared_ptr<object_manipulator::GraspTesterFast> GraspTesterPtr;
+typedef boost::shared_ptr<PlaceSequenceValidator> PlaceSequencePtr;
 
 using namespace trajectory_execution_monitor;
 
@@ -128,9 +130,9 @@ protected:
 
 	// move arm methods
 	virtual bool moveArmToSide(); // it is preferable to implement this in order to tell the robot arm where "side" is
-	bool moveArm(const std::string& group_name,const std::vector<double>& joint_positions);
-	bool moveArmThroughPickSequence();
-	bool moveArmThroughPlaceSequence();
+	virtual bool moveArm(const std::string& group_name,const std::vector<double>& joint_positions);
+	virtual bool moveArmThroughPickSequence();
+	virtual bool moveArmThroughPlaceSequence();
 
 	// callbacks
 	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt);
@@ -156,8 +158,8 @@ protected:
 	void addDetectedObjectToLocalPlanningScene(const household_objects_database_msgs::DatabaseModelPoseList& model);
 
 	// grasp execution
-	bool attemptGraspSequence(const std::string& group_name,const object_manipulator::GraspExecutionInfo& gei);
-	bool attemptPlaceSequence(const std::string& group_name,const object_manipulator::PlaceExecutionInfo& pei);
+	virtual bool attemptGraspSequence(const std::string& group_name,const object_manipulator::GraspExecutionInfo& gei);
+	virtual bool attemptPlaceSequence(const std::string& group_name,const object_manipulator::PlaceExecutionInfo& pei);
 
 	// demo monitoring
 	void startCycleTimer();
@@ -183,10 +185,10 @@ protected:
 	/* move sequence creation methods
 	 * These methods generate all the necessary move steps corresponding to each manipulation sequence
 	 */
-	void createPickMoveSequence(const object_manipulation_msgs::PickupGoal &pickupGoal,
+	virtual void createPickMoveSequence(const object_manipulation_msgs::PickupGoal &pickupGoal,
 			const std::vector<object_manipulation_msgs::Grasp> &grasps,
 			std::vector<object_manipulator::GraspExecutionInfo> &graspSequence);
-	void createPlaceMoveSequence(const object_manipulation_msgs::PlaceGoal &placeGoal,
+	virtual void createPlaceMoveSequence(const object_manipulation_msgs::PlaceGoal &placeGoal,
 			const std::vector<geometry_msgs::PoseStamped> &placePoses,
 			std::vector<object_manipulator::PlaceExecutionInfo> &placeSequence);
 
@@ -228,9 +230,9 @@ protected:
 	boost::shared_ptr<GraspActionServerClient> grasp_exec_action_client_;
 
 	// grasp move sequence generators
-	object_manipulator::GraspTesterFast* grasp_tester_;
-	PlaceSequenceValidator *place_tester_;
 	//object_manipulator::PlaceTesterFast* place_tester_;
+	boost::shared_ptr<object_manipulator::GraspTesterFast> grasp_tester_;
+	boost::shared_ptr<PlaceSequenceValidator> place_tester_;
 
 	arm_navigation_msgs::PlanningScene current_planning_scene_;
 	arm_navigation_msgs::PlanningScene planning_scene_diff_;
