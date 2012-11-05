@@ -19,7 +19,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
-#rosbuild_gensrv()
+rosbuild_gensrv()
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
@@ -34,4 +34,7 @@ rosbuild_add_library(MantisPerception src/template_matching/TemplateAlignment.cp
 rosbuild_add_executable(test_convert_obj_to_pcd src/test/test_convert_obj_to_pcd.cpp)
 
 rosbuild_add_executable(test_cluster_recognition src/test/test_cluster_recognition_node.cpp)
+
+rosbuild_add_executable(recognition_node src/cph_recognition/recognition.cpp)
+
 target_link_libraries(test_cluster_recognition MantisPerception)
