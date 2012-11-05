@@ -15,8 +15,10 @@
   <depend package="visualization_msgs"/>
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
-  <depend package="object_manipulation_tools"/>
-  <depend package="perception_tools"/>
+  <depend package="tabletop_object_detector"/>
+  <depend package="nrg_object_recognition"/>
+<!--  <depend package="object_manipulation_tools"/> 
+  <depend package="perception_tools"/>  -->
 
 </package>
 
