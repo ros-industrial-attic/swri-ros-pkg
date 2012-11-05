@@ -45,12 +45,14 @@ int main(int argc, char** argv)
   //if(argc != 1)  //Only one argument, the robot IP address is accepted
   if (node.getParam("robot_ip_address", s))
   {
-    ROS_INFO("Motion download interface connecting to IP address: %s", s.c_str());
+    char* ip_addr = strdup(s.c_str());
+    ROS_INFO("Motion download interface connecting to IP address: %s", ip_addr);
 		
     industrial::tcp_client::TcpClient robot;
-
-    robot.init(s.c_str(), StandardSocketPorts::MOTION);
+    robot.init(ip_addr, StandardSocketPorts::MOTION);
     industrial_robot_client::joint_trajectory_downloader::JointTrajectoryDownloader jtHandler(node, &robot);
+
+	free(ip_addr);
 
     ros::spin();
   }
