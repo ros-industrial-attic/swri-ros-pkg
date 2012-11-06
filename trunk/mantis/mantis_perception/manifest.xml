@@ -17,8 +17,8 @@
   <depend package="pcl_ros"/>
   <depend package="tabletop_object_detector"/>
   <depend package="nrg_object_recognition"/>
-<!--  <depend package="object_manipulation_tools"/> 
-  <depend package="perception_tools"/>  -->
+  <depend package="object_manipulation_tools"/> 
+  <depend package="perception_tools"/>  
 
 </package>
 
