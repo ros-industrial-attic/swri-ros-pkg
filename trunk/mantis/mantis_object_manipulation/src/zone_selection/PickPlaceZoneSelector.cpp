@@ -16,13 +16,8 @@
 typedef pcl::PointCloud<pcl::PointXYZ> PclCloud;
 
 PickPlaceZoneSelector::PickPlaceZoneSelector()
-:pick_zone_index(0),
- place_zone_index(1),
- TabletopSegNamespace(TABLETOP_SEGMT_DEFAULT_NAMESPACE),
- TabletopSegXmaxName(TABLETOP_SEGMT_XMAX_NAME),
- TabletopSegXminName(TABLETOP_SEGMT_XMIN_NAME),
- TabletopSegYminName(TABLETOP_SEGMT_YMIN_NAME),
- TabletopSegYmaxName(TABLETOP_SEGMT_YMAX_NAME),
+:pick_zone_index_(0),
+ place_zone_index_(1),
  place_zone_()
 {
 	// TODO Auto-generated constructor stub
@@ -36,49 +31,15 @@ PickPlaceZoneSelector::~PickPlaceZoneSelector() {
 void PickPlaceZoneSelector::swapPickPlaceZones()
 {
 	// swapping zones
-	int current_pick_zone_index = pick_zone_index;
-	pick_zone_index = place_zone_index;
-	place_zone_index = current_pick_zone_index;
+	int current_pick_zone_index = pick_zone_index_;
+	pick_zone_index_ = place_zone_index_;
+	place_zone_index_ = current_pick_zone_index;
 
-	// resetting place location
-	place_zone_.resetZone(getPlaceZoneCenter());
-
-	// updating place zone radius
-	place_zone_.setZoneRadius(getPlaceZoneRadius());
+	// resetting place zone
+	place_zone_.resetZone(Zones[place_zone_index_]);
 
 	// updating tabletop segmentation bounds
 	//updateTabletopSegmentationBounds();
-}
-
-tf::Vector3 PickPlaceZoneSelector::getPlaceZoneCenter()
-{
-	ZoneBounds &placeZone = Zones[place_zone_index];
-	tf::Vector3 zoneCenter;
-	zoneCenter.setX(0.5f*(placeZone.XMax + placeZone.XMin));
-	zoneCenter.setY(0.5f*(placeZone.YMax + placeZone.YMin));
-	zoneCenter.setZ(0.0f);
-
-	return zoneCenter;
-}
-
-double PickPlaceZoneSelector::getPlaceZoneRadius()
-{
-	ZoneBounds &placeZone = Zones[place_zone_index];
-	double xSpan = std::abs(placeZone.XMax - placeZone.XMin);
-	double ySpan = std::abs(placeZone.YMax - placeZone.YMin);
-
-	return (xSpan > ySpan) ? (ySpan/2) : (xSpan/2);
-}
-
-tf::Vector3 PickPlaceZoneSelector::getPlaceZoneSize()
-{
-	ZoneBounds &placeZone = Zones[place_zone_index];
-	tf::Vector3 zoneSize;
-	zoneSize.setX(std::abs(placeZone.XMax - placeZone.XMin));
-	zoneSize.setY(std::abs(placeZone.YMax - placeZone.YMin));
-	zoneSize.setZ(0.0f);
-
-	return zoneSize;
 }
 
 bool PickPlaceZoneSelector::isInPickZone(const std::vector<sensor_msgs::PointCloud> &clusters,std::vector<int> &inZone)
@@ -114,7 +75,7 @@ bool PickPlaceZoneSelector::isInPickZone(const sensor_msgs::PointCloud &cluster)
 	clusterCentroid.x = centroid[0];
 	clusterCentroid.y = centroid[1];
 
-	ZoneBounds &pickZone = Zones[pick_zone_index];
+	ZoneBounds &pickZone = Zones[pick_zone_index_];
 
 	if(((pickZone.XMin > clusterCentroid.x) || (pickZone.XMax < clusterCentroid.x)) ||
 			((pickZone.YMin > clusterCentroid.y) || (pickZone.YMax < clusterCentroid.y)))
@@ -129,38 +90,17 @@ bool PickPlaceZoneSelector::isInPickZone(const sensor_msgs::PointCloud &cluster)
 //{
 //	ros::NodeHandle nh;
 //
-//	ZoneBounds &pickZoneBounds = Zones[pick_zone_index];
+//	ZoneBounds &pickZoneBounds = Zones[pick_zone_index_];
 //	ros::param::set(TabletopSegNamespace + "/" + TabletopSegXminName,pickZoneBounds.XMin);
 //	ros::param::set(TabletopSegNamespace + "/" + TabletopSegXmaxName,pickZoneBounds.XMax);
 //	ros::param::set(TabletopSegNamespace + "/" + TabletopSegYminName,pickZoneBounds.YMin);
 //	ros::param::set(TabletopSegNamespace + "/" + TabletopSegYmaxName,pickZoneBounds.YMax);
 //}
 
-void PickPlaceZoneSelector::zoneBoundsToMarker(const PickPlaceZoneSelector::ZoneBounds &bounds,visualization_msgs::Marker &marker)
-{
-	tf::Vector3 zoneSize;
-	zoneSize.setX(std::abs(bounds.XMax - bounds.XMin));
-	zoneSize.setY(std::abs(bounds.YMax - bounds.YMin));
-	zoneSize.setZ(0.0f);
-
-
-	//marker.header.frame_id = place_zone_.FrameId;
-	//marker.pose = place_zone_.getZoneCenterPose();
-	marker.type = visualization_msgs::Marker::CUBE;
-	marker.scale.x = zoneSize.x();
-	marker.scale.y = zoneSize.y();
-	marker.scale.z = 1;
-	marker.color.a = 1.0;
-	marker.color.r = 0.0;
-	marker.color.g = 1.0;
-	marker.color.b = 0.0;
-
-}
-
 void PickPlaceZoneSelector::getPickZoneMarker(visualization_msgs::Marker &marker)
 {
-	ZoneBounds &zone = Zones[pick_zone_index];
-	zoneBoundsToMarker(zone,marker);
+	ZoneBounds &zone = Zones[pick_zone_index_];
+	zone.getMarker(marker);
 
 	std_msgs::ColorRGBA color;
 	color.r = 1.0f;
@@ -169,10 +109,7 @@ void PickPlaceZoneSelector::getPickZoneMarker(visualization_msgs::Marker &marker
 	color.a = 0.4f;
 
 	// computing transform
-	tf::Vector3 center;
-	center.setX(std::abs(0.5f*(zone.XMax + zone.XMin)));
-	center.setY(std::abs(0.5f*(zone.YMax + zone.YMin)));
-	center.setZ(0.0f);
+	tf::Vector3 center = zone.getCenter();
 	tf::Quaternion q = tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),0.0f);
 	tf::Transform zoneTf = tf::Transform(q,center);
 	tf::poseTFToMsg(zoneTf,marker.pose);
@@ -184,8 +121,8 @@ void PickPlaceZoneSelector::getPickZoneMarker(visualization_msgs::Marker &marker
 
 void PickPlaceZoneSelector::getPlaceZoneMarker(visualization_msgs::Marker &marker)
 {
-	ZoneBounds &zone = Zones[place_zone_index];
-	zoneBoundsToMarker(zone,marker);
+	ZoneBounds &zone = Zones[place_zone_index_];
+	zone.getMarker(marker);
 
 	std_msgs::ColorRGBA color;
 	color.r = 72.0f/255.0f;
@@ -207,17 +144,14 @@ void PickPlaceZoneSelector::getPlaceZoneMarker(visualization_msgs::Marker &marke
 void PickPlaceZoneSelector::PlaceZone::resetZone(const PickPlaceZoneSelector::ZoneBounds &bounds)
 {
 	place_zone_bounds_ = bounds;
+	objects_in_zone_.clear();
 }
 
-void PickPlaceZoneSelector::PlaceZone::setGraspObjectSize(const tf::Vector3 &size)
+void PickPlaceZoneSelector::PlaceZone::setNextObjectDetails(const PickPlaceZoneSelector::ObjectDetails &objDetails)
 {
-	grasped_object_size_ = size;
+	next_object_details_ = objDetails;
 }
 
-//void PickPlaceZoneSelector::PlaceZone::setZoneRadius(double radius)
-//{
-//	place_zone_radius_ = radius;
-//}
 
 bool PickPlaceZoneSelector::PlaceZone::generateNextLocationCandidates(std::vector<geometry_msgs::PoseStamped> &placePoses)
 {
@@ -225,15 +159,15 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextLocationCandidates(std::vecto
 
 	switch(GenerationMode)
 	{
-	case PickPlaceZoneSelector::PlaceZone::NextPoseGenerationMode::RANDOM:
+	case PickPlaceZoneSelector::PlaceZone::RANDOM:
 
 		success = generateNextPlacePoseInRandomizedMode(placePoses);
 		break;
 
-	case PickPlaceZoneSelector::PlaceZone::NextPoseGenerationMode::DESIGNATED_ZIGZAG:
+	case PickPlaceZoneSelector::PlaceZone::DESIGNATED_ZIGZAG:
 
 		success = generateNextPlacePoseInDesignatedEvenOddMode(placePoses);
-		break
+		break;
 
 	default:
 
@@ -267,7 +201,7 @@ geometry_msgs::Pose PickPlaceZoneSelector::PlaceZone::getZoneCenterPose()
 {
 	geometry_msgs::Pose pose;
 	tf::Quaternion rot = tf::Quaternion(Axis,0.0f);
-	tf::Vector3 pos = tf::Vector3(place_zone_center_.x(),place_zone_center_.y(),0.0f);
+	tf::Vector3 pos = place_zone_bounds_.getCenter();
 	tf::poseTFToMsg(tf::Transform(rot,pos),pose);
 	return pose;
 }
@@ -350,10 +284,10 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInRandomizedMode(std
 			// checking for overlaps against objects already in place region
 			bool overlapFound = false;
 
-			typedef  const std::vector<ObjectDetails>::iterator ConstIter;
-			for(ConstIter iter = objects_in_zone_.begin(); iter != objects_in_zone_.end(); iter++)
+			typedef std::vector<ObjectDetails>::iterator IterType;
+			for(IterType it = objects_in_zone_.begin();it != objects_in_zone_.end(); it++)
 			{
-				ZoneBounds objInZoneBounds(iter->Size,iter->Trans.getOrigin());
+				ZoneBounds objInZoneBounds(it->Size,it->Trans.getOrigin());
 				if(ZoneBounds::intersect(nextObjectBounds,objInZoneBounds))
 				{
 					overlapFound = true;
@@ -366,7 +300,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInRandomizedMode(std
 				continue; // try again
 			}
 
-			double distFromCenter = (place_zone_bounds_.getCenter() - nextTf.getOrigin()).distance();
+			double distFromCenter = (place_zone_bounds_.getCenter() - nextTf.getOrigin()).length();
 			ROS_INFO_STREAM(ros::this_node::getName()<<": Found available position at a distance of "<< distFromCenter
 					<<" from the center after "<<iter<<" iterations");
 
@@ -422,7 +356,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInDesignatedEvenOddM
 
 	// checking if overlaps with objects in place zone
 	bool overlapFound = false;
-	typedef  const std::vector<ObjectDetails>::iterator ConstIter;
+	typedef std::vector<ObjectDetails>::iterator ConstIter;
 	for(ConstIter iter = objects_in_zone_.begin(); iter != objects_in_zone_.end(); iter++)
 	{
 		ZoneBounds objInZoneBounds(iter->Size,iter->Trans.getOrigin());
@@ -439,7 +373,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInDesignatedEvenOddM
 	}
 
 	// passed all intersection test
-	double distFromCenter = (place_zone_bounds_.getCenter() - nextTf.getOrigin()).distance();
+	double distFromCenter = (place_zone_bounds_.getCenter() - nextTf.getOrigin()).length();
 	ROS_INFO_STREAM(ros::this_node::getName()<<": Found available position for Id: "<<next_object_details_.Id);
 
 	// adjusting place point to object height
