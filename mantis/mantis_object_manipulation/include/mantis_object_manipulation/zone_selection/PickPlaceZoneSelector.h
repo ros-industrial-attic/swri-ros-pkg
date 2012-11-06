@@ -28,20 +28,134 @@ class PickPlaceZoneSelector
 {
 public:
 
+	struct ZoneBounds
+	{
+	public:
+
+		ZoneBounds(){}
+		ZoneBounds(tf::Vector3 size, tf::Vector3 pos)
+		{
+			tf::Vector3 topLeft = tf::Transform(tf::Quaternion::getIdentity(),
+					pos)*tf::Vector3(size.x()/2.0f,size.y()/2.0f,0.0f);
+			XMax = topLeft.x();
+			XMin = topLeft.x() - size.x();
+			YMax = topLeft.y();
+			YMin = topLeft.y() - size.y();
+
+		}
+
+		double XMin;
+		double XMax;
+		double YMin;
+		double YMax;
+		std::string ZoneName;
+
+		tf::Vector3 getSize()
+		{
+			return tf::Vector3(std::abs(XMax - XMin),std::abs(YMax - YMin),0.0f);
+		}
+
+		tf::Vector3 getCenter()
+		{
+			tf::Vector3 size = getSize();
+			return tf::Vector3(XMin + size.x()/2.0f,YMin + size.y()/2.0f,0.0f);
+		}
+
+		double getBoundingRadius()
+		{
+			tf::Vector3 size = getSize();
+			return 	std::sqrt(std::pow(size.x()/2.0f,2.0f) + std::pow(size.y()/2.0f,2.0f));
+		}
+
+		static bool intersect(const ZoneBounds& zone1, const ZoneBounds& zone2)
+		{
+			// sizes
+			tf::Vector3 z1Size = zone1.getSize();
+			tf::Vector3 z2Size = zone2.getSize();
+
+			// centers
+			tf::Vector3 z1Center = zone1.getCenter();
+			tf::Vector3 z2Center = zone2.getCenter();
+
+			double xIntersectDist = std::abs(z1Size.x() + z2Size.x())/2.0f;
+			double yIntersectDist = std::abs(z1Size.y() + z2Size.y())/2.0f;
+
+			tf::Vector3 dist= z1Center - z2Center;
+			return (std::abs(dist.x()) < xIntersectDist) && (std::abs(dist.y()) < yIntersectDist);
+		}
+
+		static bool boundingCirclesIntersect(const ZoneBounds& z1, const ZoneBounds& z2)
+		{
+			double sumRadius = z1.getBoundingRadius() + z2.getBoundingRadius();
+			double distance = (z1.getCenter() - z2.getCenter()).distance();
+
+			return distance < sumRadius;
+		}
+
+		static bool contains(const ZoneBounds& outer, const ZoneBounds& inner)
+		{
+			// checking sizes first
+			tf::Vector3 bigBoxSize = outer.getSize();
+			tf::Vector3 smallBoxSize = inner.getSize();
+
+			if( (bigBoxSize.x() < smallBoxSize.x()) || ( bigBoxSize.y() < smallBoxSize.y()) )
+			{
+				return false;
+			}
+
+			// centers
+			tf::Vector3 bigBoxCenter = outer.getCenter();
+			tf::Vector3 smallBoxCenter = inner.getCenter();
+
+			tf::Vector3 containDist = bigBoxSize - smallBoxSize;
+			tf::Vector3 dist = bigBoxCenter - smallBoxCenter;
+
+			return (std::abs(dist.x()) < containDist.x()) && ( std::abs(dist.y()) < containDist.y() );
+		}
+
+	};
+
+	struct ObjectDetails
+	{
+		ObjectDetails(){}
+		ObjectDetails(const tf::Transform &trans, const tf::Vector3 &size, int id = 0,std::string tag = "")
+		:Trans(trans),
+		 Size(size),
+		 Id(id),
+		 Tag(tag)
+		{
+
+		}
+
+
+		tf::Transform Trans;
+		tf::Vector3 Size;
+		int Id;
+		std::string Tag;
+	};
+
 	struct PlaceZone
 	{
+
+	public:
+		enum NextPoseGenerationMode
+		{
+			RANDOM = 0,
+			DESIGNATED_ZIGZAG = 1
+		};
+
 	public:
 		PlaceZone()
 		:FrameId("base_link"),
 		 NumGoalCandidates(8),
 		 Axis(0,0,1.0f),
 		 ReleaseDistanceFromTable(0.02),// 2cm
+		 GenerationMode(0),
 		 MinObjectSpacing(0.05f),
 		 MaxObjectSpacing(0.08f),
 		 place_zone_center_(0.0f,0.0f,0.0f),
 		 place_zone_radius_(0.20f),
-		 bodies_in_zone_(),
-		 grasped_object_size_(0.05,0.05f,0.05f)
+		 objects_in_zone_()
 		{
 			srand(time(NULL));
 		}
@@ -73,15 +187,18 @@ public:
 			ros::param::param(nameSpace + "/release_distance",ReleaseDistanceFromTable,ReleaseDistanceFromTable);
 
 			// next goal location generation parameters
+			ros::param::param(nameSpace + "/next_location/generation_mode",GenerationMode,GenerationMode);
 			ros::param::param(nameSpace + "/next_location/min_spacing",MinObjectSpacing,MinObjectSpacing);
 			ros::param::param(nameSpace + "/next_location/max_spacing",MaxObjectSpacing,MaxObjectSpacing);
 			//ros::param::param(nameSpace + "/next_location/place_region_radius",PlaceZoneRadius,PlaceZoneRadius);
 		}
 
 		void setGraspObjectSize(const tf::Vector3 &size);
-		void setZoneRadius(double radius);
+		void setNextObjectDetails();
+		//void setZoneRadius(double radius);
 		bool generateNextLocationCandidates(std::vector<geometry_msgs::PoseStamped> &placePoses);
-		void resetZone(const tf::Vector3 &zoneCenter); // clears occupied locations and sets new zone center
+		//void resetZone(const tf::Vector3 &zoneCenter); // clears occupied locations and sets new zone center
+		void resetZone(const ZoneBounds& bounds); // clears occupied location and sets new zone
 
 		geometry_msgs::Pose getZoneCenterPose();
 
@@ -95,6 +212,7 @@ public:
 		double ReleaseDistanceFromTable; // how far from the surface the lowest part of the object should be when released
 
 		// Next goal position generation
+		int GenerationMode;
 		double MinObjectSpacing; // minimum distance between two objects inside goal region as measured from their local origins
 		double MaxObjectSpacing; // maximum distance between two objects inside goal region as measured from their local origin
 
@@ -103,24 +221,16 @@ public:
 		void createPlaceCandidatePosesByRotation(const tf::Transform &startTrans,int numCandidates,tf::Vector3 axis,
 						std::vector<geometry_msgs::PoseStamped> &candidatePoses);
 
-		bool generateNextPlacePosesInShuffleMode(std::vector<geometry_msgs::PoseStamped> &placePoses);
+		bool generateNextPlacePoseInRandomizedMode(std::vector<geometry_msgs::PoseStamped> &placePoses);
+		bool generateNextPlacePoseInDesignatedEvenOddMode(std::vector<geometry_msgs::PoseStamped> &placePoses)
 
-		tf::Vector3 place_zone_center_; // used as the center of place zone.  Only the x and y values are used
-		double place_zone_radius_;// radius of circular region that contains all placed objects
-		std::vector<tf::Transform> bodies_in_zone_;
-		tf::Vector3 grasped_object_size_;
+		//tf::Vector3 place_zone_center_; // used as the center of place zone.  Only the x and y values are used
+		//double place_zone_radius_;// radius of circular region that contains all placed objects
+		ZoneBounds place_zone_bounds_
+		std::vector<ObjectDetails> objects_in_zone_; // array of transforms and size for each object in zone
+		//tf::Vector3 grasped_object_size_;
+		ObjectDetails next_object_details_;
 
-	};
-
-	struct ZoneBounds
-	{
-	public:
-
-		double XMin;
-		double XMax;
-		double YMin;
-		double YMax;
-		std::string ZoneName;
 	};
 
 public:
@@ -221,7 +331,7 @@ public:
 
 protected:
 
-	void updateTabletopSegmentationBounds(); // updates tabletop segmentation parameters used by the segmentation service
+	//void updateTabletopSegmentationBounds(); // updates tabletop segmentation parameters used by the segmentation service
 
 	int pick_zone_index; // index to current pick zone in array "Zones"
 	int place_zone_index;// index to current place zone in array "Zones"

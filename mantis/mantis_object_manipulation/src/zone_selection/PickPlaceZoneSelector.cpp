@@ -125,16 +125,16 @@ bool PickPlaceZoneSelector::isInPickZone(const sensor_msgs::PointCloud &cluster)
 	return true;
 }
 
-void PickPlaceZoneSelector::updateTabletopSegmentationBounds()
-{
-	ros::NodeHandle nh;
-
-	ZoneBounds &pickZoneBounds = Zones[pick_zone_index];
-	ros::param::set(TabletopSegNamespace + "/" + TabletopSegXminName,pickZoneBounds.XMin);
-	ros::param::set(TabletopSegNamespace + "/" + TabletopSegXmaxName,pickZoneBounds.XMax);
-	ros::param::set(TabletopSegNamespace + "/" + TabletopSegYminName,pickZoneBounds.YMin);
-	ros::param::set(TabletopSegNamespace + "/" + TabletopSegYmaxName,pickZoneBounds.YMax);
-}
+//void PickPlaceZoneSelector::updateTabletopSegmentationBounds()
+//{
+//	ros::NodeHandle nh;
+//
+//	ZoneBounds &pickZoneBounds = Zones[pick_zone_index];
+//	ros::param::set(TabletopSegNamespace + "/" + TabletopSegXminName,pickZoneBounds.XMin);
+//	ros::param::set(TabletopSegNamespace + "/" + TabletopSegXmaxName,pickZoneBounds.XMax);
+//	ros::param::set(TabletopSegNamespace + "/" + TabletopSegYminName,pickZoneBounds.YMin);
+//	ros::param::set(TabletopSegNamespace + "/" + TabletopSegYmaxName,pickZoneBounds.YMax);
+//}
 
 void PickPlaceZoneSelector::zoneBoundsToMarker(const PickPlaceZoneSelector::ZoneBounds &bounds,visualization_msgs::Marker &marker)
 {
@@ -198,10 +198,15 @@ void PickPlaceZoneSelector::getPlaceZoneMarker(visualization_msgs::Marker &marke
 	marker.pose = place_zone_.getZoneCenterPose();
 }
 
-void PickPlaceZoneSelector::PlaceZone::resetZone(const tf::Vector3 &zoneCenter)
+//void PickPlaceZoneSelector::PlaceZone::resetZone(const tf::Vector3 &zoneCenter)
+//{
+//	place_zone_center_ = zoneCenter;
+//	objects_in_zone_.clear();
+//}
+
+void PickPlaceZoneSelector::PlaceZone::resetZone(const PickPlaceZoneSelector::ZoneBounds &bounds)
 {
-	place_zone_center_ = zoneCenter;
-	bodies_in_zone_.clear();
+	place_zone_bounds_ = bounds;
 }
 
 void PickPlaceZoneSelector::PlaceZone::setGraspObjectSize(const tf::Vector3 &size)
@@ -209,14 +214,34 @@ void PickPlaceZoneSelector::PlaceZone::setGraspObjectSize(const tf::Vector3 &siz
 	grasped_object_size_ = size;
 }
 
-void PickPlaceZoneSelector::PlaceZone::setZoneRadius(double radius)
-{
-	place_zone_radius_ = radius;
-}
+//void PickPlaceZoneSelector::PlaceZone::setZoneRadius(double radius)
+//{
+//	place_zone_radius_ = radius;
+//}
 
 bool PickPlaceZoneSelector::PlaceZone::generateNextLocationCandidates(std::vector<geometry_msgs::PoseStamped> &placePoses)
 {
-	return generateNextPlacePosesInShuffleMode(placePoses);
+	bool success = false;
+
+	switch(GenerationMode)
+	{
+	case PickPlaceZoneSelector::PlaceZone::NextPoseGenerationMode::RANDOM:
+
+		success = generateNextPlacePoseInRandomizedMode(placePoses);
+		break;
+
+	case PickPlaceZoneSelector::PlaceZone::NextPoseGenerationMode::DESIGNATED_ZIGZAG:
+
+		success = generateNextPlacePoseInDesignatedEvenOddMode(placePoses);
+		break
+
+	default:
+
+		success = generateNextPlacePoseInDesignatedEvenOddMode(placePoses);
+		break;
+	}
+
+	return success;
 }
 
 void PickPlaceZoneSelector::PlaceZone::createPlaceCandidatePosesByRotation(const tf::Transform &startTrans,
@@ -247,37 +272,50 @@ geometry_msgs::Pose PickPlaceZoneSelector::PlaceZone::getZoneCenterPose()
 	return pose;
 }
 
-bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePosesInShuffleMode(std::vector<geometry_msgs::PoseStamped> &placePoses)
+bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInRandomizedMode(std::vector<geometry_msgs::PoseStamped> &placePoses)
 {
 	// previos pose
-	tf::Transform &lastTf = bodies_in_zone_.back();
+	tf::Transform &lastTf = objects_in_zone_.back().Trans;
 
 	// returned bool
 	bool foundNewPlaceLocation = false;
 
+	// place zone details
+	tf::Vector3 placeZoneCenter = place_zone_bounds_.getCenter();
+
+	// next object details
+	ZoneBounds nextObjectBounds = ZoneBounds(next_object_details_.Size,next_object_details_.Trans.getOrigin());
+
 	// next pose
 	tf::Transform nextTf;
-	if(bodies_in_zone_.size() == 0)
+	if(objects_in_zone_.size() == 0)
 	{
 		tf::Quaternion rot = tf::Quaternion(Axis,0.0f);
 		// the z component equals the height of the object plus the requested release distance
-		tf::Vector3 pos = tf::Vector3(place_zone_center_.x(),place_zone_center_.y(),grasped_object_size_.z() + ReleaseDistanceFromTable);
+
+		tf::Vector3 pos = tf::Vector3(placeZoneCenter.x(),
+				placeZoneCenter.y(),next_object_details_.Size.z() + ReleaseDistanceFromTable);
 		nextTf = tf::Transform(rot,pos);
 		foundNewPlaceLocation = true;
 	}
 	else
 	{
-		nextTf = tf::Transform(bodies_in_zone_.back());
+		nextTf = tf::Transform(objects_in_zone_.back().Trans);
+
+		// last object details
+		ZoneBounds lastObjectBounds(objects_in_zone_.back().Size,objects_in_zone_.back().Trans.getOrigin());
+		// sum of the bounding radius of the next and last objects
+		double radialDistance = nextObjectBounds.getBoundingRadius() + lastObjectBounds.getBoundingRadius();
 
 		// new location variables
 		int distanceSegments = 20; // number of possible values between min and max object spacing
 		int angleSegments = 8; // number of possible values between 0 and 2pi
 		int randVal;
-		double distance;// meters
+		double distance; // number between Max and Min Object spacing parameters.  Should be larger than radial distance (meters)
 		double angle,angleMin = 0,angleMax = 2*M_PI; // radians
 		double ratio;
 
-		// creating new location relative to the last one
+		// creating new location relative to the last object
 		int maxIterations = 200;
 		int iter = 0;
 		while(iter < maxIterations)
@@ -288,6 +326,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePosesInShuffleMode(std::
 			randVal = rand()%distanceSegments + 1;
 			ratio = (double)randVal/(double)distanceSegments;
 			distance = MinObjectSpacing + ratio*(MaxObjectSpacing - MinObjectSpacing);
+			distance = (distance > radialDistance ? distance : radialDistance);// choosing largest between distance and radial distance
 			tf::Vector3 trans = tf::Vector3(distance,0.0f,0.0f);
 
 			// computing angle
@@ -299,20 +338,23 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePosesInShuffleMode(std::
 			// computing next pose by rotating and translating from last pose
 			nextTf = lastTf * tf::Transform(quat,tf::Vector3(0.0f,0.0f,0.0f))*tf::Transform(tf::Quaternion::getIdentity(),trans);
 
+			// updating next object bounds to new candidate location
+			nextObjectBounds = ZoneBounds(next_object_details_.Size,nextTf.getOrigin());
+
 			// checking if located inside place region
-			double distFromCenter = (nextTf.getOrigin() - place_zone_center_).length();
-			if((distFromCenter + MinObjectSpacing/2) > place_zone_radius_) // falls outside place region, try another
+			if(!ZoneBounds::contains(place_zone_bounds_,nextObjectBounds))
 			{
 				continue;
 			}
 
 			// checking for overlaps against objects already in place region
-			double distFromObj;
 			bool overlapFound = false;
-			BOOST_FOREACH(tf::Transform objTf,bodies_in_zone_)
+
+			typedef  const std::vector<ObjectDetails>::iterator ConstIter;
+			for(ConstIter iter = objects_in_zone_.begin(); iter != objects_in_zone_.end(); iter++)
 			{
-				distFromObj = (objTf.getOrigin() - nextTf.getOrigin()).length();
-				if(distFromObj < MinObjectSpacing)// overlap found, try another
+				ZoneBounds objInZoneBounds(iter->Size,iter->Trans.getOrigin());
+				if(ZoneBounds::intersect(nextObjectBounds,objInZoneBounds))
 				{
 					overlapFound = true;
 					break;
@@ -324,11 +366,12 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePosesInShuffleMode(std::
 				continue; // try again
 			}
 
+			double distFromCenter = (place_zone_bounds_.getCenter() - nextTf.getOrigin()).distance();
 			ROS_INFO_STREAM(ros::this_node::getName()<<": Found available position at a distance of "<< distFromCenter
 					<<" from the center after "<<iter<<" iterations");
 
 			// adjusting place point to object height
-			nextTf.getOrigin().setZ(grasped_object_size_.z() + ReleaseDistanceFromTable);
+			nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
 			foundNewPlaceLocation = true;
 			break;
 		}
@@ -342,10 +385,73 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePosesInShuffleMode(std::
 
 	// generating candidate poses from next location found
 	createPlaceCandidatePosesByRotation(nextTf,NumGoalCandidates,Axis,placePoses);
-	// storing next location
-	bodies_in_zone_.push_back(nextTf);
+
+	// storing object
+	next_object_details_.Trans = nextTf;
+	objects_in_zone_.push_back(next_object_details_);
 
 	return foundNewPlaceLocation;
 }
 
+bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInDesignatedEvenOddMode(std::vector<geometry_msgs::PoseStamped> &placePoses)
+{
+	// next object details
+	ZoneBounds nextObjectBounds;;
+	double nextIndex = (double)next_object_details_.Id;
+
+	// will use next object id (even or odd) to determine its location
+	tf::Transform nextTf = tf::Transform::getIdentity();
+
+	/* will use evenness of next object index to compute a new location relative to the top left corner of the place zone.
+	 * Odds go to the top and evens at the bottom (top view of table)
+	 */
+	double xCoor = (place_zone_bounds_.XMin + MinObjectSpacing/2.0f) + ((int)std::ceil(nextIndex/2.0f) - 1)*MinObjectSpacing;
+	double yCoor = (((int)nextIndex%2) == 0) ? (place_zone_bounds_.YMin + MinObjectSpacing/2.0f) : (place_zone_bounds_.YMax - MinObjectSpacing/2.0f);
+
+	// computing next candidate transform
+	nextTf.setOrigin(tf::Vector3(xCoor,yCoor,0.0f));
+
+	// updating next object bounds
+	nextObjectBounds = ZoneBounds(next_object_details_.Size,nextTf.getOrigin());
+
+	// checking if it is within place zone
+	if(!ZoneBounds::contains(place_zone_bounds_,nextObjectBounds))
+	{
+		return false;
+	}
+
+	// checking if overlaps with objects in place zone
+	bool overlapFound = false;
+	typedef  const std::vector<ObjectDetails>::iterator ConstIter;
+	for(ConstIter iter = objects_in_zone_.begin(); iter != objects_in_zone_.end(); iter++)
+	{
+		ZoneBounds objInZoneBounds(iter->Size,iter->Trans.getOrigin());
+		if(ZoneBounds::intersect(nextObjectBounds,objInZoneBounds))
+		{
+			overlapFound = true;
+			break;
+		}
+	}
+
+	if(overlapFound)
+	{
+		return false;
+	}
+
+	// passed all intersection test
+	double distFromCenter = (place_zone_bounds_.getCenter() - nextTf.getOrigin()).distance();
+	ROS_INFO_STREAM(ros::this_node::getName()<<": Found available position for Id: "<<next_object_details_.Id);
+
+	// adjusting place point to object height
+	nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
+
+	// generating candidate poses from next location found
+	createPlaceCandidatePosesByRotation(nextTf,NumGoalCandidates,Axis,placePoses);
+
+	// storing object
+	next_object_details_.Trans = nextTf;
+	objects_in_zone_.push_back(next_object_details_);
+
+	return true;
+}
 
