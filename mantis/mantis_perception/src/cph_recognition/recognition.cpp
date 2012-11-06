@@ -8,6 +8,7 @@
 #include <pcl/console/parse.h>
 #include <pcl/console/print.h>
 #include <pcl/io/pcd_io.h>
+#include <sensor_msgs/point_cloud_conversion.h>
 
 #include <iostream>
 #include <fstream>
@@ -19,24 +20,21 @@
 
 #include "cph.h"
 #include "mantis_perception/mantis_recognition.h"
-#include "nrg_object_recognition/run_data.h"
 #include "nrg_object_recognition/recognition.h"
-#include "nrg_object_recognition/segmentation.h"
+#include "tabletop_object_detector/Table.h"
 
-float subtract_angle(float angle_1, float angle_2);
+//float subtract_angle(float angle_1, float angle_2);
 
-ros::ServiceClient cph_client, seg_client;
-std::vector<std::vector<float> > probTable;
-std::map<std::string, int> classMap;
-std::vector<float> pose_dev;
-int k;
+ros::ServiceClient cph_client;//, seg_client;
 
-ros::Publisher pan_pub;
+
+
+//ros::Publisher pan_pub;
 ros::Publisher rec_pub;
-sensor_msgs::PointCloud2 cloud_to_process;
+//sensor_msgs::PointCloud2 cloud_to_process;
 
 
-float subtract_angle(float angle_1, float angle_2){
+/*float subtract_angle(float angle_1, float angle_2){
  if(angle_1-angle_2 > -180 && angle_1-angle_2 < 180)
    return(angle_1-angle_2);
  else if(angle_1-angle_2 < -180)
@@ -49,18 +47,39 @@ void kinect_cb(sensor_msgs::PointCloud2 fromKinect)
 {
 cloud_to_process = fromKinect;
 }
-
+*/
 bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
             mantis_perception::mantis_recognition::Response &main_response)
 {  
-  std_msgs::UInt16 command;
+
+
+  nrg_object_recognition::recognition rec_srv;
+
+
+  sensor_msgs::PointCloud2 cluster;
+  sensor_msgs::PointCloud received_cluster;
+  received_cluster=main_request.clusters.at(0);
+  sensor_msgs::convertPointCloudToPointCloud2(received_cluster, cluster);
+
+  rec_srv.request.cluster = cluster;
+  rec_srv.request.threshold = 10000;
+
+  main_response.label = rec_srv.response.label;
+  main_response.pose = rec_srv.response.pose;
+  main_response.model_id=0;
+
+
+  ROS_INFO("Model label: %s", main_response.label.c_str());
+  ROS_INFO("Model label: %d", main_response.model_id);
+
+  /*std_msgs::UInt16 command;
   command.data = 0;
-  /*ros::Rate loop_rate(.1);
+  ros::Rate loop_rate(.1);
   
   pan_pub.publish(command);
   loop_rate.sleep();
-  */
   
+
   std::string objectName = main_request.object_name;
   std::vector<float> pcc_row(k,0); //will hold class conditional probabilities. P(c|testObject)
   std::vector<float> filtered_result(k,0); //holds filtered result.
@@ -72,7 +91,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   float angle=0, pose_err = 0, cum_err=0, filtered_pose_err=0, cum_filt_dev=0;
   
   std::cout << "test running...\n"; 
-  //For each view - begin image iterator (we were setting num_images to 100)
+  //For each view - begin image iterator
   for(unsigned int i=0; i<main_request.num_images; i++)
     {
     //Set up probabilistic filters:
@@ -98,14 +117,14 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     for(unsigned int j=0; j<main_request.num_samples; j++)
     {
       
-      /*//Call segmentation service...
+      //Call segmentation service...
       std::cout << "time stamp of cloud being processed: " << cloud_to_process.header.stamp << std::endl;
       seg_srv.request.scene = cloud_to_process;
       seg_srv.request.min_x = -.75, seg_srv.request.max_x = .5;
       seg_srv.request.min_y = -.10, seg_srv.request.max_y = 1.0;
       seg_srv.request.min_z = 0.0, seg_srv.request.max_z = 1.3;
       seg_client.call(seg_srv);
-      rec_srv.request.cluster = seg_srv.response.clusters.at(0);*/
+      rec_srv.request.cluster = seg_srv.response.clusters.at(0);
 	
       //could iterate through all clusters here in future app.
       rec_srv.request.cluster =main_request.clusters[0];
@@ -116,14 +135,16 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 
       num_objects++;
 	
-      //Increment appropriate row.
+      //Increment appropriate row/object
       z = classMap[rec_srv.response.label];
       pcc_row.at(z)++;
 	
       //compute error in pose estimate, and accumulate squared error.
-      angle = command.data; //angle is ground truth angle
+      angle = 0; //angle is ground truth angle
 
-      translation(0) = rec_srv.response.pose.x; translation(1) = rec_srv.response.pose.y; translation(2) = rec_srv.response.pose.z;
+      translation(0) = rec_srv.response.pose.x;
+      translation(1) = rec_srv.response.pose.y;
+      translation(2) = rec_srv.response.pose.z;
       pose_err = subtract_angle(angle, pose(3));
       //std::cout << pose_err << std::endl;
       cum_err += pow(pose_err, 2);
@@ -213,9 +234,9 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     // std::cout << "tested " << num_objects << " cases...\n";
       
       
-    /*command.data += 360/main_request.num_images;
+    command.data += 360/main_request.num_images;
     pan_pub.publish(command);
-    loop_rate.sleep();*/
+    loop_rate.sleep();
   }//end image iterator
 
   std::cout << "done.\n";
@@ -239,9 +260,8 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   main_response.prob_dist = pcc_row;
   main_response.sigma_filtered = pow(main_request.num_samples*cum_filt_dev/num_objects,.5);
   main_response.filt_dist = filtered_result;
-  main_response.label = rec_srv.response.label;
-  main_response.pose = rec_srv.response.pose;
- 
+
+ */
   return(1);
 }
 
@@ -249,21 +269,23 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 int main(int argc, char **argv)
 {
   
-  ros::init(argc, argv, "main_dataset_node");
+  ros::init(argc, argv, "mantis_object_recognition");
   ros::NodeHandle n;  
   
   ros::ServiceServer rec_serv = n.advertiseService("/recognition_service", rec_cb);
   cph_client = n.serviceClient<nrg_object_recognition::recognition>("cph_recognition");
-  seg_client = n.serviceClient<nrg_object_recognition::segmentation>("segmentation");
-  ros::Subscriber kin_sub = n.subscribe("/camera/depth_registered/points", 1, kinect_cb);
+  //seg_client = n.serviceClient<nrg_object_recognition::segmentation>("segmentation");
+  //ros::Subscriber kin_sub = n.subscribe("/camera/depth_registered/points", 1, kinect_cb);
   //pan_pub = n.advertise<std_msgs::UInt16>("/pan_command",1);
   rec_pub = n.advertise<sensor_msgs::PointCloud2>("/recognition_result",1);
   
-  
+  std::vector<std::vector<float> > probTable;
+  std::map<std::string, int> classMap;
+  std::vector<float> pose_dev;
   std::ifstream objectListFile;
   objectListFile.open("classes.list", std::ios::in);
   std::string tempName, objectLine;
-  k = 0;
+  int k = 0;
   std::vector<float> probRow;
   
   
@@ -293,10 +315,9 @@ int main(int argc, char **argv)
    }
    std::cout << std::endl;
   }
-  
   std::cout << probTable.size() << " objects in set.\n";
   
-  ROS_INFO("main_dataset_node ready!");
+  ROS_INFO("mantis object detection/recognition node ready!");
   
   ros::spin(); 
 }
