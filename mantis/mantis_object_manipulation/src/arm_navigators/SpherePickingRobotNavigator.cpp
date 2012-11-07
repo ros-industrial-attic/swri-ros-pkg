@@ -258,9 +258,10 @@ bool SpherePickingRobotNavigator::performSegmentation()
 
 bool SpherePickingRobotNavigator::moveArmToSide()
 {
-
+	updateChangesToPlanningScene();
     _JointConfigurations.fetchParameters(JOINT_CONFIGURATIONS_NAMESPACE);
-    return updateChangesToPlanningScene() || moveArm(arm_group_name_,_JointConfigurations.SideAngles);
+    return  moveArm(arm_group_name_,_JointConfigurations.SideAngles);
+
 }
 
 bool SpherePickingRobotNavigator::createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses)

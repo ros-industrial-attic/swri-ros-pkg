@@ -164,14 +164,18 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextLocationCandidates(std::vecto
 		success = generateNextPlacePoseInRandomizedMode(placePoses);
 		break;
 
-	case PickPlaceZoneSelector::PlaceZone::DESIGNATED_ZIGZAG:
+	case PickPlaceZoneSelector::PlaceZone::DESIGNATED_ZIGZAG_ALONG_X:
 
-		success = generateNextPlacePoseInDesignatedEvenOddMode(placePoses);
+		success = generateNextPlacePoseInDesignatedZigZagXMode(placePoses);
+		break;
+
+	case PickPlaceZoneSelector::PlaceZone::DESIGNATED_ZIGZAG_ALONG_Y:
+		success = generateNextPlacePoseInDesignatedZigZagYMode(placePoses);
 		break;
 
 	default:
 
-		success = generateNextPlacePoseInDesignatedEvenOddMode(placePoses);
+		success = generateNextPlacePoseInDesignatedZigZagXMode(placePoses);
 		break;
 	}
 
@@ -327,7 +331,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInRandomizedMode(std
 	return foundNewPlaceLocation;
 }
 
-bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInDesignatedEvenOddMode(std::vector<geometry_msgs::PoseStamped> &placePoses)
+bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInDesignatedZigZagXMode(std::vector<geometry_msgs::PoseStamped> &placePoses)
 {
 	// next object details
 	ZoneBounds nextObjectBounds;;
@@ -342,6 +346,68 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInDesignatedEvenOddM
 	double xCoor = (place_zone_bounds_.XMin + MinObjectSpacing/2.0f) + ((int)std::ceil(nextIndex/2.0f) - 1)*MinObjectSpacing;
 	//double yCoor = (((int)nextIndex%2) == 0) ? (place_zone_bounds_.YMin + MinObjectSpacing/2.0f) : (place_zone_bounds_.YMax - MinObjectSpacing/2.0f);
 	double yCoor = (((int)nextIndex%2) == 0) ? (place_zone_bounds_.YMin + MinObjectSpacing/2.0f) : (place_zone_bounds_.YMax - MinObjectSpacing/2.0f);
+
+	// computing next candidate transform
+	nextTf.setOrigin(tf::Vector3(xCoor,yCoor,0.0f));
+
+	// updating next object bounds
+	nextObjectBounds = ZoneBounds(next_object_details_.Size,nextTf.getOrigin());
+
+	// checking if it is within place zone
+	if(!ZoneBounds::contains(place_zone_bounds_,nextObjectBounds))
+	{
+		return false;
+	}
+
+	// checking if overlaps with objects in place zone
+	bool overlapFound = false;
+	typedef std::vector<ObjectDetails>::iterator ConstIter;
+	for(ConstIter iter = objects_in_zone_.begin(); iter != objects_in_zone_.end(); iter++)
+	{
+		ZoneBounds objInZoneBounds(iter->Size,iter->Trans.getOrigin());
+		if(ZoneBounds::intersect(nextObjectBounds,objInZoneBounds))
+		{
+			overlapFound = true;
+			break;
+		}
+	}
+
+	if(overlapFound)
+	{
+		return false;
+	}
+
+	// passed all intersection test
+	double distFromCenter = (place_zone_bounds_.getCenter() - nextTf.getOrigin()).length();
+	ROS_INFO_STREAM(ros::this_node::getName()<<": Found available position for Id: "<<next_object_details_.Id);
+
+	// adjusting place point to object height
+	nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
+
+	// generating candidate poses from next location found
+	createPlaceCandidatePosesByRotation(nextTf,NumGoalCandidates,Axis,placePoses);
+
+	// storing object
+	next_object_details_.Trans = nextTf;
+	objects_in_zone_.push_back(next_object_details_);
+
+	return true;
+}
+
+bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInDesignatedZigZagYMode(std::vector<geometry_msgs::PoseStamped> &placePoses)
+{
+	// next object details
+	ZoneBounds nextObjectBounds;;
+	double nextIndex = (double)next_object_details_.Id;
+
+	// will use next object id (even or odd) to determine its location
+	tf::Transform nextTf = tf::Transform::getIdentity();
+
+	/* will use evenness of next object index to compute a new location relative to the top left corner of the place zone.
+	 */
+	double yCoor = (place_zone_bounds_.YMax - MinObjectSpacing/2.0f) - ((int)std::ceil(nextIndex/2.0f) - 1)*MinObjectSpacing;
+	//double yCoor = (place_zone_bounds_.YMin + MinObjectSpacing/2.0f) + ((int)std::ceil(nextIndex/2.0f) - 1)*MinObjectSpacing;
+	double xCoor = (((int)nextIndex%2) == 0) ? (place_zone_bounds_.XMin + MinObjectSpacing/2.0f) : (place_zone_bounds_.XMax - MinObjectSpacing/2.0f);
 
 	// computing next candidate transform
 	nextTf.setOrigin(tf::Vector3(xCoor,yCoor,0.0f));

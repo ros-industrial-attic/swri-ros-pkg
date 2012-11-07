@@ -73,7 +73,7 @@ void generatePosesInZigZagMode(PickPlaceZoneSelector::PlaceZone& placeZone,PickP
 {
 	std::vector<geometry_msgs::PoseStamped> poses;
 
-	placeZone.getZoneBounds().NextLocationGenMode = PickPlaceZoneSelector::PlaceZone::DESIGNATED_ZIGZAG;
+	placeZone.getZoneBounds().NextLocationGenMode = PickPlaceZoneSelector::PlaceZone::DESIGNATED_ZIGZAG_ALONG_X;
 	for(int i = 0; i < numLocations && ros::ok(); i++)
 	{
 		obj.Id = i + 1;

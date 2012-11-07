@@ -4,7 +4,7 @@ zone_bounds:
    x_max: 1.5
    y_min: -1.2
    y_max: 0.0
-   next_location_gen_mode: 1
+   next_location_gen_mode: 2
  - zone_name: zone_2
    x_min: 0.5
    x_max: 1.5

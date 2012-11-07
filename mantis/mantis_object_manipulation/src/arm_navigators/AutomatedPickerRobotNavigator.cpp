@@ -31,12 +31,6 @@ AutomatedPickerRobotNavigator::~AutomatedPickerRobotNavigator()
 	ROS_INFO_STREAM(NODE_NAME<<": Exiting navigator");
 }
 
-void AutomatedPickerRobotNavigator::fetchParameters(std::string nameSpace)
-{
-	RobotNavigator::fetchParameters(nameSpace);
-	zone_selector_.fetchParameters(nameSpace);
-}
-
 void AutomatedPickerRobotNavigator::setup()
 {
 	ros::NodeHandle nh;
@@ -46,6 +40,7 @@ void AutomatedPickerRobotNavigator::setup()
 
 	// getting ros parametets
 	fetchParameters(NAVIGATOR_NAMESPACE);
+	zone_selector_.fetchParameters(NODE_NAME);
 
 	ROS_INFO_STREAM(NODE_NAME<<": Setting up execution Monitors");
 	// setting up execution monitors
@@ -226,6 +221,8 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	static const int MaxIdCount = 8;
 	static int CurrentIdCount = 1;
 
+	ROS_WARN_STREAM(NODE_NAME<<": Using id "<<CurrentIdCount<<" for the next object");
+
 	// assigning id ( if recognition is used the id returned in the result should be used instead)
 	recognized_obj_id_ = CurrentIdCount;
 	CurrentIdCount++;
@@ -246,6 +243,7 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	candidate_place_poses_.clear();
 	if(!zone_selector_.generateNextLocationCandidates(candidate_place_poses_))
 	{
+		ROS_WARN_STREAM(NODE_NAME<<": Couldn't find available location for object, swapping zones and resseting counter");
 		// no more locations available, swapping zones
 		zone_selector_.swapPickPlaceZones();
 		CurrentIdCount = 1;
@@ -300,7 +298,7 @@ bool AutomatedPickerRobotNavigator::moveArmToSide()
 {
 
     _JointConfigurations.fetchParameters(JOINT_CONFIGURATIONS_NAMESPACE);
-    return updateChangesToPlanningScene() || moveArm(arm_group_name_,_JointConfigurations.SideAngles);
+    return updateChangesToPlanningScene() && moveArm(arm_group_name_,_JointConfigurations.SideAngles);
 }
 
 bool AutomatedPickerRobotNavigator::createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses)

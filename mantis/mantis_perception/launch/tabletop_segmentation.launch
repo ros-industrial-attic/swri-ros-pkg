@@ -25,10 +25,10 @@
 	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="up_direction" value="1.0" />
 	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="z_filter_min" value="-.1" />
 	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="z_filter_max" value=".5" />
-	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="y_filter_min" value="-1.2" />
+	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="y_filter_min" value="-1.0" />
 	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="y_filter_max" value="1.2" />
-	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="x_filter_min" value="0.5" />
-	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="x_filter_max" value="1.5" />
+	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="x_filter_min" value="0.4" />
+	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="x_filter_max" value="0.8" />
 	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="table_z_filter_min" value="-0.5" />
 	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="table_z_filter_max" value="-0.01" />		
 
