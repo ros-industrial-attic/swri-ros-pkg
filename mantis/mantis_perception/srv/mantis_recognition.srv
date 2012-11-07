@@ -1,7 +1,8 @@
 sensor_msgs/PointCloud[] clusters
+tabletop_object_detector/Table table
 ---
 
 string label
 int32 model_id
 nrg_object_recognition/pose pose
-int32[] cluster_model_indices
+
