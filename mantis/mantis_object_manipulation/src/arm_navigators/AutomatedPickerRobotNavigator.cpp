@@ -12,6 +12,7 @@ std::string AutomatedPickerRobotNavigator::MARKER_SEGMENTED_OBJECT = "segmented_
 std::string AutomatedPickerRobotNavigator::SEGMENTATION_NAMESPACE = "segmentation";
 std::string AutomatedPickerRobotNavigator::GOAL_NAMESPACE = "goal";
 std::string AutomatedPickerRobotNavigator::JOINT_CONFIGURATIONS_NAMESPACE = "joints";
+std::string AutomatedPickerRobotNavigator::MARKER_ARRAY_TOPIC = "object_array";
 
 
 AutomatedPickerRobotNavigator::AutomatedPickerRobotNavigator()
@@ -97,6 +98,7 @@ void AutomatedPickerRobotNavigator::setup()
 	{
 		// setting up ros publishers
 		marker_publisher_ = nh.advertise<visualization_msgs::Marker> (VISUALIZATION_TOPIC, 128);
+		marker_array_pub_ = nh.advertise<visualization_msgs::MarkerArray>(MARKER_ARRAY_TOPIC,1);
 		attached_object_publisher_ = nh.advertise<arm_navigation_msgs::AttachedCollisionObject> ("attached_collision_object_alternate", 1);
 
 		// setting up timer obj
@@ -124,6 +126,19 @@ void AutomatedPickerRobotNavigator::setup()
 		// adding marker to map
 		addMarker(MARKER_SEGMENTED_OBJECT,marker);
 		addMarker(MARKER_ATTACHED_OBJECT,marker);
+
+		// pick and place zone markers
+		visualization_msgs::Marker zoneMarker;
+		zoneMarker.header.stamp = ros::Time();
+		zoneMarker.ns = "zones";
+		zoneMarker.action = visualization_msgs::Marker::ADD;
+		zoneMarker.id = 0;
+		zone_selector_.getPickZoneMarker(zoneMarker);
+		marker_array_msg_.markers.push_back(zoneMarker);
+
+		zoneMarker.id = 1;
+		zone_selector_.getPlaceZoneMarker(zoneMarker);
+		marker_array_msg_.markers.push_back(zoneMarker);
 	}
 }
 
@@ -207,6 +222,18 @@ bool AutomatedPickerRobotNavigator::performSphereSegmentation()
 
 bool AutomatedPickerRobotNavigator::performRecognition()
 {
+	// declaring temporary variables to generate object ids
+	static const int MaxIdCount = 8;
+	static int CurrentIdCount = 1;
+
+	// assigning id ( if recognition is used the id returned in the result should be used instead)
+	recognized_obj_id_ = CurrentIdCount;
+	CurrentIdCount++;
+	if(CurrentIdCount > MaxIdCount)
+	{
+		CurrentIdCount = 1;
+	}
+
 	// recognition calls should happen here
 
 	// passed recognized object details to zone selector
@@ -221,6 +248,7 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	{
 		// no more locations available, swapping zones
 		zone_selector_.swapPickPlaceZones();
+		CurrentIdCount = 1;
 		return false;
 	}
 
@@ -280,6 +308,12 @@ bool AutomatedPickerRobotNavigator::createCandidateGoalPoses(std::vector<geometr
 	// will copy previously computed candidate poses
 	placePoses.assign(candidate_place_poses_.begin(),candidate_place_poses_.end());
 	return true;//zone_selector_.generateNextLocationCandidates(placePoses);
+}
+
+void AutomatedPickerRobotNavigator::callbackPublishMarkers(const ros::TimerEvent &evnt)
+{
+	RobotNavigator::callbackPublishMarkers(evnt);
+	marker_array_pub_.publish(marker_array_msg_);
 }
 
 

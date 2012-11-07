@@ -62,3 +62,6 @@ target_link_libraries(mantis_sphere_picking_node RobotNavigator)
 
 rosbuild_add_executable(test_zone_selector_node src/test/test_zone_selector_node.cpp)
 target_link_libraries(test_zone_selector_node RobotNavigator)
+
+rosbuild_add_executable(automated_pick_place_node src/nodes/automated_pick_place_node.cpp)
+target_link_libraries(automated_pick_place_node RobotNavigator)
