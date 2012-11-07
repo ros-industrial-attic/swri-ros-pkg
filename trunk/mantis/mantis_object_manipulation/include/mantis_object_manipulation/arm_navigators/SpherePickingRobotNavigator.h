@@ -202,7 +202,7 @@ protected:
 		ROS_WARN_STREAM(NODE_NAME<<": Skipping Recognition");
 	}
 
-	virtual void createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses);
+	virtual bool createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses);
 	virtual bool moveArmToSide();
 
 	// callback overrides

@@ -39,6 +39,7 @@ void generatePosesInRandomMode(PickPlaceZoneSelector::PlaceZone& placeZone,const
 {
 	std::vector<geometry_msgs::PoseStamped> poses;
 
+	placeZone.getZoneBounds().NextLocationGenMode = PickPlaceZoneSelector::PlaceZone::RANDOM;
 	for(int i = 0; i < numLocations && ros::ok(); i++)
 	{
 		placeZone.setNextObjectDetails(obj);
@@ -69,6 +70,40 @@ void generatePosesInRandomMode(PickPlaceZoneSelector::PlaceZone& placeZone,const
 }
 
 void generatePosesInZigZagMode(PickPlaceZoneSelector::PlaceZone& placeZone,PickPlaceZoneSelector::ObjectDetails &obj,int numLocations)
+{
+	std::vector<geometry_msgs::PoseStamped> poses;
+
+	placeZone.getZoneBounds().NextLocationGenMode = PickPlaceZoneSelector::PlaceZone::DESIGNATED_ZIGZAG;
+	for(int i = 0; i < numLocations && ros::ok(); i++)
+	{
+		obj.Id = i + 1;
+		placeZone.setNextObjectDetails(obj);
+
+		if(!placeZone.generateNextLocationCandidates(poses))
+		{
+			std::cout<<"Next location could not be found\n";
+			OBJECT_MARKER_ARRAY.markers.clear();
+			break;
+		}
+		else
+		{
+			geometry_msgs::Point &location = poses[0].pose.position;
+			std::cout<<"\tposition for object id "<<obj.Id<<" found at: "<<location.x<<", "<<location.y<<", "<<location.z<<"\n";
+
+			// adding to marker array
+			OBJECT_MARKER_MSG.id = i;
+			OBJECT_MARKER_MSG.pose = poses[0].pose;
+			OBJECT_MARKER_ARRAY.markers.push_back(OBJECT_MARKER_MSG);
+
+			poses.clear();
+		}
+
+		//ros::spin();
+		ros::Duration(DURATION_VALUE).sleep();
+	}
+}
+
+void generatePosesInRequestedMode(PickPlaceZoneSelector::PlaceZone& placeZone,PickPlaceZoneSelector::ObjectDetails &obj,int numLocations)
 {
 	std::vector<geometry_msgs::PoseStamped> poses;
 
@@ -186,30 +221,47 @@ int main(int argc,char** argv)
 	//int numLocations = 6; // locations to search in current place zone before switching
 
 	spinner.start();
+//	while(ros::ok())
+//	{
+//		// getting parameters
+//		fetchParameters(nodeName);
+//
+//		std::cout<<"\nGenerating Poses in Random Mode at place location with center:\n";
+//		tf::Vector3 placeCenter = zoneSelector.getPlaceZone().getZoneBounds().getCenter();
+//		std::cout<<"\tx: "<< placeCenter.x()<<",y: "<< placeCenter.y()<<",z: "<<placeCenter.z()<<"\n";
+//		//placeZone.GenerationMode = PickPlaceZoneSelector::PlaceZone::RANDOM;
+//		generatePosesInRandomMode(placeZone,objDetails,NUM_OBJECTS_IN_ZONE);
+//
+//		// swapping zones
+//		zoneSelector.swapPickPlaceZones();
+//		std::cout<<"\n\nSwapt pick and place zones"<<"\n";
+//
+//		// getting parameters
+//		fetchParameters(nodeName);
+//
+//		//placeZone.GenerationMode = PickPlaceZoneSelector::PlaceZone::DESIGNATED_ZIGZAG;
+//		// generating zigzag arrangement
+//		std::cout<<"\nGenerating Poses in Zigzag Mode at place location with center\n";
+//		placeCenter = zoneSelector.getPlaceZone().getZoneBounds().getCenter();
+//		std::cout<<"\tx: "<< placeCenter.x()<<",y: "<< placeCenter.y()<<",z: "<<placeCenter.z()<<"\n";
+//		generatePosesInZigZagMode(placeZone,objDetails,NUM_OBJECTS_IN_ZONE);
+//
+//		// swapping zones
+//		zoneSelector.swapPickPlaceZones();
+//		std::cout<<"\n\nSwapt pick and place zones"<<"\n";
+//
+//	}
+
 	while(ros::ok())
 	{
 		// getting parameters
 		fetchParameters(nodeName);
 
-		std::cout<<"\nGenerating Poses in Random Mode at place location with center:\n";
+		std::cout<<"\nGenerating Poses in designated Mode at place location with center:\n";
 		tf::Vector3 placeCenter = zoneSelector.getPlaceZone().getZoneBounds().getCenter();
 		std::cout<<"\tx: "<< placeCenter.x()<<",y: "<< placeCenter.y()<<",z: "<<placeCenter.z()<<"\n";
-		placeZone.GenerationMode = PickPlaceZoneSelector::PlaceZone::RANDOM;
-		generatePosesInRandomMode(placeZone,objDetails,NUM_OBJECTS_IN_ZONE);
-
-		// swapping zones
-		zoneSelector.swapPickPlaceZones();
-		std::cout<<"\n\nSwapt pick and place zones"<<"\n";
-
-		// getting parameters
-		fetchParameters(nodeName);
-
-		// generating zigzag arrangement
-		std::cout<<"\nGenerating Poses in Zigzag Mode at place location with center\n";
-		placeCenter = zoneSelector.getPlaceZone().getZoneBounds().getCenter();
-		std::cout<<"\tx: "<< placeCenter.x()<<",y: "<< placeCenter.y()<<",z: "<<placeCenter.z()<<"\n";
-		placeZone.GenerationMode = PickPlaceZoneSelector::PlaceZone::DESIGNATED_ZIGZAG;
-		generatePosesInZigZagMode(placeZone,objDetails,NUM_OBJECTS_IN_ZONE);
+		//placeZone.GenerationMode = PickPlaceZoneSelector::PlaceZone::RANDOM;
+		generatePosesInRequestedMode(placeZone,objDetails,NUM_OBJECTS_IN_ZONE);
 
 		// swapping zones
 		zoneSelector.swapPickPlaceZones();

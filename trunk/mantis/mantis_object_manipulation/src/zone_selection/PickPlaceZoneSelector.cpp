@@ -157,7 +157,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextLocationCandidates(std::vecto
 {
 	bool success = false;
 
-	switch(GenerationMode)
+	switch(place_zone_bounds_.NextLocationGenMode)
 	{
 	case PickPlaceZoneSelector::PlaceZone::RANDOM:
 
