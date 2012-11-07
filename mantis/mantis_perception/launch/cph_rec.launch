@@ -1,0 +1,23 @@
+<launch>
+
+  <arg name="log_to_warehouse" default="false" />
+  <arg name="use_chomp" default="false" />
+
+  <include file="$(find freetail_config)/launch/openni_try.launch"/>
+  
+  <rosparam command="load" file="$(find longhorn)/cfg/longhorn_hand_descriptions.yaml"/>
+
+  <rosparam command="load" file="$(find freetail_object_manipulation)/config/localhost.yaml"/>
+
+  <include file="$(find freetail_ball_bin_segmentation)/launch/tabletop_segmentation.launch">
+    <arg name="tabletop_segmentation_points_in" value="camera/depth_registered/points"/>
+  </include>
+
+  <!-- URDF Universal Robot Description File -->
+  <include file="$(find longhorn)/launch/upload.launch" />
+ 
+  <!-- ADD JOINT STATE PUBLISHER HERE WITH USE_GUI:=TRUE -->1
+  <!-- Get TF -->
+  <node pkg="robot_state_publisher" name="st_pub" type="state_publisher"/>
+
+</launch>
