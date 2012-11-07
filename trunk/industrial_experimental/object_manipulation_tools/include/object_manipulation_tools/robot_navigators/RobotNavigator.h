@@ -107,7 +107,7 @@ protected:
 	virtual void setup();
 
 	// ros parameters
-	void fetchParameters(std::string nameSpace = "");
+	virtual void fetchParameters(std::string nameSpace = "");
 
 	/* Service methods
 	 * these methods perform the following:
@@ -122,7 +122,7 @@ protected:
 	virtual bool performTrajectoryFiltering(const std::string& group_name,trajectory_msgs::JointTrajectory& jt);
 
 	// goal position: this should be implemented by each specific specialization of the class
-	virtual void createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses) = 0;
+	virtual bool createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses) = 0;
 
 	// database comm
 	bool getMeshFromDatabasePose(const household_objects_database_msgs::DatabaseModelPose &model_pose,
