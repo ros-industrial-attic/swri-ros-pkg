@@ -2,8 +2,8 @@
 <launch>
 	<node name="test_zone_selector" pkg="mantis_object_manipulation" type="test_zone_selector_node" output="screen">
 		<rosparam command="load" file="$(find mantis_object_manipulation)/config/pick_place_zone_parameters.yaml"/>
-		<param name="num_objects_in_zone" value="20"/>
-		<param name="update_rate" value="0.5"/>
+		<param name="num_objects_in_zone" value="10"/>
+		<param name="update_rate" value="0.2"/>
 	</node>
 
 	<node name="test_zone_selector_visualization" pkg="rviz" type="rviz" args="-d $(find mantis_object_manipulation)/config/viz_test_place_selector.vcg"/>

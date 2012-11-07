@@ -1,15 +1,15 @@
 zone_bounds:
  - zone_name: zone_1
-   x_min: 0.5
-   x_max: 1.5
-   y_min: -1.2
-   y_max: 0.0
-   next_location_gen_mode: 1
+   x_min: 0.4
+   x_max: 0.8
+   y_min: -0.32
+   y_max: 0.1
+   next_location_gen_mode: 2
  - zone_name: zone_2
-   x_min: 0.5
-   x_max: 1.5
-   y_min: 0.0
-   y_max: 1.2
+   x_min: 0.4
+   x_max: 0.8
+   y_min: 0.1
+   y_max: 0.4
    next_location_gen_mode: 0
 place_zone:
   frame_id: base_link
@@ -20,5 +20,5 @@ place_zone:
     z: 1
   release_distance: 0.02
   next_location:
-    min_spacing: 0.05
-    max_spacing: 0.08
+    min_spacing: 0.08
+    max_spacing: 0.14

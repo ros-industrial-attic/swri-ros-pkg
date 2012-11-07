@@ -77,7 +77,7 @@ protected:
 	virtual bool performSegmentation();
 	bool performSphereSegmentation();
 
-	virtual void fetchParameters(std::string nameSpace = "");
+	//virtual void fetchParameters(std::string nameSpace = "");
 
 	virtual bool performRecognition();
 

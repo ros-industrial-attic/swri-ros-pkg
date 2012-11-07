@@ -158,7 +158,8 @@ public:
 		enum NextPoseGenerationMode
 		{
 			RANDOM = 0,
-			DESIGNATED_ZIGZAG = 1
+			DESIGNATED_ZIGZAG_ALONG_X = 1,
+			DESIGNATED_ZIGZAG_ALONG_Y = 2
 		};
 
 	public:
@@ -237,8 +238,8 @@ public:
 						std::vector<geometry_msgs::PoseStamped> &candidatePoses);
 
 		bool generateNextPlacePoseInRandomizedMode(std::vector<geometry_msgs::PoseStamped> &placePoses);
-		bool generateNextPlacePoseInDesignatedEvenOddMode(std::vector<geometry_msgs::PoseStamped> &placePoses);
-
+		bool generateNextPlacePoseInDesignatedZigZagXMode(std::vector<geometry_msgs::PoseStamped> &placePoses);
+		bool generateNextPlacePoseInDesignatedZigZagYMode(std::vector<geometry_msgs::PoseStamped> &placePoses);
 		ZoneBounds place_zone_bounds_;
 		std::vector<ObjectDetails> objects_in_zone_; // array of transforms and size for each object in zone
 		ObjectDetails next_object_details_;
