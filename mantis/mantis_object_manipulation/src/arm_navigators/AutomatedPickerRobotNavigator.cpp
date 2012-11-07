@@ -1,17 +1,20 @@
 /*
- * SpherePickingRobotNavigator.cpp
+ * AutomatedPickerRobotNavigator.cpp
  *
- *  Created on: Oct 19, 2012
+ *  Created on: Nov 6, 2012
+ *      Author: coky
  */
 
-#include <mantis_object_manipulation/arm_navigators/SpherePickingRobotNavigator.h>
+#include <mantis_object_manipulation/arm_navigators/AutomatedPickerRobotNavigator.h>
+#include <mantis_object_manipulation/arm_navigators/AutomatedPickerRobotNavigator.h>
 
-std::string SpherePickingRobotNavigator::MARKER_SEGMENTED_OBJECT = "segmented_obj";
-std::string SpherePickingRobotNavigator::SEGMENTATION_NAMESPACE = "segmentation";
-std::string SpherePickingRobotNavigator::GOAL_NAMESPACE = "goal";
-std::string SpherePickingRobotNavigator::JOINT_CONFIGURATIONS_NAMESPACE = "joints";
+std::string AutomatedPickerRobotNavigator::MARKER_SEGMENTED_OBJECT = "segmented_obj";
+std::string AutomatedPickerRobotNavigator::SEGMENTATION_NAMESPACE = "segmentation";
+std::string AutomatedPickerRobotNavigator::GOAL_NAMESPACE = "goal";
+std::string AutomatedPickerRobotNavigator::JOINT_CONFIGURATIONS_NAMESPACE = "joints";
 
-SpherePickingRobotNavigator::SpherePickingRobotNavigator()
+
+AutomatedPickerRobotNavigator::AutomatedPickerRobotNavigator()
 :RobotNavigator()
 {
 	// TODO Auto-generated constructor stub
@@ -21,13 +24,19 @@ SpherePickingRobotNavigator::SpherePickingRobotNavigator()
 
 }
 
-SpherePickingRobotNavigator::~SpherePickingRobotNavigator()
+AutomatedPickerRobotNavigator::~AutomatedPickerRobotNavigator()
 {
 	// TODO Auto-generated destructor stub
 	ROS_INFO_STREAM(NODE_NAME<<": Exiting navigator");
 }
 
-void SpherePickingRobotNavigator::setup()
+void AutomatedPickerRobotNavigator::fetchParameters(std::string nameSpace)
+{
+	RobotNavigator::fetchParameters(nameSpace);
+	zone_selector_.fetchParameters(nameSpace);
+}
+
+void AutomatedPickerRobotNavigator::setup()
 {
 	ros::NodeHandle nh;
 	std::string nodeName = ros::this_node::getName();
@@ -91,15 +100,14 @@ void SpherePickingRobotNavigator::setup()
 		attached_object_publisher_ = nh.advertise<arm_navigation_msgs::AttachedCollisionObject> ("attached_collision_object_alternate", 1);
 
 		// setting up timer obj
-		marker_pub_timer_ = nh.createTimer(ros::Duration(0.4f),&SpherePickingRobotNavigator::callbackPublishMarkers,this);
+		marker_pub_timer_ = nh.createTimer(ros::Duration(0.4f),&AutomatedPickerRobotNavigator::callbackPublishMarkers,this);
 
 		ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
+
 		// others
 		grasp_tester_ = GraspTesterPtr(new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_));
 		place_tester_ = PlaceSequencePtr(new PlaceSequenceValidator(&cm_, ik_plugin_name_));
-//		grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_);
-//		place_tester_ = new PlaceSequenceValidator(&cm_, ik_plugin_name_);
-		trajectories_finished_function_ = boost::bind(&SpherePickingRobotNavigator::trajectoriesFinishedCallbackFunction, this, _1);
+		trajectories_finished_function_ = boost::bind(&AutomatedPickerRobotNavigator::trajectoriesFinishedCallbackFunction, this, _1);
 
 		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 	}
@@ -119,62 +127,7 @@ void SpherePickingRobotNavigator::setup()
 	}
 }
 
-//void SpherePickingRobotNavigator::run()
-//{
-//	ros::NodeHandle nh;
-//	ros::AsyncSpinner spinner(4);
-//	spinner.start();
-//	srand(time(NULL));
-//
-//	ROS_INFO_STREAM(NODE_NAME<<" Setup stage started");
-//	setup();
-//	ROS_INFO_STREAM(NODE_NAME<<" Setup stage completed");
-//
-//	while(ros::ok())
-//	{
-//	    startCycleTimer();
-//
-//	    ROS_INFO_STREAM(NODE_NAME + ": Moving arm to side pose");
-//		if(!moveArmToSide())
-//		{
-//			ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
-//			break;
-//		}
-//
-//		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
-//		if(!performSegmentation())
-//		{
-//		  ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
-//		  continue;
-//		}
-//		ROS_INFO_STREAM(NODE_NAME << ": Segmentation stage completed");
-//
-//		ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
-//		if(!moveArmThroughPickSequence())
-//		{
-//		  ROS_WARN_STREAM(NODE_NAME << ": grasp pickup stage failed");
-//		  continue;
-//		}
-//		else
-//		{
-//			ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
-//		}
-//
-//		ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
-//		if(!moveArmThroughPlaceSequence())
-//		{
-//			ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
-//		}
-//		else
-//		{
-//			ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
-//		}
-//
-//	    printTiming();
-//	  }
-//}
-
-bool SpherePickingRobotNavigator::performSphereSegmentation()
+bool AutomatedPickerRobotNavigator::performSphereSegmentation()
 {
 	//  ===================================== preparing result objects =====================================
 	  arm_navigation_msgs::CollisionObject obj;
@@ -210,6 +163,7 @@ bool SpherePickingRobotNavigator::performSphereSegmentation()
 	  recognized_obj_pose_map_[std::string(obj.id)] = pose;
 
 	  // storing recognized object as model for planning
+
 	  household_objects_database_msgs::DatabaseModelPoseList models;
 	  household_objects_database_msgs::DatabaseModelPose model;
 	  model.model_id = 0;
@@ -219,6 +173,7 @@ bool SpherePickingRobotNavigator::performSphereSegmentation()
 	  models.model_list.push_back(model);
 	  recognized_models_.clear();
 	  recognized_models_.push_back(models);
+	  recognized_collision_object_ = obj;
 
 	  //  ===================================== updating local planning scene =====================================
 	  addDetectedObjectToLocalPlanningScene(obj);
@@ -250,147 +205,82 @@ bool SpherePickingRobotNavigator::performSphereSegmentation()
 	return true;
 }
 
-bool SpherePickingRobotNavigator::performSegmentation()
+bool AutomatedPickerRobotNavigator::performRecognition()
 {
-	//RobotNavigator::performSegmentation();
-	return RobotNavigator::performSegmentation() && performSphereSegmentation();
+	// recognition calls should happen here
+
+	// passed recognized object details to zone selector
+	arm_navigation_msgs::Shape &shape = recognized_collision_object_.shapes[0];
+	tf::Vector3 objSize = tf::Vector3(2.0f*shape.dimensions[0],2.0f*shape.dimensions[0],2.0f*shape.dimensions[0]);
+	PickPlaceZoneSelector::ObjectDetails objDetails(tf::Transform::getIdentity(),objSize,recognized_obj_id_,"next_object");
+	zone_selector_.getPlaceZone().setNextObjectDetails(objDetails);
+
+	// computing poses so that no move is attempted if no locations are available in the place zone.
+	candidate_place_poses_.clear();
+	if(!zone_selector_.generateNextLocationCandidates(candidate_place_poses_))
+	{
+		// no more locations available, swapping zones
+		zone_selector_.swapPickPlaceZones();
+		return false;
+	}
+
+	return true;
 }
 
-bool SpherePickingRobotNavigator::moveArmToSide()
+bool AutomatedPickerRobotNavigator::performSegmentation()
+{
+	//RobotNavigator::performSegmentation();
+	bool success = false;
+	success =  RobotNavigator::performSegmentation();
+	if(!success)
+	{
+		return false;
+	}
+
+	// check if at least one cluster is located in pick zone
+	std::vector<int> inZone;
+	success = zone_selector_.isInPickZone(segmented_clusters_,inZone);
+	if(!success)
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": Neither cluster was found in pick zone, swapping zones");
+		zone_selector_.swapPickPlaceZones();
+		return false;
+	}
+	else
+	{
+		ROS_INFO_STREAM(NODE_NAME<<": A total of "<<inZone.size()<<" were found in pick zone");
+
+		// retaining only cluster in pick zone
+		std::vector<sensor_msgs::PointCloud> tempArray;
+		for(unsigned int i = 0;i < inZone.size();i++)
+		{
+			tempArray.push_back(segmented_clusters_[inZone[i]]);
+		}
+		segmented_clusters_.assign(tempArray.begin(),tempArray.end());
+	}
+
+	success =  performSphereSegmentation();
+	if(!success)
+	{
+		return false;
+	}
+
+
+}
+
+bool AutomatedPickerRobotNavigator::moveArmToSide()
 {
 
     _JointConfigurations.fetchParameters(JOINT_CONFIGURATIONS_NAMESPACE);
     return updateChangesToPlanningScene() || moveArm(arm_group_name_,_JointConfigurations.SideAngles);
 }
 
-bool SpherePickingRobotNavigator::createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses)
+bool AutomatedPickerRobotNavigator::createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses)
 {
-	ROS_INFO_STREAM(NODE_NAME<<": getting place position from ros parameters");
-	_GoalParameters.fetchParameters(GOAL_NAMESPACE);
-	_GoalParameters.generateNextLocationCandidates(placePoses);
-
-	return true;
+	// will copy previously computed candidate poses
+	placePoses.assign(candidate_place_poses_.begin(),candidate_place_poses_.end());
+	return true;//zone_selector_.generateNextLocationCandidates(placePoses);
 }
 
-void SpherePickingRobotNavigator::GoalLocation::generateNextLocationCandidates(
-		std::vector<geometry_msgs::PoseStamped> &placePoses)
-{
-		switch(NextLocationGenMode)
-		{
-		case GoalLocation::FIXED:
-			createCandidatePosesByRotation(GoalTransform,NumGoalCandidates,Axis,placePoses);
-			break;
 
-		case GoalLocation::CIRCULAR_ARRANGEMENT:
-			generateNextLocationCircularMode(placePoses);
-			break;
 
-		case GoalLocation::SPIRAL_ARRANGEMENT:
-			generateNextLocationSpiralMode(placePoses);
-			break;
-
-		case GoalLocation::SQUARE_ARRANGEMENT:
-			generateNextLocationSquaredMode(placePoses);
-			break;
-
-		case GoalLocation::SHUFFLE:
-			generateNextLocationShuffleMode(placePoses);
-			break;
-
-		default:
-			generateNextLocationShuffleMode(placePoses);
-			break;
-		}
-}
-
-void SpherePickingRobotNavigator::GoalLocation::generateNextLocationShuffleMode(
-		std::vector<geometry_msgs::PoseStamped> &placePoses)
-{
-	// previos pose
-	tf::Transform &lastTf = previous_locations_.back();
-
-	// next pose
-	tf::Transform nextTf;
-	if(previous_locations_.size() == 0)
-	{
-		nextTf = GoalTransform;
-	}
-	else
-	{
-		nextTf = tf::Transform(previous_locations_.back());
-
-		// new location variables
-		int distanceSegments = 20; // number of possible values between min and max object spacing
-		int angleSegments = 8; // number of possible values between 0 and 2pi
-		int randVal;
-		double distance;// meters
-		double angle,angleMin = 0,angleMax = 2*M_PI; // radians
-		double ratio;
-
-		// creating new location relative to the last one
-		int maxIterations = 100;
-		int iter = 0;
-		while(iter < maxIterations)
-		{
-			iter++;
-
-			// computing distance
-			randVal = rand()%distanceSegments + 1;
-			ratio = (double)randVal/(double)distanceSegments;
-			distance = MinObjectSpacing + ratio*(MaxObjectSpacing - MinObjectSpacing);
-			tf::Vector3 trans = tf::Vector3(distance,0.0f,0.0f);
-
-			// computing angle
-			randVal = rand()%angleSegments + 1;
-			ratio = (double)randVal/(double)angleSegments;
-			angle = angleMin + ratio*(angleMax - angleMin);
-			tf::Quaternion quat = tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),angle);
-
-			// computing next pose by rotating and translating from last pose
-			nextTf = lastTf * tf::Transform(quat,tf::Vector3(0.0f,0.0f,0.0f))*tf::Transform(tf::Quaternion::getIdentity(),trans);
-
-			// checking if located inside place region
-			double distFromCenter = (nextTf.getOrigin() - GoalTransform.getOrigin()).length();
-			if((distFromCenter + MinObjectSpacing/2) > PlaceRegionRadius) // falls outside place region, try another
-			{
-				continue;
-			}
-
-			// checking for overlaps against objects already in place region
-			double distFromObj;
-			BOOST_FOREACH(tf::Transform objTf,previous_locations_)
-			{
-				distFromObj = (objTf.getOrigin() - nextTf.getOrigin()).length();
-				if(distFromObj < MinObjectSpacing)// overlap found, try another
-				{
-					continue;
-				}
-			}
-		}
-	}
-
-	// generating candidate poses from next location found
-	createCandidatePosesByRotation(nextTf,NumGoalCandidates,Axis,placePoses);
-
-	// storing next location
-	previous_locations_.push_back(nextTf);
-}
-
-void SpherePickingRobotNavigator::GoalLocation::createCandidatePosesByRotation(const tf::Transform &startTrans,int numCandidates,tf::Vector3 axis,
-		std::vector<geometry_msgs::PoseStamped> &candidatePoses)
-{
-	geometry_msgs::PoseStamped pose;
-	pose.header.frame_id = GoalTransform.frame_id_;
-
-	// rotate about z axis and apply to original goal pose in order to create candidates;
-	for(int i = 0; i < numCandidates; i++)
-	{
-		double ratio = ((double)i)/((double)numCandidates);
-		double angle = 2*M_PI*ratio;
-		tf::Quaternion q = tf::Quaternion(axis,angle);
-		tf::Vector3 p = tf::Vector3(0,0,0);
-		tf::Transform candidateTransform = startTrans*tf::Transform(q,p);
-		tf::poseTFToMsg(candidateTransform,pose.pose);
-		candidatePoses.push_back(pose);
-	}
-}

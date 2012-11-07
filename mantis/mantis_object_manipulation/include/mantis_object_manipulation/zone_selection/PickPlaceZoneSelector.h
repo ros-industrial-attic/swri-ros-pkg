@@ -48,6 +48,7 @@ public:
 		double XMax;
 		double YMin;
 		double YMax;
+		int NextLocationGenMode;
 		std::string ZoneName;
 
 		tf::Vector3 getSize() const
@@ -166,7 +167,6 @@ public:
 		 NumGoalCandidates(8),
 		 Axis(0,0,1.0f),
 		 ReleaseDistanceFromTable(0.02),// 2cm
-		 GenerationMode(0),// random
 		 MinObjectSpacing(0.05f),
 		 MaxObjectSpacing(0.08f),
 		 objects_in_zone_()
@@ -201,7 +201,6 @@ public:
 			ros::param::param(nameSpace + "/release_distance",ReleaseDistanceFromTable,ReleaseDistanceFromTable);
 
 			// next goal location generation parameters
-			ros::param::param(nameSpace + "/next_location/generation_mode",GenerationMode,GenerationMode);
 			ros::param::param(nameSpace + "/next_location/min_spacing",MinObjectSpacing,MinObjectSpacing);
 			ros::param::param(nameSpace + "/next_location/max_spacing",MaxObjectSpacing,MaxObjectSpacing);
 		}
@@ -212,7 +211,7 @@ public:
 
 		void resetZone(const ZoneBounds& bounds); // clears array of objects and sets new zone
 
-		const ZoneBounds& getZoneBounds()
+		ZoneBounds& getZoneBounds()
 		{
 			return place_zone_bounds_;
 		}
@@ -229,7 +228,6 @@ public:
 		double ReleaseDistanceFromTable; // how far from the surface the lowest part of the object should be when released
 
 		// Next goal position generation
-		int GenerationMode;
 		double MinObjectSpacing; // minimum distance between two objects inside goal region as measured from their local origins
 		double MaxObjectSpacing; // maximum distance between two objects inside goal region as measured from their local origin
 
@@ -276,6 +274,7 @@ public:
 						structMember = "y_min"; zone.YMin = static_cast<double>(val[structMember]);
 						structMember = "y_max"; zone.YMax = static_cast<double>(val[structMember]);
 						structMember = "zone_name"; zone.ZoneName = static_cast<std::string>(val[structMember]);
+						structMember = "next_location_gen_mode"; zone.NextLocationGenMode = static_cast<int>(val[structMember]);
 					}
 
 					Zones.push_back(zone);
