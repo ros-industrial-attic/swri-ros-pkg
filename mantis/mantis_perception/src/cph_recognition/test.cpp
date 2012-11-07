@@ -23,54 +23,74 @@
 #include "nrg_object_recognition/recognition.h"
 #include "tabletop_object_detector/Table.h"
 #include "tabletop_object_detector/TabletopSegmentation.h"
-
-//float subtract_angle(float angle_1, float angle_2);
-
-ros::ServiceClient recognition_client, seg_client;
+#include "nrg_object_recognition/segmentation.h"
 
 
+ros::ServiceClient recognition_client, segmentation_client;
 
-//ros::Publisher pan_pub;
 ros::Publisher recognition_pub;
-
-
-
+ros::Publisher seg_pub;
+/*sensor_msgs::PointCloud2 cloud_to_process;
+void kinect_cb(sensor_msgs::PointCloud2 fromKinect)
+{
+cloud_to_process = fromKinect;
+}*/
 int main(int argc, char **argv)
 {
   
-  ros::init(argc, argv, "mantis_object_recognition");
+  ros::init(argc, argv, "mantis_recognition_test");
   ros::NodeHandle n;
 
   //ros::ServiceServer rec_serv = n.advertiseService("/recognition_service", rec_cb);
-  recognition_client = n.serviceClient<nrg_object_recognition::recognition>("mantis_object_recognition");
-  seg_client = n.serviceClient<tabletop_object_detector::TabletopSegmentation>("/tabletop_segmentation", true);
+  recognition_client = n.serviceClient<mantis_perception::mantis_recognition>("/mantis_object_recognition");
+  segmentation_client = n.serviceClient<tabletop_object_detector::TabletopSegmentation>("/tabletop_segmentation", true);
+  //segmentation_client = n.serviceClient<nrg_object_recognition::segmentation>("segmentation");
   //ros::Subscriber kin_sub = n.subscribe("/camera/depth_registered/points", 1, kinect_cb);
-  //pan_pub = n.advertise<std_msgs::UInt16>("/pan_command",1);
-  
-  tabletop_object_detector::TabletopSegmentation seg_srv;
-        if (!seg_client.call(seg_srv))
+  seg_pub = n.advertise<sensor_msgs::PointCloud2>("/segmentation_result",1);
+
+  while (ros::ok())
+  {
+    tabletop_object_detector::TabletopSegmentation seg_srv;
+        if (!segmentation_client.call(seg_srv))
            {
-              ROS_ERROR("Call to table top segmentation service failed");
+              ROS_ERROR("Call to tabletop segmentation service failed");
 
             }
+	sensor_msgs::PointCloud2 segcluster;
+    sensor_msgs::PointCloud clustervector;
+    clustervector=seg_srv.response.clusters[0];
+    sensor_msgs::convertPointCloudToPointCloud2(clustervector, segcluster);
+    segcluster.header.frame_id=seg_srv.response.table.pose.header.frame_id;
+    segcluster.header.stamp=seg_srv.response.table.pose.header.stamp;
+    seg_pub.publish (segcluster);
+
+    /*nrg_object_recognition::segmentation seg_srv;
+
+	seg_srv.request.scene = cloud_to_process;
+    seg_srv.request.min_x = -.75, seg_srv.request.max_x = .5;
+	seg_srv.request.min_y = -.25, seg_srv.request.max_y = 1.0;
+	seg_srv.request.min_z = 0.0, seg_srv.request.max_z = 1.3;
+	segmentation_client.call(seg_srv);
+	if (!segmentation_client.call(seg_srv))
+	{
+	  ROS_ERROR("Call to nrg segmentation service failed");
+	}
 
     ROS_INFO("Segmentation service succeeded. Detected %d clusters", (int)seg_srv.response.clusters.size());
+
+    seg_pub.publish (seg_srv.response.clusters.at(0));*/
   
+    mantis_perception::mantis_recognition rec_srv;
+    rec_srv.request.clusters = seg_srv.response.clusters;
+    rec_srv.request.table = seg_srv.response.table;
 
-  
-  mantis_perception::mantis_recognition rec_srv;
-    
-  if (!recognition_client.call(rec_srv))
-             {
-                ROS_ERROR("Call to mantis recognition service failed");
+    if (!recognition_client.call(rec_srv))
+	  {
+        ROS_ERROR("Call to mantis recognition service failed");
+	  }
 
-              }
-
-  rec_srv.request.clusters = seg_srv.response.clusters;
-
-  
-  ROS_INFO("Model label: %s", rec_srv.response.label.c_str());
-  ROS_INFO("Model label: %d", rec_srv.response.model_id);
+    ROS_INFO("Model label: %s", rec_srv.response.label.c_str());
+    ROS_INFO("Model id: %d", rec_srv.response.model_id);
 /*
   //Visualization://////////////////////////////////////////////////////
         //build filename.
@@ -104,7 +124,9 @@ int main(int argc, char **argv)
   recognition_pub = n.advertise<sensor_msgs::PointCloud2>("/recognition_test",1);
 */
   
-  ros::spin(); 
+    ros::spinOnce();
+  }//end ros ok while look
+
 }
 
 
