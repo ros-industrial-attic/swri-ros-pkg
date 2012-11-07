@@ -25,8 +25,6 @@
 #include "nrg_object_recognition/recognition.h"
 #include "tabletop_object_detector/Table.h"
 
-//float subtract_angle(float angle_1, float angle_2);
-
 ros::ServiceClient cph_client;
 ros::Publisher rec_pub;
 
@@ -53,58 +51,52 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
       
   //Call recognition service
   cph_client.call(rec_srv);
-
-  ROS_INFO("CPH recognition called");
-
   if (!cph_client.call(rec_srv))
   {
     ROS_ERROR("Call to cph recognition service failed");
   }
   
+  //Assign response values
   main_response.label = rec_srv.response.label;
   main_response.pose = rec_srv.response.pose;
   
-  /*if (main_response.label.c_str()=="coupling")
+  if (main_response.label=="coupling")
   {
-    main_response.model_id=9640;
-  }
-  else */if (main_response.label=="coupling")
-  {
-    main_response.model_id=9639;
+    main_response.model_id=1;
   }
 
   else if (main_response.label=="pvc_t") 
   {
-    main_response.model_id=9639;
+    main_response.model_id=2;
   }
   else if (main_response.label=="enclosure")
   {
-    main_response.model_id=9642;
+    main_response.model_id=3;
   }
   else if (main_response.label=="box")
   {
-    main_response.model_id=9642;
+    main_response.model_id=3;
   }
   else if (main_response.label=="plug")
   {
-    main_response.model_id=9641;
+    main_response.model_id=4;
   }
   else if (main_response.label=="white")
   {
-    main_response.model_id=9641;
+    main_response.model_id=4;
   }
   else main_response.model_id=0;
 
 
   ROS_INFO("CPH recognition complete");
 
-  //Visualization://////////////////////////////////////////////////////
-      //build filename.
+//////Visualization://////////////////////////////////////////////////////
+      //Import pcd file which matches recognition response
       std::stringstream fileName;
       fileName << "data/" << rec_srv.response.label << "_" << rec_srv.response.pose.rotation << ".pcd";
       //Load and convert file.
       pcl::PointCloud<pcl::PointXYZ>::Ptr trainingMatch (new pcl::PointCloud<pcl::PointXYZ>);
-      sensor_msgs::PointCloud2 rosMsg;
+
       pcl::io::loadPCDFile(fileName.str(), *trainingMatch);
       //Translate to location:
       Eigen::Vector4f centroid;
@@ -117,18 +109,17 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
       translate(1) = rec_srv.response.pose.y;
       translate(2) = rec_srv.response.pose.z;
       rotate.setIdentity();
-      //rotate = Eigen::Quaternionf (main_request.table.pose.pose.orientation.x, main_request.table.pose.pose.orientation.y, main_request.table.pose.pose.orientation.z, main_request.table.pose.pose.orientation.w);
 
       pcl::transformPointCloud(*trainingMatch, *trainingMatch, translate, rotate);
-
-      pcl::toROSMsg(*trainingMatch, rosMsg);
+      //make into ros message for publlishing
+      sensor_msgs::PointCloud2 recognized_cloud;
+      pcl::toROSMsg(*trainingMatch, recognized_cloud);
       //Add transform to header
-      //rosMsg.header.frame_id = "/camera_depth_optical_frame";
-      rosMsg.header.frame_id = main_request.table.pose.header.frame_id;
-      rosMsg.header.stamp=main_request.table.pose.header.stamp;
+      recognized_cloud.header.frame_id = main_request.table.pose.header.frame_id;
+      recognized_cloud.header.stamp=main_request.table.pose.header.stamp;
       //Publish to topic /recognition_result.
-      rec_pub.publish(rosMsg);
-      /////////end visualization////////////////////////////////////////////////////
+      rec_pub.publish(recognized_cloud);
+/////////end visualization////////////////////////////////////////////////////
 
   return true;
 }
