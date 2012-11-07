@@ -17,6 +17,7 @@
   <depend package="pcl_ros"/>
   <depend package="object_manipulation_tools"/>
   <depend package="perception_tools"/>
+  <depend package="mantis_perception"/>
 
 </package>
 

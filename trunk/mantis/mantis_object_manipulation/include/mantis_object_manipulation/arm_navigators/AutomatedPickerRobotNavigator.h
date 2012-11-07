@@ -96,6 +96,9 @@ protected:
 	// segmentation
 	SphereSegmentation _SphereSegmentation;
 
+	//services
+	ros::ServiceClient recognition_client_;
+
 	// recognition results
 	arm_navigation_msgs::CollisionObject recognized_collision_object_;
 	int recognized_obj_id_;

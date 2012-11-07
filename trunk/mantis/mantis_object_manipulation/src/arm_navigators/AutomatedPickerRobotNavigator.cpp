@@ -7,6 +7,7 @@
 
 #include <mantis_object_manipulation/arm_navigators/AutomatedPickerRobotNavigator.h>
 #include <mantis_object_manipulation/arm_navigators/AutomatedPickerRobotNavigator.h>
+#include <mantis_perception/mantis_recognition.h>
 
 std::string AutomatedPickerRobotNavigator::MARKER_SEGMENTED_OBJECT = "segmented_obj";
 std::string AutomatedPickerRobotNavigator::SEGMENTATION_NAMESPACE = "segmentation";
@@ -59,6 +60,9 @@ void AutomatedPickerRobotNavigator::setup()
 	{
 		// segmentation
 		seg_srv_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>(segmentation_service_, true);
+
+		//recognition
+		recognition_client_ = nh.serviceClient<mantis_perception::mantis_recognition>("/mantis_object_recognition");
 
 		// path and grasp planning
 		grasp_planning_client = nh.serviceClient<object_manipulation_msgs::GraspPlanning>(grasp_planning_service_, true);
@@ -232,6 +236,16 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	}
 
 	// recognition calls should happen here
+	mantis_perception::mantis_recognition rec_srv;
+	rec_srv.request.clusters = segmented_clusters_;
+	rec_srv.request.table = segmentation_results_.table;
+
+	if (!recognition_client_.call(rec_srv))
+	{
+	  ROS_ERROR("Call to mantis recognition service failed");
+	  return false;
+	}
+
 
 	// passed recognized object details to zone selector
 	arm_navigation_msgs::Shape &shape = recognized_collision_object_.shapes[0];
