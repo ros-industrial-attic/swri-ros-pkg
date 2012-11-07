@@ -340,6 +340,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInDesignatedEvenOddM
 	 * Odds go to the top and evens at the bottom (top view of table)
 	 */
 	double xCoor = (place_zone_bounds_.XMin + MinObjectSpacing/2.0f) + ((int)std::ceil(nextIndex/2.0f) - 1)*MinObjectSpacing;
+	//double yCoor = (((int)nextIndex%2) == 0) ? (place_zone_bounds_.YMin + MinObjectSpacing/2.0f) : (place_zone_bounds_.YMax - MinObjectSpacing/2.0f);
 	double yCoor = (((int)nextIndex%2) == 0) ? (place_zone_bounds_.YMin + MinObjectSpacing/2.0f) : (place_zone_bounds_.YMax - MinObjectSpacing/2.0f);
 
 	// computing next candidate transform

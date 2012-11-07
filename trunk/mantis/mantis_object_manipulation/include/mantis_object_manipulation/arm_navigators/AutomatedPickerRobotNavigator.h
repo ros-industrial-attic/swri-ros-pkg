@@ -69,6 +69,7 @@ public:
 	static std::string SEGMENTATION_NAMESPACE;
 	static std::string GOAL_NAMESPACE;
 	static std::string JOINT_CONFIGURATIONS_NAMESPACE;
+	static std::string MARKER_ARRAY_TOPIC;
 
 protected:
 
@@ -84,10 +85,7 @@ protected:
 	virtual bool moveArmToSide();
 
 	// callback overrides
-	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt)
-	{
-		RobotNavigator::callbackPublishMarkers(evnt);
-	}
+	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt);
 
 protected:
 
@@ -105,7 +103,11 @@ protected:
 	// place poses
 	std::vector<geometry_msgs::PoseStamped> candidate_place_poses_;
 
+	// publishers
+	ros::Publisher marker_array_pub_;
 
+	// visualization
+	visualization_msgs::MarkerArray marker_array_msg_;
 
 };
 
