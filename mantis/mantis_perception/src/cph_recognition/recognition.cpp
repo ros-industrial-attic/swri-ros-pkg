@@ -1,7 +1,6 @@
 //mantis_object_recognition_node
 //based on work done at UT Austin by Brian O'Neil
 #include "ros/ros.h"
-#include "std_msgs/UInt16.h"
 
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
@@ -59,53 +58,62 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   //Assign response values
   main_response.label = rec_srv.response.label;
   main_response.pose = rec_srv.response.pose;
-  ROS_WARN_STREAM("Object labeled as "<< rec_srv.response.label);
-  std::string label = main_response.label;
+  ROS_WARN_STREAM("Object labeled as "<< main_response.label);
 
-  std::string objName = "box";
-  if(label.compare(label.length()-objName.length(),objName.length(),objName) == 0)
+  std::size_t found;
+  std::string label = main_response.label;
+  found=label.find_last_of("/");
+
+  if(label.substr(found+1)=="box")
   {
     main_response.model_id=1;
   }
-
-  objName = "pvc_t";
-  if (label.compare(label.length()-objName.length(),objName.length(),objName) == 0)
+  else if (label.substr(found+1)=="coupling")
   {
     main_response.model_id=2;
   }
-
+  else if (label.substr(found+1)=="pvc_t")
+  {
+    main_response.model_id=3;
+  }
+  else if (label.substr(found+1)=="white")
+  {
+    main_response.model_id=4;
+  }
+  else if (label.substr(found+1)=="pvc_elbow")
+  {
+    main_response.model_id=5;
+  }
+  else
+  {
+	main_response.model_id=0;
+	ROS_ERROR_STREAM("Object not properly identified");
+  }
+  //std::string objName = "box";
+/*//  objName = "pvc_t";
   objName = "white";
   if (label.compare(label.length()-objName.length(),objName.length(),objName) == 0)
   {
 	  main_response.model_id=3;
   }
-
-
-//  if (main_response.label=="enclosure")
-//  {
-//    main_response.model_id=3;
-//  }
-//  else if (main_response.label=="box")
-//  {
-//    main_response.model_id=3;
-//  }
-//  else if (main_response.label=="plug")
-//  {
-//    main_response.model_id=4;
-//  }
-//  else if (main_response.label=="white")
-//  {
-//    main_response.model_id=4;
-//  }
-  else main_response.model_id=1;
-
+  objName = "coupling";
+  if (label.compare(label.length()-objName.length(),objName.length(),objName) == 0)
+  {
+	  main_response.model_id=4;
+  }
+  objName = "pvc_elbow";
+  if (label.compare(label.length()-objName.length(),objName.length(),objName) == 0)
+  {
+	  main_response.model_id=5;
+  }
+*/
 
   ROS_INFO("CPH recognition complete");
 
 //////Visualization://////////////////////////////////////////////////////
       //Import pcd file which matches recognition response
       std::stringstream fileName;
-      fileName << "data/" << rec_srv.response.label << "_" << rec_srv.response.pose.rotation << ".pcd";
+      fileName << "/home"<<rec_srv.response.label << "_" << rec_srv.response.pose.rotation << ".pcd";
       //Load and convert file.
       pcl::PointCloud<pcl::PointXYZ>::Ptr trainingMatch (new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -147,45 +155,6 @@ int main(int argc, char **argv)
   cph_client = n.serviceClient<nrg_object_recognition::recognition>("/cph_recognition");
   rec_pub = n.advertise<sensor_msgs::PointCloud2>("/recognition_result",1);
   
-/*
-  std::vector<std::vector<float> > probTable;
-  std::map<std::string, int> classMap;
-  std::vector<float> pose_dev;
-  std::ifstream objectListFile;
-  objectListFile.open("classes.list", std::ios::in);
-  std::string tempName, objectLine;
-  int k = 0;
-  std::vector<float> probRow;
-  
-  
-  while(std::getline(objectListFile, objectLine)){
-    std::istringstream objectSS(objectLine);
-    //Record object name and add to map.
-    objectSS >> tempName;
-    classMap.insert(std::pair<std::string, int>(tempName, k));
-    //Get pose sigma 
-    objectSS >> tempName;
-    pose_dev.push_back(atof(tempName.c_str()));
-    
-    //populate probability table (line k;)
-    while(objectSS >> tempName){
-      probRow.push_back(atof(tempName.c_str()));
-    }
-    probTable.push_back(probRow);
-    probRow.clear();
-    k++;  
-  }
-  if(k != probTable.at(0).size())
-    std::cout << "Error: Probability table is not square!" << std::endl;
-  
-  for(unsigned int i=0; i<k; i++){
-   for(unsigned int j=0; j<k; j++){
-     std::cout << probTable.at(i).at(j) << " ";
-   }
-   std::cout << std::endl;
-  }
-  std::cout << probTable.size() << " objects in set.\n";
-*/
   ROS_INFO("mantis object detection/recognition node ready!");
   
   ros::spin(); 
