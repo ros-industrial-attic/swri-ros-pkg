@@ -1,0 +1,14 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b industrial_utils contains utility functions and classes for the ROS-Industrial program
+
+<!-- 
+Provide an overview of your package.
+-->
+
+-->
+
+
+*/
