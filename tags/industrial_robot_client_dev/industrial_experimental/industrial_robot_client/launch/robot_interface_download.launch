@@ -12,14 +12,23 @@
          - joint_trajectory_action : actionlib interface to control robot motion
 
     Usage:
-      robot_interface_download.launch robot_ip:=<value>
+      robot_interface_download.launch robot_ip:=<value> joint_names_pkg:=<pkg name> 
+      	joint_names_path:=<path name>
   -->
 
   <!-- robot_ip: IP-address of the robot's socket-messaging server -->
   <arg name="robot_ip" />
   
+  <!-- The yaml file than contains the controller joint names and order -->
+  <arg name="joint_names_file" />
+  
+  
+  
   <!-- copy the specified IP address to the Parameter Server, for use by nodes below -->
   <param name="/robot_ip_address" type="str" value="$(arg robot_ip)"/>
+  
+  <!-- load parameter file with joint names and order -->
+  <rosparam file="$(arg joint_names_file)" />
   
   <!-- robot_state: publishes joint positions and robot-state data
                    (from socket connection to robot) -->

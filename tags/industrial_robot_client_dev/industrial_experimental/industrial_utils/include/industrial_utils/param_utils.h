@@ -29,40 +29,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UTILS_H_
-#define UTILS_H_
+
+#ifndef PARAM_UTILS_H_
+#define PARAM_UTILS_H_
 
 #include <vector>
 #include <string>
 
 namespace industrial_utils
 {
+namespace param
+{
 
 /**
- * \brief Checks to see if sets are similar(same members, any order)
- * NOTE: Vectors are passed by copy because they are modified by the
- * function(i.e. ordered).
- * This function should not be used for large vectors or in loops (it
- * is slow!)
+ * \brief Gets parameter list as vector of strings
  *
- * \param lhs first vector
- * \param rhs second vector
+ * \param param_name name of list parameter
+ * \param list_param populated with parameter value(s)
  *
- * \return true set are similar (same members, any order)
+ * \return true if parameter
  */
-bool isSimilar(std::vector<std::string> lhs, std::vector<std::string> rhs);
+bool getListParam(const std::string param_name, std::vector<std::string> & list_param);
 
-/**
- * \brief Checks to see if sets are the same(same members, same order)
- * Wraps std::equal method.
- *
- * \param lhs first vector
- * \param rhs second vector
- *
- * \return true set are similar (same members, same order)
- */
-bool isSame(const std::vector<std::string> & lhs, const std::vector<std::string> & rhs);
-
+} //industrial_utils::param
 } //industrial_utils
-
-#endif /* UTILS_H_ */
+#endif /* PARAM_UTILS_H_ */

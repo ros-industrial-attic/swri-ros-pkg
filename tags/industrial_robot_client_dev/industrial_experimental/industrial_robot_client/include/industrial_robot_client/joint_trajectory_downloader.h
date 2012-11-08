@@ -43,11 +43,7 @@ namespace joint_trajectory_downloader
 
 /**
  * \brief Message handler that downloads joint trajectories to the
- * motoman controller
- */
-
-//* JointTrajectoryDownloader
-/**
+ * a robot controller that supports the trajectory downloading interface
  *
  * THIS CLASS IS NOT THREAD-SAFE
  *
@@ -57,35 +53,64 @@ class JointTrajectoryDownloader
 
 public:
 
-	JointTrajectoryDownloader();
+  JointTrajectoryDownloader();
 
   /**
    * \brief Constructor
    *
    * \param n ROS node handle (used for subscribing)
-   * \param robot_connection message connection (used for publishing (to the robot controller))
-   * \param joint_names ordered list of joint names (controller order)
+   * \param robot_connection Simple message connection (used for publishing (to the robot controller))
+   * \param joint_name ordered list of joint names (controller order)
    */
-	JointTrajectoryDownloader(ros::NodeHandle &n,
-	                          industrial::smpl_msg_connection::SmplMsgConnection* robot_connecton,
-	                          std::vector<std::string> &joint_names);
+  JointTrajectoryDownloader(ros::NodeHandle &n, industrial::smpl_msg_connection::SmplMsgConnection* robot_connection,
+                            std::vector<std::string> &joint_names);
 
+  /**
+   * \brief Destructor
+   *
+   */
   ~JointTrajectoryDownloader();
 
+  /**
+   * \brief Joint trajectory callback.  When receiving a joint trajectory, this
+   * method formats it for sending to the robot controller.
+   *
+   * \param msg joint trajectory
+   */
   void jointTrajectoryCB(const trajectory_msgs::JointTrajectoryConstPtr &msg);
 
 private:
-
+  /**
+   * \brief Robot connection
+   */
   industrial::smpl_msg_connection::SmplMsgConnection* robot_;
-  ros::Subscriber sub_joint_trajectory_; //subscribe to "command"
-  ros::NodeHandle node_;
-  std::vector<std::string> joint_names_;
 
+  /**
+   * \brief Joint trajectory subscriber
+   */
+  ros::Subscriber sub_joint_trajectory_; //subscribe to "command"
+
+  /**
+   * \brief ROS Node
+   *
+   */
+  ros::NodeHandle node_;
+
+  /**
+   * \brief Order list of joint names (controller order).  This list is used to
+   * check and reorder of trajectories that are sent to the controller.
+   *
+   */
+  std::vector<std::string> &joint_names_;
+
+  /**
+   * \brief Internal method for sending trajectory stop command to the controller
+   */
   void trajectoryStop();
 
 };
 
 } //joint_trajectory_downloader
-} //industrial_robot_client
+} //motoman
 
 #endif /* JOINT_TRAJECTORY_DOWNLOADER_H */

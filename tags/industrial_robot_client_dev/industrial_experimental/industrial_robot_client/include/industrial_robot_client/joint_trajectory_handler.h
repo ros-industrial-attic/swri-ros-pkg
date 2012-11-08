@@ -29,63 +29,81 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef JOINT_TRAJECTORY_DOWNLOADER_H
-#define JOINT_TRAJECTORY_DOWNLOADER_H
+#ifndef JOINT_TRAJECTORY_HANDLER_H
+#define JOINT_TRAJECTORY_HANDLER_H
 
 #include "simple_message/smpl_msg_connection.h"
 #include "ros/ros.h"
+#include <boost/thread/thread.hpp>
+#include <sensor_msgs/JointState.h>
 #include <trajectory_msgs/JointTrajectory.h>
 
 namespace industrial_robot_client
 {
-namespace joint_trajectory_downloader
+namespace joint_trajectory_handler
 {
 
+namespace JointTrajectoryStates
+{
+enum JointTrajectoryState
+{
+  IDLE = 0, STREAMING =1 //,STARTING, //, STOPPING
+};
+}
+typedef JointTrajectoryStates::JointTrajectoryState JointTrajectoryState;
+
 /**
- * \brief Message handler that downloads joint trajectories to the
- * motoman controller
+ * \brief Message handler that relays joint trajectories to the motoman controller
  */
 
-//* JointTrajectoryDownloader
+//* JointTrajectoryHandler
 /**
  *
  * THIS CLASS IS NOT THREAD-SAFE
  *
  */
-class JointTrajectoryDownloader
+class JointTrajectoryHandler
 {
 
 public:
 
-	JointTrajectoryDownloader();
+  JointTrajectoryHandler();
 
   /**
    * \brief Constructor
    *
-   * \param n ROS node handle (used for subscribing)
-   * \param robot_connection message connection (used for publishing (to the robot controller))
-   * \param joint_names ordered list of joint names (controller order)
+   * \param ROS node handle (used for subscribing)
+   * \param ROS node handle (used for publishing (to the robot controller))
    */
-	JointTrajectoryDownloader(ros::NodeHandle &n,
-	                          industrial::smpl_msg_connection::SmplMsgConnection* robot_connecton,
-	                          std::vector<std::string> &joint_names);
+  JointTrajectoryHandler(ros::NodeHandle &n, industrial::smpl_msg_connection::SmplMsgConnection* robotConnecton);
 
-  ~JointTrajectoryDownloader();
+  ~JointTrajectoryHandler();
 
   void jointTrajectoryCB(const trajectory_msgs::JointTrajectoryConstPtr &msg);
+  void trajectoryHandler();
+
+  unsigned int getNextTrajectoryPoint(const trajectory_msgs::JointTrajectory& traj,
+                                      const ros::Time& start,
+                                      const ros::Time& cur);
 
 private:
 
-  industrial::smpl_msg_connection::SmplMsgConnection* robot_;
-  ros::Subscriber sub_joint_trajectory_; //subscribe to "command"
-  ros::NodeHandle node_;
-  std::vector<std::string> joint_names_;
-
   void trajectoryStop();
 
+  industrial::smpl_msg_connection::SmplMsgConnection* robot_;
+  ros::Subscriber sub_joint_tranectory_; //subscribe to "command"
+  ros::NodeHandle node_;
+
+  boost::thread* trajectoryHandler_;
+  boost::mutex mutex_;int currentPoint;
+  trajectory_msgs::JointTrajectory current_traj_;
+  JointTrajectoryState state_;
+  ros::Time streaming_start_;
+
+  static const int NUM_OF_JOINTS_ = 7;
 };
 
-} //joint_trajectory_downloader
+} //joint_trajectory_handler
 } //industrial_robot_client
 
-#endif /* JOINT_TRAJECTORY_DOWNLOADER_H */
+#endif /* JOINT_TRAJECTORY_HANDLER_H */
