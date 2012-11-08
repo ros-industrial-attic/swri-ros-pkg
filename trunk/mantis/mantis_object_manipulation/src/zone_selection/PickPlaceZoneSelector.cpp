@@ -145,6 +145,13 @@ void PickPlaceZoneSelector::PlaceZone::resetZone(const PickPlaceZoneSelector::Zo
 {
 	place_zone_bounds_ = bounds;
 	objects_in_zone_.clear();
+
+	// computing grid mode
+	tf::Vector3 zoneSize = place_zone_bounds_.getSize();
+	grid_x_size_ = std::floor(zoneSize.x()/MinObjectSpacing);
+	grid_y_size_ = std::floor(zoneSize.y()/MinObjectSpacing);
+
+	ROS_WARN_STREAM("ZoneSelector: Computed grid size of "<<grid_x_size_<<" by "<<grid_y_size_);
 }
 
 void PickPlaceZoneSelector::PlaceZone::setNextObjectDetails(const PickPlaceZoneSelector::ObjectDetails &objDetails)
@@ -171,6 +178,10 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextLocationCandidates(std::vecto
 
 	case PickPlaceZoneSelector::PlaceZone::DESIGNATED_ZIGZAG_ALONG_Y:
 		success = generateNextPlacePoseInDesignatedZigZagYMode(placePoses);
+		break;
+
+	case PickPlaceZoneSelector::PlaceZone::DESIGNATED_GRID_ALONG_X:
+		success = generateNextPlacePoseInGridXWise(placePoses);
 		break;
 
 	default:
@@ -436,6 +447,69 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInDesignatedZigZagYM
 
 	if(overlapFound)
 	{
+		return false;
+	}
+
+	// passed all intersection test
+	double distFromCenter = (place_zone_bounds_.getCenter() - nextTf.getOrigin()).length();
+	ROS_INFO_STREAM(ros::this_node::getName()<<": Found available position for Id: "<<next_object_details_.Id);
+
+	// adjusting place point to object height
+	nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
+
+	// generating candidate poses from next location found
+	createPlaceCandidatePosesByRotation(nextTf,NumGoalCandidates,Axis,placePoses);
+
+	// storing object
+	next_object_details_.Trans = nextTf;
+	objects_in_zone_.push_back(next_object_details_);
+
+	return true;
+}
+
+bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridXWise(std::vector<geometry_msgs::PoseStamped> &placePoses)
+{
+	// next object details
+	ZoneBounds nextObjectBounds;;
+	double nextIndex = (double)next_object_details_.Id;
+
+	// will use next object id (even or odd) to determine its location
+	tf::Transform nextTf = tf::Transform::getIdentity();
+
+	/* will use evenness of next object index to compute a new location relative to the top left corner of the place zone.
+	 */
+	double xCoor = (place_zone_bounds_.XMin + MinObjectSpacing/2.0f) + (((int)nextIndex - 1)%grid_x_size_)*MinObjectSpacing;
+	double yCoor = (place_zone_bounds_.YMax - MinObjectSpacing/2.0f) - ((int)std::ceil(nextIndex/((float)grid_x_size_)) - 1)*MinObjectSpacing;
+
+	// computing next candidate transform
+	nextTf.setOrigin(tf::Vector3(xCoor,yCoor,0.0f));
+
+	// updating next object bounds
+	nextObjectBounds = ZoneBounds(next_object_details_.Size,nextTf.getOrigin());
+
+	// checking if it is within place zone
+	if(!ZoneBounds::contains(place_zone_bounds_,nextObjectBounds))
+	{
+		ROS_ERROR_STREAM("ZoneSelector: new location is outside zone");
+		return false;
+	}
+
+	// checking if overlaps with objects in place zone
+	bool overlapFound = false;
+	typedef std::vector<ObjectDetails>::iterator ConstIter;
+	for(ConstIter iter = objects_in_zone_.begin(); iter != objects_in_zone_.end(); iter++)
+	{
+		ZoneBounds objInZoneBounds(iter->Size,iter->Trans.getOrigin());
+		if(ZoneBounds::intersect(nextObjectBounds,objInZoneBounds))
+		{
+			overlapFound = true;
+			break;
+		}
+	}
+
+	if(overlapFound)
+	{
+		ROS_ERROR_STREAM("ZoneSelector: new location overlap found");
 		return false;
 	}
 

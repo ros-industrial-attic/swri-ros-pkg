@@ -49,7 +49,7 @@
 
 <!-- recognition -->
   <node pkg="nrg_object_recognition" name="cph_recognition_node" type="cph_recognition_node" 
-	output="screen" args="data">
+	output="screen" args="$(find mantis_perception)/data">
   </node>
   <node pkg="mantis_perception" name="mantis_object_recognition" type="mantis_object_recognition" output="screen">
   </node>

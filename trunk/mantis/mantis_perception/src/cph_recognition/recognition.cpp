@@ -59,33 +59,45 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   //Assign response values
   main_response.label = rec_srv.response.label;
   main_response.pose = rec_srv.response.pose;
-  
-  if (main_response.label=="coupling")
+  ROS_WARN_STREAM("Object labeled as "<< rec_srv.response.label);
+  std::string label = main_response.label;
+
+  std::string objName = "box";
+  if(label.compare(label.length()-objName.length(),objName.length(),objName) == 0)
   {
     main_response.model_id=1;
   }
 
-  else if (main_response.label=="pvc_t") 
+  objName = "pvc_t";
+  if (label.compare(label.length()-objName.length(),objName.length(),objName) == 0)
   {
     main_response.model_id=2;
   }
-  else if (main_response.label=="enclosure")
+
+  objName = "white";
+  if (label.compare(label.length()-objName.length(),objName.length(),objName) == 0)
   {
-    main_response.model_id=3;
+	  main_response.model_id=3;
   }
-  else if (main_response.label=="box")
-  {
-    main_response.model_id=3;
-  }
-  else if (main_response.label=="plug")
-  {
-    main_response.model_id=4;
-  }
-  else if (main_response.label=="white")
-  {
-    main_response.model_id=4;
-  }
-  else main_response.model_id=0;
+
+
+//  if (main_response.label=="enclosure")
+//  {
+//    main_response.model_id=3;
+//  }
+//  else if (main_response.label=="box")
+//  {
+//    main_response.model_id=3;
+//  }
+//  else if (main_response.label=="plug")
+//  {
+//    main_response.model_id=4;
+//  }
+//  else if (main_response.label=="white")
+//  {
+//    main_response.model_id=4;
+//  }
+  else main_response.model_id=1;
 
 
   ROS_INFO("CPH recognition complete");
