@@ -5,6 +5,8 @@
  *      Author: coky
  */
 
+//#define USE_SPHERE_SEGMENTATION
+
 #include <mantis_object_manipulation/arm_navigators/AutomatedPickerRobotNavigator.h>
 #include <mantis_object_manipulation/arm_navigators/AutomatedPickerRobotNavigator.h>
 #include <mantis_perception/mantis_recognition.h>
@@ -62,7 +64,8 @@ void AutomatedPickerRobotNavigator::setup()
 		seg_srv_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>(segmentation_service_, true);
 
 		//recognition
-		recognition_client_ = nh.serviceClient<mantis_perception::mantis_recognition>("/mantis_object_recognition");
+		//recognition_client_ = nh.serviceClient<mantis_perception::mantis_recognition>("/mantis_object_recognition");
+		recognition_client_ = nh.serviceClient<mantis_perception::mantis_recognition>(recognition_service_,true);
 
 		// path and grasp planning
 		grasp_planning_client = nh.serviceClient<object_manipulation_msgs::GraspPlanning>(grasp_planning_service_, true);
@@ -222,6 +225,8 @@ bool AutomatedPickerRobotNavigator::performSphereSegmentation()
 bool AutomatedPickerRobotNavigator::performRecognition()
 {
 	// declaring temporary variables to generate object ids
+#ifdef USE_SPHERE_SEGMENTATION
+
 	static const int MaxIdCount = 8;
 	static int CurrentIdCount = 1;
 
@@ -235,41 +240,133 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 		CurrentIdCount = 1;
 	}
 
-	// recognition calls should happen here
-	mantis_perception::mantis_recognition rec_srv;
-	rec_srv.request.clusters = segmented_clusters_;
-	rec_srv.request.table = segmentation_results_.table;
-
-	if (!recognition_client_.call(rec_srv))
-	{
-	  ROS_ERROR("Call to mantis recognition service failed");
-	  return false;
-	}
-
-
 	// passed recognized object details to zone selector
-	arm_navigation_msgs::Shape &shape = recognized_collision_object_.shapes[0];
-	tf::Vector3 objSize = tf::Vector3(2.0f*shape.dimensions[0],2.0f*shape.dimensions[0],2.0f*shape.dimensions[0]);
-	PickPlaceZoneSelector::ObjectDetails objDetails(tf::Transform::getIdentity(),objSize,recognized_obj_id_,"next_object");
+	double bbBoxSide = zone_selector_.getPlaceZone().MinObjectSpacing;
+	tf::Vector3 objSize = tf::Vector3(bbBoxSide,bbBoxSide,bbBoxSide);
+	PickPlaceZoneSelector::ObjectDetails objDetails(tf::Transform::getIdentity(),objSize,
+			CurrentIdCount,"next_object");
 	zone_selector_.getPlaceZone().setNextObjectDetails(objDetails);
 
 	// computing poses so that no move is attempted if no locations are available in the place zone.
 	candidate_place_poses_.clear();
 	if(!zone_selector_.generateNextLocationCandidates(candidate_place_poses_))
 	{
-		ROS_WARN_STREAM(NODE_NAME<<": Couldn't find available location for object, swapping zones and resseting counter");
+		ROS_WARN_STREAM(NODE_NAME<<": Couldn't find available location for object, swapping zones and resetting counter.");
 		// no more locations available, swapping zones
 		zone_selector_.swapPickPlaceZones();
 		CurrentIdCount = 1;
 		return false;
 	}
 
+#else
+
+	// preparing recognition results
+	arm_navigation_msgs::CollisionObject obj;
+	obj.id = makeCollisionObjectNameFromModelId(0);
+	mantis_perception::mantis_recognition rec_srv;
+	rec_srv.request.clusters = segmented_clusters_;
+	rec_srv.request.table = segmentation_results_.table;
+
+	// recognition call
+	if (!recognition_client_.call(rec_srv))
+	{
+	  ROS_ERROR("Call to mantis recognition service failed");
+	  return false;
+	}
+	else
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": Found object with id: "<<rec_srv.response.model_id);
+	}
+
+/*
+ * Storing recognition results
+ */
+	// parsing pose results
+	tf::Transform t = tf::Transform::getIdentity();
+	nrg_object_recognition::pose &tempPose =  rec_srv.response.pose;
+	t.setOrigin(tf::Vector3(tempPose.x,tempPose.y,tempPose.z));
+	t.setRotation(tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),tempPose.rotation));
+
+	// storing pose
+	geometry_msgs::PoseStamped pose;
+	tf::poseTFToMsg(t,pose.pose);
+	pose.header.frame_id = cm_.getWorldFrameId();
+	recognized_obj_pose_map_[std::string(obj.id)] = pose;
+
+	// adding collision obj to planning scene
+	obj.header.frame_id = cm_.getWorldFrameId();
+	obj.padding = 0.0f;
+	obj.shapes = std::vector<arm_navigation_msgs::Shape>();
+	arm_navigation_msgs::Shape shape;
+	shape.type = arm_navigation_msgs::Shape::SPHERE;
+	//shape.dimensions.push_back(zone_selector_.getPlaceZone().MinObjectSpacing/2.0f); // radius;
+	shape.dimensions.push_back(0.02f);
+	obj.shapes.push_back(shape);
+	obj.poses.push_back(pose.pose);
+	addDetectedObjectToLocalPlanningScene(obj);
+
+	// storing model detail for path planning
+	household_objects_database_msgs::DatabaseModelPoseList models;
+	household_objects_database_msgs::DatabaseModelPose model;
+	model.model_id = 0;
+	model.pose = pose;
+	model.confidence = 1.0f;
+	model.detector_name = "cfh_recognition";
+	models.model_list.push_back(model);
+	recognized_models_.clear();
+	recognized_models_.push_back(models);
+	//recognized_model_description_.name = segmentation_results_.table.pose.header.frame_id;
+
+/*
+ * Finished storing recognition results
+ */
+
+	// passed recognized object details to zone selector
+	double bbBoxSide = 0.8f*zone_selector_.getPlaceZone().MinObjectSpacing;
+	tf::Vector3 objSize = tf::Vector3(bbBoxSide,bbBoxSide,bbBoxSide);
+	PickPlaceZoneSelector::ObjectDetails objDetails(tf::Transform::getIdentity(),objSize,
+			rec_srv.response.model_id,rec_srv.response.label);
+	zone_selector_.getPlaceZone().setNextObjectDetails(objDetails);
+
+	// computing poses so that no move is attempted if no locations are available in the place zone.
+	candidate_place_poses_.clear();
+
+	ROS_WARN_STREAM(NODE_NAME<<": using box with size "<<zone_selector_.getPlaceZone().MinObjectSpacing);
+	if(!zone_selector_.generateNextLocationCandidates(candidate_place_poses_))
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": Couldn't find available location for object, swapping zones.");
+		// no more locations available, swapping zones
+		zone_selector_.swapPickPlaceZones();
+		//CurrentIdCount = 1;
+		return false;
+	}
+
+#endif
+
+
+//	// passed recognized object details to zone selector
+//	double bbBoxSide = zone_selector_.getPlaceZone().MinObjectSpacing;
+//	tf::Vector3 objSize = tf::Vector3(bbBoxSide,bbBoxSide,bbBoxSide);
+//	PickPlaceZoneSelector::ObjectDetails objDetails(tf::Transform::getIdentity(),objSize,
+//			rec_srv.response.model_id,rec_srv.response.label);
+//	zone_selector_.getPlaceZone().setNextObjectDetails(objDetails);
+//
+//	// computing poses so that no move is attempted if no locations are available in the place zone.
+//	candidate_place_poses_.clear();
+//	if(!zone_selector_.generateNextLocationCandidates(candidate_place_poses_))
+//	{
+//		ROS_WARN_STREAM(NODE_NAME<<": Couldn't find available location for object, swapping zones.");
+//		// no more locations available, swapping zones
+//		zone_selector_.swapPickPlaceZones();
+//		//CurrentIdCount = 1;
+//		return false;
+//	}
+
 	return true;
 }
 
 bool AutomatedPickerRobotNavigator::performSegmentation()
 {
-	//RobotNavigator::performSegmentation();
 	bool success = false;
 	success =  RobotNavigator::performSegmentation();
 	if(!success)
@@ -299,12 +396,15 @@ bool AutomatedPickerRobotNavigator::performSegmentation()
 		segmented_clusters_.assign(tempArray.begin(),tempArray.end());
 	}
 
+#ifdef USE_SPHERE_SEGMENTATION
 	success =  performSphereSegmentation();
 	if(!success)
 	{
 		return false;
 	}
 
+#endif
+	return true;
 
 }
 
