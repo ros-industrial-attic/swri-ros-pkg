@@ -4,7 +4,7 @@
   <arg name="log_to_warehouse" default="false" />
   <arg name="use_chomp" default="false" />
 
-  <include file="$(find freetail_config)/launch/openni_try.launch"/>
+  <include file="$(find mantis_perception)/launch/mantis_sensor.launch"/>
   
   <rosparam command="load" file="$(find longhorn)/cfg/longhorn_hand_descriptions.yaml"/>
 
