@@ -244,8 +244,8 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 //  float min_z = .55, max_z = 1.15;
 
  for(pcl::PointCloud<pcl::PointXYZ>::iterator position=cloud_filtered_0->begin(); position!=cloud_filtered_0->end(); position++){
-     //if(position->x > min_x && position->x < max_x && position->y > min_y && position->y < max_y && position->z > min_z && position->z < max_z)
-     if(position->x > min_x && position->x < max_x && position->y > (2.145*position->z - 3.31) && position->y < (-.466*position->z + .400))
+     if(position->x > min_x && position->x < max_x && position->y > min_y && position->y < max_y && position->z > min_z && position->z < max_z)
+    // if(position->x > min_x && position->x < max_x && position->y > (2.145*position->z - 3.31) && position->y < (-.466*position->z + .400))
      cloud_filtered->push_back(*position);
   }
   sensor_msgs::PointCloud2 cloud_filtered_pc2;
@@ -327,7 +327,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 int main(int argc, char **argv)
 {
 
-  ros::init(argc, argv, "mantis_segmentation_node");
+  ros::init(argc, argv, "mantis_segmentation");
   ros::NodeHandle nh;
 
   plane_pub = nh.advertise<sensor_msgs::PointCloud2>("/dominant_plane",1);
