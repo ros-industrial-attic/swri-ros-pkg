@@ -300,7 +300,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
   ec.setClusterTolerance (0.03); // 2cm
-  ec.setMinClusterSize (0);
+  ec.setMinClusterSize (min_cluster_size_);
   ec.setMaxClusterSize (25000);
   ec.setSearchMethod (tree);
   ec.setInputCloud (cloud_filtered);
