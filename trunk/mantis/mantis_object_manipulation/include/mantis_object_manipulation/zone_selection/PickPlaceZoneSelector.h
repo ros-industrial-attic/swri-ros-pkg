@@ -16,6 +16,7 @@
 #include <arm_navigation_msgs/Shape.h>
 #include <arm_navigation_msgs/PlanningScene.h>
 #include <ros/ros.h>
+#include <typeinfo>
 
 // paramters used by the tabletop segmentation service
 const std::string TABLETOP_SEGMT_DEFAULT_NAMESPACE = "tabletop_segmentation";
@@ -48,7 +49,6 @@ public:
 		double XMax;
 		double YMin;
 		double YMax;
-		int NextLocationGenMode;
 		std::string ZoneName;
 
 		tf::Vector3 getSize() const
@@ -130,6 +130,26 @@ public:
 			return (std::abs(dist.x()) < containDist.x()) && ( std::abs(dist.y()) < containDist.y() );
 		}
 
+		bool parseParam(XmlRpc::XmlRpcValue& val)
+		{
+			std::string structMember;
+			if(val.getType() == XmlRpc::XmlRpcValue::TypeStruct)
+			{
+				structMember = "x_min"; XMin = static_cast<double>(val[structMember]);
+				structMember = "x_max"; XMax = static_cast<double>(val[structMember]);
+				structMember = "y_min"; YMin = static_cast<double>(val[structMember]);
+				structMember = "y_max"; YMax = static_cast<double>(val[structMember]);
+				structMember = "zone_name"; ZoneName = static_cast<std::string>(val[structMember]);
+				//structMember = "next_location_gen_mode"; zone.NextLocationGenMode = static_cast<int>(val[structMember]);
+			}
+			else
+			{
+				return false;
+			}
+
+			return true;
+		}
+
 	};
 
 	struct ObjectDetails
@@ -151,16 +171,16 @@ public:
 		std::string Tag;
 	};
 
-	struct PlaceZone
+	struct PlaceZone : public ZoneBounds
 	{
-
 	public:
 		enum NextPoseGenerationMode
 		{
 			RANDOM = 0,
 			DESIGNATED_GRID_ALONG_X = 1,
-			DESIGNATED_ZIGZAG_ALONG_X = 2,
-			DESIGNATED_ZIGZAG_ALONG_Y = 4
+			DESIGNATED_GRID_ALONG_Y = 2,
+			DESIGNATED_ZIGZAG_ALONG_X = 4,
+			DESIGNATED_ZIGZAG_ALONG_Y = 5
 		};
 
 	public:
@@ -175,48 +195,77 @@ public:
 		{
 			srand(time(NULL));
 		}
+
+		PlaceZone(tf::Vector3 size, tf::Vector3 pos)
+		:ZoneBounds(size,pos),
+		 FrameId("base_link"),
+		 NumGoalCandidates(8),
+		 Axis(0,0,1.0f),
+		 ReleaseDistanceFromTable(0.02),// 2cm
+		 MinObjectSpacing(0.05f),
+		 MaxObjectSpacing(0.08f),
+		 objects_in_zone_()
+		{
+
+		}
+
 		virtual ~PlaceZone()
 		{
 
 		}
 
-		void fetchParameters(std::string nameSpace)
+		bool parseParam(XmlRpc::XmlRpcValue& val)
 		{
-			// reference coordinate frame for zone
-			ros::param::param(nameSpace + "/frame_id",FrameId,FrameId);
-
-			// number of candidates
-			ros::param::param(nameSpace + "/pose_candidates",NumGoalCandidates,NumGoalCandidates);
-			if(NumGoalCandidates <= 0)
+			if(!ZoneBounds::parseParam(val))
 			{
-				NumGoalCandidates = 1;
+				return false;
 			}
 
-			// axis for producing additional candidates
-			double x = 0, y = 0,z = 0;
-			ros::param::param(nameSpace + "/orientation_axis/x",x,Axis.x());
-			ros::param::param(nameSpace + "/orientation_axis/y",y,Axis.y());
-			ros::param::param(nameSpace + "/orientation_axis/z",z,Axis.z());
-			Axis = tf::Vector3(x,y,z).normalized();
+			std::string structMember;
+			double x,y,z;
+			if(val.getType() == XmlRpc::XmlRpcValue::TypeStruct)
+			{
+				structMember = "frame_id"; FrameId = static_cast<std::string>(val[structMember]);
+				structMember = "pose_candidates"; NumGoalCandidates = static_cast<int>(val[structMember]);
+				structMember = "release_distance"; ReleaseDistanceFromTable = static_cast<double>(val[structMember]);
+				structMember = "next_location/min_spacing"; MinObjectSpacing = static_cast<double>(val[structMember]);
+				structMember = "next_location/max_spacing"; MinObjectSpacing = static_cast<double>(val[structMember]);
+				structMember = "next_location/generation_mode"; NextLocationGenMode = static_cast<int>(val[structMember]);
+				structMember = "orientation_axis/x"; x = static_cast<double>(val[structMember]);
+				structMember = "orientation_axis/y"; y = static_cast<double>(val[structMember]);
+				structMember = "orientation_axis/z"; z = static_cast<double>(val[structMember]);
+				Axis = tf::Vector3(x,y,z).normalized();
 
-			// distance of bottom surface of object to resting surface
-			ros::param::param(nameSpace + "/release_distance",ReleaseDistanceFromTable,ReleaseDistanceFromTable);
+				// parsing allowed id's array
+				structMember = "ids_allowed";
+				XmlRpc::XmlRpcValue idArray = val[structMember];
+				if((idArray.getType() == XmlRpc::XmlRpcValue::TypeArray) &&
+						(idArray[0].getType() == XmlRpc::XmlRpcValue::TypeInt))
+				{
+					for(unsigned int i = 0; i < idArray.size(); i++)
+					{
+						int id = static_cast<int>(idArray[i]);
+						Ids.push_back(id);
+					}
 
-			// next goal location generation parameters
-			ros::param::param(nameSpace + "/next_location/min_spacing",MinObjectSpacing,MinObjectSpacing);
-			ros::param::param(nameSpace + "/next_location/max_spacing",MaxObjectSpacing,MaxObjectSpacing);
+				}
+				else
+				{
+					return false;
+				}
+			}
+
+			resetZone();
+			return true;
 		}
 
 		void setNextObjectDetails(const ObjectDetails &objectDetails);
 
-		bool generateNextLocationCandidates(std::vector<geometry_msgs::PoseStamped> &placePoses);
+		bool isIdInZone(int i);
 
-		void resetZone(const ZoneBounds& bounds); // clears array of objects and sets new zone
+		bool generateNextLocationCandidates(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
 
-		ZoneBounds& getZoneBounds()
-		{
-			return place_zone_bounds_;
-		}
+		void resetZone(); // clear object list
 
 		geometry_msgs::Pose getZoneCenterPose();
 
@@ -232,18 +281,25 @@ public:
 		// Next goal position generation
 		double MinObjectSpacing; // minimum distance between two objects inside goal region as measured from their local origins
 		double MaxObjectSpacing; // maximum distance between two objects inside goal region as measured from their local origin
+		int NextLocationGenMode; // one of the supported enumeration values that determines how to generate the next location
+		std::vector<int> Ids; // Array of object id's allowed in this zone
 
 	protected:
 
 		void createPlaceCandidatePosesByRotation(const tf::Transform &startTrans,int numCandidates,tf::Vector3 axis,
 						std::vector<geometry_msgs::PoseStamped> &candidatePoses);
 
-		bool generateNextPlacePoseInRandomizedMode(std::vector<geometry_msgs::PoseStamped> &placePoses);
-		bool generateNextPlacePoseInDesignatedZigZagXMode(std::vector<geometry_msgs::PoseStamped> &placePoses);
-		bool generateNextPlacePoseInDesignatedZigZagYMode(std::vector<geometry_msgs::PoseStamped> &placePoses);
-		bool generateNextPlacePoseInGridXWise(std::vector<geometry_msgs::PoseStamped> &placePoses);
+		bool generateNextPlacePoseInRandomizedMode(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
+		bool generateNextPlacePoseInDesignatedZigZagXMode(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
+		bool generateNextPlacePoseInDesignatedZigZagYMode(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
+		bool generateNextPlacePoseInGridXWise(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
+		bool generateNextPlacePoseInGridYWise(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
+
+		// check overlaps with object in theses zones.
+		bool checkOverlaps(ZoneBounds &nextObjBounds,std::vector<PlaceZone* > zones);
+
+
 		// general zone member
-		ZoneBounds place_zone_bounds_;
 		std::vector<ObjectDetails> objects_in_zone_; // array of transforms and size for each object in zone
 		ObjectDetails next_object_details_;
 
@@ -260,80 +316,88 @@ public:
 	void fetchParameters(std::string nameSpace = "")
 	{
 		ros::NodeHandle nh;
+		std::string nodeName = ros::this_node::getName();
 
-		XmlRpc::XmlRpcValue list;
-		if(ros::param::get(nameSpace + "/zone_bounds",list))
+		// getting place zones
+		XmlRpc::XmlRpcValue placeZonesParam;
+		place_zones_.clear();
+		if(ros::param::get(nameSpace + "/place_zones",placeZonesParam))
 		{
-			ROS_INFO_STREAM(ros::this_node::getName()<<": found zone_bounds struct array with "<<list.size()<<" elements");
-			if(list.getType()==XmlRpc::XmlRpcValue::TypeArray && list.size() > 0 &&
-					(list[0].getType() == XmlRpc::XmlRpcValue::TypeStruct))
-			{
-				ROS_INFO_STREAM(ros::this_node::getName()<<": zone_bounds struct met type conditions");
-				Zones.clear();
-				for(int i = 0; i < list.size(); i++)
-				{
-					ZoneBounds zone;
-					std::string structMember;
-					XmlRpc::XmlRpcValue &val = list[i];
-					if(val.getType() == XmlRpc::XmlRpcValue::TypeStruct)
-					{
-						structMember = "x_min"; zone.XMin = static_cast<double>(val[structMember]);
-						structMember = "x_max"; zone.XMax = static_cast<double>(val[structMember]);
-						structMember = "y_min"; zone.YMin = static_cast<double>(val[structMember]);
-						structMember = "y_max"; zone.YMax = static_cast<double>(val[structMember]);
-						structMember = "zone_name"; zone.ZoneName = static_cast<std::string>(val[structMember]);
-						structMember = "next_location_gen_mode"; zone.NextLocationGenMode = static_cast<int>(val[structMember]);
-					}
+			ROS_INFO_STREAM(nodeName<<": found place_zones struct array with "<<placeZonesParam.size()<<" elements");
 
-					Zones.push_back(zone);
+			// checking if array contains structure elements
+			if(placeZonesParam.getType()==XmlRpc::XmlRpcValue::TypeArray && placeZonesParam.size() > 0 &&
+					(placeZonesParam[0].getType() == XmlRpc::XmlRpcValue::TypeStruct))
+			{
+				for(int i = 0; i < placeZonesParam.size(); i++)
+				{
+					PlaceZone zone;
+					if(!zone.parseParam(placeZonesParam[i]))
+					{
+						ROS_ERROR_STREAM(nodeName<<": Error parsing place zone");
+						break;
+					}
+					place_zones_.push_back(zone);
 				}
 			}
-			else
+
+		}
+		else
+		{
+			ROS_ERROR_STREAM(ros::this_node::getName()<<": did not find place_zones structure array");
+		}
+
+		// getting pick zones
+		XmlRpc::XmlRpcValue pickZoneParam;
+		pick_zones_.clear();
+		if(ros::param::get(nameSpace + "/pick_zones",pickZoneParam) && (pickZoneParam[0].getType() == XmlRpc::XmlRpcValue::TypeArray))
+		{
+			ROS_INFO_STREAM(nodeName<<": found pick_zones struct array with "<<pickZoneParam.size()<<" elements");
+
+			for(int  i = 0; i < pickZoneParam.size(); i++)
 			{
-				ROS_WARN_STREAM(ros::this_node::getName()<<": zone_bounds struct did not meet type requirements");
+				ZoneBounds pickZone;
+				if(!pickZone.parseParam(pickZoneParam[i]))
+				{
+					ROS_ERROR_STREAM(nodeName<<": Error parsing pick zone");
+					break;
+				}
+				pick_zones_.push_back(pickZone);
 			}
 		}
 		else
 		{
-			ROS_WARN_STREAM(ros::this_node::getName()<<": did not find zone_bounds struct array");
+			ROS_ERROR_STREAM(ros::this_node::getName()<<": did not find pick_zones structure array");
 		}
-
-		// getting parameters for place zone
-		place_zone_.fetchParameters(nameSpace + "/place_zone");
-
-		// setting internal members
-		place_zone_.resetZone(Zones[place_zone_index_]);
 	}
 
-	void swapPickPlaceZones();
+	void goToNextPickZone(); //
 	bool isInPickZone(const std::vector<sensor_msgs::PointCloud> &clusters,std::vector<int> &inZone);
 	bool isInPickZone(const sensor_msgs::PointCloud &cluster);
 
-	bool generateNextLocationCandidates(std::vector<geometry_msgs::PoseStamped> &placePoses)
-	{
-		return place_zone_.generateNextLocationCandidates(placePoses);
-	}
+	bool generateNextLocationCandidates(std::vector<geometry_msgs::PoseStamped> &placePoses);
 
-	PlaceZone& getPlaceZone()
+
+	void setNextObjectDetails(const ObjectDetails &obj)
 	{
-		return place_zone_;
+		next_obj_details_ = obj;
 	}
 
 	void getPlaceZoneMarker(visualization_msgs::Marker &marker);
 	void getPickZoneMarker(visualization_msgs::Marker &marker);
 
-public:
-
-	// ros parameters
-	std::vector<ZoneBounds> Zones;
 
 protected:
 
-	//void updateTabletopSegmentationBounds(); // updates tabletop segmentation parameters used by the segmentation service
+	// ros parameters
+	std::vector<ZoneBounds> pick_zones_;
+	std::vector<PlaceZone> place_zones_;
 
+	// internal
 	int pick_zone_index_; // index to current pick zone in array "Zones"
-	int place_zone_index_;// index to current place zone in array "Zones"
-	PlaceZone place_zone_;
+	std::vector<PlaceZone* > available_place_zones_;  // reference array to place zones that do not overlap with current pick zone
+	ObjectDetails next_obj_details_;
+
 };
 
 #endif /* PICKPLACEZONESELECTOR_H_ */
