@@ -23,7 +23,7 @@
 
 #include <visualization_msgs/Marker.h>
 
-#include "nrg_object_recognition/segmentation.h"
+//#include "nrg_object_recognition/segmentation.h"
 
   ros::Publisher plane_pub;
   ros::Publisher bound_pub;
@@ -250,7 +250,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   }
   sensor_msgs::PointCloud2 cloud_filtered_pc2;
   pcl::toROSMsg(*cloud_filtered, cloud_filtered_pc2);
-  cloud_filtered_pc2.header.frame_id = "/camera_depth_optical_frame";
+  cloud_filtered_pc2.header = in_cloud.header;
   bound_pub.publish(cloud_filtered_pc2);
 
   //std::cout << "num points in spatially filtered cloud: " << cloud_filtered->points.size() << std::endl;
@@ -277,7 +277,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
     extract.filter (*cloud_plane);
     sensor_msgs::PointCloud2 plane_pc2;
     pcl::toROSMsg(*cloud_plane, plane_pc2);
-    plane_pc2.header.frame_id = "/camera_depth_optical_frame";
+    plane_pc2.header = in_cloud.header;
     plane_pub.publish(plane_pc2);
 
     //std::cout << "Removing tabletop..."  << std::endl;
@@ -289,7 +289,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   }
 
   pcl::toROSMsg(*cloud_filtered, cloud_filtered_pc2);
-  cloud_filtered_pc2.header.frame_id = "/camera_depth_optical_frame";
+  cloud_filtered_pc2.header = in_cloud.header;
   cluster_pub.publish(cloud_filtered_pc2);
 
      //std::cout << "Number of points in remaining clusters: " << cloud_filtered->points.size()  << std::endl;
