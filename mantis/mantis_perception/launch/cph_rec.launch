@@ -1,3 +1,4 @@
+<?xml version="1.0" ?>
 <launch>
 
   <arg name="log_to_warehouse" default="false" />
@@ -9,7 +10,7 @@
 
   <rosparam command="load" file="$(find freetail_object_manipulation)/config/localhost.yaml"/>
 
-  <include file="$(find freetail_ball_bin_segmentation)/launch/tabletop_segmentation.launch">
+  <include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
     <arg name="tabletop_segmentation_points_in" value="camera/depth_registered/points"/>
   </include>
 
@@ -20,4 +21,9 @@
   <!-- Get TF -->
   <node pkg="robot_state_publisher" name="st_pub" type="state_publisher"/>
 
+<!-- recognition -->
+  <node pkg="nrg_object_recognition" name="cph_recognition_node" type="cph_recognition_node" 
+	output="screen" args="$(find mantis_perception)/data">
+  </node>
+ 
 </launch>
