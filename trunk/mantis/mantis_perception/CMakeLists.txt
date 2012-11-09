@@ -35,8 +35,11 @@ rosbuild_add_executable(test_convert_obj_to_pcd src/test/test_convert_obj_to_pcd
 
 rosbuild_add_executable(test_cluster_recognition src/test/test_cluster_recognition_node.cpp)
 
+rosbuild_add_executable(mantis_segmentation src/cph_recognition/segmentation.cpp)
+
 rosbuild_add_executable(mantis_object_recognition src/cph_recognition/recognition.cpp)
 
 rosbuild_add_executable(mantis_recognition_test src/cph_recognition/test.cpp)
+
 
 target_link_libraries(test_cluster_recognition MantisPerception)
