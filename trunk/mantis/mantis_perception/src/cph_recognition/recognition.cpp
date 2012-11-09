@@ -37,15 +37,17 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 
   nrg_object_recognition::recognition rec_srv;
 
-  sensor_msgs::PointCloud received_cluster;
+  sensor_msgs::PointCloud2 received_cluster;
+  //sensor_msgs::PointCloud received_cluster;
   received_cluster=main_request.clusters.at(0);
-  sensor_msgs::PointCloud2 cluster;
-  sensor_msgs::convertPointCloudToPointCloud2(received_cluster, cluster);
-  cluster.header.frame_id=main_request.table.pose.header.frame_id;
-  cluster.header.stamp=main_request.table.pose.header.stamp;
+  //sensor_msgs::PointCloud2 cluster;
+  //sensor_msgs::convertPointCloudToPointCloud2(received_cluster, cluster);
+  //cluster.header.frame_id=main_request.table.pose.header.frame_id;
+  //cluster.header.stamp=main_request.table.pose.header.stamp;
 
 
-  rec_srv.request.cluster = cluster;
+  rec_srv.request.cluster = received_cluster;
+  //rec_srv.request.cluster = cluster;
   rec_srv.request.threshold = 1000;
       
   //Call recognition service
@@ -128,8 +130,8 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
       sensor_msgs::PointCloud2 recognized_cloud;
       pcl::toROSMsg(*trainingMatch, recognized_cloud);
       //Add transform to header
-      recognized_cloud.header.frame_id = main_request.table.pose.header.frame_id;
-      recognized_cloud.header.stamp=main_request.table.pose.header.stamp;
+      //recognized_cloud.header.frame_id = main_request.table.pose.header.frame_id;
+      //recognized_cloud.header.stamp=main_request.table.pose.header.stamp;
       //Publish to topic /recognition_result.
       rec_pub.publish(recognized_cloud);
 /////////end visualization////////////////////////////////////////////////////
