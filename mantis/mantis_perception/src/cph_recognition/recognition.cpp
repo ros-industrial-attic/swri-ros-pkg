@@ -15,7 +15,7 @@
 #include <math.h>
 #include <string.h>
 
-#include <flann/flann.h>
+#include <visualization_msgs/Marker.h>
 
 #include <boost/filesystem.hpp>
 
@@ -26,6 +26,7 @@
 
 ros::ServiceClient cph_client;
 ros::Publisher rec_pub;
+ros::Publisher vis_pub;
 
 bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
             mantis_perception::mantis_recognition::Response &main_response)
@@ -45,7 +46,6 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 
 
   rec_srv.request.cluster = cluster;
-  //rec_srv.request.cluster = main_request.clusters.at(0);
   rec_srv.request.threshold = 1000;
       
   //Call recognition service
@@ -55,10 +55,13 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     ROS_ERROR("Call to cph recognition service failed");
   }
   
-  //Assign response values
+////////////////////Assign response values/////////////////////////
   main_response.label = rec_srv.response.label;
   main_response.pose = rec_srv.response.pose;
   ROS_WARN_STREAM("Object labeled as "<< main_response.label);
+  //Assign id and marker based on label
+  visualization_msgs::Marker mesh_marker;
+  mesh_marker.type = visualization_msgs::Marker::MESH_RESOURCE;
 
   std::size_t found;
   std::string label = main_response.label;
@@ -67,46 +70,36 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   if(label.substr(found+1)=="box")
   {
     main_response.model_id=1;
+    mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enblosure.STL";
   }
   else if (label.substr(found+1)=="coupling")
   {
     main_response.model_id=2;
+    mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/rubber_coupler_clamps.STL";
   }
   else if (label.substr(found+1)=="pvc_t")
   {
     main_response.model_id=3;
+    mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
   }
   else if (label.substr(found+1)=="white")
   {
     main_response.model_id=4;
+    mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.stl";
   }
   else if (label.substr(found+1)=="pvc_elbow")
   {
     main_response.model_id=5;
+    mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_elbow.stl";
   }
   else
   {
-	main_response.model_id=0;
+	main_response.model_id=1;
 	ROS_ERROR_STREAM("Object not properly identified");
   }
-  //std::string objName = "box";
-/*//  objName = "pvc_t";
-  objName = "white";
-  if (label.compare(label.length()-objName.length(),objName.length(),objName) == 0)
-  {
-	  main_response.model_id=3;
-  }
-  objName = "coupling";
-  if (label.compare(label.length()-objName.length(),objName.length(),objName) == 0)
-  {
-	  main_response.model_id=4;
-  }
-  objName = "pvc_elbow";
-  if (label.compare(label.length()-objName.length(),objName.length(),objName) == 0)
-  {
-	  main_response.model_id=5;
-  }
-*/
+
+  main_response.mesh_marker = mesh_marker;
+  vis_pub.publish( mesh_marker );
 
   ROS_INFO("CPH recognition complete");
 
@@ -154,6 +147,7 @@ int main(int argc, char **argv)
   ros::ServiceServer rec_serv = n.advertiseService("/mantis_object_recognition", rec_cb);
   cph_client = n.serviceClient<nrg_object_recognition::recognition>("/cph_recognition");
   rec_pub = n.advertise<sensor_msgs::PointCloud2>("/recognition_result",1);
+  vis_pub = n.advertise<visualization_msgs::Marker>( "matching_mesh_marker", 0 );
   
   ROS_INFO("mantis object detection/recognition node ready!");
   
