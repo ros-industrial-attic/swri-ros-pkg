@@ -51,8 +51,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_library(RobotNavigator 
 	src/arm_navigators/RobotPickPlaceNavigator.cpp 
 	src/arm_navigators/SpherePickingRobotNavigator.cpp
-	src/zone_selection/PickPlaceZoneSelector.cpp
-	src/arm_navigators/AutomatedPickerRobotNavigator.cpp)
+	src/zone_selection/PickPlaceZoneSelector.cpp)
+#	src/arm_navigators/AutomatedPickerRobotNavigator.cpp)
 
 rosbuild_add_executable(mantis_pick_place_node src/nodes/pick_place_demo_node.cpp)
 target_link_libraries(mantis_pick_place_node RobotNavigator)
@@ -60,8 +60,8 @@ target_link_libraries(mantis_pick_place_node RobotNavigator)
 rosbuild_add_executable(mantis_sphere_picking_node src/nodes/sphere_picking_demo_node.cpp)
 target_link_libraries(mantis_sphere_picking_node RobotNavigator)
 
-rosbuild_add_executable(test_zone_selector_node src/test/test_zone_selector_node.cpp)
-target_link_libraries(test_zone_selector_node RobotNavigator)
+#rosbuild_add_executable(test_zone_selector_node src/test/test_zone_selector_node.cpp)
+#target_link_libraries(test_zone_selector_node RobotNavigator)
 
-rosbuild_add_executable(automated_pick_place_node src/nodes/automated_pick_place_node.cpp)
-target_link_libraries(automated_pick_place_node RobotNavigator)
+#rosbuild_add_executable(automated_pick_place_node src/nodes/automated_pick_place_node.cpp)
+#target_link_libraries(automated_pick_place_node RobotNavigator)
