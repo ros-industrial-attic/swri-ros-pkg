@@ -1,17 +1,23 @@
 #include "ros/ros.h"
 #include "mantis_perception/mantis_segmentation.h"
+#include "tabletop_object_detector/TabletopSegmentation.h"
 
 #include <pcl/ModelCoefficients.h>
+#include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/project_inliers.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/surface/convex_hull.h>
 
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -22,12 +28,14 @@
 #include <tf/transform_datatypes.h>
 
 #include <visualization_msgs/Marker.h>
+#include "tabletop_object_detector/marker_generator.h"
 
 //#include "nrg_object_recognition/segmentation.h"
 
   ros::Publisher plane_pub;
   ros::Publisher bound_pub;
   ros::Publisher cluster_pub;
+  ros::Publisher first_cluster_pub;
 
 class MantisSegmentor
 {
@@ -88,6 +96,19 @@ class MantisSegmentor
   void processCloud(const sensor_msgs::PointCloud2 &cloud,
                       mantis_perception::mantis_segmentation::Response &seg_response,
                       tabletop_object_detector::Table table);
+
+  tf::Transform getPlaneTransform (pcl::ModelCoefficients coeffs,
+  		double up_direction, bool flatten_plane);
+
+  template <typename PointT>
+  bool getPlanePoints (const pcl::PointCloud<PointT> &table,
+  		     const tf::Transform& table_plane_trans,
+  		     sensor_msgs::PointCloud &table_points);
+
+  template <class PointCloudType>
+  tabletop_object_detector::Table getTable(std_msgs::Header cloud_header,
+                                    const tf::Transform &table_plane_trans,
+                                    const PointCloudType &table_points);
 
   public:
 
@@ -213,7 +234,8 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   // Create the filtering object: downsample the dataset using a leaf size of 1cm
   //std::cout << "Voxel grid filtering...\n";
   pcl::VoxelGrid<pcl::PointXYZ> vg;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>), cloud_filtered_0 (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_0 (new pcl::PointCloud<pcl::PointXYZ>);
   vg.setInputCloud (cloud);
   vg.setLeafSize (0.001f, 0.001f, 0.001f);
   vg.filter (*cloud_filtered_0);
@@ -248,13 +270,14 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
     // if(position->x > min_x && position->x < max_x && position->y > (2.145*position->z - 3.31) && position->y < (-.466*position->z + .400))
      cloud_filtered->push_back(*position);
   }
+
   sensor_msgs::PointCloud2 cloud_filtered_pc2;
   pcl::toROSMsg(*cloud_filtered, cloud_filtered_pc2);
   cloud_filtered_pc2.header = in_cloud.header;
   bound_pub.publish(cloud_filtered_pc2);
 
   //std::cout << "num points in spatially filtered cloud: " << cloud_filtered->points.size() << std::endl;
-  int i=0, nr_points = (int) cloud_filtered->points.size ();
+  int nr_points = (int) cloud_filtered->points.size ();
   while (cloud_filtered->points.size () > 0.5 * nr_points)
   {
     // Segment the largest planar component from the remaining cloud
@@ -274,7 +297,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
     extract.setNegative (false);
 
     // Publish dominant plane
-    extract.filter (*cloud_plane);
+    extract.filter (*cloud_plane); //cloud_plane is a pcl::PointCloud<pcl::PointXYZ>::Ptr
     sensor_msgs::PointCloud2 plane_pc2;
     pcl::toROSMsg(*cloud_plane, plane_pc2);
     plane_pc2.header = in_cloud.header;
@@ -306,6 +329,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   ec.setInputCloud (cloud_filtered);
   ec.extract (cluster_indices);
 
+  std::vector<sensor_msgs::PointCloud2> pc2_clusters;
   //std::cout << "length of cluster_indices: " << cluster_indices.size() << std::endl;
   int j = 0;
   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
@@ -319,11 +343,271 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
     std::cout << "writing cluster to service response. It has " << cloud_cluster->points.size() << " points.\n";
     sensor_msgs::PointCloud2 tempROSMsg;
     pcl::toROSMsg(*cloud_cluster, tempROSMsg);
-    seg_response.clusters.push_back(tempROSMsg);
+    pc2_clusters.push_back(tempROSMsg);
+    //seg_response.clusters.push_back(tempROSMsg);
     j++;
   }
+  sensor_msgs::PointCloud2 big_cluster;
+  big_cluster=pc2_clusters.at(0);
+  big_cluster.header = in_cloud.header;
+  first_cluster_pub.publish(big_cluster);
+
+//convert array of PointCloud2 to PointCloud
+  std::vector<sensor_msgs::PointCloud> out_clusters;
+  ROS_INFO("Cluster published and put into PointCloud2 array");
+  for (int i=0; i<pc2_clusters.size(); i++)
+  {
+	  sensor_msgs::PointCloud out_cloud;
+	  ROS_INFO("Inside for loop...");
+	  sensor_msgs::convertPointCloud2ToPointCloud(pc2_clusters.at(i), out_cloud);
+	  out_clusters.push_back(out_cloud);
+  }
+  ROS_INFO("Cluster converted from PointCloud2 array to PointCloud array");
+  seg_response.clusters=out_clusters;
+  ROS_INFO("Clusters converted");
+  //response.clusters = clusters;
+
+//MAKE THE TABLE ////////////////////////////////////////
+  // Step 1 : Filter, remove NaNs and downsample
+  pcl::PointCloud<Point>::Ptr cloud_ptr (new pcl::PointCloud<Point>);
+  pcl::fromROSMsg (in_cloud, *cloud_ptr);
+  pcl::PassThrough<Point> pass_;
+  pass_.setInputCloud (cloud_ptr);
+  pass_.setFilterFieldName ("z");
+  pass_.setFilterLimits (z_filter_min_, z_filter_max_);
+  pcl::PointCloud<Point>::Ptr z_cloud_filtered_ptr (new pcl::PointCloud<Point>);
+  pass_.filter (*z_cloud_filtered_ptr);
+
+  pass_.setInputCloud (z_cloud_filtered_ptr);
+  pass_.setFilterFieldName ("y");
+  pass_.setFilterLimits (y_filter_min_, y_filter_max_);
+  pcl::PointCloud<Point>::Ptr y_cloud_filtered_ptr (new pcl::PointCloud<Point>);
+  pass_.filter (*y_cloud_filtered_ptr);
+
+  pass_.setInputCloud (y_cloud_filtered_ptr);
+  pass_.setFilterFieldName ("x");
+  pass_.setFilterLimits (x_filter_min_, x_filter_max_);
+  pcl::PointCloud<Point>::Ptr cloud_filtered_ptr (new pcl::PointCloud<Point>);
+  pass_.filter (*cloud_filtered_ptr);
+
+  pcl::PointCloud<Point>::Ptr cloud_downsampled_ptr (new pcl::PointCloud<Point>);
+  pcl::VoxelGrid<Point> grid_;
+  grid_.setLeafSize (plane_detection_voxel_size_, plane_detection_voxel_size_, plane_detection_voxel_size_);
+  grid_.setFilterFieldName ("z");
+  grid_.setFilterLimits (z_filter_min_, z_filter_max_);
+  grid_.setDownsampleAllData (false);
+  grid_.setInputCloud (cloud_filtered_ptr);
+  grid_.filter (*cloud_downsampled_ptr);
+
+  // Step 2 : Estimate normals
+  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals_ptr (new pcl::PointCloud<pcl::Normal>);
+  pcl::search::KdTree<Point>::Ptr normals_tree_;
+  normals_tree_ = boost::make_shared<pcl::search::KdTree<Point> > ();
+  // Normal estimation parameters
+  pcl::NormalEstimation<Point, pcl::Normal> n3d_;
+  n3d_.setKSearch (10);
+  n3d_.setSearchMethod (normals_tree_);
+  n3d_.setInputCloud (cloud_downsampled_ptr);
+  n3d_.compute (*cloud_normals_ptr);
+  ROS_INFO("Step 2 done");
+
+  // Step 3 : Perform planar segmentation
+  pcl::PointIndices::Ptr table_inliers_ptr (new pcl::PointIndices);
+  pcl::ModelCoefficients::Ptr table_coefficients_ptr (new pcl::ModelCoefficients);
+  pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg_;
+  // Table model fitting parameters
+  seg_.setDistanceThreshold (0.05);
+  seg_.setMaxIterations (10000);
+  seg_.setNormalDistanceWeight (0.1);
+  seg_.setOptimizeCoefficients (true);
+  seg_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+  seg_.setMethodType (pcl::SAC_RANSAC);
+  seg_.setProbability (0.99);
+  seg_.setInputCloud (cloud_downsampled_ptr);
+  seg_.setInputNormals (cloud_normals_ptr);
+  seg_.segment (*table_inliers_ptr, *table_coefficients_ptr);
+
+  if (table_coefficients_ptr->values.size () <=3)
+  {
+	ROS_INFO("Failed to detect table in scan");
+	seg_response.result = seg_response.NO_TABLE;
+	return;
+  }
+
+  if ( table_inliers_ptr->indices.size() < (unsigned int)inlier_threshold_)
+  {
+	ROS_INFO("Plane detection has %d inliers, below min threshold of %d", (int)table_inliers_ptr->indices.size(),
+			 inlier_threshold_);
+	seg_response.result = seg_response.NO_TABLE;
+	return;
+  }
+
+  ROS_INFO ("[TableObjectDetector::input_callback] Model found with %d inliers: [%f %f %f %f].",
+			(int)table_inliers_ptr->indices.size (),
+			table_coefficients_ptr->values[0], table_coefficients_ptr->values[1],
+			table_coefficients_ptr->values[2], table_coefficients_ptr->values[3]);
+  ROS_INFO("Step 3 done");
+
+  pcl::PointCloud<Point>::Ptr table_projected_ptr (new pcl::PointCloud<Point>);
+  pcl::ProjectInliers<Point> proj_;
+  proj_.setModelType (pcl::SACMODEL_PLANE);
+  proj_.setInputCloud (cloud_downsampled_ptr);
+  proj_.setIndices (table_inliers_ptr);
+  proj_.setModelCoefficients (table_coefficients_ptr);
+  proj_.filter (*table_projected_ptr);
+  tf::Transform table_plane_trans;
+  table_plane_trans = getPlaneTransform (*table_coefficients_ptr, up_direction_, false);
+
+  sensor_msgs::PointCloud table_points;
+  if (!getPlanePoints<Point> (*table_projected_ptr, table_plane_trans, table_points))
+  {
+    seg_response.result = seg_response.OTHER_ERROR;
+    return;
+  }
+
+  seg_response.table = getTable<sensor_msgs::PointCloud>(in_cloud.header, table_plane_trans, table_points);
 
 }
+tf::Transform MantisSegmentor::getPlaneTransform (pcl::ModelCoefficients coeffs,
+		double up_direction, bool flatten_plane)
+{
+  ROS_ASSERT(coeffs.values.size() > 3);
+  double a = coeffs.values[0], b = coeffs.values[1], c = coeffs.values[2], d = coeffs.values[3];
+  //asume plane coefficients are normalized
+  tf::Vector3 position(-a*d, -b*d, -c*d);
+  tf::Vector3 z(a, b, c);
+
+  //if we are flattening the plane, make z just be (0,0,up_direction)
+  if(flatten_plane)
+  {
+    ROS_INFO("flattening plane");
+    z[0] = z[1] = 0;
+    z[2] = up_direction;
+  }
+  else
+  {
+    //make sure z points "up"
+    ROS_DEBUG("in getPlaneTransform, z: %0.3f, %0.3f, %0.3f", z[0], z[1], z[2]);
+    if ( z.dot( tf::Vector3(0, 0, up_direction) ) < 0)
+    {
+      z = -1.0 * z;
+      ROS_INFO("flipped z");
+    }
+  }
+  //try to align the x axis with the x axis of the original frame
+  //or the y axis if z and x are too close too each other
+  tf::Vector3 x(1, 0, 0);
+  if ( fabs(z.dot(x)) > 1.0 - 1.0e-4) x = tf::Vector3(0, 1, 0);
+  tf::Vector3 y = z.cross(x).normalized();
+  x = y.cross(z).normalized();
+
+  tf::Matrix3x3 rotation;
+  rotation[0] = x; 	// x
+  rotation[1] = y; 	// y
+  rotation[2] = z; 	// z
+  rotation = rotation.transpose();
+  tf::Quaternion orientation;
+  rotation.getRotation(orientation);
+  ROS_DEBUG("in getPlaneTransform, x: %0.3f, %0.3f, %0.3f", x[0], x[1], x[2]);
+  ROS_DEBUG("in getPlaneTransform, y: %0.3f, %0.3f, %0.3f", y[0], y[1], y[2]);
+  ROS_DEBUG("in getPlaneTransform, z: %0.3f, %0.3f, %0.3f", z[0], z[1], z[2]);
+  return tf::Transform(orientation, position);
+}
+template <typename PointT>
+bool MantisSegmentor::getPlanePoints (const pcl::PointCloud<PointT> &table,
+		     const tf::Transform& table_plane_trans,
+		     sensor_msgs::PointCloud &table_points)
+{
+  // Prepare the output
+  table_points.header = table.header;
+  table_points.points.resize (table.points.size ());
+  for (size_t i = 0; i < table.points.size (); ++i)
+  {
+    table_points.points[i].x = table.points[i].x;
+    table_points.points[i].y = table.points[i].y;
+    table_points.points[i].z = table.points[i].z;
+  }
+
+  // Transform the data
+  tf::TransformListener listener;
+  tf::StampedTransform table_pose_frame(table_plane_trans, table.header.stamp,
+                                        table.header.frame_id, "table_frame");
+  listener.setTransform(table_pose_frame);
+  std::string error_msg;
+  if (!listener.canTransform("table_frame", table_points.header.frame_id, table_points.header.stamp, &error_msg))
+  {
+    ROS_ERROR("Can not transform point cloud from frame %s to table frame; error %s",
+	      table_points.header.frame_id.c_str(), error_msg.c_str());
+    return false;
+  }
+  int current_try=0, max_tries = 3;
+  while (1)
+  {
+    bool transform_success = true;
+    try
+    {
+      listener.transformPointCloud("table_frame", table_points, table_points);
+    }
+    catch (tf::TransformException ex)
+    {
+      transform_success = false;
+      if ( ++current_try >= max_tries )
+      {
+        ROS_ERROR("Failed to transform point cloud from frame %s into table_frame; error %s",
+                  table_points.header.frame_id.c_str(), ex.what());
+        return false;
+      }
+      //sleep a bit to give the listener a chance to get a new transform
+      ros::Duration(0.1).sleep();
+    }
+    if (transform_success) break;
+  }
+  table_points.header.stamp = table.header.stamp;
+  table_points.header.frame_id = "table_frame";
+  return true;
+}
+
+
+template <class PointCloudType>
+tabletop_object_detector::Table MantisSegmentor::getTable(std_msgs::Header cloud_header,
+                                  const tf::Transform &table_plane_trans,
+                                  const PointCloudType &table_points)
+{
+	tabletop_object_detector::Table table;
+
+  //get the extents of the table
+  if (!table_points.points.empty())
+  {
+    table.x_min = table_points.points[0].x;
+    table.x_max = table_points.points[0].x;
+    table.y_min = table_points.points[0].y;
+    table.y_max = table_points.points[0].y;
+  }
+  for (size_t i=1; i<table_points.points.size(); ++i)
+  {
+    if (table_points.points[i].x<table.x_min && table_points.points[i].x>-3.0) table.x_min = table_points.points[i].x;
+    if (table_points.points[i].x>table.x_max && table_points.points[i].x< 3.0) table.x_max = table_points.points[i].x;
+    if (table_points.points[i].y<table.y_min && table_points.points[i].y>-3.0) table.y_min = table_points.points[i].y;
+    if (table_points.points[i].y>table.y_max && table_points.points[i].y< 3.0) table.y_max = table_points.points[i].y;
+  }
+
+  geometry_msgs::Pose table_pose;
+  tf::poseTFToMsg(table_plane_trans, table_pose);
+  table.pose.pose = table_pose;
+  table.pose.header = cloud_header;
+
+
+  visualization_msgs::Marker tableMarker = tabletop_object_detector::MarkerGenerator::getTableMarker(table.x_min, table.x_max,
+                                                                           table.y_min, table.y_max);
+  tableMarker.header = cloud_header;
+  tableMarker.pose = table_pose;
+  tableMarker.ns = "tabletop_node";
+  tableMarker.id = current_marker_id_++;
+  marker_pub_.publish(tableMarker);
+
+  return table;
+}
+
 int main(int argc, char **argv)
 {
 
@@ -333,6 +617,7 @@ int main(int argc, char **argv)
   plane_pub = nh.advertise<sensor_msgs::PointCloud2>("/dominant_plane",1);
   bound_pub = nh.advertise<sensor_msgs::PointCloud2>("/bounded_scene",1);
   cluster_pub = nh.advertise<sensor_msgs::PointCloud2>("/pre_clustering",1);
+  first_cluster_pub = nh.advertise<sensor_msgs::PointCloud2>("/biggest_cluster",1);
   //ros::ServiceServer serv = n.advertiseService("/segmentation", segment_cb);
 
   MantisSegmentor node(nh);
