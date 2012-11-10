@@ -34,7 +34,9 @@ public:
 	public:
 
 		ZoneBounds(){}
-		ZoneBounds(tf::Vector3 size, tf::Vector3 pos)
+		ZoneBounds(tf::Vector3 size, tf::Vector3 pos,std::string frameId = "base_link",std::string name = "")
+		:FrameId(frameId),
+		 ZoneName(name)
 		{
 			tf::Vector3 topLeft = tf::Transform(tf::Quaternion::getIdentity(),
 					pos)*tf::Vector3(size.x()/2.0f,size.y()/2.0f,0.0f);
@@ -50,6 +52,7 @@ public:
 		double YMin;
 		double YMax;
 		std::string ZoneName;
+		std::string FrameId;
 
 		tf::Vector3 getSize() const
 		{
@@ -140,6 +143,7 @@ public:
 				structMember = "y_min"; YMin = static_cast<double>(val[structMember]);
 				structMember = "y_max"; YMax = static_cast<double>(val[structMember]);
 				structMember = "zone_name"; ZoneName = static_cast<std::string>(val[structMember]);
+				structMember = "frame_id"; FrameId = static_cast<std::string>(val[structMember]);
 				//structMember = "next_location_gen_mode"; zone.NextLocationGenMode = static_cast<int>(val[structMember]);
 			}
 			else
@@ -177,16 +181,15 @@ public:
 		enum NextPoseGenerationMode
 		{
 			RANDOM = 0,
-			DESIGNATED_GRID_ALONG_X = 1,
-			DESIGNATED_GRID_ALONG_Y = 2,
-			DESIGNATED_ZIGZAG_ALONG_X = 4,
-			DESIGNATED_ZIGZAG_ALONG_Y = 5
+			GRID_ALONG_X = 1,
+			GRID_ALONG_Y = 2,
+			ZIGZAG_ALONG_X = 4,
+			ZIGZAG_ALONG_Y = 5
 		};
 
 	public:
 		PlaceZone()
-		:FrameId("base_link"),
-		 NumGoalCandidates(8),
+		:NumGoalCandidates(8),
 		 Axis(0,0,1.0f),
 		 ReleaseDistanceFromTable(0.02),// 2cm
 		 MinObjectSpacing(0.05f),
@@ -198,7 +201,6 @@ public:
 
 		PlaceZone(tf::Vector3 size, tf::Vector3 pos)
 		:ZoneBounds(size,pos),
-		 FrameId("base_link"),
 		 NumGoalCandidates(8),
 		 Axis(0,0,1.0f),
 		 ReleaseDistanceFromTable(0.02),// 2cm
@@ -222,19 +224,27 @@ public:
 			}
 
 			std::string structMember;
-			double x,y,z;
+			double x = 0.0f,y = 0.0f,z = 0.0f;
 			if(val.getType() == XmlRpc::XmlRpcValue::TypeStruct)
 			{
-				structMember = "frame_id"; FrameId = static_cast<std::string>(val[structMember]);
+				//structMember = "frame_id"; FrameId = static_cast<std::string>(val[structMember]);
 				structMember = "pose_candidates"; NumGoalCandidates = static_cast<int>(val[structMember]);
 				structMember = "release_distance"; ReleaseDistanceFromTable = static_cast<double>(val[structMember]);
-				structMember = "next_location/min_spacing"; MinObjectSpacing = static_cast<double>(val[structMember]);
-				structMember = "next_location/max_spacing"; MinObjectSpacing = static_cast<double>(val[structMember]);
-				structMember = "next_location/generation_mode"; NextLocationGenMode = static_cast<int>(val[structMember]);
-				structMember = "orientation_axis/x"; x = static_cast<double>(val[structMember]);
-				structMember = "orientation_axis/y"; y = static_cast<double>(val[structMember]);
-				structMember = "orientation_axis/z"; z = static_cast<double>(val[structMember]);
+
+				XmlRpc::XmlRpcValue nextParam;
+				structMember = "next_location"; nextParam = val[structMember];
+				structMember = "min_spacing"; MinObjectSpacing = static_cast<double>(nextParam[structMember]);
+				structMember = "max_spacing"; MinObjectSpacing = static_cast<double>(nextParam[structMember]);
+				structMember = "generation_mode"; NextLocationGenMode = static_cast<int>(nextParam[structMember]);
+
+				XmlRpc::XmlRpcValue axisParam;
+				structMember = "orientation_axis"; axisParam = val[structMember];
+				structMember = "x"; x = static_cast<double>(axisParam[structMember]);
+				structMember = "y"; y = static_cast<double>(axisParam[structMember]);
+				structMember = "z"; z = static_cast<double>(axisParam[structMember]);
 				Axis = tf::Vector3(x,y,z).normalized();
+
+				ROS_INFO_STREAM(ros::this_node::getName()<<": Axis: "<<Axis.x()<<", "<<Axis.y()<<", "<<Axis.z());
 
 				// parsing allowed id's array
 				structMember = "ids_allowed";
@@ -272,7 +282,7 @@ public:
 	public:
 
 		// ros parameters
-		std::string FrameId;
+		//std::string FrameId;
 		int NumGoalCandidates; // number of total goal transforms, each additional transform is produced by rotating
 								// about an axis by a specified angle
 		tf::Vector3 Axis; // used in producing additional goal candidates
@@ -290,8 +300,8 @@ public:
 						std::vector<geometry_msgs::PoseStamped> &candidatePoses);
 
 		bool generateNextPlacePoseInRandomizedMode(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
-		bool generateNextPlacePoseInDesignatedZigZagXMode(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
-		bool generateNextPlacePoseInDesignatedZigZagYMode(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
+		bool generateNextPlacePoseInZigZagXMode(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
+		bool generateNextPlacePoseInZigZagYMode(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
 		bool generateNextPlacePoseInGridXWise(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
 		bool generateNextPlacePoseInGridYWise(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
 
@@ -344,13 +354,13 @@ public:
 		}
 		else
 		{
-			ROS_ERROR_STREAM(ros::this_node::getName()<<": did not find place_zones structure array");
+			ROS_ERROR_STREAM(ros::this_node::getName()<<": did not find place_zones structure array under "<<nameSpace + "/place_zones");
 		}
 
 		// getting pick zones
 		XmlRpc::XmlRpcValue pickZoneParam;
 		pick_zones_.clear();
-		if(ros::param::get(nameSpace + "/pick_zones",pickZoneParam) && (pickZoneParam[0].getType() == XmlRpc::XmlRpcValue::TypeArray))
+		if(ros::param::get(nameSpace + "/pick_zones",pickZoneParam) && (pickZoneParam.getType() == XmlRpc::XmlRpcValue::TypeArray))
 		{
 			ROS_INFO_STREAM(nodeName<<": found pick_zones struct array with "<<pickZoneParam.size()<<" elements");
 
@@ -367,8 +377,14 @@ public:
 		}
 		else
 		{
-			ROS_ERROR_STREAM(ros::this_node::getName()<<": did not find pick_zones structure array");
+			ROS_ERROR_STREAM(ros::this_node::getName()<<": did not find pick_zones structure array under "<<nameSpace + "/pick_zones");
 		}
+
+		ROS_INFO_STREAM(nodeName<<": Completed parsing zone arrays, setting up zone selector");
+
+		goToNextPickZone();
+
+		ROS_INFO_STREAM(nodeName<<": Zone Selector is ready");
 	}
 
 	void goToNextPickZone(); //
@@ -383,8 +399,23 @@ public:
 		next_obj_details_ = obj;
 	}
 
-	void getPlaceZoneMarker(visualization_msgs::Marker &marker);
+	void getActivePlaceZonesMarkers(visualization_msgs::MarkerArray &markers);
 	void getPickZoneMarker(visualization_msgs::Marker &marker);
+	void getAllActiveZonesMarkers(visualization_msgs::MarkerArray &markers); // includes pick and active place zones
+
+	const std::vector<ZoneBounds>& getPickZones()
+	{
+		return pick_zones_;
+	}
+
+	const std::vector<PlaceZone>& getAllPlaceZones()
+	{
+		return place_zones_;
+	}
+
+protected:
+
+	void initializeColorArray();
 
 
 protected:
@@ -395,9 +426,12 @@ protected:
 
 	// internal
 	int pick_zone_index_; // index to current pick zone in array "Zones"
-	std::vector<PlaceZone* > available_place_zones_;  // reference array to place zones that do not overlap with current pick zone
+	std::vector<PlaceZone* > active_place_zones_;  // reference array to place zones that do not overlap with current pick zone
+	std::vector<PlaceZone* > inactive_place_zones_;
 	ObjectDetails next_obj_details_;
 
+	// markers
+	std::vector<std_msgs::ColorRGBA> marker_colors_;
 };
 
 #endif /* PICKPLACEZONESELECTOR_H_ */
