@@ -1,3 +1,4 @@
   * [MainPage Main]
-  * [Installation Install]
+  * [http://ros.org/wiki/Industrial User Docs]
+  * [http://ros.org/wiki/Industrial/Dev Developer Docs]
   * [mailto:swri-ros-pkg-dev@googlegroups.com Support/Feature Request]
