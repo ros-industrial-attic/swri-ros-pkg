@@ -1,7 +1,7 @@
 ﻿#labels Featured
 #sidebar SidebarNav
 
-[MainPage Main]   `*`   [http://http://ros.org/wiki/Industrial User Documentation]   `*`   [http://http://ros.org/wiki/Industrial/Dev Developer Documentation]
+[MainPage Main]   `*`   [http://ros.org/wiki/Industrial User Documentation]   `*`   [http://ros.org/wiki/Industrial/Dev Developer Documentation]
 
 =ROS-Industrial=
 <g:plusone size="medium"></g:plusone>
