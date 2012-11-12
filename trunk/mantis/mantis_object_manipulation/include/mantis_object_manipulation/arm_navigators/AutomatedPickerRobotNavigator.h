@@ -11,6 +11,7 @@
 #include <object_manipulation_tools/robot_navigators/RobotNavigator.h>
 #include <perception_tools/segmentation/SphereSegmentation.h>
 #include <mantis_object_manipulation/zone_selection/PickPlaceZoneSelector.h>
+#include <boost/thread/mutex.hpp>
 
 class AutomatedPickerRobotNavigator: public RobotNavigator
 {
@@ -87,6 +88,9 @@ protected:
 	// callback overrides
 	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt);
 
+	void updateMarkerArrayMsg();
+
+
 protected:
 
 	// ros parameters
@@ -111,6 +115,9 @@ protected:
 
 	// visualization
 	visualization_msgs::MarkerArray marker_array_msg_;
+
+	// threading
+	boost::mutex marker_array_mutex_;
 
 };
 

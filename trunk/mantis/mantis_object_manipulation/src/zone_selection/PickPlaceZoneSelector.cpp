@@ -37,10 +37,16 @@ void PickPlaceZoneSelector::initializeColorArray()
 {
 	const int numColors = 40;
 	const double ratio = 255.0f/((double)numColors);
+	std_msgs::ColorRGBA color;
+
+	// manually enter colors
+
+	color.r = 0.0f;color.g = 1.0f;color.b = 1.0f; color.a = 0.4f; marker_colors_.push_back(color); // aqua
+	color.r = color.g = color.b = 1.0f; color.a = 0.4f; marker_colors_.push_back(color); // white
+
+	// random colors
 	for(int i = 0; i < numColors ; i++)
 	{
-
-		std_msgs::ColorRGBA color;
 		color.r = (255.0f -  0.25f*((double)i)*ratio)/255.0f; // 255 to ~180
 		color.g = (0.75f*255.0f + (i % 2 == 0 ? (1) : (-1))*0.25f*((double)i)*ratio)/255.0f; // ~180 to 255
 		color.b = (0.80f*255.0f + (i % 2 == 0 ? (-1) : (1))*0.2f*(((double)i)*ratio))/255.0f; //[60%,100%]*255
@@ -48,9 +54,12 @@ void PickPlaceZoneSelector::initializeColorArray()
 
 		marker_colors_.push_back(color);
 
-		std::cout<<"\n"<<typeid(*this).name()<<" Generated color : r "<<color.r<<",g "<<color.g<<",b "<<color.b<<",a "<<color.a;
-
 	}
+
+	// yellow
+	color.r = 1.0f; color.g = 1.0f; color.b = 0.0f;
+	marker_colors_.push_back(color);
+
 }
 
 void PickPlaceZoneSelector::goToNextPickZone()
@@ -260,16 +269,20 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextLocationCandidates(std::vecto
 		success = generateNextPlacePoseInZigZagYMode(placePoses,otherZones);
 		break;
 
+	case PickPlaceZoneSelector::PlaceZone::CIRCLE:
+		success = generateNextPlacePoseInCircle(placePoses,otherZones);
+		break;
+
 	case PickPlaceZoneSelector::PlaceZone::GRID_ALONG_X:
 		success = generateNextPlacePoseInGridXWise(placePoses,otherZones);
 		break;
 
 	case PickPlaceZoneSelector::PlaceZone::GRID_ALONG_Y:
 		success = generateNextPlacePoseInGridYWise(placePoses,otherZones);
+		break;
 
 	default:
-		success = generateNextPlacePoseInZigZagXMode(placePoses,otherZones);
-		break;
+		success = generateNextPlacePoseInGridXWise(placePoses,otherZones);
 	}
 
 	return success;
@@ -660,18 +673,21 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridXWise(std::vec
 	tf::Transform nextTf = tf::Transform::getIdentity();
 
 	// search parameters
-	const int maxIterations = 200;
+	const int maxIterations = 50;
 	int counter = 0;
 	double xCoor;
 	double yCoor;
 	bool overlapFound = false;
 	while(counter < maxIterations)
 	{
+		overlapFound = false;
 		/* will use evenness of next object index to compute a new location relative to the top left corner of the place zone.
 		 * Odds go to the top and evens at the bottom (top view of table)
 		 */
-		xCoor = (this->XMin + MinObjectSpacing/2.0f) + ((nextIndex - 1)%grid_x_size_)*MinObjectSpacing;
-		yCoor = (this->YMax - MinObjectSpacing/2.0f) - ((int)std::ceil((double)nextIndex/((double)grid_x_size_)) - 1)*MinObjectSpacing;
+//		xCoor = (this->XMin + MinObjectSpacing/2.0f) + ((nextIndex - 1)%grid_x_size_)*MinObjectSpacing;
+//		yCoor = (this->YMax - MinObjectSpacing/2.0f) - ((int)std::ceil((double)nextIndex/((double)grid_x_size_)) - 1)*MinObjectSpacing;
+		xCoor = (this->XMin + MinObjectSpacing/2.0f) + ((nextIndex)%grid_x_size_)*MinObjectSpacing;
+		yCoor = (this->YMax - MinObjectSpacing/2.0f) - ((int)std::floor((double)nextIndex/((double)grid_x_size_)))*MinObjectSpacing;
 		// incrementing counter
 		counter++;
 
@@ -685,7 +701,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridXWise(std::vec
 		if(!ZoneBounds::contains(*this,nextObjectBounds))
 		{
 			overlapFound = true;
-			ROS_ERROR_STREAM(ros::this_node::getName()<<": No more space in this place zone "<<maxIterations<<" iterations, exiting");
+			ROS_ERROR_STREAM(ZoneName<<": No more space in zone, exiting");
 			return false;// exit no more space
 		}
 
@@ -721,12 +737,12 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridXWise(std::vec
 	}
 	if(overlapFound)
 	{
-		ROS_ERROR_STREAM(ros::this_node::getName()<<": Did not find location after "<<maxIterations<<" iterations, exiting");
+		ROS_ERROR_STREAM(ZoneName<<": Did not find location after "<<maxIterations<<" iterations, exiting");
 	}
 	else
 	{
 		// passed all intersection test
-		ROS_INFO_STREAM(ros::this_node::getName()<<": Found available position for Id: "<<next_object_details_.Id);
+		ROS_INFO_STREAM(ZoneName<<": Found available position for Id: "<<next_object_details_.Id);
 
 		// adjusting place point to object height
 		nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
@@ -753,18 +769,21 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridYWise(std::vec
 	tf::Transform nextTf = tf::Transform::getIdentity();
 
 	// search parameters
-	const int maxIterations = 200;
+	const int maxIterations = 50;
 	int counter = 0;
 	double xCoor;
 	double yCoor;
 	bool overlapFound = false;
 	while(counter < maxIterations)
 	{
+		overlapFound = false;
 		/* will use evenness of next object index to compute a new location relative to the top left corner of the place zone.
 		 * Odds go to the top and evens at the bottom (top view of table)
 		 */
-		yCoor = (this->YMax - MinObjectSpacing/2.0f) - ((nextIndex - 1)%grid_y_size_)*MinObjectSpacing;
-		xCoor = (this->XMin + MinObjectSpacing/2.0f) + ((int)std::ceil((double)nextIndex/((double)grid_y_size_)) - 1)*MinObjectSpacing;
+//		yCoor = (this->YMax - MinObjectSpacing/2.0f) - ((nextIndex - 1)%grid_y_size_)*MinObjectSpacing;
+//		xCoor = (this->XMin + MinObjectSpacing/2.0f) + ((int)std::ceil((double)nextIndex/((double)grid_y_size_)) - 1)*MinObjectSpacing;
+		yCoor = (this->YMax - MinObjectSpacing/2.0f) - ((nextIndex)%grid_y_size_)*MinObjectSpacing;
+		xCoor = (this->XMin + MinObjectSpacing/2.0f) + ((int)std::floor((double)nextIndex/((double)grid_y_size_)))*MinObjectSpacing;
 
 		// incrementing counter
 		counter++;
@@ -779,7 +798,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridYWise(std::vec
 		if(!ZoneBounds::contains(*this,nextObjectBounds))
 		{
 			overlapFound = true;
-			ROS_ERROR_STREAM(ros::this_node::getName()<<": No more space in this place zone "<<maxIterations<<" iterations, exiting");
+			ROS_ERROR_STREAM(ZoneName<<": No more space in zone, exiting");
 			return false;// exit no more space
 		}
 
@@ -815,12 +834,12 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridYWise(std::vec
 	}
 	if(overlapFound)
 	{
-		ROS_ERROR_STREAM(ros::this_node::getName()<<": Did not find location after "<<maxIterations<<" iterations, exiting");
+		ROS_ERROR_STREAM(ZoneName<<": Did not find location after "<<maxIterations<<" iterations, exiting");
 	}
 	else
 	{
 		// passed all intersection test
-		ROS_INFO_STREAM(ros::this_node::getName()<<": Found available position for Id: "<<next_object_details_.Id);
+		ROS_INFO_STREAM(ZoneName<<": Found available position for Id: "<<next_object_details_.Id);
 
 		// adjusting place point to object height
 		nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
@@ -836,3 +855,104 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridYWise(std::vec
 	return !overlapFound;
 }
 
+bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInCircle(std::vector<geometry_msgs::PoseStamped> &placePoses,
+		std::vector<PlaceZone* > &otherZones)
+{
+	// next object details
+	ZoneBounds nextObjectBounds;;
+	int nextIndex = (int)objects_in_zone_.size();
+
+	// will use next object id (even or odd) to determine its location
+	tf::Transform nextTf = tf::Transform::getIdentity();
+
+	// search parameters
+	const int maxIterations = 50;
+	int segments = 6; // # segments in first layer
+	double deltaTheta = M_PI/3.0f;
+	int counter = 0;
+	double xCoor;
+	double yCoor;
+	double radius;
+	double theta;
+	bool overlapFound = false;
+	tf::Vector3 center = getCenter();
+	while(counter < maxIterations)
+	{
+		overlapFound = false;
+		double factor = std::ceil((double)nextIndex/(double)segments);
+		radius = factor * MinObjectSpacing/2.0f;
+		theta = (nextIndex%segments)*(radius == 0.0f ? 0.0f : deltaTheta/factor);
+		xCoor = center.x() + 2.0f * radius * std::cos(theta);
+		yCoor = center.y() + 2.0f * radius * std::sin(theta);
+
+		// incrementing counter
+		counter++;
+
+		// computing next candidate transform
+		nextTf.setOrigin(tf::Vector3(xCoor,yCoor,0.0f));
+
+		// updating next object bounds
+		nextObjectBounds = ZoneBounds(next_object_details_.Size,nextTf.getOrigin());
+
+		// checking if it is within place zone
+		if(!ZoneBounds::contains(*this,nextObjectBounds))
+		{
+			overlapFound = true;
+			nextIndex++;
+			continue;
+//			ROS_ERROR_STREAM(ZoneName<<": No more space in zone, "<<ZoneName<< " exiting");
+//			return false;// exit no more space
+		}
+
+		// checking if overlaps with objects in place zone
+		typedef std::vector<ObjectDetails>::iterator ConstIter;
+		for(ConstIter iter = objects_in_zone_.begin(); iter != objects_in_zone_.end(); iter++)
+		{
+			ZoneBounds objInZoneBounds(iter->Size,iter->Trans.getOrigin());
+			if(ZoneBounds::boundingCirclesIntersect(nextObjectBounds,objInZoneBounds))
+			{
+				overlapFound = true;
+				break;
+			}
+		}
+		if(overlapFound)
+		{
+			nextIndex++;
+			continue;
+		}
+
+		// checking for overlaps against object in other zones
+		overlapFound = checkOverlaps(nextObjectBounds,otherZones);
+		if(overlapFound)
+		{
+			nextIndex++;
+			continue;
+		}
+		else
+		{
+			break;
+		}
+
+	}
+	if(overlapFound)
+	{
+		ROS_ERROR_STREAM(ZoneName<<": Did not find location after "<<maxIterations<<" iterations, exiting");
+	}
+	else
+	{
+		// passed all intersection test
+		ROS_INFO_STREAM(ZoneName<<": Found available position for Id: "<<next_object_details_.Id);
+
+		// adjusting place point to object height
+		nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
+
+		// generating candidate poses from next location found
+		createPlaceCandidatePosesByRotation(nextTf,NumGoalCandidates,Axis,placePoses);
+
+		// storing object
+		next_object_details_.Trans = nextTf;
+		objects_in_zone_.push_back(next_object_details_);
+	}
+
+	return !overlapFound;
+}

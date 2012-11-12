@@ -109,7 +109,7 @@ public:
 			double sumRadius = z1.getBoundingRadius() + z2.getBoundingRadius();
 			double distance = (z1.getCenter() - z2.getCenter()).length();
 
-			return distance < sumRadius;
+			return distance <= sumRadius;
 		}
 
 		static bool contains(const ZoneBounds& outer, const ZoneBounds& inner)
@@ -183,8 +183,9 @@ public:
 			RANDOM = 0,
 			GRID_ALONG_X = 1,
 			GRID_ALONG_Y = 2,
-			ZIGZAG_ALONG_X = 4,
-			ZIGZAG_ALONG_Y = 5
+			CIRCLE = 4,
+			ZIGZAG_ALONG_X = 5,
+			ZIGZAG_ALONG_Y = 6
 		};
 
 	public:
@@ -304,6 +305,7 @@ public:
 		bool generateNextPlacePoseInZigZagYMode(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
 		bool generateNextPlacePoseInGridXWise(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
 		bool generateNextPlacePoseInGridYWise(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
+		bool generateNextPlacePoseInCircle(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
 
 		// check overlaps with object in theses zones.
 		bool checkOverlaps(ZoneBounds &nextObjBounds,std::vector<PlaceZone* > zones);
