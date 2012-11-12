@@ -37,17 +37,17 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 
   nrg_object_recognition::recognition rec_srv;
 
-  sensor_msgs::PointCloud2 received_cluster;
-  //sensor_msgs::PointCloud received_cluster;
+  //sensor_msgs::PointCloud2 received_cluster;
+  sensor_msgs::PointCloud received_cluster;
   received_cluster=main_request.clusters.at(0);
-  //sensor_msgs::PointCloud2 cluster;
-  //sensor_msgs::convertPointCloudToPointCloud2(received_cluster, cluster);
-  //cluster.header.frame_id=main_request.table.pose.header.frame_id;
-  //cluster.header.stamp=main_request.table.pose.header.stamp;
+  sensor_msgs::PointCloud2 cluster;
+  sensor_msgs::convertPointCloudToPointCloud2(received_cluster, cluster);
+  cluster.header.frame_id=main_request.table.pose.header.frame_id;
+  cluster.header.stamp=main_request.table.pose.header.stamp;
 
 
-  rec_srv.request.cluster = received_cluster;
-  //rec_srv.request.cluster = cluster;
+  //rec_srv.request.cluster = received_cluster;
+  rec_srv.request.cluster = cluster;
   rec_srv.request.threshold = 1000;
       
   //Call recognition service
@@ -60,7 +60,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 ////////////////////Assign response values/////////////////////////
   main_response.label = rec_srv.response.label;
   main_response.pose = rec_srv.response.pose;
-  ROS_WARN_STREAM("Object labeled as "<< main_response.label);
+
   //Assign id and marker based on label
   visualization_msgs::Marker mesh_marker;
   mesh_marker.type = visualization_msgs::Marker::MESH_RESOURCE;
@@ -68,8 +68,8 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   std::size_t found;
   std::string label = main_response.label;
   found=label.find_last_of("/");
-
-  if(label.substr(found+1)=="box")
+  ROS_WARN_STREAM("Object labeled as "<< label.substr(found+1));
+  if(label.substr(found+1)=="enclosure")
   {
     main_response.model_id=1;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enblosure.STL";
@@ -84,7 +84,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     main_response.model_id=3;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
   }
-  else if (label.substr(found+1)=="white")
+  else if (label.substr(found+1)=="plug")
   {
     main_response.model_id=4;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.stl";
@@ -130,8 +130,8 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
       sensor_msgs::PointCloud2 recognized_cloud;
       pcl::toROSMsg(*trainingMatch, recognized_cloud);
       //Add transform to header
-      //recognized_cloud.header.frame_id = main_request.table.pose.header.frame_id;
-      //recognized_cloud.header.stamp=main_request.table.pose.header.stamp;
+      recognized_cloud.header.frame_id = main_request.table.pose.header.frame_id;
+      recognized_cloud.header.stamp=main_request.table.pose.header.stamp;
       //Publish to topic /recognition_result.
       rec_pub.publish(recognized_cloud);
 /////////end visualization////////////////////////////////////////////////////
