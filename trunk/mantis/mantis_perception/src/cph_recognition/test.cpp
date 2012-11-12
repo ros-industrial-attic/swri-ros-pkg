@@ -41,27 +41,26 @@ int main(int argc, char **argv)
 
   seg_pub = n.advertise<sensor_msgs::PointCloud2>("/segmentation_result",1);
 
-  //while (ros::ok())
-  //{
+  while (ros::ok())
+  {
     mantis_perception::mantis_segmentation seg_srv;
     if (!segmentation_client.call(seg_srv))
     {
       ROS_ERROR("Call to mantis segmentation service failed");
     }
 
-    //sensor_msgs::PointCloud2 segcluster;
-    //sensor_msgs::PointCloud clustervector;
-    sensor_msgs::PointCloud2 clustervector;
+    sensor_msgs::PointCloud2 segcluster;
+    sensor_msgs::PointCloud clustervector;
     clustervector=seg_srv.response.clusters[0];
-    //sensor_msgs::convertPointCloudToPointCloud2(clustervector, segcluster);
-    //segcluster.header.frame_id=seg_srv.response.table.pose.header.frame_id;
-    //segcluster.header.stamp=seg_srv.response.table.pose.header.stamp;
-    seg_pub.publish (clustervector);
-/**/
+    sensor_msgs::convertPointCloudToPointCloud2(clustervector, segcluster);
+    segcluster.header.frame_id=seg_srv.response.table.pose.header.frame_id;
+    segcluster.header.stamp=seg_srv.response.table.pose.header.stamp;
+    seg_pub.publish (segcluster);
+
     mantis_perception::mantis_recognition rec_srv;
 
     rec_srv.request.clusters = seg_srv.response.clusters;
-    //rec_srv.request.table = seg_srv.response.table;
+    rec_srv.request.table = seg_srv.response.table;
 
     if (!recognition_client.call(rec_srv))
     {
@@ -72,7 +71,7 @@ int main(int argc, char **argv)
     ROS_INFO("Model id: %d", rec_srv.response.model_id);
   
     ros::spinOnce();
-//  }//end ros ok while loop
+  }//end ros ok while loop
 
 }
 

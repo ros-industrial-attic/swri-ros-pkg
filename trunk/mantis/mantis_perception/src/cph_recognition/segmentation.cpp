@@ -29,7 +29,6 @@
 
 #include <visualization_msgs/Marker.h>
 #include "tabletop_object_detector/marker_generator.h"
-
 //#include "nrg_object_recognition/segmentation.h"
 
   ros::Publisher plane_pub;
@@ -87,15 +86,18 @@ class MantisSegmentor
   //------------------ Callbacks -------------------
 
   //! Callback for service calls
-  bool serviceCallback(mantis_perception::mantis_segmentation::Request &request,
-                       mantis_perception::mantis_segmentation::Response &response);
+  bool serviceCallback(tabletop_object_detector::TabletopSegmentation::Request &request,
+		  tabletop_object_detector::TabletopSegmentation::Response &response);
 
   //------------------- Complete processing -----
 
   //! Complete processing for new style point cloud
   void processCloud(const sensor_msgs::PointCloud2 &cloud,
-                      mantis_perception::mantis_segmentation::Response &seg_response,
+		  tabletop_object_detector::TabletopSegmentationResponse &seg_response,
                       tabletop_object_detector::Table table);
+
+  //! Clears old published markers and remembers the current number of published markers
+  void clearOldMarkers(std::string frame_id);
 
   tf::Transform getPlaneTransform (pcl::ModelCoefficients coeffs,
   		double up_direction, bool flatten_plane);
@@ -149,8 +151,8 @@ class MantisSegmentor
     ~MantisSegmentor() {}
 };
 //! Callback for service calls
-bool MantisSegmentor::serviceCallback(mantis_perception::mantis_segmentation::Request &request,
-                     mantis_perception::mantis_segmentation::Response &response)
+bool MantisSegmentor::serviceCallback(tabletop_object_detector::TabletopSegmentation::Request &request,
+		tabletop_object_detector::TabletopSegmentation::Response &response)
 {
   ros::Time start_time = ros::Time::now();
   std::string topic = nh_.resolveName("cloud_in");
@@ -202,7 +204,7 @@ bool MantisSegmentor::serviceCallback(mantis_perception::mantis_segmentation::Re
     ROS_INFO_STREAM("Input cloud converted to " << processing_frame_ << " frame after " <<
                     ros::Time::now() - start_time << " seconds");
     processCloud(converted_cloud, response, request.table);
-    //clearOldMarkers(converted_cloud.header.frame_id);
+    clearOldMarkers(converted_cloud.header.frame_id);
   }
   else
   {
@@ -221,10 +223,8 @@ bool MantisSegmentor::serviceCallback(mantis_perception::mantis_segmentation::Re
   return true;
 }
 
-
-//! Complete processing for new style point cloud
 void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
-                  mantis_perception::mantis_segmentation::Response &seg_response, tabletop_object_detector::Table table)
+		tabletop_object_detector::TabletopSegmentation::Response &seg_response, tabletop_object_detector::Table table)
 {
   // Read in the cloud data
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>), cloud_f (new pcl::PointCloud<pcl::PointXYZ>);
@@ -265,8 +265,10 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 //  float min_y = -.5, max_y = .5;
 //  float min_z = .55, max_z = 1.15;
 
- for(pcl::PointCloud<pcl::PointXYZ>::iterator position=cloud_filtered_0->begin(); position!=cloud_filtered_0->end(); position++){
-     if(position->x > min_x && position->x < max_x && position->y > min_y && position->y < max_y && position->z > min_z && position->z < max_z)
+ for(pcl::PointCloud<pcl::PointXYZ>::iterator position=cloud_filtered_0->begin(); position!=cloud_filtered_0->end(); position++)
+ //for (pcl::PointCloud<pcl::PointXYZ>::iterator position=cloud->begin(); position!=cloud->end(); position++)
+ {
+ if(position->x > min_x && position->x < max_x && position->y > min_y && position->y < max_y && position->z > min_z && position->z < max_z)
     // if(position->x > min_x && position->x < max_x && position->y > (2.145*position->z - 3.31) && position->y < (-.466*position->z + .400))
      cloud_filtered->push_back(*position);
   }
@@ -322,7 +324,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance (0.03); // 2cm
+  ec.setClusterTolerance (0.01); // 2cm
   ec.setMinClusterSize (min_cluster_size_);
   ec.setMaxClusterSize (25000);
   ec.setSearchMethod (tree);
@@ -358,13 +360,11 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   for (int i=0; i<pc2_clusters.size(); i++)
   {
 	  sensor_msgs::PointCloud out_cloud;
-	  ROS_INFO("Inside for loop...");
 	  sensor_msgs::convertPointCloud2ToPointCloud(pc2_clusters.at(i), out_cloud);
 	  out_clusters.push_back(out_cloud);
   }
   ROS_INFO("Cluster converted from PointCloud2 array to PointCloud array");
   seg_response.clusters=out_clusters;
-  ROS_INFO("Clusters converted");
   //response.clusters = clusters;
 
 //MAKE THE TABLE ////////////////////////////////////////
@@ -409,7 +409,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   n3d_.setSearchMethod (normals_tree_);
   n3d_.setInputCloud (cloud_downsampled_ptr);
   n3d_.compute (*cloud_normals_ptr);
-  ROS_INFO("Step 2 done");
+  ROS_INFO("Normal Estimation done");
 
   // Step 3 : Perform planar segmentation
   pcl::PointIndices::Ptr table_inliers_ptr (new pcl::PointIndices);
@@ -446,7 +446,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 			(int)table_inliers_ptr->indices.size (),
 			table_coefficients_ptr->values[0], table_coefficients_ptr->values[1],
 			table_coefficients_ptr->values[2], table_coefficients_ptr->values[3]);
-  ROS_INFO("Step 3 done");
+  ROS_INFO("Planar segmentation done");
 
   pcl::PointCloud<Point>::Ptr table_projected_ptr (new pcl::PointCloud<Point>);
   pcl::ProjectInliers<Point> proj_;
@@ -468,6 +468,23 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   seg_response.table = getTable<sensor_msgs::PointCloud>(in_cloud.header, table_plane_trans, table_points);
 
 }
+
+void MantisSegmentor::clearOldMarkers(std::string frame_id)
+{
+  for (int id=current_marker_id_; id < num_markers_published_; id++)
+    {
+      visualization_msgs::Marker delete_marker;
+      delete_marker.header.stamp = ros::Time::now();
+      delete_marker.header.frame_id = frame_id;
+      delete_marker.id = id;
+      delete_marker.action = visualization_msgs::Marker::DELETE;
+      delete_marker.ns = "tabletop_node";
+      marker_pub_.publish(delete_marker);
+    }
+  num_markers_published_ = current_marker_id_;
+  current_marker_id_ = 0;
+}
+
 tf::Transform MantisSegmentor::getPlaneTransform (pcl::ModelCoefficients coeffs,
 		double up_direction, bool flatten_plane)
 {
