@@ -42,7 +42,7 @@ void PickPlaceZoneSelector::initializeColorArray()
 	// manually enter colors
 
 	color.r = 0.0f;color.g = 1.0f;color.b = 1.0f; color.a = 0.4f; marker_colors_.push_back(color); // aqua
-	color.r = color.g = color.b = 1.0f; color.a = 0.4f; marker_colors_.push_back(color); // white
+	color.r = 1.0f; color.g = 1.0f; color.b = 1.0f; color.a = 0.4f; marker_colors_.push_back(color); // white
 
 	// random colors
 	for(int i = 0; i < numColors ; i++)
