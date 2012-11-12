@@ -9,6 +9,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <tf/transform_broadcaster.h>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 #include <iostream>
 
 typedef std::vector<PickPlaceZoneSelector::PlaceZone> PlaceZoneArray;
@@ -32,16 +33,25 @@ int NUM_OBJECTS_IN_ZONE = 10;
 double TEST_OBJECT_RADIUS = 0.02f;
 std::vector<int> IDS_USED = std::vector<int>();
 
+// multithreading
+boost::mutex MUTEX_OBJ;
+
 void timerCallback(const ros::TimerEvent &evnt)
 {
-	if(!OBJECT_MARKER_ARRAY.markers.empty())
 	{
-		OBJECT_MARKER_PUBLISHER.publish(OBJECT_MARKER_ARRAY);
+		boost::mutex::scoped_lock lock(MUTEX_OBJ);
+		if(!OBJECT_MARKER_ARRAY.markers.empty())
+		{
+			OBJECT_MARKER_PUBLISHER.publish(OBJECT_MARKER_ARRAY);
+		}
 	}
 
-	if(!ZONE_MARKER_ARRAY.markers.empty())
 	{
-		ZONE_MARKER_PUBLISHER.publish(ZONE_MARKER_ARRAY);
+		boost::mutex::scoped_lock lock(MUTEX_OBJ);
+		if(!ZONE_MARKER_ARRAY.markers.empty())
+		{
+			ZONE_MARKER_PUBLISHER.publish(ZONE_MARKER_ARRAY);
+		}
 	}
 
 	WORLD_TRANSFORM.stamp_ = ros::Time::now();
@@ -50,13 +60,28 @@ void timerCallback(const ros::TimerEvent &evnt)
 
 void removeZoneMarkers()
 {
-	for(unsigned int i = 0; i < ZONE_MARKER_ARRAY.markers.size(); i++)
+	boost::mutex::scoped_lock lock(MUTEX_OBJ);
 	{
-		visualization_msgs::Marker &m =  ZONE_MARKER_ARRAY.markers[i];
-		m.action = visualization_msgs::Marker::DELETE;
+		for(unsigned int i = 0; i < ZONE_MARKER_ARRAY.markers.size(); i++)
+		{
+			visualization_msgs::Marker &m =  ZONE_MARKER_ARRAY.markers[i];
+			m.action = visualization_msgs::Marker::DELETE;
+		}
+		ZONE_MARKER_PUBLISHER.publish(ZONE_MARKER_ARRAY);
+		ZONE_MARKER_ARRAY.markers.clear();
 	}
-	ZONE_MARKER_PUBLISHER.publish(ZONE_MARKER_ARRAY);
-	ZONE_MARKER_ARRAY.markers.clear();
+}
+
+void clearObjectMarkers()
+{
+	boost::mutex::scoped_lock lock(MUTEX_OBJ);
+	OBJECT_MARKER_ARRAY.markers.clear();
+}
+
+void addObjectMarker(const visualization_msgs::Marker objMarker)
+{
+	boost::mutex::scoped_lock lock(MUTEX_OBJ);
+	OBJECT_MARKER_ARRAY.markers.push_back(objMarker);
 }
 
 void generatePosesInRequestedMode(PickPlaceZoneSelector &zoneSelector,PickPlaceZoneSelector::ObjectDetails &obj,int numLocations)
@@ -73,7 +98,7 @@ void generatePosesInRequestedMode(PickPlaceZoneSelector &zoneSelector,PickPlaceZ
 		if(!zoneSelector.generateNextLocationCandidates(poses))
 		{
 			std::cout<<"Next location could not be found\n";
-			OBJECT_MARKER_ARRAY.markers.clear();
+			clearObjectMarkers();
 			break;
 		}
 		else
@@ -84,7 +109,8 @@ void generatePosesInRequestedMode(PickPlaceZoneSelector &zoneSelector,PickPlaceZ
 			// adding to marker array
 			OBJECT_MARKER_MSG.id = i;
 			OBJECT_MARKER_MSG.pose = poses[0].pose;
-			OBJECT_MARKER_ARRAY.markers.push_back(OBJECT_MARKER_MSG);
+			//OBJECT_MARKER_ARRAY.markers.push_back(OBJECT_MARKER_MSG);
+			addObjectMarker(OBJECT_MARKER_MSG);
 
 		}
 		poses.clear();
@@ -92,6 +118,8 @@ void generatePosesInRequestedMode(PickPlaceZoneSelector &zoneSelector,PickPlaceZ
 		//ros::spin();
 		ros::Duration(DURATION_VALUE).sleep();
 	}
+
+	clearObjectMarkers();
 }
 
 void fetchParameters(std::string nameSpace)

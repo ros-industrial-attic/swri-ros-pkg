@@ -17,6 +17,9 @@ std::string AutomatedPickerRobotNavigator::GOAL_NAMESPACE = "goal";
 std::string AutomatedPickerRobotNavigator::JOINT_CONFIGURATIONS_NAMESPACE = "joints";
 std::string AutomatedPickerRobotNavigator::MARKER_ARRAY_TOPIC = "object_array";
 
+// global variables
+const double OBJECT_ABB_SIDE = 0.1; // this variable will be used to set the bounds of each object perceived.  Eventually, the recognition
+									// service will provide this value and this variable will be removed.
 
 AutomatedPickerRobotNavigator::AutomatedPickerRobotNavigator()
 :RobotNavigator()
@@ -130,17 +133,7 @@ void AutomatedPickerRobotNavigator::setup()
 		addMarker(MARKER_ATTACHED_OBJECT,marker);
 
 		// pick and place zone markers
-		visualization_msgs::Marker zoneMarker;
-		zoneMarker.header.stamp = ros::Time();
-		zoneMarker.ns = "zones";
-		zoneMarker.action = visualization_msgs::Marker::ADD;
-		zoneMarker.id = 0;
-		zone_selector_.getPickZoneMarker(zoneMarker);
-		marker_array_msg_.markers.push_back(zoneMarker);
-
-		zoneMarker.id = 1;
-		zone_selector_.getPlaceZoneMarker(zoneMarker);
-		marker_array_msg_.markers.push_back(zoneMarker);
+		updateMarkerArrayMsg();
 	}
 }
 
@@ -322,45 +315,27 @@ bool AutomatedPickerRobotNavigator::performRecognition()
  */
 
 	// passed recognized object details to zone selector
-	double bbBoxSide = 0.8f*zone_selector_.getPlaceZone().MinObjectSpacing;
+	double bbBoxSide = OBJECT_ABB_SIDE;
 	tf::Vector3 objSize = tf::Vector3(bbBoxSide,bbBoxSide,bbBoxSide);
 	PickPlaceZoneSelector::ObjectDetails objDetails(tf::Transform::getIdentity(),objSize,
 			rec_srv.response.model_id,rec_srv.response.label);
-	zone_selector_.getPlaceZone().setNextObjectDetails(objDetails);
+	zone_selector_.setNextObjectDetails(objDetails);
 
 	// computing poses so that no move is attempted if no locations are available in the place zone.
 	candidate_place_poses_.clear();
 
-	ROS_WARN_STREAM(NODE_NAME<<": using box with size "<<zone_selector_.getPlaceZone().MinObjectSpacing);
+	ROS_WARN_STREAM(NODE_NAME<<": using box with size "<<OBJECT_ABB_SIDE);
 	if(!zone_selector_.generateNextLocationCandidates(candidate_place_poses_))
 	{
 		ROS_WARN_STREAM(NODE_NAME<<": Couldn't find available location for object, swapping zones.");
 		// no more locations available, swapping zones
-		zone_selector_.swapPickPlaceZones();
+		zone_selector_.goToNextPickZone();
+		updateMarkerArrayMsg();
 		//CurrentIdCount = 1;
 		return false;
 	}
 
 #endif
-
-
-//	// passed recognized object details to zone selector
-//	double bbBoxSide = zone_selector_.getPlaceZone().MinObjectSpacing;
-//	tf::Vector3 objSize = tf::Vector3(bbBoxSide,bbBoxSide,bbBoxSide);
-//	PickPlaceZoneSelector::ObjectDetails objDetails(tf::Transform::getIdentity(),objSize,
-//			rec_srv.response.model_id,rec_srv.response.label);
-//	zone_selector_.getPlaceZone().setNextObjectDetails(objDetails);
-//
-//	// computing poses so that no move is attempted if no locations are available in the place zone.
-//	candidate_place_poses_.clear();
-//	if(!zone_selector_.generateNextLocationCandidates(candidate_place_poses_))
-//	{
-//		ROS_WARN_STREAM(NODE_NAME<<": Couldn't find available location for object, swapping zones.");
-//		// no more locations available, swapping zones
-//		zone_selector_.swapPickPlaceZones();
-//		//CurrentIdCount = 1;
-//		return false;
-//	}
 
 	return true;
 }
@@ -380,7 +355,8 @@ bool AutomatedPickerRobotNavigator::performSegmentation()
 	if(!success)
 	{
 		ROS_WARN_STREAM(NODE_NAME<<": Neither cluster was found in pick zone, swapping zones");
-		zone_selector_.swapPickPlaceZones();
+		zone_selector_.goToNextPickZone();
+		updateMarkerArrayMsg();
 		return false;
 	}
 	else
@@ -425,7 +401,31 @@ bool AutomatedPickerRobotNavigator::createCandidateGoalPoses(std::vector<geometr
 void AutomatedPickerRobotNavigator::callbackPublishMarkers(const ros::TimerEvent &evnt)
 {
 	RobotNavigator::callbackPublishMarkers(evnt);
-	marker_array_pub_.publish(marker_array_msg_);
+	//marker_array_pub_.publish(marker_array_msg_);
+
+	boost::mutex::scoped_lock lock(marker_array_mutex_);
+	{
+		if(!marker_array_msg_.markers.empty())
+		{
+			marker_array_pub_.publish(marker_array_msg_);
+		}
+	}
+}
+
+void AutomatedPickerRobotNavigator::updateMarkerArrayMsg()
+{
+	typedef std::vector<visualization_msgs::Marker>::iterator Iter;
+	boost::mutex::scoped_lock lock(marker_array_mutex_);
+	{
+		for(Iter i = marker_array_msg_.markers.begin(); i != marker_array_msg_.markers.end(); i++)
+		{
+			visualization_msgs::Marker &marker = *i;
+			marker.action = visualization_msgs::Marker::DELETE;
+		}
+		marker_array_pub_.publish(marker_array_msg_);
+		marker_array_msg_.markers.clear();
+		zone_selector_.getAllActiveZonesMarkers(marker_array_msg_);
+	}
 }
 
 
