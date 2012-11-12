@@ -8,6 +8,7 @@
 #include <pcl/console/parse.h>
 #include <pcl/console/print.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 #include <sensor_msgs/point_cloud_conversion.h>
 
 #include <iostream>
@@ -27,6 +28,7 @@
 ros::ServiceClient cph_client;
 ros::Publisher rec_pub;
 ros::Publisher vis_pub;
+ros::Publisher noise_pub;
 
 bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
             mantis_perception::mantis_recognition::Response &main_response)
@@ -35,9 +37,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   ROS_INFO("Starting mantis recognition");
   ROS_INFO("Number of clusters received in request = %d", (int)main_request.clusters.size());
 
-  nrg_object_recognition::recognition rec_srv;
-
-  //sensor_msgs::PointCloud2 received_cluster;
+  //convert segmentation results from array of PointCloud to single PointCloud2
   sensor_msgs::PointCloud received_cluster;
   received_cluster=main_request.clusters.at(0);
   sensor_msgs::PointCloud2 cluster;
@@ -45,8 +45,24 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   cluster.header.frame_id=main_request.table.pose.header.frame_id;
   cluster.header.stamp=main_request.table.pose.header.stamp;
 
+  //Filter cluster to remove noise
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::fromROSMsg (cluster, *cluster_ptr);
+  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> out_remove;
+  out_remove.setInputCloud(cluster_ptr);
+  out_remove.setNegative(true);
+  out_remove.setMeanK(50);
+  out_remove.setStddevMulThresh(1.0);
+  out_remove.filter(cloud_noise);
+  sensor_msgs::PointCloud2 cluster_noise;
+  sensor_msgs::convertPointCloudToPointCloud2(cloud_noise, cluster_noise);
+  cluster_noise.header.frame_id=main_request.table.pose.header.frame_id;
+  cluster_noise.header.stamp=main_request.table.pose.header.stamp;
+  noise_pub.publish( cluster_noise );
 
-  //rec_srv.request.cluster = received_cluster;
+  //Brian's recognition service
+  nrg_object_recognition::recognition rec_srv;
+
   rec_srv.request.cluster = cluster;
   rec_srv.request.threshold = 1000;
       
@@ -60,6 +76,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 ////////////////////Assign response values/////////////////////////
   main_response.label = rec_srv.response.label;
   main_response.pose = rec_srv.response.pose;
+
 
   //Assign id and marker based on label
   visualization_msgs::Marker mesh_marker;
@@ -150,6 +167,7 @@ int main(int argc, char **argv)
   cph_client = n.serviceClient<nrg_object_recognition::recognition>("/cph_recognition");
   rec_pub = n.advertise<sensor_msgs::PointCloud2>("/recognition_result",1);
   vis_pub = n.advertise<visualization_msgs::Marker>( "matching_mesh_marker", 0 );
+  noise_pub=n.advertise<sensor_msgs::PointCloud2>("/noisy_points",1);
   
   ROS_INFO("mantis object detection/recognition node ready!");
   
