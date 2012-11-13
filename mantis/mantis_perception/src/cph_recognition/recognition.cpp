@@ -9,6 +9,7 @@
 #include <pcl/console/print.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/filters/passthrough.h>
 #include <sensor_msgs/point_cloud_conversion.h>
 
 #include <iostream>
@@ -44,22 +45,34 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   sensor_msgs::convertPointCloudToPointCloud2(received_cluster, cluster);
   cluster.header.frame_id=main_request.table.pose.header.frame_id;
   cluster.header.stamp=main_request.table.pose.header.stamp;
-
+/*
   //Filter cluster to remove noise
   pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cut (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ> cloud_noise;
   pcl::fromROSMsg (cluster, *cluster_ptr);
+
+  //Filter to remove high points
+  pcl::PassThrough<pcl::PointXYZ> pass;
+  pass.setInputCloud (cluster_ptr);
+  pass.setFilterFieldName ("z");
+  pass.setFilterLimits (0, 0.08);
+  pass.filter (*cloud_cut);
+  //then filter to remove outliers
   pcl::StatisticalOutlierRemoval<pcl::PointXYZ> out_remove;
-  out_remove.setInputCloud(cluster_ptr);
-  out_remove.setNegative(true);
+  out_remove.setInputCloud(cloud_cut);
+  out_remove.setNegative(false);
   out_remove.setMeanK(50);
   out_remove.setStddevMulThresh(1.0);
   out_remove.filter(cloud_noise);
+
   sensor_msgs::PointCloud2 cluster_noise;
-  sensor_msgs::convertPointCloudToPointCloud2(cloud_noise, cluster_noise);
+  pcl::toROSMsg (cloud_noise, cluster_noise);
+  //sensor_msgs::convertPointCloudToPointCloud2(cloud_noise, cluster_noise);
   cluster_noise.header.frame_id=main_request.table.pose.header.frame_id;
   cluster_noise.header.stamp=main_request.table.pose.header.stamp;
   noise_pub.publish( cluster_noise );
-
+*/
   //Brian's recognition service
   nrg_object_recognition::recognition rec_srv;
 
