@@ -8,6 +8,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/project_inliers.h>
@@ -349,23 +350,72 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
     //seg_response.clusters.push_back(tempROSMsg);
     j++;
   }
-  sensor_msgs::PointCloud2 big_cluster;
-  big_cluster=pc2_clusters.at(0);
-  big_cluster.header = in_cloud.header;
-  first_cluster_pub.publish(big_cluster);
 
+/*
+  //Filter cluster to remove noise
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cut (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ> cloud_noise;
+  //pcl::fromROSMsg (big_cluster, *cluster_ptr);
+
+  //Filter to remove high points
+  pcl::PassThrough<pcl::PointXYZ> pass;
+  pass.setInputCloud (cluster_ptr);
+  pass.setFilterFieldName ("z");
+  pass.setFilterLimits (0, 0.08);
+  pass.filter (*cloud_cut);
+  //then filter to remove outliers
+  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> out_remove;
+  out_remove.setInputCloud(cloud_cut);
+  out_remove.setNegative(false);
+  out_remove.setMeanK(50);
+  out_remove.setStddevMulThresh(1.0);
+  out_remove.filter(cloud_noise);
+
+  sensor_msgs::PointCloud2 cluster_noise;
+  pcl::toROSMsg (cloud_noise, cluster_noise);
+  cluster_noise.header.frame_id=in_cloud.header.frame_id;
+  cluster_noise.header.stamp=in_cloud.header.stamp;
+*/
 //convert array of PointCloud2 to PointCloud
   std::vector<sensor_msgs::PointCloud> out_clusters;
   ROS_INFO("Cluster published and put into PointCloud2 array");
   for (int i=0; i<pc2_clusters.size(); i++)
   {
 	  sensor_msgs::PointCloud out_cloud;
-	  sensor_msgs::convertPointCloud2ToPointCloud(pc2_clusters.at(i), out_cloud);
+	  sensor_msgs::PointCloud2 ocloud;
+	  pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+	  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cut (new pcl::PointCloud<pcl::PointXYZ>);
+	  pcl::PointCloud<pcl::PointXYZ> cloud_noise;
+	  pcl::fromROSMsg (pc2_clusters.at(i), *cluster_ptr);
+
+	  pcl::PassThrough<pcl::PointXYZ> pass;
+	  pass.setInputCloud (cluster_ptr);
+	  pass.setFilterFieldName ("z");
+	  pass.setFilterLimits (0, 0.08);
+	  pass.filter (*cloud_cut);
+
+	  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> out_remove;
+	  out_remove.setInputCloud(cloud_cut);
+	  out_remove.setNegative(false);
+	  out_remove.setMeanK(50);
+	  out_remove.setStddevMulThresh(1.0);
+	  out_remove.filter(cloud_noise);
+
+	  pcl::toROSMsg (cloud_noise, ocloud);
+	  sensor_msgs::convertPointCloud2ToPointCloud(ocloud, out_cloud);
 	  out_clusters.push_back(out_cloud);
   }
+  sensor_msgs::PointCloud2 big_cluster;
+  sensor_msgs::PointCloud bcluster;
+  bcluster = out_clusters.at(0);
+  sensor_msgs::convertPointCloudToPointCloud2(bcluster, big_cluster);
+  //big_cluster=pc2_clusters.at(0);
+  big_cluster.header = in_cloud.header;
+  first_cluster_pub.publish(big_cluster);
+
   ROS_INFO("Cluster converted from PointCloud2 array to PointCloud array");
   seg_response.clusters=out_clusters;
-  //response.clusters = clusters;
 
 //MAKE THE TABLE ////////////////////////////////////////
   // Step 1 : Filter, remove NaNs and downsample
