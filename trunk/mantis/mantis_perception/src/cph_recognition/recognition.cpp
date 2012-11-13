@@ -104,22 +104,47 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     main_response.model_id=1;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enblosure.STL";
   }
+  if(label.substr(found+1)=="enclosuref")
+    {
+      main_response.model_id=1;
+      mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enblosure.STL";
+    }
   else if (label.substr(found+1)=="coupling")
   {
     main_response.model_id=2;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/rubber_coupler_clamps.STL";
   }
+  else if (label.substr(found+1)=="couplingf")
+    {
+      main_response.model_id=2;
+      mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/rubber_coupler_clamps.STL";
+    }
   else if (label.substr(found+1)=="pvc_t")
   {
     main_response.model_id=3;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
   }
+  else if (label.substr(found+1)=="pvct")
+    {
+      main_response.model_id=3;
+      mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
+    }
   else if (label.substr(found+1)=="plug")
   {
     main_response.model_id=4;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.stl";
   }
+  else if (label.substr(found+1)=="plugf")
+    {
+      main_response.model_id=4;
+      mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.stl";
+    }
   else if (label.substr(found+1)=="pvc_elbow")
+  {
+    main_response.model_id=5;
+    mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_elbow.stl";
+  }
+  else if (label.substr(found+1)=="pvcelbow")
   {
     main_response.model_id=5;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_elbow.stl";
