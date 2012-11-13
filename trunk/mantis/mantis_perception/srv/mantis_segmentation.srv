@@ -8,7 +8,7 @@ tabletop_object_detector/Table table
 tabletop_object_detector/Table table
 
 # The raw clusters detected in the scan 
-sensor_msgs/PointCloud2[] clusters
+sensor_msgs/PointCloud[] clusters
 
 # Whether the detection has succeeded or failed
 int32 NO_CLOUD_RECEIVED = 1
