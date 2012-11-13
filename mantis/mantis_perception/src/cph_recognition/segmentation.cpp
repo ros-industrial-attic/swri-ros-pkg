@@ -516,7 +516,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   }
 
   seg_response.table = getTable<sensor_msgs::PointCloud>(in_cloud.header, table_plane_trans, table_points);
-
+  seg_response.result = seg_response.SUCCESS;
 }
 
 void MantisSegmentor::clearOldMarkers(std::string frame_id)
