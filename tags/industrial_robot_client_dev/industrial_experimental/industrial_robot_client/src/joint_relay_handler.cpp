@@ -29,6 +29,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
+#include <algorithm>
+
 #include "industrial_robot_client/joint_relay_handler.h"
 #include "simple_message/messages/joint_message.h"
 #include "simple_message/log_wrapper.h"
@@ -50,9 +52,20 @@ bool JointRelayHandler::init(SmplMsgConnection* connection, std::vector<std::str
 
   this->pub_joint_sensor_state_ = this->node_.advertise<sensor_msgs::JointState>("joint_states",1);
 
-  this->num_joints_ = joint_names.size();
+  // save "complete" joint-name list, preserving any blank entries for later use
+  this->robot_joint_names_ = joint_names;
 
-  this->joint_control_state_.joint_names = joint_names;
+  // only publish non-blank joints to ROS
+  std::vector<std::string> valid_names;
+  for (int i=0; i<joint_names.size(); ++i)
+  {
+    if (!joint_names[i].empty())
+      valid_names.push_back(joint_names[i]);
+  }
+
+  this->num_joints_ = valid_names.size();
+
+  this->joint_control_state_.joint_names = valid_names;
   this->joint_control_state_.actual.positions.resize(num_joints_);
   this->joint_control_state_.desired.positions.resize(num_joints_);
   this->joint_control_state_.error.positions.resize(num_joints_);
@@ -76,21 +89,27 @@ bool JointRelayHandler::internalCB(industrial::simple_message::SimpleMessage & i
   if (joint.init(in))
   {
     shared_real value;
-    for(int i =0; i <num_joints_; i++)
+    int jnt_idx=0;
+    for(int msg_idx =0; msg_idx<robot_joint_names_.size(); ++msg_idx)
     {
-      if (joint.getJoints().getJoint(i, value))
+      if (robot_joint_names_[msg_idx].empty())  // skip over blank-named joints
+        continue;
+
+      if (joint.getJoints().getJoint(msg_idx, value))
       {
-        this->joint_control_state_.actual.positions[i] = value;
-        this->joint_sensor_state_.position[i] = value;
+        this->joint_control_state_.actual.positions[jnt_idx] = value;
+        this->joint_sensor_state_.position[jnt_idx] = value;
       }
       else
       {
-        this->joint_control_state_.actual.positions[i] = 0.0;
-        LOG_ERROR("Failed to populate ith(%d) of controller state message", i);
+        this->joint_control_state_.actual.positions[jnt_idx] = 0.0;
+        LOG_ERROR("Failed to populate ith(%d) of controller state message", jnt_idx);
       }
       // TODO: For now these values are not populated
-      this->joint_control_state_.desired.positions[i] = 0.0;
-      this->joint_control_state_.error.positions[i] = 0.0;
+      this->joint_control_state_.desired.positions[jnt_idx] = 0.0;
+      this->joint_control_state_.error.positions[jnt_idx] = 0.0;
+
+      ++jnt_idx;
     }
     this->joint_control_state_.header.stamp = ros::Time::now();
     this->pub_joint_control_state_.publish(this->joint_control_state_);

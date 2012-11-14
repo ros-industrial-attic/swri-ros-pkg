@@ -72,13 +72,17 @@ public:
   * \brief Class initializer
   *
   * \param connection simple message connection that will be used to send replies.
-  * \param joint_names list of joint-names for msg-publishing.  Order should match data from robot connection.
+  * \param joint_names list of joint-names for msg-publishing.
+  *   - Count and order should match data from robot connection.
+  *   - Use blank-name to exclude a joint from publishing.
   *
   * \return true on success, false otherwise (an invalid message type)
   */
  bool init(industrial::smpl_msg_connection::SmplMsgConnection* connection, std::vector<std::string> &joint_names);
 
 private:
+
+  std::vector<std::string> robot_joint_names_;
 
   control_msgs::FollowJointTrajectoryFeedback joint_control_state_;
   sensor_msgs::JointState joint_sensor_state_;
