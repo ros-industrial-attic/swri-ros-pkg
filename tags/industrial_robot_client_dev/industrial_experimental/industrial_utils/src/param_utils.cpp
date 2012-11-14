@@ -29,6 +29,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sstream>
+
 #include "industrial_utils/param_utils.h"
 #include "ros/ros.h"
 
@@ -78,6 +80,22 @@ bool getListParam(const std::string param_name, std::vector<std::string> & list_
 
   return rtn;
 
+}
+
+bool getJointNames(const std::string param_name, int num_joints, std::vector<std::string> & joint_names)
+{
+  if (getListParam(param_name, joint_names))
+    return true;
+
+  joint_names.clear();
+  for (int i=0; i<num_joints; ++i)
+  {
+    std::stringstream tmp;
+    tmp << "joint_" << i+1;
+    joint_names.push_back(tmp.str());
+  }
+
+    return false;
 }
 
 } //industrial_utils::param

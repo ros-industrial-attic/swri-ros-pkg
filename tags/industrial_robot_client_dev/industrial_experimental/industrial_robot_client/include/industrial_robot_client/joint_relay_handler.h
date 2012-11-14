@@ -33,9 +33,11 @@
 #ifndef JOINT_HANDLER_H
 #define JOINT_HANDLER_H
 
+#include <string>
+#include <vector>
+
 #include "simple_message/message_handler.h"
 #include "ros/ros.h"
-//#include <pr2_controllers_msgs/JointTrajectoryControllerState.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <control_msgs/FollowJointTrajectoryFeedback.h>
 #include <sensor_msgs/JointState.h>
@@ -55,37 +57,26 @@ namespace joint_relay_handler
  */
 class JointRelayHandler : public industrial::message_handler::MessageHandler
 {
+  // since this class defines a different init(), this helps find the base-class init()
+  using industrial::message_handler::MessageHandler::init;
 
 public:
 
   /**
 * \brief Constructor
 */
-  JointRelayHandler();
+  JointRelayHandler() {};
 
 
-  /**
-* \brief Class initializer
-*
-* \param connection simple message connection that will be used to send replies.
-*
-* \return true on success, false otherwise (an invalid message type)
-*/
-  bool init(industrial::smpl_msg_connection::SmplMsgConnection* connection);
-
-  /**
-* \brief Class initializer (Direct call to base class with the same name)
-* I couldn't get the "using" form to work/
-*
-* \param connection simple message connection that will be used to send replies.
-*
-* \return true on success, false otherwise (an invalid message type)
-*/
-  bool init(int msg_type, industrial::smpl_msg_connection::SmplMsgConnection* connection)
-  {
-    return MessageHandler::init(msg_type, connection);
-  };
-
+ /**
+  * \brief Class initializer
+  *
+  * \param connection simple message connection that will be used to send replies.
+  * \param joint_names list of joint-names for msg-publishing.  Order should match data from robot connection.
+  *
+  * \return true on success, false otherwise (an invalid message type)
+  */
+ bool init(industrial::smpl_msg_connection::SmplMsgConnection* connection, std::vector<std::string> &joint_names);
 
 private:
 
@@ -95,7 +86,7 @@ private:
   ros::Publisher pub_joint_sensor_state_;
   ros::NodeHandle node_;
 
-  static const int NUM_OF_JOINTS_ = 7;
+  int num_joints_;
 
  /**
   * \brief Callback executed upon receiving a ping message

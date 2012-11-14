@@ -33,49 +33,36 @@
 #include "simple_message/messages/joint_message.h"
 #include "simple_message/log_wrapper.h"
 
-
 using namespace industrial::joint_message;
 using namespace industrial::simple_message;
 using namespace industrial::shared_types;
+using industrial::smpl_msg_connection::SmplMsgConnection;
 
 namespace industrial_robot_client
 {
 namespace joint_relay_handler
 {
 
-JointRelayHandler::JointRelayHandler() :
-        joint_control_state_()
+bool JointRelayHandler::init(SmplMsgConnection* connection, std::vector<std::string>& joint_names)
 {
   this->pub_joint_control_state_ =
           this->node_.advertise<control_msgs::FollowJointTrajectoryFeedback>("feedback_states", 1);
 
   this->pub_joint_sensor_state_ = this->node_.advertise<sensor_msgs::JointState>("joint_states",1);
 
-  // Set up the default joint names (TODO: This should be made more generic.  The
-  // joint names can have an arbitrary prefix that isn't accounted for here.  This
-  // info can be found in the URDF, but I don't know how to get it here.
-  this->joint_control_state_.joint_names.push_back("joint_s");
-  this->joint_control_state_.joint_names.push_back("joint_l");
-  this->joint_control_state_.joint_names.push_back("joint_e");
-  this->joint_control_state_.joint_names.push_back("joint_u");
-  this->joint_control_state_.joint_names.push_back("joint_r");
-  this->joint_control_state_.joint_names.push_back("joint_b");
-  this->joint_control_state_.joint_names.push_back("joint_t");
-  // TODO: Again, this should be more generic.
-  this->joint_control_state_.actual.positions.resize(NUM_OF_JOINTS_);
-  this->joint_control_state_.desired.positions.resize(NUM_OF_JOINTS_);
-  this->joint_control_state_.error.positions.resize(NUM_OF_JOINTS_);
+  this->num_joints_ = joint_names.size();
 
-  // Copy from control state to sensor state
+  this->joint_control_state_.joint_names = joint_names;
+  this->joint_control_state_.actual.positions.resize(num_joints_);
+  this->joint_control_state_.desired.positions.resize(num_joints_);
+  this->joint_control_state_.error.positions.resize(num_joints_);
+
   this->joint_sensor_state_.name = this->joint_control_state_.joint_names;
-  this->joint_sensor_state_.position.resize(NUM_OF_JOINTS_);
-  this->joint_sensor_state_.velocity.resize(NUM_OF_JOINTS_);
-  this->joint_sensor_state_.effort.resize(NUM_OF_JOINTS_);
-}
+  this->joint_sensor_state_.position.resize(num_joints_);
+  this->joint_sensor_state_.velocity.resize(num_joints_);
+  this->joint_sensor_state_.effort.resize(num_joints_);
 
-bool JointRelayHandler::init(industrial::smpl_msg_connection::SmplMsgConnection* connection)
-{
-  return this->init(StandardMsgTypes::JOINT, connection);
+  return init((int)StandardMsgTypes::JOINT, connection);
 }
 
 bool JointRelayHandler::internalCB(industrial::simple_message::SimpleMessage & in)
@@ -89,7 +76,7 @@ bool JointRelayHandler::internalCB(industrial::simple_message::SimpleMessage & i
   if (joint.init(in))
   {
     shared_real value;
-    for(int i =0; i < NUM_OF_JOINTS_; i++)
+    for(int i =0; i <num_joints_; i++)
     {
       if (joint.getJoints().getJoint(i, value))
       {
