@@ -11,6 +11,7 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/passthrough.h>
 #include <sensor_msgs/point_cloud_conversion.h>
+#include <tf/transform_listener.h>
 
 #include <iostream>
 #include <fstream>
@@ -45,34 +46,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   sensor_msgs::convertPointCloudToPointCloud2(received_cluster, cluster);
   cluster.header.frame_id=main_request.table.pose.header.frame_id;
   cluster.header.stamp=main_request.table.pose.header.stamp;
-/*
-  //Filter cluster to remove noise
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_ptr (new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cut (new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ> cloud_noise;
-  pcl::fromROSMsg (cluster, *cluster_ptr);
 
-  //Filter to remove high points
-  pcl::PassThrough<pcl::PointXYZ> pass;
-  pass.setInputCloud (cluster_ptr);
-  pass.setFilterFieldName ("z");
-  pass.setFilterLimits (0, 0.08);
-  pass.filter (*cloud_cut);
-  //then filter to remove outliers
-  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> out_remove;
-  out_remove.setInputCloud(cloud_cut);
-  out_remove.setNegative(false);
-  out_remove.setMeanK(50);
-  out_remove.setStddevMulThresh(1.0);
-  out_remove.filter(cloud_noise);
-
-  sensor_msgs::PointCloud2 cluster_noise;
-  pcl::toROSMsg (cloud_noise, cluster_noise);
-  //sensor_msgs::convertPointCloudToPointCloud2(cloud_noise, cluster_noise);
-  cluster_noise.header.frame_id=main_request.table.pose.header.frame_id;
-  cluster_noise.header.stamp=main_request.table.pose.header.stamp;
-  noise_pub.publish( cluster_noise );
-*/
   //Brian's recognition service
   nrg_object_recognition::recognition rec_srv;
 
@@ -99,52 +73,27 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   std::string label = main_response.label;
   found=label.find_last_of("/");
   ROS_WARN_STREAM("Object labeled as "<< label.substr(found+1));
-  if(label.substr(found+1)=="enclosure")
+  if(label.substr(found+1)=="enclosure" || label.substr(found+1)=="enclosuref")
   {
     main_response.model_id=1;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enblosure.STL";
   }
-  if(label.substr(found+1)=="enclosuref")
-    {
-      main_response.model_id=1;
-      mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enblosure.STL";
-    }
-  else if (label.substr(found+1)=="coupling")
+  else if (label.substr(found+1)=="coupling" || label.substr(found+1)=="couplingf")
   {
     main_response.model_id=2;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/rubber_coupler_clamps.STL";
   }
-  else if (label.substr(found+1)=="couplingf")
-    {
-      main_response.model_id=2;
-      mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/rubber_coupler_clamps.STL";
-    }
-  else if (label.substr(found+1)=="pvc_t")
+  else if (label.substr(found+1)=="pvc_t" || label.substr(found+1)=="pvct")
   {
     main_response.model_id=3;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
   }
-  else if (label.substr(found+1)=="pvct")
-    {
-      main_response.model_id=3;
-      mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
-    }
-  else if (label.substr(found+1)=="plug")
+  else if (label.substr(found+1)=="plug" || label.substr(found+1)=="plugf")
   {
     main_response.model_id=4;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.stl";
   }
-  else if (label.substr(found+1)=="plugf")
-    {
-      main_response.model_id=4;
-      mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.stl";
-    }
-  else if (label.substr(found+1)=="pvc_elbow")
-  {
-    main_response.model_id=5;
-    mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_elbow.stl";
-  }
-  else if (label.substr(found+1)=="pvcelbow")
+  else if (label.substr(found+1)=="pvc_elbow" || label.substr(found+1)=="pvcelbow")
   {
     main_response.model_id=5;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_elbow.stl";
