@@ -42,7 +42,7 @@ namespace joint_trajectory_downloader
 {
 
 /**
- * \brief Message handler that downloads joint trajectories to the
+ * \brief Message handler that downloads joint trajectories to
  * a robot controller that supports the trajectory downloading interface
  *
  * THIS CLASS IS NOT THREAD-SAFE
@@ -59,11 +59,12 @@ public:
    * \brief Constructor
    *
    * \param n ROS node handle (used for subscribing)
-   * \param robot_connection Simple message connection (used for publishing (to the robot controller))
-   * \param joint_name ordered list of joint names (controller order)
+   * \param robot_connection message connection (used for publishing (to the robot controller))
+   * \param joint_names ordered list of joint names (controller order)
    */
-  JointTrajectoryDownloader(ros::NodeHandle &n, industrial::smpl_msg_connection::SmplMsgConnection* robot_connection,
-                            std::vector<std::string> &joint_names);
+	JointTrajectoryDownloader(ros::NodeHandle &n,
+	                          industrial::smpl_msg_connection::SmplMsgConnection* robot_connecton,
+	                          std::vector<std::string> &joint_names);
 
   /**
    * \brief Destructor
@@ -101,7 +102,7 @@ private:
    * check and reorder of trajectories that are sent to the controller.
    *
    */
-  std::vector<std::string> &joint_names_;
+  std::vector<std::string> joint_names_;
 
   /**
    * \brief Internal method for sending trajectory stop command to the controller
@@ -111,6 +112,6 @@ private:
 };
 
 } //joint_trajectory_downloader
-} //motoman
+} //industrial_robot_client
 
 #endif /* JOINT_TRAJECTORY_DOWNLOADER_H */

@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <joint_trajectory_downloader.h>
+#include "industrial_robot_client/joint_trajectory_downloader.h"
 #include "simple_message/joint_traj_pt.h"
 #include "simple_message/messages/joint_traj_pt_message.h"
 #include "simple_message/smpl_msg_connection.h"

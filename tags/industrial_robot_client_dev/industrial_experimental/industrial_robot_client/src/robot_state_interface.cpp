@@ -29,50 +29,63 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/ros.h"
-#include "simple_message/socket/simple_socket.h"
-#include "simple_message/socket/udp_client.h"
-#include "simple_message/socket/tcp_client.h"
-#include <joint_relay_handler.h>
-#include "simple_message/message_manager.h"
+#include "industrial_robot_client/robot_state_interface.h"
 
-using namespace industrial::udp_client;
-using namespace industrial::tcp_client;
-using namespace industrial::message_manager;
+using industrial::smpl_msg_connection::SmplMsgConnection;
 using namespace industrial::simple_socket;
-using namespace industrial_robot_client::joint_relay_handler;
 
-int main(int argc, char** argv)
+namespace industrial_robot_client
 {
-  TcpClient connection;
-  MessageManager manager;
-	
-  ros::init(argc, argv, "state_interface");
+namespace robot_state_interface
+{
+
+RobotStateInterface::RobotStateInterface()
+{
+  this->connection_ = NULL;
+  this->add_handler(&default_handler_);
+}
+
+bool RobotStateInterface::init()
+{
   ros::NodeHandle n;
   std::string s;
 
-  JointRelayHandler jr_handler(n);
-
-  if (n.getParam("robot_ip_address", s))
+  // initialize default connection, if one not specified.
+  if (!n.getParam("robot_ip_address", s))
   {
-    ROS_INFO("Robot state connecting to IP address: %s", s.c_str());
-    char* ip_add;
-    ip_add=(char*)(s.c_str());
-    connection.init(ip_add, StandardSocketPorts::STATE);
-    connection.makeConnect();
-
-    jr_handler.init(&connection);
-
-    manager.init(&connection);
-    manager.add(&jr_handler);
-  }
-  else
-  {
-    ROS_ERROR("Robot State failed to get param 'robot_state/robot_ip_address'");
+    ROS_ERROR("Robot State failed to get param 'robot_ip_address'");
+    return false;
   }
 
-  manager.spin();
+  char* ip_addr = strdup(s.c_str());  // connection.init() requires "char*", not "const char*"
+  ROS_INFO("Robot state connecting to IP address: %s", ip_addr);
+  default_tcp_connection_.init(ip_addr, StandardSocketPorts::STATE);
+  free(ip_addr);
 
-  return 0;
+  return init(&default_tcp_connection_);
 }
 
+bool RobotStateInterface::init(SmplMsgConnection* connection)
+{
+  this->connection_ = connection;
+  connection_->makeConnect();
+
+  // initialize message-manager
+  if (!manager_.init(connection_))
+    return false;
+
+  // initialize default handlers
+  if (!default_handler_.init(connection_))
+    return false;
+  this->add_handler(&default_handler_);
+
+  return true;
+}
+
+void RobotStateInterface::run()
+{
+  manager_.spin();
+}
+
+} // robot_state_interface
+} // industrial_robot_client

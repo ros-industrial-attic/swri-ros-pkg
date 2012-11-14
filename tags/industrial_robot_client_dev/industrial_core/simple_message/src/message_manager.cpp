@@ -196,18 +196,19 @@ void MessageManager::spin()
   }
 }
 
-bool MessageManager::add(MessageHandler * handler)
+bool MessageManager::add(MessageHandler * handler, bool allow_replace)
 {
+  int idx = -1;
   bool rtn = false;
 
   if (NULL != handler)
   {
-    if (this->getMaxNumHandlers() > this->getNumHandlers())
+    // If get handler returns -1 then a hander for the message type
+    // does not exist, and a new one should be added
+    idx = getHandlerIdx(handler->getMsgType());
+    if (0 > idx)
     {
-      // If get handler returns NULL then a hander for the message type
-      // does not exist and this one can be added, otherwise return
-      // and error
-      if (NULL == getHandler(handler->getMsgType()))
+      if (this->getMaxNumHandlers() > this->getNumHandlers())
       {
         this->handlers_[this->getNumHandlers()] = handler;
         this->setNumHandlers(this->getNumHandlers() + 1);
@@ -216,13 +217,17 @@ bool MessageManager::add(MessageHandler * handler)
       }
       else
       {
-        LOG_ERROR("Failed to add handler for: %d, handler already exists", handler->getMsgType());
+        LOG_ERROR("Max number of handlers exceeded");
         rtn = false;
       }
     }
+    else if (allow_replace)
+    {
+      this->handlers_[idx] = handler;
+    }
     else
     {
-      LOG_ERROR("Max number of hanlders exceeded");
+      LOG_ERROR("Failed to add handler for: %d, handler already exists", handler->getMsgType());
       rtn = false;
     }
   }
@@ -236,7 +241,17 @@ bool MessageManager::add(MessageHandler * handler)
 
 MessageHandler* MessageManager::getHandler(int msg_type)
 {
-  MessageHandler* rtn = NULL;
+  int idx = getHandlerIdx(msg_type);
+
+  if (idx < 0)
+    return NULL;
+  else
+    return this->handlers_[idx];
+}
+
+int MessageManager::getHandlerIdx(int msg_type)
+{
+  int rtn = -1;
   MessageHandler* temp = NULL;
 
   for (unsigned int i = 0; i < this->getMaxNumHandlers(); i++)
@@ -248,19 +263,18 @@ MessageHandler* MessageManager::getHandler(int msg_type)
     {
       if (temp->getMsgType() == msg_type)
       {
-        rtn = temp;
+        rtn = i;
         break;
       }
     }
     else
     {
-      rtn = NULL;
       LOG_WARN("Null value encountered, end of handlers reached");
       break;
     }
   }
 
-  if (NULL == rtn)
+  if (-1 == rtn)
   {
     LOG_WARN("Handler not found for type: %d", msg_type);
   }

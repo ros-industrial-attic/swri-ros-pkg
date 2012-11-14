@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "joint_trajectory_downloader.h"
+#include "industrial_robot_client/joint_trajectory_downloader.h"
 #include "simple_message/socket/simple_socket.h"
 #include "simple_message/socket/tcp_client.h"
 #include "industrial_utils/param_utils.h"

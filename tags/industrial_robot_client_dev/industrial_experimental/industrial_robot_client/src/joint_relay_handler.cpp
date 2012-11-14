@@ -29,7 +29,7 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */ 
 
-#include <joint_relay_handler.h>
+#include "industrial_robot_client/joint_relay_handler.h"
 #include "simple_message/messages/joint_message.h"
 #include "simple_message/log_wrapper.h"
 
@@ -43,11 +43,9 @@ namespace industrial_robot_client
 namespace joint_relay_handler
 {
 
-JointRelayHandler::JointRelayHandler(ros::NodeHandle &n) :
-        joint_control_state_(),
-        node_(n)
+JointRelayHandler::JointRelayHandler() :
+        joint_control_state_()
 {
-
   this->pub_joint_control_state_ =
           this->node_.advertise<control_msgs::FollowJointTrajectoryFeedback>("feedback_states", 1);
 

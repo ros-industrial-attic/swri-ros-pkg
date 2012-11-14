@@ -49,9 +49,6 @@ namespace joint_relay_handler
 /**
  * \brief Message handler that relays joint positions (converts simple message
  * types to ROS message types and publishes them)
- */
-//* JointRelayHandler
-/**
  *
  * THIS CLASS IS NOT THREAD-SAFE
  *
@@ -63,10 +60,8 @@ public:
 
   /**
 * \brief Constructor
-*
-* \param ROS node handle (used for publishing)
 */
-  JointRelayHandler(ros::NodeHandle &n);
+  JointRelayHandler();
 
 
   /**
@@ -94,7 +89,6 @@ public:
 
 private:
 
-  //pr2_controllers_msgs::JointTrajectoryControllerState joint_control_state_;
   control_msgs::FollowJointTrajectoryFeedback joint_control_state_;
   sensor_msgs::JointState joint_sensor_state_;
   ros::Publisher pub_joint_control_state_;
