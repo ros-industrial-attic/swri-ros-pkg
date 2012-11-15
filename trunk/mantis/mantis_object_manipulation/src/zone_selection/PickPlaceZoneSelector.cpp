@@ -14,6 +14,9 @@
 #include <cmath>
 #include <algorithm>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <tf_conversions/tf_eigen.h>
+#include <pcl/common/transforms.h>
+#include <tf/transform_listener.h>
 
 typedef pcl::PointCloud<pcl::PointXYZ> PclCloud;
 
@@ -115,6 +118,20 @@ bool PickPlaceZoneSelector::isInPickZone(const sensor_msgs::PointCloud &cluster)
 	sensor_msgs::convertPointCloudToPointCloud2(cluster,clusterMsg);
 	pcl::fromROSMsg(clusterMsg,cloud);
 
+	// reference to active pick zone
+	ZoneBounds &pickZone = pick_zones_[pick_zone_index_];
+
+	// checking frame ids and transforming cloud if they are different
+	tf::TransformListener tfListener;
+	tf::StampedTransform clusterTransform;
+	Eigen::Affine3d tfEigen;
+	if(pickZone.FrameId.compare(cluster.header.frame_id) != 0)
+	{
+		tfListener.lookupTransform(pickZone.FrameId,cluster.header.frame_id,ros::Time::now(),clusterTransform);
+		tf::TransformTFToEigen(clusterTransform,tfEigen);
+		pcl::transformPointCloud(cloud,cloud,Eigen::Affine3f(tfEigen));
+	}
+
 	// finding centroid
 	Eigen::Vector4f centroid;
 	pcl::compute3DCentroid(cloud,centroid);
@@ -124,7 +141,6 @@ bool PickPlaceZoneSelector::isInPickZone(const sensor_msgs::PointCloud &cluster)
 	clusterCentroid.x = centroid[0];
 	clusterCentroid.y = centroid[1];
 
-	ZoneBounds &pickZone = pick_zones_[pick_zone_index_];
 
 	if(((pickZone.XMin > clusterCentroid.x) || (pickZone.XMax < clusterCentroid.x)) ||
 			((pickZone.YMin > clusterCentroid.y) || (pickZone.YMax < clusterCentroid.y)))
