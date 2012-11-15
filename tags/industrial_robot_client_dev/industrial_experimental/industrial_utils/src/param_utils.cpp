@@ -84,7 +84,7 @@ bool getListParam(const std::string param_name, std::vector<std::string> & list_
 
 bool getJointNames(const std::string param_name, int num_joints, std::vector<std::string> & joint_names)
 {
-  if (getListParam(param_name, joint_names))
+  if (ros::param::has(param_name) && getListParam(param_name, joint_names))
     return true;
 
   joint_names.clear();

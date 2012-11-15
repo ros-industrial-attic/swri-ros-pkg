@@ -36,17 +36,20 @@
 #include <string>
 #include <vector>
 
-#include "simple_message/message_handler.h"
 #include "ros/ros.h"
-#include <control_msgs/FollowJointTrajectoryAction.h>
-#include <control_msgs/FollowJointTrajectoryFeedback.h>
-#include <sensor_msgs/JointState.h>
+#include "control_msgs/FollowJointTrajectoryFeedback.h"
+#include "sensor_msgs/JointState.h"
+#include "simple_message/message_handler.h"
+#include "simple_message/messages/joint_message.h"
 
 
 namespace industrial_robot_client
 {
 namespace joint_relay_handler
 {
+
+using industrial::joint_message::JointMessage;
+using industrial::simple_message::SimpleMessage;
 
 /**
  * \brief Message handler that relays joint positions (converts simple message
@@ -80,26 +83,73 @@ public:
   */
  bool init(industrial::smpl_msg_connection::SmplMsgConnection* connection, std::vector<std::string> &joint_names);
 
-private:
+protected:
 
-  std::vector<std::string> robot_joint_names_;
+  std::vector<std::string> all_joint_names_;
 
-  control_msgs::FollowJointTrajectoryFeedback joint_control_state_;
-  sensor_msgs::JointState joint_sensor_state_;
   ros::Publisher pub_joint_control_state_;
   ros::Publisher pub_joint_sensor_state_;
   ros::NodeHandle node_;
 
-  int num_joints_;
+  /**
+   * \brief Convert joint message into publish message-types
+   *
+   * \param[in] msg_in Joint message from robot connection
+   * \param[out] control_state FollowJointTrajectoryFeedback message for ROS publishing
+   * \param[out] sensor_state JointState message for ROS publishing
+   *
+   * \return true on success, false otherwise
+   */
+  virtual bool create_messages(JointMessage& msg_in,
+                               control_msgs::FollowJointTrajectoryFeedback* control_state,
+                               sensor_msgs::JointState* sensor_state);
 
+  /**
+   * \brief Transform joint positions before publishing.
+   * Can be overridden to implement, e.g. robot-specific joint coupling.
+   *
+   * \param[in] pos_in joint positions, exactly as passed from robot connection.
+   * \param[out] pos_out transformed joint positions (in same order/count as input positions)
+   *
+   * \return true on success, false otherwise
+   */
+  virtual bool transform(const std::vector<double>& pos_in, std::vector<double>* pos_out)
+  {
+    *pos_out = pos_in;  // by default, no transform is applied
+    return true;
+  }
+
+  /**
+   * \brief Select specific joints for publishing
+   *
+   * \param[in] all_joint_pos joint positions, in count/order matching robot connection
+   * \param[in] all_joint_names joint names, matching all_joint_pos
+   * \param[out] pub_joint_pos joint positions selected for publishing
+   * \param[out] pub_joint_names joint names selected for publishing
+   *
+   * \return true on success, false otherwise
+   */
+  virtual bool select(const std::vector<double>& all_joint_pos, const std::vector<std::string>& all_joint_names,
+                      std::vector<double>* pub_joint_pos, std::vector<std::string>* pub_joint_names);
+
+  /**
+   * \brief Callback executed upon receiving a joint message
+   *
+   * \param in incoming message
+   *
+   * \return true on success, false otherwise
+   */
+  bool internalCB(JointMessage& in);
+
+private:
  /**
-  * \brief Callback executed upon receiving a ping message
+  * \brief Callback executed upon receiving a message
   *
   * \param in incoming message
   *
   * \return true on success, false otherwise
   */
- bool internalCB(industrial::simple_message::SimpleMessage & in);
+ bool internalCB(SimpleMessage& in);
 };//class JointRelayHandler
 
 }//joint_relay_handler

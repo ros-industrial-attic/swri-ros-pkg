@@ -257,26 +257,13 @@ int MessageManager::getHandlerIdx(int msg_type)
   for (unsigned int i = 0; i < this->getMaxNumHandlers(); i++)
   {
     temp = this->handlers_[i];
-    // The handlers are searched until the appropriate handler is found
-    // or a NULL value is found (signifies the end of the buffer);
-    if (NULL != temp)
+    if (NULL == temp) break;  // end of handler-list
+
+    if (temp->getMsgType() == msg_type)
     {
-      if (temp->getMsgType() == msg_type)
-      {
         rtn = i;
         break;
-      }
     }
-    else
-    {
-      LOG_WARN("Null value encountered, end of handlers reached");
-      break;
-    }
-  }
-
-  if (-1 == rtn)
-  {
-    LOG_WARN("Handler not found for type: %d", msg_type);
   }
 
   return rtn;
