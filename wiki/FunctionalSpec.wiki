@@ -1,3 +1,3 @@
 #summary Provides guidelines for ROS node functionality, to improve cross-platform compatibility.
 
-The content on this page has been moved [http://ros.org/wiki/Industrial/Dev/Industrial_Robot_Driver_Spec here]
+The content on this page has been moved [http://ros.org/wiki/Industrial/Industrial_Robot_Driver_Spec here]
