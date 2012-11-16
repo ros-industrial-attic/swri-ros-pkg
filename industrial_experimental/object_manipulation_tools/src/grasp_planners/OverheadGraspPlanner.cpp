@@ -117,6 +117,40 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 	// updating parameters
 	fetchParameters(true);
 
+	// checking if grasp to evaluate were passed
+	if(!req.grasps_to_evaluate.empty())
+	{
+		object_manipulation_msgs::Grasp candidateGrasp;
+		std::vector<geometry_msgs::Pose> candidatePoses;
+		sensor_msgs::JointState jointState;
+		jointState.name = std::vector<std::string>();
+		jointState.position = std::vector<double>();
+		jointState.velocity = std::vector<double>();
+ 		candidateGrasp.grasp_pose = geometry_msgs::Pose();
+
+ 		// generating candidate poses
+		candidateGrasp.grasp_posture = jointState;
+		candidateGrasp.pre_grasp_posture = jointState;
+		candidateGrasp.desired_approach_distance = _ParamVals.DefaultPregraspDistance;
+		candidateGrasp.min_approach_distance = _ParamVals.DefaultPregraspDistance;
+ 		for(std::size_t i = 0;i < req.grasps_to_evaluate.size(); i++)
+ 		{
+ 			object_manipulation_msgs::Grasp &graspEval = req.grasps_to_evaluate[i];
+ 			geometry_msgs::Pose &poseToEval = graspEval.grasp_pose;
+ 			generateGraspPoses(poseToEval,_ParamVals.NumCandidateGrasps,candidatePoses);
+ 		}
+
+ 		// storing all candidate poses
+ 		for(std::size_t i = 0; i < candidatePoses.size(); i++)
+ 		{
+ 			candidateGrasp.grasp_pose = candidatePoses[i];
+ 			res.grasps.push_back(candidateGrasp);
+ 		}
+
+ 		res.error_code.value = object_manipulation_msgs::GraspPlanningErrorCode::SUCCESS;
+ 		return true;
+	}
+
 	// local variables
 	ros::NodeHandle nh;
 	std::stringstream stdOut;
@@ -398,6 +432,26 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 	res.grasps = grasps;
 	res.error_code.value = object_manipulation_msgs::GraspPlanningErrorCode::SUCCESS;
 	return true;
+}
+
+void OverheadGraspPlanner::generateGraspPoses(const geometry_msgs::Pose &pose,int numCandidates,
+		std::vector<geometry_msgs::Pose> &poses)
+{
+	tf::Transform graspTf = tf::Transform::getIdentity();
+	tf::Transform candidateTf;
+	tfScalar angle = tfScalar(2*M_PI/(double(numCandidates)));
+
+	// converting initial pose to tf
+	tf::poseMsgToTF(pose,graspTf);
+
+	for(int i = 0; i < numCandidates; i++)
+	{
+		candidateTf = graspTf*tf::Transform(tf::Quaternion(_ParamVals.ApproachVector,i*angle),
+				tf::Vector3(0.0f,0.0f,0.0f));
+		geometry_msgs::Pose candidatePose = geometry_msgs::Pose();
+		tf::poseTFToMsg(candidateTf,candidatePose);
+		poses.push_back(candidatePose);
+	}
 }
 
 
