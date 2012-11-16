@@ -24,6 +24,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
 
+#include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 
@@ -153,6 +154,15 @@ class MantisSegmentor
 bool MantisSegmentor::serviceCallback(tabletop_object_detector::TabletopSegmentation::Request &request,
 		tabletop_object_detector::TabletopSegmentation::Response &response)
 {
+
+	/*
+  static tf::TransformBroadcaster broadcaster;
+
+  broadcaster.sendTransform(
+		  tf::StampedTransform(
+			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.545, -0.18, 0.0185)),
+			ros::Time::now(),"/base_link", "/object_training_frame"));
+*/
   ros::Time start_time = ros::Time::now();
   std::string topic = nh_.resolveName("cloud_in");
   ROS_INFO("Tabletop detection service called; waiting for a point_cloud2 on topic %s", topic.c_str());
@@ -659,6 +669,9 @@ int main(int argc, char **argv)
   cluster_pub = nh.advertise<sensor_msgs::PointCloud2>("/pre_clustering",1);
   first_cluster_pub = nh.advertise<sensor_msgs::PointCloud2>("/biggest_cluster",1);
   //ros::ServiceServer serv = n.advertiseService("/segmentation", segment_cb);
+
+
+
 
   MantisSegmentor node(nh);
 
