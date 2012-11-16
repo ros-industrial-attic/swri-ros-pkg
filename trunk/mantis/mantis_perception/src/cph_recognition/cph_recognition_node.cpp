@@ -23,7 +23,6 @@
 #include "cph.h"
 
 
-
 typedef std::pair<std::string, std::vector<float> > cph_model;
 std::vector<cph_model> models;
 flann::Matrix<int> k_indices;
@@ -126,7 +125,7 @@ bool recognize_cb(nrg_object_recognition::recognition::Request &srv_request,
   srv_response.pose.x = centroid(0);
   srv_response.pose.y = centroid(1);
   srv_response.pose.z = centroid(2);
-  
+
   //Compute cph:
   cph.setInputCloud (cluster);
   std::vector<float> feature;
