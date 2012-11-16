@@ -793,8 +793,8 @@ bool RobotNavigator::performGraspPlanning()
 
 	//  ===================================== storing results =====================================
 	/* Storing grasp candidates:
-	 * 	Grasp poses are positions of the wrist link in terms of the world,
-	 * 	we need to get them in terms of the object
+	 * 	Grasp poses are poses of the wrist link in terms of the world,
+	 * 	we need to get them relative to the object
 	 */
 	grasp_candidates_.assign(response.grasps.begin(),response.grasps.end());
 
