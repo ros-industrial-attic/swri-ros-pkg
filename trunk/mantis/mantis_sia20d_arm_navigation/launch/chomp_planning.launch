@@ -2,10 +2,10 @@
 <launch>  
 	<node pkg="chomp_motion_planner" name="chomp_planner_longrange" type="chomp_planner_node" respawn="false" output="screen">
 		<remap from="collision_map" to="collision_map_occ"/>
-		<rosparam command="load" file="$(find mantis_arm_navigation)/config/chomp_planning.yaml" />
+		<rosparam command="load" file="$(find mantis_sia20d_arm_navigation)/config/chomp_planning.yaml" />
 		<param name="animate_path" value="false"/>
 		<param name="animate_endeffector" value="false"/>
-		<param name="animate_endeffector_segment" value="r_gripper_tool_frame"/>
+		<param name="animate_endeffector_segment" value="sia20d_arm/palm"/>
 	  	<param name="use_signed_environment_field" value="true"/>
 	  	<param name="use_signed_self_field" value="false"/>
 		<param name="trajectory_duration" value="4.0"/>
@@ -38,10 +38,10 @@
 		<remap from="filter_trajectory" to="/trajectory_filter_server/filter_trajectory_with_constraints" />
 
 		<!-- (replaced element) loading robot padding for sia20d -->
-		<rosparam command="load" file="$(find mantis_arm_navigation)/config/robot_padding.yaml"/>
+		<rosparam command="load" file="$(find mantis_sia20d_arm_navigation)/config/robot_padding.yaml"/>
 	
 		<!-- (replaced element) loading joint limits for sia20d -->
-		<rosparam command="load" file="$(find mantis_arm_navigation)/config/joint_limits.yaml"/>
+		<rosparam command="load" file="$(find mantis_sia20d_arm_navigation)/config/joint_limits.yaml"/>
 	</node>
 </launch>
 
