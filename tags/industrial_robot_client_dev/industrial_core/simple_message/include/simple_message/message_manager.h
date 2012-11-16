@@ -148,7 +148,6 @@ public:
   {
     return this->num_handlers_;
   }
-  ;
 
   /**
    * \brief Gets maximumn number of handlers
@@ -159,7 +158,28 @@ public:
   {
     return this->MAX_NUM_HANDLERS;
   }
-  ;
+
+
+  /**
+   * \brief Gets communications fault handler
+   *
+   * \return reference to message handler or NULL if one doesn't exist
+   */
+  industrial::comms_fault_handler::CommsFaultHandler* getCommsFaultHandler()
+  {
+    return this->comms_hndlr_;
+  }
+
+  /**
+   * \brief Gets communications fault handler
+   *
+   * \param Pointer to message handler
+   */
+  void setCommsFaultHandler(industrial::comms_fault_handler::CommsFaultHandler* handler)
+  {
+    this->comms_hndlr_ = handler;
+  }
+
 
 private:
 
@@ -219,26 +239,6 @@ private:
    * \return index of matching handler or -1 if one doesn't exist
    */
   int getHandlerIdx(int msg_type);
-
-  /**
-   * \brief Gets communications fault handler
-   *
-   * \return reference to message handler or NULL if one doesn't exist
-   */
-  industrial::comms_fault_handler::CommsFaultHandler* getCommsFaultHandler()
-  {
-    return this->comms_hndlr_;
-  }
-
-  /**
-   * \brief Gets communications fault handler
-   *
-   * \param Pointer to message handler
-   */
-  void setCommsFaultHandler(industrial::comms_fault_handler::CommsFaultHandler* handler)
-  {
-    this->comms_hndlr_ = handler;
-  }
 
   /**
    * \brief Gets default communications fault handler

@@ -29,19 +29,25 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
+
+rosbuild_add_library(industrial_robot_client
+  src/joint_relay_handler.cpp
+  src/joint_trajectory_handler.cpp
+  src/joint_trajectory_downloader.cpp
+  src/robot_state_interface.cpp)
+
 rosbuild_add_executable(robot_state
-  src/generic_robot_state_node.cpp
-  src/robot_state_interface.cpp
-  src/joint_relay_handler.cpp)
+  src/generic_robot_state_node.cpp)
+target_link_libraries(robot_state industrial_robot_client)
 
 rosbuild_add_executable(motion_streaming_interface
-  src/motion_streaming_interface.cpp
-  src/joint_trajectory_handler.cpp)
+  src/motion_streaming_interface.cpp)
+target_link_libraries(motion_streaming_interface industrial_robot_client)
 rosbuild_link_boost(motion_streaming_interface thread)
 
 rosbuild_add_executable(motion_download_interface
-  src/motion_download_interface.cpp
-  src/joint_trajectory_downloader.cpp)
+  src/motion_download_interface.cpp)
+target_link_libraries(motion_download_interface industrial_robot_client)
 rosbuild_link_boost(motion_download_interface thread)
 
 rosbuild_add_executable(joint_trajectory_action src/joint_trajectory_action.cpp)

@@ -99,6 +99,17 @@ public:
   }
 
   /**
+   * \brief get active message-manager object
+   *
+   * \return current message-manager object
+   */
+  MessageManager* get_manager()
+  {
+    return &this->manager_;
+  }
+
+
+  /**
    * \brief Add a new handler.
    *
    * \param new message-handler for a specific msg-type (ALREADY INITIALIZED).

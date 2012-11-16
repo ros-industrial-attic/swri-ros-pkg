@@ -123,7 +123,7 @@ bool JointRelayHandler::create_messages(JointMessage& msg_in,
   // select specific joints for publishing
   std::vector<double> pub_joint_pos;
   std::vector<std::string> pub_joint_names;
-  if (!select(all_joint_pos, all_joint_names_, &pub_joint_pos, &pub_joint_names))
+  if (!select(xform_joint_pos, all_joint_names_, &pub_joint_pos, &pub_joint_names))
   {
     LOG_ERROR("Failed to select joints for publishing");
     return false;
