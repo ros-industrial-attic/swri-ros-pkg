@@ -46,6 +46,11 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   float enc_1_x_offset = 0.0085645;
   float enc_1_y_offset = -0.0099451;
   float enc_1_z_offset = 0.03923;
+  float plug_pick_point_z = 0.048;
+  float enc_pick_point_x = 0.027;
+  float enc_pick_point_z = 0.051;
+  float pvct_pick_point_y = 0.025;
+  float pvct_pick_point_z = 0.055;
 
   ROS_INFO("Starting mantis recognition");
   ROS_INFO("Number of clusters received in request = %d", (int)main_request.clusters.size());
@@ -72,9 +77,8 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   }
   float theta = rec_srv.response.pose.rotation*3.14159/180;//radians
   
-  static tf::TransformBroadcaster pvct_broadcaster;
-  static tf::TransformBroadcaster plug_broadcaster;
-  static tf::TransformBroadcaster enc_broadcaster;
+  static tf::TransformBroadcaster obj_broadcaster;
+
 
 
 ////////////////////Assign response values/////////////////////////
@@ -84,12 +88,34 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   ROS_INFO_STREAM("Recgonized pose: \n x: " << rec_srv.response.pose.x << "\n y: "<<rec_srv.response.pose.y <<
 		  "\n z: "<<rec_srv.response.pose.z << "\n theta: "<<rec_srv.response.pose.rotation);
 
-  main_response.pick_pose.header.stamp=main_request.table.pose.header.stamp;
-  main_response.pick_pose.header.frame_id=main_request.table.pose.header.frame_id;
-  main_response.pick_pose.pose.orientation.x = 0.0;
-  main_response.pick_pose.pose.orientation.y = 0.0;
-  main_response.pick_pose.pose.orientation.z = sin(theta/2);
-  main_response.pick_pose.pose.orientation.w = cos(theta/2);
+  geometry_msgs::Quaternion part_or;
+  part_or.x=0;
+  part_or.y = 0;
+  part_or.z = sin(theta/2);
+  part_or.w = cos(theta/2);
+
+  tf::Quaternion part_orientation;
+  part_orientation.setValue(0, 0, sin(theta/2), cos(theta/2));
+
+  tf::Quaternion rotation(1, 0, 0, 0);
+  tf::Vector3 vector(0, 1, 0);
+
+  tf::Quaternion rot_part;
+  rot_part.setValue(sin(3.14159/2), 0, 0, cos(3.14159/2));
+
+  tf::Quaternion rotated_part = part_orientation * rot_part;
+
+  geometry_msgs::Quaternion pick_frame;
+  tf::quaternionTFToMsg(rotated_part, pick_frame);
+
+  geometry_msgs::PoseStamped pick_pose;
+
+  pick_pose.header.stamp=main_request.table.pose.header.stamp;
+  pick_pose.header.frame_id=main_request.table.pose.header.frame_id;
+  pick_pose.pose.orientation.x = pick_frame.x;
+  pick_pose.pose.orientation.y = pick_frame.y;
+  pick_pose.pose.orientation.z = pick_frame.z;
+  pick_pose.pose.orientation.w = pick_frame.w;
 
   //Assign id and marker based on label
   visualization_msgs::Marker mesh_marker;
@@ -97,15 +123,15 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   //mesh_marker.type = visualization_msgs::Marker::SPHERE;
   mesh_marker.action = visualization_msgs::Marker::ADD;
   mesh_marker.lifetime = ros::Duration();
-  mesh_marker.header.frame_id = main_response.pick_pose.header.frame_id;
-  mesh_marker.header.stamp= main_response.pick_pose.header.stamp;//ros::Time();
+  mesh_marker.header.frame_id = pick_pose.header.frame_id;
+  mesh_marker.header.stamp= pick_pose.header.stamp;//ros::Time();
   mesh_marker.scale.x = 1;
   mesh_marker.scale.y = 1;
   mesh_marker.scale.z = 1;
-  mesh_marker.pose.orientation.x = main_response.pick_pose.pose.orientation.x;
-  mesh_marker.pose.orientation.y = main_response.pick_pose.pose.orientation.y;
-  mesh_marker.pose.orientation.z = main_response.pick_pose.pose.orientation.z;
-  mesh_marker.pose.orientation.w = main_response.pick_pose.pose.orientation.w;
+  mesh_marker.pose.orientation.x = 0;
+  mesh_marker.pose.orientation.y = 0;
+  mesh_marker.pose.orientation.z = sin(theta/2);
+  mesh_marker.pose.orientation.w = cos(theta/2);
   mesh_marker.color.a = 1.0;
   mesh_marker.color.r = 0.0;
   mesh_marker.color.g = 1.0;
@@ -122,12 +148,15 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   {
     main_response.model_id=1;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
-    main_response.pick_pose.pose.position.x= rec_srv.response.pose.x - (enc_1_x_offset);
-    main_response.pick_pose.pose.position.y= rec_srv.response.pose.y - (enc_1_y_offset);
-    main_response.pick_pose.pose.position.z = rec_srv.response.pose.z - (enc_1_z_offset);
-    enc_broadcaster.sendTransform(tf::StampedTransform(
-  	        tf::Transform(tf::Quaternion(0, 0, main_response.pick_pose.pose.orientation.z, main_response.pick_pose.pose.orientation.w),
-  	        tf::Vector3(main_response.pick_pose.pose.position.x, main_response.pick_pose.pose.position.y, main_response.pick_pose.pose.position.z)),
+    pick_pose.pose.position.x= rec_srv.response.pose.x - (enc_1_x_offset)+enc_pick_point_x;
+    pick_pose.pose.position.y= rec_srv.response.pose.y - (enc_1_y_offset);
+    pick_pose.pose.position.z= rec_srv.response.pose.z - (enc_1_z_offset)+enc_pick_point_z;
+    mesh_marker.pose.position.x=rec_srv.response.pose.x - (enc_1_x_offset);
+    mesh_marker.pose.position.y=rec_srv.response.pose.y - (enc_1_y_offset);
+    mesh_marker.pose.position.z=rec_srv.response.pose.z - (enc_1_z_offset);
+    obj_broadcaster.sendTransform(tf::StampedTransform(
+  	        tf::Transform(tf::Quaternion(pick_pose.pose.orientation.x, 0, pick_pose.pose.orientation.z, pick_pose.pose.orientation.w),
+  	        tf::Vector3(pick_pose.pose.position.x, pick_pose.pose.position.y, pick_pose.pose.position.z)),
   	      main_request.table.pose.header.stamp,"/base_link", "/object_training_frame"));
   }
   else if (label.substr(found+1)=="coupling" || label.substr(found+1)=="couplingf")
@@ -139,24 +168,30 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   {
     main_response.model_id=3;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
-    main_response.pick_pose.pose.position.x = rec_srv.response.pose.x - (pvct_1_x_offset);
-    main_response.pick_pose.pose.position.y = rec_srv.response.pose.y - (pvct_1_y_offset);
-    main_response.pick_pose.pose.position.z = rec_srv.response.pose.z - (pvct_1_z_offset);
-    pvct_broadcaster.sendTransform(tf::StampedTransform(
-  	        tf::Transform(tf::Quaternion(0, 0, main_response.pick_pose.pose.orientation.z, main_response.pick_pose.pose.orientation.w),
-  	        tf::Vector3(rec_srv.response.pose.x-(pvct_1_x_offset), rec_srv.response.pose.y-(pvct_1_y_offset), rec_srv.response.pose.z-(pvct_1_z_offset))),
+    pick_pose.pose.position.x = rec_srv.response.pose.x - (pvct_1_x_offset);
+    pick_pose.pose.position.y = rec_srv.response.pose.y - (pvct_1_y_offset);
+    pick_pose.pose.position.z = rec_srv.response.pose.z - (pvct_1_z_offset)+pvct_pick_point_z/2;
+    mesh_marker.pose.position.x=rec_srv.response.pose.x - (pvct_1_x_offset);
+    mesh_marker.pose.position.y=rec_srv.response.pose.y - (pvct_1_y_offset);
+    mesh_marker.pose.position.z=rec_srv.response.pose.z - (pvct_1_z_offset);
+    obj_broadcaster.sendTransform(tf::StampedTransform(
+  	        tf::Transform(tf::Quaternion(pick_pose.pose.orientation.x, 0, pick_pose.pose.orientation.z, pick_pose.pose.orientation.w),
+  	        tf::Vector3(pick_pose.pose.position.x, pick_pose.pose.position.y, pick_pose.pose.position.z)),
   	      main_request.table.pose.header.stamp,"/base_link", "/object_training_frame"));
   }
   else if (label.substr(found+1)=="plug_1" || label.substr(found+1)=="plugf")
   {
     main_response.model_id=4;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.STL";
-    main_response.pick_pose.pose.position.x = rec_srv.response.pose.x - (plug_1_x_offset);
-    main_response.pick_pose.pose.position.y = rec_srv.response.pose.y - (plug_1_y_offset);
-    main_response.pick_pose.pose.position.z = rec_srv.response.pose.z - (plug_1_z_offset);
-    plug_broadcaster.sendTransform(tf::StampedTransform(
-  	        tf::Transform(tf::Quaternion(0, 0, main_response.pick_pose.pose.orientation.z, main_response.pick_pose.pose.orientation.w),
-  	        tf::Vector3(rec_srv.response.pose.x-(plug_1_x_offset), rec_srv.response.pose.y-(plug_1_y_offset), rec_srv.response.pose.z-(plug_1_z_offset))),
+    pick_pose.pose.position.x = rec_srv.response.pose.x - (plug_1_x_offset);
+    pick_pose.pose.position.y = rec_srv.response.pose.y - (plug_1_y_offset);
+    pick_pose.pose.position.z = rec_srv.response.pose.z - (plug_1_z_offset)+plug_pick_point_z;
+    mesh_marker.pose.position.x=rec_srv.response.pose.x - (plug_1_x_offset);
+    mesh_marker.pose.position.y=rec_srv.response.pose.y - (plug_1_y_offset);
+    mesh_marker.pose.position.z=rec_srv.response.pose.z - (plug_1_z_offset);
+    obj_broadcaster.sendTransform(tf::StampedTransform(
+  	        tf::Transform(tf::Quaternion(pick_pose.pose.orientation.x, 0, pick_pose.pose.orientation.z, pick_pose.pose.orientation.w),
+  	        tf::Vector3(pick_pose.pose.position.x, pick_pose.pose.position.y, pick_pose.pose.position.z)),
   	      main_request.table.pose.header.stamp,"/base_link", "/object_training_frame"));
   }
   else if (label.substr(found+1)=="pvc_elbow" || label.substr(found+1)=="pvcelbow")
@@ -171,10 +206,9 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   }
   ROS_WARN_STREAM("Object labeled as "<< label.substr(found+1)<<" with model id "<<main_response.model_id);
 
-  //finish inputing marker properites and publish
-  mesh_marker.pose.position.x=main_response.pick_pose.pose.position.x;
-  mesh_marker.pose.position.y=main_response.pick_pose.pose.position.y;
-  mesh_marker.pose.position.z=main_response.pick_pose.pose.position.z;
+  //finish inputing marker properties and publish
+  main_response.pick_poses.push_back(pick_pose);
+
   main_response.mesh_marker = mesh_marker;
   vis_pub.publish( mesh_marker );
 
