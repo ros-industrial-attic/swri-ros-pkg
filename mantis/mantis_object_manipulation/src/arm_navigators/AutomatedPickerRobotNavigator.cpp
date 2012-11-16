@@ -310,6 +310,13 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	recognized_models_.push_back(models);
 	//recognized_model_description_.name = segmentation_results_.table.pose.header.frame_id;
 
+	// storing grasp candidate poses
+	candidate_pick_poses_.clear();
+	if(!rec_srv.response.pick_poses.empty())
+	{
+		candidate_pick_poses_.assign(rec_srv.response.pick_poses.begin(),rec_srv.response.pick_poses.end());
+	}
+
 /*
  * Finished storing recognition results
  */
@@ -336,6 +343,153 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	}
 
 #endif
+
+	return true;
+}
+
+bool AutomatedPickerRobotNavigator::performGraspPlanning()
+{
+	//  ===================================== saving current time stamp =====================================
+	ros::WallTime start_time = ros::WallTime::now();
+
+	//  ===================================== clearing results from last call =====================================
+	grasp_pickup_goal_.target.potential_models.clear();
+	grasp_candidates_.clear();
+
+	//  ===================================== calling service =====================================
+	// checking available recognized models
+	if((recognized_models_.size() == 0) || (recognized_models_[0].model_list.size() == 0))
+	{
+	  return false;
+	}
+
+	// populating grasp plan request/response
+	household_objects_database_msgs::DatabaseModelPose modelPose = recognized_models_[0].model_list[0];
+	object_manipulation_msgs::GraspPlanning::Request request;
+	object_manipulation_msgs::GraspPlanning::Response response;
+	std::string modelId = makeCollisionObjectNameFromModelId(modelPose.model_id);
+
+	//modelPose.pose = geometry_msgs::PoseStamped();
+	//modelPose.pose.pose.orientation.w = 1.0;
+	modelPose.pose = recognized_obj_pose_map_[modelId];
+	modelPose.pose.header.frame_id = recognized_model_description_.name; // should be updated during recognition stage
+	modelPose.pose.header.stamp = ros::Time::now();
+	request.arm_name = arm_group_name_;
+	request.target.potential_models.push_back(modelPose);
+	request.target.reference_frame_id = segmented_clusters_[0].header.frame_id;
+	request.target.cluster = segmented_clusters_[0];
+
+	// creating candidate grasp to evaluate
+	if(!candidate_pick_poses_.empty())
+	{
+		std::vector<object_manipulation_msgs::Grasp> evaluateGrasps;
+		for(std::vector<geometry_msgs::PoseStamped>::iterator i = candidate_pick_poses_.begin();
+				i != candidate_pick_poses_.end(); i++)
+		{
+			object_manipulation_msgs::Grasp graspEval;
+			graspEval.grasp_pose = i->pose;
+			evaluateGrasps.push_back(graspEval);
+		}
+		request.grasps_to_evaluate.assign(evaluateGrasps.begin(),evaluateGrasps.end());
+	}
+	else
+	{
+		ROS_ERROR_STREAM(NODE_NAME<<": No candidate pick poses were returned from recognition, aborting");
+		return false;
+	}
+
+	bool success = grasp_planning_client.call(request, response);
+
+	// ===================================== checking results ========================================
+	if(!success)
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": grasp planning call unsuccessful, exiting");
+		return false;
+	}
+
+	if(response.error_code.value != response.error_code.SUCCESS)
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": grasp planning call returned error code, exiting " << response.error_code.value);
+		return false;
+	}
+
+	if(response.grasps.size() == 0)
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": No grasps returned in response");
+		return false;
+	}
+
+	//TODO - actually deal with the different cases here, especially for the cluster planner
+	if(request.target.reference_frame_id != recognized_model_description_.name ||
+		  request.target.reference_frame_id != modelPose.pose.header.frame_id)
+	{
+	  ROS_WARN_STREAM("Cluster does not match recognition");
+	}
+
+	//  ===================================== storing results =====================================
+	/* Storing grasp candidates:
+	 * 	Grasp poses are poses of the wrist link in terms of the world,
+	 * 	we need to get them relative to the object
+	 */
+	grasp_candidates_.assign(response.grasps.begin(),response.grasps.end());
+
+	// instantiating needed transforms and poses
+	tf::StampedTransform wrist_in_tcp_tf = tf::StampedTransform();
+	tf::Transform object_in_world_tf; // will remove
+	tf::Transform object_in_world_inverse_tf;// will remove
+
+	// populating transforms
+	tf::poseMsgToTF(modelPose.pose.pose, object_in_world_tf);
+	object_in_world_inverse_tf = object_in_world_tf.inverse();
+	_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wrist_in_tcp_tf);
+
+	// applying transformation to grasp pose so that the arm wrist relative to the object is obtained
+	for(unsigned int i = 0; i < grasp_candidates_.size(); i++)
+	{
+		tf::Transform tcp_in_obj_tf;
+		tf::poseMsgToTF(grasp_candidates_[i].grasp_pose, tcp_in_obj_tf);
+		tf::poseTFToMsg((tcp_in_obj_tf*wrist_in_tcp_tf),
+			  grasp_candidates_[i].grasp_pose);
+	}
+
+	// storing grasp pickup goal to be used later during pick move sequence execution
+	grasp_pickup_goal_.arm_name = arm_group_name_;
+	grasp_pickup_goal_.collision_object_name = modelId;
+	grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
+	grasp_pickup_goal_.lift.direction.vector.z = 1.0;
+	grasp_pickup_goal_.lift.desired_distance = .1;
+	grasp_pickup_goal_.target.reference_frame_id = modelId;
+	grasp_pickup_goal_.target.cluster = segmented_clusters_[0];
+	grasp_pickup_goal_.allow_gripper_support_collision = true;
+	grasp_pickup_goal_.collision_support_surface_name = "table";
+	grasp_pickup_goal_.target.potential_models.push_back(modelPose);
+
+	//  ===================================== updating local planning scene =====================================
+	// updating gripper (not sure if this is necessary)
+	tf::Transform first_grasp_in_world_tf;
+	tf::poseMsgToTF(response.grasps[0].grasp_pose, first_grasp_in_world_tf);
+	planning_models::KinematicState state(*current_robot_state_);
+	state.updateKinematicStateWithLinkAt(gripper_link_name_, first_grasp_in_world_tf);
+
+	//  ===================================== generating markers results =====================================
+	// publishing marker of gripper at pre-grasp
+//	visualization_msgs::MarkerArray arr;
+//	std_msgs::ColorRGBA col_pregrasp;
+//	col_pregrasp.r = 0.0;
+//	col_pregrasp.g = 1.0;
+//	col_pregrasp.b = 1.0;
+//	col_pregrasp.a = 1.0;
+//	std::vector<std::string> links = cm_.getKinematicModel()->getModelGroup(gripper_group_name_)->getGroupLinkNames();
+//	cm_.getRobotMarkersGivenState(state, arr, col_pregrasp,"first_grasp", ros::Duration(0.0), &links);
+//	marker_array_publisher_.publish(arr);
+
+	// ===================================== printing completion info message =====================================
+	ROS_INFO_STREAM(NODE_NAME<<": Grasp is " << response.grasps[0].grasp_pose.position.x << " "
+			  << response.grasps[0].grasp_pose.position.y << " "
+			  << response.grasps[0].grasp_pose.position.z);
+
+	ROS_INFO_STREAM(NODE_NAME<<": Cloud header " << segmented_clusters_[0].header.frame_id);
+	ROS_INFO_STREAM(NODE_NAME<<": Recognition pose frame " << modelPose.pose.header.frame_id);
 
 	return true;
 }

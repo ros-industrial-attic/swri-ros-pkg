@@ -75,12 +75,11 @@ public:
 protected:
 
 	virtual void setup();
+
 	virtual bool performSegmentation();
 	bool performSphereSegmentation();
-
-	//virtual void fetchParameters(std::string nameSpace = "");
-
 	virtual bool performRecognition();
+	virtual bool performGraspPlanning();
 
 	virtual bool createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses);
 	virtual bool moveArmToSide();
@@ -106,6 +105,9 @@ protected:
 	// recognition results
 	arm_navigation_msgs::CollisionObject recognized_collision_object_;
 	int recognized_obj_id_;
+
+	// candidate pick poses to evaluate
+	std::vector<geometry_msgs::PoseStamped> candidate_pick_poses_;
 
 	// place poses
 	std::vector<geometry_msgs::PoseStamped> candidate_place_poses_;
