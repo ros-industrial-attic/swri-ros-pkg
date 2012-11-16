@@ -69,37 +69,31 @@ void SimulatedController::init()
 	_LastJointState.velocity.clear();
 	_LastJointState.effort.clear();
 
-	if(ros::param::search(JOINT_NAMES_PARAM_NAME,matchFound))
+	if(nh.getParam(JOINT_NAMES_PARAM_NAME,list) ||
+			nh.getParam(ros::names::parentNamespace(ros::this_node::getName()) + "/" +JOINT_NAMES_PARAM_NAME,list))
 	{
-		if(nh.getParam(matchFound,list))
+		if(list.getType() == XmlRpc::XmlRpcValue::TypeArray)
 		{
-			if(list.getType() == XmlRpc::XmlRpcValue::TypeArray)
+			ROS_INFO_STREAM(nodeName + ": Found joints under parameter " + JOINT_NAMES_PARAM_NAME);
+			//BOOST_FOREACH(XmlRpc::XmlRpcValue val,list.)
+			for(int i = 0; i < list.size(); i++)
 			{
-				ROS_INFO("%s",std::string(nodeName + ": Found joints under parameter " + matchFound).c_str());
-				//BOOST_FOREACH(XmlRpc::XmlRpcValue val,list.)
-				for(int i = 0; i < list.size(); i++)
+				XmlRpc::XmlRpcValue val = list[i];
+				if(val.getType() == XmlRpc::XmlRpcValue::TypeString)
 				{
-					XmlRpc::XmlRpcValue val = list[i];
-					if(val.getType() == XmlRpc::XmlRpcValue::TypeString)
-					{
-						std::string name = static_cast<std::string>(val);
-						_JointNames.push_back(name);
-						_LastJointState.name.push_back(name);
-						_LastJointState.position.push_back(0.0f);
-						_LastJointState.velocity.push_back(0.0f);
-						_LastJointState.effort.push_back(0.0f);
-					}
+					std::string name = static_cast<std::string>(val);
+					_JointNames.push_back(name);
+					_LastJointState.name.push_back(name);
+					_LastJointState.position.push_back(0.0f);
+					_LastJointState.velocity.push_back(0.0f);
+					_LastJointState.effort.push_back(0.0f);
 				}
 			}
-		}
-		else
-		{
-			ROS_INFO("%s",std::string(nodeName + ": Could not retrieve parameter " + matchFound).c_str());
 		}
 	}
 	else
 	{
-		ROS_INFO("%s",std::string(nodeName + ": Could not find parameter " + JOINT_NAMES_PARAM_NAME).c_str());
+		ROS_ERROR_STREAM(nodeName + ": Could not retrieve parameter " + JOINT_NAMES_PARAM_NAME);
 	}
 
 	sensor_msgs::JointState st = _LastJointState;
