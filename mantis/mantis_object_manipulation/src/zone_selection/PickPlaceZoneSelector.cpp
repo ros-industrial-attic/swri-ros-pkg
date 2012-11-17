@@ -63,6 +63,9 @@ void PickPlaceZoneSelector::initializeColorArray()
 	color.r = 1.0f; color.g = 1.0f; color.b = 0.0f;
 	marker_colors_.push_back(color);
 
+	//red
+	color.r = 1.0f; color.g = 0.0f; color.b = 0.0f; color.a = 0.2f;
+
 }
 
 void PickPlaceZoneSelector::goToNextPickZone()

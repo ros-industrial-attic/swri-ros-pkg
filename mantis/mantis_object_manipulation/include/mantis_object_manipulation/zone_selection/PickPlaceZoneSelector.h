@@ -280,6 +280,12 @@ public:
 
 		geometry_msgs::Pose getZoneCenterPose();
 
+		void getMarker(visualization_msgs::Marker &marker) const
+		{
+			ZoneBounds::getMarker(marker);
+			marker.scale.z = 1.6;
+		}
+
 	public:
 
 		// ros parameters
@@ -309,7 +315,6 @@ public:
 
 		// check overlaps with object in theses zones.
 		bool checkOverlaps(ZoneBounds &nextObjBounds,std::vector<PlaceZone* > zones);
-
 
 		// general zone member
 		std::vector<ObjectDetails> objects_in_zone_; // array of transforms and size for each object in zone
