@@ -46,11 +46,17 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   float enc_1_x_offset = 0.0085645;
   float enc_1_y_offset = -0.0099451;
   float enc_1_z_offset = 0.03923;
+  float pvc_elbow_1_x_offset = 0.004949;
+  float pvc_elbow_1_y_offset = -0.006247;
+  float pvc_elbow_1_z_offset = 0.0182536;
   float plug_pick_point_z = 0.048;
   float enc_pick_point_x = 0.027;
   float enc_pick_point_z = 0.051;
   float pvct_pick_point_y = 0.025;
   float pvct_pick_point_z = 0.055;
+  float pvc_elbow_pick_point_x = 0.00;
+  float pvc_elbow_pick_point_y = 0.00;
+  float pvc_elbow_pick_point_z = 0.030;
 
   ROS_INFO("Starting mantis recognition");
   ROS_INFO("Number of clusters received in request = %d", (int)main_request.clusters.size());
@@ -194,10 +200,20 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   	        tf::Vector3(pick_pose.pose.position.x, pick_pose.pose.position.y, pick_pose.pose.position.z)),
   	      main_request.table.pose.header.stamp,"/base_link", "/object_training_frame"));
   }
-  else if (label.substr(found+1)=="pvc_elbow" || label.substr(found+1)=="pvcelbow")
+  else if (label.substr(found+1)=="pvc_elbow_1" || label.substr(found+1)=="pvcelbow")
   {
     main_response.model_id=5;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_elbow.STL";
+    pick_pose.pose.position.x = rec_srv.response.pose.x - (pvc_elbow_1_x_offset)+pvc_elbow_pick_point_x;
+    pick_pose.pose.position.y = rec_srv.response.pose.y - (pvc_elbow_1_y_offset)+pvc_elbow_pick_point_y;
+    pick_pose.pose.position.z = rec_srv.response.pose.z - (pvc_elbow_1_z_offset)+pvc_elbow_pick_point_z;
+    mesh_marker.pose.position.x=rec_srv.response.pose.x - (pvc_elbow_1_x_offset);
+    mesh_marker.pose.position.y=rec_srv.response.pose.y - (pvc_elbow_1_y_offset);
+    obj_broadcaster.sendTransform(tf::StampedTransform(
+  	        tf::Transform(tf::Quaternion(pick_pose.pose.orientation.x, 0, pick_pose.pose.orientation.z, pick_pose.pose.orientation.w),
+  	        tf::Vector3(pick_pose.pose.position.x, pick_pose.pose.position.y, pick_pose.pose.position.z)),
+  	      main_request.table.pose.header.stamp,"/base_link", "/object_training_frame"));
+    mesh_marker.pose.position.z=rec_srv.response.pose.z - (pvc_elbow_1_z_offset);
   }
   else
   {
