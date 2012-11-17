@@ -341,6 +341,7 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 		//CurrentIdCount = 1;
 		return false;
 	}
+	ROS_WARN_STREAM(NODE_NAME<<": found place location for object ");
 
 #endif
 
@@ -446,9 +447,9 @@ bool AutomatedPickerRobotNavigator::performGraspPlanning()
 	// applying transformation to grasp pose so that the arm wrist relative to the object is obtained
 	for(unsigned int i = 0; i < grasp_candidates_.size(); i++)
 	{
-		tf::Transform tcp_in_obj_tf;
-		tf::poseMsgToTF(grasp_candidates_[i].grasp_pose, tcp_in_obj_tf);
-		tf::poseTFToMsg((tcp_in_obj_tf*wrist_in_tcp_tf),
+		tf::Transform tcp_in_world_tf;
+		tf::poseMsgToTF(grasp_candidates_[i].grasp_pose, tcp_in_world_tf);
+		tf::poseTFToMsg(object_in_world_inverse_tf*(tcp_in_world_tf*wrist_in_tcp_tf),
 			  grasp_candidates_[i].grasp_pose);
 	}
 

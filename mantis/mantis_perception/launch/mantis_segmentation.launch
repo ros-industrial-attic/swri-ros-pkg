@@ -7,10 +7,10 @@
     <arg name="flatten_table" default="false"/>
     <arg name="processing_frame" default="base_link"/>
 
-    <node pkg="mantis_perception" name="mantis_segmentation" type="mantis_segmentation" respawn="true" output="screen">
+    <node pkg="mantis_perception" name="tabletop_segmentation" type="mantis_segmentation" respawn="true" output="screen">
 	<!--topic remapping-->
         <remap from="cloud_in" to="$(arg tabletop_segmentation_points_in)" />
-        <remap from="segmentation_srv" to="mantis_segmentation" />
+        <remap from="segmentation_srv" to="tabletop_segmentation" />
         <remap from="markers_out" to="tabletop_segmentation_markers" />
 
 	<param name="clustering_voxel_size" value="$(arg tabletop_segmentation_clustering_voxel_size)" />
@@ -22,7 +22,7 @@
 
 	<!-- processing and filtering frame -->
 	<!-- all clouds converted to and processed in base link frame -->
-	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="processing_frame" value="${arg processing_frame}" />
+	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="processing_frame" value="$(arg processing_frame)" />
 	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="up_direction" value="1.0" />
 	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="z_filter_min" value="-.1" />
 	<param if="$(arg tabletop_segmentation_convert_to_base_link)" name="z_filter_max" value=".5" />

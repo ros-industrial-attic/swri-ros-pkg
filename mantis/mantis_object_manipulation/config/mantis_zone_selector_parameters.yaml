@@ -61,7 +61,7 @@ place_zones:
    next_location:
     min_spacing: 0.16
     max_spacing: 0.20
-    generation_mode: 1
+    generation_mode: 2
    ids_allowed: [0,2,4]
  - zone_name: place_zone4
    x_min: 0.4
@@ -95,5 +95,5 @@ place_zones:
    next_location:
     min_spacing: 0.16
     max_spacing: 0.20
-    generation_mode: 1
+    generation_mode: 0
    ids_allowed: [0,2,4]
