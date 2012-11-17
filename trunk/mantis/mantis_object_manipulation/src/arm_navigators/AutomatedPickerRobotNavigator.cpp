@@ -18,7 +18,7 @@ std::string AutomatedPickerRobotNavigator::JOINT_CONFIGURATIONS_NAMESPACE = "joi
 std::string AutomatedPickerRobotNavigator::MARKER_ARRAY_TOPIC = "object_array";
 
 // global variables
-const double OBJECT_ABB_SIDE = 0.1; // this variable will be used to set the bounds of each object perceived.  Eventually, the recognition
+const double OBJECT_ABB_SIDE = 0.1f; // this variable will be used to set the bounds of each object perceived.  Eventually, the recognition
 									// service will provide this value and this variable will be removed.
 
 AutomatedPickerRobotNavigator::AutomatedPickerRobotNavigator()
