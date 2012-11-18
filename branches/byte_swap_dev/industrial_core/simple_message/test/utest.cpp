@@ -503,10 +503,10 @@ TEST(JointTrajPt, equal)
   ASSERT_TRUE(joint.setJoint(8, 9.0));
   ASSERT_TRUE(joint.setJoint(9, 10.0));
 
-  rhs.init(1.0, joint, 50.0);
+  rhs.init(1.0, joint, 50.0, 100);
   EXPECT_FALSE(lhs==rhs);
 
-  lhs.init(0, joint, 0);
+  lhs.init(0, joint, 0, 0);
   EXPECT_FALSE(lhs==rhs);
 
   lhs.copyFrom(rhs);
@@ -548,7 +548,7 @@ TEST(JointTrajPt, Comms)
 	data.setJoint(7,8.0);
 	data.setJoint(8,9.0);
 	data.setJoint(9,10.0);
-	posSend.init(1, data, 99);
+	posSend.init(1, data, 99, 100);
 
   jointSend.init(posSend);
 
@@ -576,7 +576,7 @@ TEST(JointTraj, equal)
   ASSERT_TRUE(joint.setJoint(8, 9.0));
   ASSERT_TRUE(joint.setJoint(9, 10.0));
 
-  point.init(1.0, joint, 50.0);
+  point.init(1.0, joint, 50.0, 100);
   rhs.addPoint(point);
   EXPECT_FALSE(lhs==rhs);
 

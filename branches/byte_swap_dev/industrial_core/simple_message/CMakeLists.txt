@@ -27,9 +27,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/byte_array.cpp
-#					src/simple_message.cpp)
 rosbuild_add_library(simple_message 
 					src/byte_array.cpp
 					src/simple_message.cpp
@@ -56,9 +53,44 @@ rosbuild_add_library(simple_message
 					
 					src/simple_comms_fault_handler.cpp
 					)
-	
+				
+
 rosbuild_add_gtest(utest test/utest.cpp)
 target_link_libraries(utest simple_message)
+
+
+
+rosbuild_add_library(simple_message_byte_swapping 
+					src/byte_array.cpp
+					src/simple_message.cpp
+					src/smpl_msg_connection.cpp
+					
+					src/socket/simple_socket.cpp
+					src/socket/udp_socket.cpp
+					src/socket/udp_client.cpp
+					src/socket/udp_server.cpp
+					src/socket/tcp_socket.cpp
+					src/socket/tcp_client.cpp
+					src/socket/tcp_server.cpp
+					
+					src/message_handler.cpp
+					src/message_manager.cpp
+					src/ping_handler.cpp
+					src/ping_message.cpp
+					src/joint_data.cpp
+					src/joint_traj_pt.cpp
+					src/joint_traj.cpp
+
+					src/messages/joint_message.cpp
+					src/messages/joint_traj_pt_message.cpp
+					
+					src/simple_comms_fault_handler.cpp
+					)
+				
+
+rosbuild_add_gtest(utest_byte_swapping test/utest.cpp)
+target_link_libraries(utest_byte_swapping simple_message_byte_swapping)
+set_target_properties(simple_message_byte_swapping PROPERTIES COMPILE_FLAGS "-DBYTE_SWAPPING")
 					
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()

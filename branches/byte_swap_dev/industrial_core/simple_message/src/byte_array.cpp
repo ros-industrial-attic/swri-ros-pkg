@@ -99,6 +99,23 @@ void ByteArray::copyFrom(ByteArray & buffer)
   }
 }
 
+
+#ifdef BYTE_SWAPPING
+void ByteArray::swap(void *value, shared_int byteSize)
+{
+  LOG_COMM("Executing byte swapping");
+  int i;
+  char temp;
+  char* valuePtr = (char*)&value;
+  for (i = 0; i < byteSize / 2; i++)
+  {
+    temp = valuePtr[byteSize - i - 1];
+    valuePtr[byteSize - i - 1] = valuePtr[i];
+    valuePtr[i] = temp;
+  }
+}
+#endif
+
 char* ByteArray::getRawDataPtr()
 {
   return &this->buffer_[0];
@@ -112,16 +129,28 @@ char* ByteArray::getRawDataPtr()
  */
 bool ByteArray::load(shared_bool value)
 {
+#ifdef BYTE_SWAPPING
+  this->swap(&value, sizeof(shared_bool));
+#endif
+
   return this->load(&value, sizeof(shared_bool));
 }
 
 bool ByteArray::load(shared_real value)
 {
+#ifdef BYTE_SWAPPING
+  this->swap(&value, sizeof(shared_real));
+#endif
+
   return this->load(&value, sizeof(shared_real));
 }
 
 bool ByteArray::load(shared_int value)
 {
+#ifdef BYTE_SWAPPING
+  this->swap(&value, sizeof(shared_int));
+#endif
+
   return this->load(&value, sizeof(shared_int));
 }
 
@@ -178,17 +207,30 @@ bool ByteArray::load(void* value, const shared_int byte_size)
  */
 bool ByteArray::unload(shared_bool & value)
 {
-  return this->unload(&value, sizeof(shared_bool));
+  shared_bool rtn = this->unload(&value, sizeof(shared_bool));
+#ifdef BYTE_SWAPPING
+  this->swap(&rtn, sizeof(shared_bool));
+#endif
+  return rtn;
+
 }
 
 bool ByteArray::unload(shared_real &value)
 {
-  return this->unload(&value, sizeof(shared_real));
+  shared_real rtn = this->unload(&value, sizeof(shared_real));
+#ifdef BYTE_SWAPPING
+  this->swap(&rtn, sizeof(shared_real));
+#endif
+  return rtn;
 }
 
 bool ByteArray::unload(shared_int &value)
 {
-  return this->unload(&value, sizeof(shared_int));
+  shared_int rtn = this->unload(&value, sizeof(shared_int));
+#ifdef BYTE_SWAPPING
+  this->swap(&rtn, sizeof(shared_int));
+#endif
+  return rtn;
 }
 
 bool ByteArray::unload(simple_serialize::SimpleSerialize &value)
@@ -389,7 +431,7 @@ char* ByteArray::getUnloadPtr(shared_int byteSize)
   else
   {
     LOG_ERROR("Get unload pointer failed, buffer size: %d, smaller than byte size: %d",
-      this->getBufferSize(), byteSize);
+              this->getBufferSize(), byteSize);
     rtn = NULL;
   }
 
