@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<launch>
+
+  <arg name="log_to_warehouse" default="false" />
+  <arg name="use_chomp" default="false" />
+
+  <include file="$(find mantis_perception)/launch/mantis_sensor.launch"/>
+  
+  <rosparam command="load" file="$(find longhorn)/cfg/longhorn_hand_descriptions.yaml"/>
+
+  <rosparam command="load" file="$(find freetail_object_manipulation)/config/localhost.yaml"/>
+
+  <include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
+    <arg name="tabletop_segmentation_points_in" value="camera/depth_registered/points"/>
+  </include>
+
+  <!-- URDF Universal Robot Description File -->
+  <include file="$(find longhorn)/launch/upload.launch" />
+ 
+  <!-- ADD JOINT STATE PUBLISHER HERE WITH USE_GUI:=TRUE -->1
+  <!-- Get TF -->
+  <node pkg="robot_state_publisher" name="st_pub" type="state_publisher"/>
+
+<!-- recognition -->
+  <node pkg="mantis_perception" name="cph_recognition" type="cph_recognition" 
+	output="screen" args="$(find mantis_perception)/data">
+  </node>
+   <node pkg="mantis_perception" name="mantis_object_recognition" type="mantis_object_recognition" output="screen">
+  </node>
+</launch>
