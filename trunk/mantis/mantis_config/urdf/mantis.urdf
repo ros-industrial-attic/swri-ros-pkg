@@ -186,18 +186,18 @@
   </joint>
   <link name="palm">
     <visual>
-      <origin rpy="0 0 0" xyz="0 0.036 -0.0473"/>
+      <origin rpy="0 0 0" xyz="0 0.036 -0.1"/>
       <geometry>
-        <box size="0.044 0.088 0.0946"/>
+        <mesh filename="package://mantis_config/config/meshes/vacuum_gripper.STL"/>
       </geometry>
-      <material name="another_blue1">
-        <color rgba="0.40 0.40 0.80 1"/>
+      <material name="silver">
+        <color rgba="0.8 0.8 0.8 1"/>
       </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="0 0.036 -0.0473"/>
+      <origin rpy="0 0 0" xyz="0 0.036 -0.1"/>
       <geometry>
-        <box size="0.044 0.088 0.0946"/>
+        <mesh filename="package://mantis_config/config/meshes/vacuum_gripper.stl"/>
       </geometry>
       <material name="another_blue2">
         <color rgba="0.38 0.54 0.83 1"/>
