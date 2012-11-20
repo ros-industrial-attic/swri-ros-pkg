@@ -35,7 +35,8 @@
 	
 		<!-- Uncomment the following line if using warehouse -->
 		<!--remap from="filter_trajectory" to="trajectory_filter/filter_trajectory_with_constraints" /-->	
-		<remap from="filter_trajectory" to="/trajectory_filter_server/filter_trajectory_with_constraints" />
+		<remap from="filter_trajectory" 
+			to="trajectory_filter_server/filter_trajectory_with_constraints" />
 
 		<!-- (replaced element) loading robot padding for sia20d -->
 		<rosparam command="load" file="$(find mantis_sia20d_arm_navigation)/config/robot_padding.yaml"/>
