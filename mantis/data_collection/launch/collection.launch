@@ -1,0 +1,26 @@
+<?xml version="1.0" ?>
+<launch>
+
+  <!-- Get TF -->
+  <node pkg="robot_state_publisher" name="st_pub" type="state_publisher"/>
+
+  <!-- URDF Universal Robot Description File -->
+  <include file="$(find longhorn)/launch/upload.launch" />
+  <!-- Start kinect -->
+  <include file="$(find mantis_perception)/launch/mantis_sensor.launch"/>
+  
+  <!-- Start segmentation node -->	
+  <include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
+    <arg name="tabletop_segmentation_points_in" value="camera/depth_registered/points"/>
+  </include>
+ 
+  <!-- Run feature node -->
+<!--  <node pkg="data_collection" name="feature_extraction" type="feature_extraction"/> -->
+
+  <!-- Run data collection node -->
+  <node pkg="data_collection" name="pan360_data_collect" type="pan360_data_collect"/> 
+
+  <!-- Run mesh maker node -->
+  <node pkg="data_collection" name="marker" type="marker" output="screen"/> 
+
+</launch>
