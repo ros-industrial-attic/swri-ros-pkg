@@ -1,0 +1,39 @@
+notes on collecting data
+
+Terminal windows/commands:
+Terminal 1: roslaunch openni_launch openni.launch
+Terminal 2: rosrun nrg_object_recognition segmentation_node
+Terminal 3: rosrun data_clection pan360_data_collect
+Terminal 4: rosrun data_clection feature_extraction
+Terminal 5: rosservice call /pan360_data_collect objectname angle
+where objectname is the name that we are calling the particular object (probably shoudl be consisted with SwRI_MODEL_SET)
+      and angle is the delta angle that you want from rotary table. 
+
+
+
+
+notes on collecting data with changes made to feature_extraction.cpp and pan360_data
+Terminal 1: roslaunch mantis_perception mantis_sensor.launch
+Terminal 2: roslaunch freetail_ball_bin_segmentation sim_bringup.launch
+Terminal 3: roslaunch mantis_perception mantis_segmentation.launch 
+Terminal 3: rosrun data_clection pan360_data_collect
+Terminal 4: rosrun data_clection feature_extraction
+Terminal 5: rosservice call /pan360_data_collect objectname angle
+where objectname is the name that we are calling the particular object (probably shoudl be consisted with SwRI_MODEL_SET)
+      and angle is angle with respect to zero or home (which still needs to be determined by CG on turntable).
+Terminal 6: rosrun rviz rviz
+
+
+
+notes on collecting data with above mentioned changes and new marker publishing
+Terminal 1: rosrun data_collection marker
+Terminal 2: rosservice call /data_collect_mesh angle
+	where angle ranges from 0-360
+Terminal 1: roslaunch mantis_perception mantis_sensor.launch
+Terminal 2: roslaunch freetail_ball_bin_segmentation sim_bringup.launch
+Terminal 3: roslaunch mantis_perception mantis_segmentation.launch
+Terminal 4: rosrun data_collection pan360_data_collect
+Terminal 5: rosrun data_collection feature_extraction
+Terminal 6: rosrun rviz rviz
+Terminal 7: rosservice call /pan360_data_collect object_location angle
+	where angle matches mesh angle, and object is the object name and location is an integer of 1-3, 1 being right in front of the camera

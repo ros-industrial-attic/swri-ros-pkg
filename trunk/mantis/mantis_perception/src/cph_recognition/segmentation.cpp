@@ -155,12 +155,12 @@ bool MantisSegmentor::serviceCallback(tabletop_object_detector::TabletopSegmenta
 		tabletop_object_detector::TabletopSegmentation::Response &response)
 {
 
-	/*
+/*
   static tf::TransformBroadcaster broadcaster;
 
   broadcaster.sendTransform(
 		  tf::StampedTransform(
-			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.545, -0.18, 0.0185)),
+			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.545, -0.18, 0.049)),
 			ros::Time::now(),"/base_link", "/object_training_frame"));
 */
   ros::Time start_time = ros::Time::now();

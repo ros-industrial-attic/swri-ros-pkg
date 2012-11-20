@@ -39,7 +39,7 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
 
   recognition_client = n.serviceClient<mantis_perception::mantis_recognition>("/mantis_object_recognition");
-  segmentation_client = n.serviceClient<mantis_perception::mantis_segmentation>("/mantis_segmentation", true);
+  segmentation_client = n.serviceClient<mantis_perception::mantis_segmentation>("/tabletop_segmentation", true);
 
   seg_pub = n.advertise<sensor_msgs::PointCloud2>("/segmentation_result",1);
 
