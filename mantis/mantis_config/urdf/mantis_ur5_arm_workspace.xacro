@@ -9,7 +9,7 @@
 	<!-- property list -->
 	<xacro:property name="workcell_height" value="1"/>
 	<xacro:property name="vacuum_gripper_width" value="0.088"/>
-	<xacro:property name="arm2_prefix" value="ur5_arm/"/>
+	<xacro:property name="arm2_prefix" value="ur5_arm_"/>
 	<xacro:property name="arm2_name" value="ur5"/>	
 
 	<!-- instantiating arm and gripper -->	

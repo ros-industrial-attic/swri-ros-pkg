@@ -2,14 +2,25 @@
 <launch>
 	<!-- input arguments -->
 	<arg name="use_chomp" default="true" />
+	<arg name="use_custom_segmentation" default="true"/>
 
 	<!-- fixed parameters -->
 	<arg name="arm_namespace" value="sia20d_arm"/>
 	<arg name="robot_description" value="$(find mantis_config)/urdf/mantis_sia20d.urdf"/>
 
+	<!-- camera sensor setup (must be placed outside the group namespace) -->
+	<remap from="/camera/depth_registered/points"
+		to="/$(arg arm_namespace)/camera/depth_registered/points"/>
+	<include  file="$(find mantis_perception)/launch/mantis_sensor.launch">
+		<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
+		<!--arg name="camera_name" value="$(arg arm_namespace)_camera"/-->
+	</include>
+
+	<!-- gripper description (needs to be outside the scope of the namespace)-->
+	<rosparam  command="load" 
+		file="$(find mantis_sia20d_arm_navigation)/config/vacuum_gripper_description_parameters.yaml"/>
+
 	<group ns="$(arg arm_namespace)">
-		<!-- camera sensor setup -->
-		<include  file="$(find mantis_perception)/launch/mantis_sensor.launch"/>
 
 		<!-- planning enviroment parameter setup-->
 		<param name="robot_description" textfile="$(arg robot_description)" />
@@ -20,33 +31,65 @@
 		<include  file="$(find planning_environment)/launch/environment_server.launch">
 			<arg name="use_collision_map" value="false"/>
 		</include>  
-	  
+
 		<!-- path planner -->
 		<!-- if chomp was selected -->
 		<remap if="$(arg use_chomp)" 
-			from="/chomp_planner_longrange/plan_path" to="/path_planning/plan_kinematic_path"/>
-		<include if="$(arg use_chomp)"  file="$(find mantis_sia20d_arm_navigation)/launch/chomp_planning.launch"/>
+			from="/$(arg arm_namespace)/chomp_planner_longrange/plan_path" 
+			to="/$(arg arm_namespace)/path_planning/plan_kinematic_path"/>
+		<include if="$(arg use_chomp)"  
+			file="$(find mantis_sia20d_arm_navigation)/launch/chomp_planning.launch"/>
 
 		<!-- if ompl was selected -->
-		<remap unless="$(arg use_chomp)" from="/ompl_planning/plan_kinematic_path" to="/path_planning/plan_kinematic_path"/>
-		<include  unless="$(arg use_chomp)" file="$(find mantis_arm_navigation)/launch/ompl_planning.launch"/> 
+		<remap unless="$(arg use_chomp)" 
+			from="/ompl_planning/plan_kinematic_path" 
+			to="/path_planning/plan_kinematic_path"/>
+		<include  unless="$(arg use_chomp)" 
+			file="$(find mantis_sia20d_arm_navigation)/launch/ompl_planning.launch"/>   
+
 
 		<!-- trajectory filter -->
-		<node  pkg="trajectory_filter_server" name="trajectory_filter_server" type="trajectory_filter_server" output="screen">
+		<node  pkg="trajectory_filter_server" 
+			name="trajectory_filter_server" type="trajectory_filter_server" output="screen">
 			<rosparam command="load" file="$(find mantis_sia20d_arm_navigation)/config/joint_limits.yaml"/>
-			<rosparam unless="$(arg use_chomp)" command="load" file="$(find mantis_arm_navigation)/config/ompl_filters.yaml"/>
-			<rosparam if="$(arg use_chomp)" command="load" file="$(find mantis_arm_navigation)/config/chomp_filters.yaml"/>
+			<rosparam unless="$(arg use_chomp)" command="load" 
+				file="$(find mantis_sia20d_arm_navigation)/config/ompl_filters.yaml"/>
+			<rosparam if="$(arg use_chomp)" command="load" 
+				file="$(find mantis_sia20d_arm_navigation)/config/chomp_filters.yaml"/>
 		</node>
 
 		<!-- grasp planner -->
-		<rosparam  command="load" 
-			file="$(find mantis_sia20d_arm_navigation)/config/vacuum_gripper_description_parameters.yaml"/>
 		<include  file="$(find mantis_grasp_planning)/launch/vacuum_gripper_grasp_planner_server.launch"/>
 
 		<!-- segmentation -->
-		<include  file="$(find mantis_perception)/launch/mantis_segmentation.launch">
-			<arg name="tabletop_segmentation_points_in" value="camera/depth_registered/points"/>
+		<include  if="$(arg use_custom_segmentation)" 
+			file="$(find mantis_perception)/launch/mantis_segmentation.launch">
+
+			<arg name="tabletop_segmentation_points_in" 
+				value="camera/depth_registered/points"/>
 			<arg name="processing_frame" value="workcell_frame"/>
+			<arg name="up_direction" value="1.0"/>
+			<arg name="z_filter_min" value="-0.1"/>
+			<arg name="z_filter_max" value="0.5"/>
+			<arg name="y_filter_min" value="-1.0"/>
+			<arg name="y_filter_max" value="0.8"/>
+			<arg name="x_filter_min" value="0.2"/>
+			<arg name="x_filter_max" value="1.0"/>
+		</include>
+
+		<include  unless="$(arg use_custom_segmentation)" 
+			file="$(find mantis_perception)/launch/tabletop_segmentation.launch">
+
+			<arg name="tabletop_segmentation_points_in" 
+				value="camera/depth_registered/points"/>
+			<arg name="processing_frame" value="workcell_frame"/>
+			<arg name="up_direction" value="1.0"/>
+			<arg name="z_filter_min" value="-0.1"/>
+			<arg name="z_filter_max" value="0.5"/>
+			<arg name="y_filter_min" value="-1.0"/>
+			<arg name="y_filter_max" value="0.8"/>
+			<arg name="x_filter_min" value="0.2"/>
+			<arg name="x_filter_max" value="1.0"/>
 		</include>
 
 		<!-- recognition -->

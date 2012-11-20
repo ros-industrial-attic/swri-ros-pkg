@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<launch>
+	<arg name="conf_file" default="$(find mantis_config)/vcg/sia20d_visualization.vcg"/>
+	<node pkg="rviz" type="rviz" name="mantis_visualization" args="-d $(arg conf_file)"/>
+</launch>

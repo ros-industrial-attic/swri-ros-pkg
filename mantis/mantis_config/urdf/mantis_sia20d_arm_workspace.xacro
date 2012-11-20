@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <robot name="mantis_sia20d" xmlns:xacro="http://ros.org/wiki/xacro">
-	<include filename="$(find motoman_config)/cfg/sia20d_mesh_macro.xacro"/>
+	<include filename="$(find mantis_config)/urdf/sia20d_mesh_macro.xacro"/>
 	<include filename="$(find mantis_config)/urdf/vacuum_gripper.xacro"/>
 	<include filename="$(find mantis_config)/urdf/vacuum_gripper_macro.xacro"/>
 	<include filename="$(find mantis_config)/urdf/mantis_workspace_components.xacro"/>
@@ -9,7 +9,8 @@
 	<!-- property list -->
 	<xacro:property name="workcell_height" value="1"/>
 	<xacro:property name="vacuum_gripper_width" value="0.088"/>
-	<xacro:property name="arm1_prefix" value="sia20d_arm/"/>
+	<xacro:property name="arm1_prefix" value="sia20d_arm_"/>
+	<!--xacro:property name="arm1_prefix" value=""/-->
 	<xacro:property name="arm1_name" value="sia20d"/>
 	
 	<!-- instantiating workcell definitions -->
@@ -17,8 +18,10 @@
 	<!-- end of workcell definitions -->
 
 	<!-- instantiating sensor definitions -->
-	<xacro:sensor_definitions prefix="${arm1_prefix}" parent_link="workcell_frame" 
-		x_val="1.20" y_val="0" z_val="0.4" pitch="0.5235" yaw="3.147"/>
+	<!--xacro:sensor_definitions prefix="${arm1_prefix}" parent_link="workcell_frame" 
+		x_val="1.20" y_val="0" z_val="0.4" pitch="0.5235" yaw="3.147"/-->
+	<xacro:sensor_definitions prefix="${arm1_prefix}" parent_link="${arm1_prefix}base_link" 
+		x_val="1.08" y_val="-0.72" z_val="0.82" pitch="0.5235" yaw="2.356"/>
 	<!-- end of sensor definitions -->
 
 	<!-- instantiating arm and gripper -->	

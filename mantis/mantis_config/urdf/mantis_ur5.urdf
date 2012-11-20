@@ -39,7 +39,7 @@
   <link name="workcell_frame"/>
   <!-- property list -->
   <!-- instantiating arm and gripper -->
-  <link name="ur5_arm/base_link">
+  <link name="ur5_arm_base_link">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/Base.dae"/>
@@ -51,15 +51,15 @@
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
-  <joint name="ur5_arm/shoulder_pan_joint" type="revolute">
-    <parent link="ur5_arm/base_link"/>
-    <child link="ur5_arm/shoulder_link"/>
+  <joint name="ur5_arm_shoulder_pan_joint" type="revolute">
+    <parent link="ur5_arm_base_link"/>
+    <child link="ur5_arm_shoulder_link"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.089159"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="0.0 0.0 1.0"/>
     <limit effort="10.0" lower="-6.2831853" upper="6.2831853" velocity="3.14159265"/>
     <dynamics damping="10" friction="0.1"/>
   </joint>
-  <link name="ur5_arm/shoulder_link">
+  <link name="ur5_arm_shoulder_link">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/Shoulder.dae"/>
@@ -67,9 +67,9 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur5_description/meshes/collision/Shoulder.dae"/>
+        <cylinder length="0.16" radius="0.06"/>
       </geometry>
-      <!-- <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.009159"/> -->
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.009159"/>
     </collision>
     <inertial>
       <mass value="3.7"/>
@@ -77,15 +77,15 @@
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.00193 -0.02561"/>
     </inertial>
   </link>
-  <joint name="ur5_arm/shoulder_lift_joint" type="revolute">
-    <parent link="ur5_arm/shoulder_link"/>
-    <child link="ur5_arm/upper_arm_link"/>
+  <joint name="ur5_arm_shoulder_lift_joint" type="revolute">
+    <parent link="ur5_arm_shoulder_link"/>
+    <child link="ur5_arm_upper_arm_link"/>
     <origin rpy="0.0 1.570796325 0.0" xyz="0.0 0.13585 0.0"/>
-    <axis xyz="0 1 0"/>
+    <axis xyz="0.0 1.0 0.0"/>
     <limit effort="10.0" lower="-6.2831853" upper="6.2831853" velocity="3.14159265"/>
     <dynamics damping="10" friction="0.1"/>
   </joint>
-  <link name="ur5_arm/upper_arm_link">
+  <link name="ur5_arm_upper_arm_link">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/UpperArm.dae"/>
@@ -94,9 +94,9 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur5_description/meshes/collision/UpperArm.dae"/>
+        <cylinder length="0.425" radius="0.054"/>
       </geometry>
-      <!--       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.2125"/> -->
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.2125"/>
     </collision>
     <inertial>
       <mass value="8.393"/>
@@ -104,15 +104,15 @@
       <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.024201 0.2125"/>
     </inertial>
   </link>
-  <joint name="ur5_arm/elbow_joint" type="revolute">
-    <parent link="ur5_arm/upper_arm_link"/>
-    <child link="ur5_arm/forearm_link"/>
+  <joint name="ur5_arm_elbow_joint" type="revolute">
+    <parent link="ur5_arm_upper_arm_link"/>
+    <child link="ur5_arm_forearm_link"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.1197 0.425"/>
-    <axis xyz="0 1 0"/>
+    <axis xyz="0.0 1.0 0.0"/>
     <limit effort="10.0" lower="-6.2831853" upper="6.2831853" velocity="3.14159265"/>
     <dynamics damping="10" friction="0.1"/>
   </joint>
-  <link name="ur5_arm/forearm_link">
+  <link name="ur5_arm_forearm_link">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/Forearm.dae"/>
@@ -120,9 +120,9 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur5_description/meshes/collision/Forearm.dae"/>
+        <cylinder length="0.39225" radius="0.04"/>
       </geometry>
-      <!--       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.196125"/> -->
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.196125"/>
     </collision>
     <inertial>
       <mass value="2.275"/>
@@ -130,15 +130,15 @@
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
-  <joint name="ur5_arm/wrist_1_joint" type="revolute">
-    <parent link="ur5_arm/forearm_link"/>
-    <child link="ur5_arm/wrist_1_link"/>
+  <joint name="ur5_arm_wrist_1_joint" type="revolute">
+    <parent link="ur5_arm_forearm_link"/>
+    <child link="ur5_arm_wrist_1_link"/>
     <origin rpy="0.0 1.570796325 0.0" xyz="0.0 0.0 0.39225"/>
-    <axis xyz="0 1 0"/>
+    <axis xyz="0.0 1.0 0.0"/>
     <limit effort="10.0" lower="-6.2831853" upper="6.2831853" velocity="3.14159265"/>
     <dynamics damping="10" friction="0.1"/>
   </joint>
-  <link name="ur5_arm/wrist_1_link">
+  <link name="ur5_arm_wrist_1_link">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/Wrist1.dae"/>
@@ -147,9 +147,9 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur5_description/meshes/collision/Wrist1.dae"/>
+        <cylinder length="0.1488" radius="0.045"/>
       </geometry>
-      <origin rpy="0.0 1.570796325 0.0" xyz="0.0 0.093 0.0"/>
+      <origin rpy="-1.570796325 0.0 0.0" xyz="0.0 0.02325 0.0"/>
     </collision>
     <inertial>
       <mass value="1.219"/>
@@ -157,15 +157,15 @@
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
-  <joint name="ur5_arm/wrist_2_joint" type="revolute">
-    <parent link="ur5_arm/wrist_1_link"/>
-    <child link="ur5_arm/wrist_2_link"/>
+  <joint name="ur5_arm_wrist_2_joint" type="revolute">
+    <parent link="ur5_arm_wrist_1_link"/>
+    <child link="ur5_arm_wrist_2_link"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.093 0.0"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="0.0 0.0 1.0"/>
     <limit effort="10.0" lower="-6.2831853" upper="6.2831853" velocity="3.14159265"/>
     <dynamics damping="10" friction="0.1"/>
   </joint>
-  <link name="ur5_arm/wrist_2_link">
+  <link name="ur5_arm_wrist_2_link">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/Wrist2.dae"/>
@@ -174,9 +174,9 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur5_description/meshes/collision/Wrist2.dae"/>
+        <cylinder length="0.15144" radius="0.045"/>
       </geometry>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.09465"/>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0236625"/>
     </collision>
     <inertial>
       <mass value="1.219"/>
@@ -184,15 +184,15 @@
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
-  <joint name="ur5_arm/wrist_3_joint" type="revolute">
-    <parent link="ur5_arm/wrist_2_link"/>
-    <child link="ur5_arm/wrist_3_link"/>
+  <joint name="ur5_arm_wrist_3_joint" type="revolute">
+    <parent link="ur5_arm_wrist_2_link"/>
+    <child link="ur5_arm_wrist_3_link"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.09465"/>
-    <axis xyz="0 1 0"/>
+    <axis xyz="0.0 1.0 0.0"/>
     <limit effort="10.0" lower="-6.2831853" upper="6.2831853" velocity="3.14159265"/>
     <dynamics damping="10" friction="0.1"/>
   </joint>
-  <link name="ur5_arm/wrist_3_link">
+  <link name="ur5_arm_wrist_3_link">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/Wrist3.dae"/>
@@ -200,8 +200,9 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur5_description/meshes/collision/Wrist3.dae"/>
+        <cylinder length="0.135795" radius="0.045"/>
       </geometry>
+      <origin rpy="-1.570796325 0.0 0.0" xyz="0.0 0.012345 0.0"/>
     </collision>
     <inertial>
       <mass value="0.1879"/>
@@ -209,47 +210,47 @@
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
-  <joint name="ur5_arm/ee_fixed_joint" type="fixed">
-    <parent link="ur5_arm/wrist_3_link"/>
-    <child link="ur5_arm/ee_link"/>
+  <joint name="ur5_arm_ee_fixed_joint" type="fixed">
+    <parent link="ur5_arm_wrist_3_link"/>
+    <child link="ur5_arm_ee_link"/>
     <origin rpy="0.0 0.0 1.570796325" xyz="0.0 0.0823 0.0"/>
   </joint>
-  <link name="ur5_arm/ee_link"/>
+  <link name="ur5_arm_ee_link"/>
   <transmission name="shoulder_pan_trans" type="pr2_mechanism_model/SimpleTransmission">
     <actuator name="shoulder_pan_motor"/>
-    <joint name="ur5_arm/shoulder_pan_joint"/>
+    <joint name="ur5_arm_shoulder_pan_joint"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <transmission name="shoulder_lift_trans" type="pr2_mechanism_model/SimpleTransmission">
     <actuator name="shoulder_lift_motor"/>
-    <joint name="ur5_arm/shoulder_lift_joint"/>
+    <joint name="ur5_arm_shoulder_lift_joint"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <transmission name="elbow_trans" type="pr2_mechanism_model/SimpleTransmission">
     <actuator name="elbow_motor"/>
-    <joint name="ur5_arm/elbow_joint"/>
+    <joint name="ur5_arm_elbow_joint"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <transmission name="wrist_1_trans" type="pr2_mechanism_model/SimpleTransmission">
     <actuator name="wrist_1_motor"/>
-    <joint name="ur5_arm/wrist_1_joint"/>
+    <joint name="ur5_arm_wrist_1_joint"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <transmission name="wrist_2_trans" type="pr2_mechanism_model/SimpleTransmission">
     <actuator name="wrist_2_motor"/>
-    <joint name="ur5_arm/wrist_2_joint"/>
+    <joint name="ur5_arm_wrist_2_joint"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <transmission name="wrist_3_trans" type="pr2_mechanism_model/SimpleTransmission">
     <actuator name="wrist_3_motor"/>
-    <joint name="ur5_arm/wrist_3_joint"/>
+    <joint name="ur5_arm_wrist_3_joint"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <gazebo reference="universal_robot">
     <material>Gazebo/Blue</material>
   </gazebo>
-  <link name="ur5_arm/gripper_frame"/>
-  <link name="ur5_arm/gripper_body">
+  <link name="ur5_arm_gripper_frame"/>
+  <link name="ur5_arm_gripper_body">
     <visual>
       <!--origin xyz="0 0.036 -0.0473" rpy="0 0 0"/-->
       <geometry>
@@ -268,15 +269,15 @@
       </material>
     </collision>
   </link>
-  <link name="ur5_arm/tcp_frame"/>
-  <joint name="ur5_arm/gripper_to_palm" type="fixed">
-    <parent link="ur5_arm/gripper_frame"/>
-    <child link="ur5_arm/gripper_body"/>
+  <link name="ur5_arm_tcp_frame"/>
+  <joint name="ur5_arm_gripper_to_palm" type="fixed">
+    <parent link="ur5_arm_gripper_frame"/>
+    <child link="ur5_arm_gripper_body"/>
     <origin rpy="0 0 0" xyz="0 0 0.0473"/>
   </joint>
-  <joint name="ur5_arm/gripper_to_tcp" type="fixed">
-    <parent link="ur5_arm/gripper_frame"/>
-    <child link="ur5_arm/tcp_frame"/>
+  <joint name="ur5_arm_gripper_to_tcp" type="fixed">
+    <parent link="ur5_arm_gripper_frame"/>
+    <child link="ur5_arm_tcp_frame"/>
     <origin rpy="0 0 0" xyz="0.022 0 0.0946"/>
   </joint>
   <!-- instantiating workcell definitions -->
@@ -417,38 +418,38 @@
   </joint>
   <!-- end of workcell definitions -->
   <!-- instantiating sensor definitions -->
-  <material name="ur5_arm/color_b">
+  <material name="ur5_arm_color_b">
     <color rgba="0 0.8 1 0.4"/>
   </material>
-  <material name="ur5_arm/color_a">
+  <material name="ur5_arm_color_a">
     <color rgba="0.8 0.2 1 0.2"/>
   </material>
-  <material name="ur5_arm/silver">
+  <material name="ur5_arm_silver">
     <color rgba="0.6 0.6 0.6 1"/>
   </material>
-  <link name="ur5_arm/kinect">
+  <link name="ur5_arm_kinect">
     <collision>
-      <material name="ur5_arm/color_a"/>
+      <material name="ur5_arm_color_a"/>
       <geometry>
         <box size="0.36 0.28 0.22"/>
       </geometry>
     </collision>
   </link>
-  <link name="ur5_arm/kinect_keepout">
+  <link name="ur5_arm_kinect_keepout">
     <collision>
-      <material name="ur5_arm/color_b"/>
+      <material name="ur5_arm_color_b"/>
       <geometry>
         <box size="0.2 0.32 0.48"/>
       </geometry>
     </collision>
   </link>
-  <link name="ur5_arm/kinect_frame">
+  <link name="ur5_arm_kinect_frame">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
         <box size="0.064 0.28 0.04"/>
       </geometry>
-      <material name="ur5_arm/silver"/>
+      <material name="ur5_arm_silver"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -457,7 +458,7 @@
       </geometry>
     </collision>
   </link>
-  <link name="ur5_arm/kinect_ir_link">
+  <link name="ur5_arm_kinect_ir_link">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
@@ -465,7 +466,7 @@
       </geometry>
     </visual>
   </link>
-  <link name="ur5_arm/kinect_rgb_link">
+  <link name="ur5_arm_kinect_rgb_link">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
@@ -473,41 +474,41 @@
       </geometry>
     </visual>
   </link>
-  <link name="ur5_arm/kinect_ir_optical_frame"/>
-  <link name="ur5_arm/kinect_rgb_optical_frame"/>
-  <joint name="ur5_arm/kinect_frame_joint" type="fixed">
-    <parent link="ur5_arm/kinect"/>
-    <child link="ur5_arm/kinect_frame"/>
+  <link name="ur5_arm_kinect_ir_optical_frame"/>
+  <link name="ur5_arm_kinect_rgb_optical_frame"/>
+  <joint name="ur5_arm_kinect_frame_joint" type="fixed">
+    <parent link="ur5_arm_kinect"/>
+    <child link="ur5_arm_kinect_frame"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
-  <joint name="ur5_arm/kinect_ir_joint" type="fixed">
-    <parent link="ur5_arm/kinect_frame"/>
-    <child link="ur5_arm/kinect_ir_link"/>
+  <joint name="ur5_arm_kinect_ir_joint" type="fixed">
+    <parent link="ur5_arm_kinect_frame"/>
+    <child link="ur5_arm_kinect_ir_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
-  <joint name="ur5_arm/kinect_ir_optical_frame_joint" type="fixed">
-    <parent link="ur5_arm/kinect_ir_link"/>
-    <child link="ur5_arm/kinect_ir_optical_frame"/>
+  <joint name="ur5_arm_kinect_ir_optical_frame_joint" type="fixed">
+    <parent link="ur5_arm_kinect_ir_link"/>
+    <child link="ur5_arm_kinect_ir_optical_frame"/>
     <origin rpy="-1.57 0 -1.57" xyz="0 0 0"/>
   </joint>
-  <joint name="ur5_arm/kinect_rgb_joint" type="fixed">
-    <parent link="ur5_arm/kinect_ir_link"/>
-    <child link="ur5_arm/kinect_rgb_link"/>
+  <joint name="ur5_arm_kinect_rgb_joint" type="fixed">
+    <parent link="ur5_arm_kinect_ir_link"/>
+    <child link="ur5_arm_kinect_rgb_link"/>
     <origin rpy="0 0 0" xyz="0 -0.03 0"/>
   </joint>
-  <joint name="ur5_arm/kinect_rgb_optical_frame_joint" type="fixed">
-    <parent link="ur5_arm/kinect_rgb_link"/>
-    <child link="ur5_arm/kinect_rgb_optical_frame"/>
+  <joint name="ur5_arm_kinect_rgb_optical_frame_joint" type="fixed">
+    <parent link="ur5_arm_kinect_rgb_link"/>
+    <child link="ur5_arm_kinect_rgb_optical_frame"/>
     <origin rpy="-1.57 0 -1.57" xyz="0 0 0"/>
   </joint>
-  <joint name="ur5_arm/workcell_frame_to_kinect" type="fixed">
+  <joint name="ur5_arm_workcell_frame_to_kinect" type="fixed">
     <parent link="workcell_frame"/>
-    <child link="ur5_arm/kinect"/>
+    <child link="ur5_arm_kinect"/>
     <origin rpy="0 0.5235 0" xyz="-1.2 0 0.4"/>
   </joint>
-  <joint name="ur5_arm/workcell_frame_to_kinect_keepout" type="fixed">
+  <joint name="ur5_arm_workcell_frame_to_kinect_keepout" type="fixed">
     <parent link="workcell_frame"/>
-    <child link="ur5_arm/kinect_keepout"/>
+    <child link="ur5_arm_kinect_keepout"/>
     <origin rpy="0 0 0" xyz="-1.2 0 0.24"/>
   </joint>
   <!-- end of sensor definitions -->
@@ -535,14 +536,14 @@
   <!-- arm-workcell joint definitions -->
   <joint name="ur5_to_stand" type="fixed">
     <parent link="ur5_stand"/>
-    <child link="ur5_arm/base_link"/>
+    <child link="ur5_arm_base_link"/>
     <origin rpy="0 0 -3.14" xyz="0 0 0.10"/>
   </joint>
   <!-- end of arm workcell joint definitions-->
   <!-- arm-gripper coupling joint definitions -->
   <joint name="ur5_to_gripper" type="fixed">
-    <parent link="ur5_arm/ee_link"/>
-    <child link="ur5_arm/gripper_frame"/>
+    <parent link="ur5_arm_ee_link"/>
+    <child link="ur5_arm_gripper_frame"/>
     <origin rpy="0 1.57 0" xyz="0 0 0"/>
   </joint>
   <!-- end of arm-gripper coupling joint definitions -->
