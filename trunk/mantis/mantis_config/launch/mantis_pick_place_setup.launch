@@ -3,6 +3,7 @@
 
 <!-- input arguments -->
   <arg name="use_chomp" default="true" />
+  <arg name="use_custom_segmentation" default="true"/>
   <!--arg name="sim_only" default="true"/-->
 
 <!-- fixed parameters -->
@@ -43,8 +44,14 @@
   <include file="$(find mantis_grasp_planning)/launch/vacuum_gripper_grasp_planner_server.launch"/>
 
 <!-- segmentation -->
-  <include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
+  <include if="$(arg use_custom_segmentation)" file="$(find mantis_perception)/launch/mantis_segmentation.launch">
     <arg name="tabletop_segmentation_points_in" value="camera/depth_registered/points"/>
+  </include>
+
+  <include  unless="$(arg use_custom_segmentation)" 
+			file="$(find mantis_perception)/launch/tabletop_segmentation.launch">
+			<arg name="tabletop_segmentation_points_in" 
+				value="camera/depth_registered/points"/>
   </include>
 
 <!-- recognition -->
