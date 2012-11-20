@@ -55,6 +55,9 @@ using namespace industrial::byte_array;
 ByteArray::ByteArray(void)
 {
   this->init();
+#ifdef BYTE_SWAPPING
+  LOG_WARN("Byte swapping enabled");
+#endif
 }
 
 ByteArray::~ByteArray(void)
@@ -104,15 +107,30 @@ void ByteArray::copyFrom(ByteArray & buffer)
 void ByteArray::swap(void *value, shared_int byteSize)
 {
   LOG_COMM("Executing byte swapping");
-  int i;
-  char temp;
-  char* valuePtr = (char*)&value;
-  for (i = 0; i < byteSize / 2; i++)
+
+  //char* valuePtr = (char*)value;
+
+  //LOG_COMM("valuePtr: %p, value: %p", &valuePtr, &value);
+  LOG_COMM("Value (swapping-input): %u", (unsigned int)(*(unsigned int*)value));
+  for (unsigned int i = 0; i < byteSize / 2; i++)
   {
-    temp = valuePtr[byteSize - i - 1];
-    valuePtr[byteSize - i - 1] = valuePtr[i];
-    valuePtr[i] = temp;
+    unsigned int endIndex = byteSize - i - 1;
+    char endByte = ((char*)value)[endIndex];
+    unsigned int endInt = endByte;
+
+    unsigned int beginIndex = i;
+    char beginByte = ((char*)value)[beginIndex];
+    unsigned int beginInt = beginByte;
+
+    LOG_COMM("Swap beginIndex i: %u, endIndex: %u, begin[]: %u, end[]: %u",
+             beginIndex, endIndex, beginInt, endInt);
+    //LOG_WARN("Swapping %x with %x", valuePtr[endIndex], beginByte);
+    ((char*)value)[endIndex] = beginByte;
+    //LOG_WARN("Swapping %c with %c", valuePtr[beginIndex], endByte);
+    ((char*)value)[beginIndex] = endByte;
   }
+  LOG_COMM("Value (swapping-output): %u", (unsigned int)(*(unsigned int*)value));
+
 }
 #endif
 
@@ -129,17 +147,15 @@ char* ByteArray::getRawDataPtr()
  */
 bool ByteArray::load(shared_bool value)
 {
-#ifdef BYTE_SWAPPING
-  this->swap(&value, sizeof(shared_bool));
-#endif
-
   return this->load(&value, sizeof(shared_bool));
 }
 
 bool ByteArray::load(shared_real value)
 {
 #ifdef BYTE_SWAPPING
+  LOG_COMM("Value (loading-input): %f", value);
   this->swap(&value, sizeof(shared_real));
+  LOG_COMM("Value (loading-output): %f", value);
 #endif
 
   return this->load(&value, sizeof(shared_real));
@@ -148,7 +164,9 @@ bool ByteArray::load(shared_real value)
 bool ByteArray::load(shared_int value)
 {
 #ifdef BYTE_SWAPPING
+  LOG_COMM("Value (loading-input): %d", value);
   this->swap(&value, sizeof(shared_int));
+  LOG_COMM("Value (loading-output): %d", value);
 #endif
 
   return this->load(&value, sizeof(shared_int));
@@ -208,27 +226,31 @@ bool ByteArray::load(void* value, const shared_int byte_size)
 bool ByteArray::unload(shared_bool & value)
 {
   shared_bool rtn = this->unload(&value, sizeof(shared_bool));
-#ifdef BYTE_SWAPPING
-  this->swap(&rtn, sizeof(shared_bool));
-#endif
   return rtn;
 
 }
 
 bool ByteArray::unload(shared_real &value)
 {
-  shared_real rtn = this->unload(&value, sizeof(shared_real));
+  bool rtn = this->unload(&value, sizeof(shared_real));
+
 #ifdef BYTE_SWAPPING
-  this->swap(&rtn, sizeof(shared_real));
+  LOG_COMM("Value (unloading-input): %f", value);
+  this->swap(&value, sizeof(shared_real));
+  LOG_COMM("Value (unloading-output): %f", value);
 #endif
+
   return rtn;
 }
 
 bool ByteArray::unload(shared_int &value)
 {
-  shared_int rtn = this->unload(&value, sizeof(shared_int));
+  bool rtn = this->unload(&value, sizeof(shared_int));
+
 #ifdef BYTE_SWAPPING
-  this->swap(&rtn, sizeof(shared_int));
+  LOG_COMM("Value (unloading-input): %d", value);
+  this->swap(&value, sizeof(shared_int));
+  LOG_COMM("Value (unloading-output): %d", value);
 #endif
   return rtn;
 }
