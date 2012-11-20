@@ -1,16 +1,18 @@
 navigator:
   arm_group: sia20d_arm
   gripper_group: sia20d_gripper
-  wrist_link: sia20d_arm/link_t
-  gripper_link: sia20d_arm/palm
-  planner_service_name: sia20d_arm/path_planning/plan_kinematic_path
-  trajectory_filter_service_name: sia20d_arm/trajectory_filter_server/filter_trajectory_with_constraints
-  segmentation_service_name: sia20d_arm/tabletop_segmentation
-  recognition_service_name: sia20d_arm/mantis_object_recognition
-  grasp_planning_service_name: sia20d_arm/plan_point_cluster_grasp
-  planning_scene_service_name: sia20d_arm/environment_server/set_planning_scene_diff
+  wrist_link: sia20d_arm_link_t
+  gripper_link: sia20d_arm_palm
+  planner_service_name: /sia20d_arm/path_planning/plan_kinematic_path
+  trajectory_filter_service_name: /sia20d_arm/trajectory_filter_server/filter_trajectory_with_constraints
+  segmentation_service_name: /sia20d_arm/tabletop_segmentation
+  recognition_service_name: /sia20d_arm/mantis_object_recognition
+  grasp_planning_service_name: /sia20d_arm/plan_point_cluster_grasp
+  planning_scene_service_name: /sia20d_arm/environment_server/set_planning_scene_diff
   arm_inverse_kinematics_plugin: SIA20D_Mesh_manipulator_kinematics/IKFastKinematicsPlugin
-  joint_state_topic: sia20d_arm/joint_states
+  joint_state_topic: /sia20d_arm/joint_states
+  joint_trajectory_service_name: /sia20d_arm/joint_trajectory_action
+  grasp_action_service_name: /sia20d_arm/grasp_execution_action
 segmentation:
   world_frame_id: workcell_frame
   k_nearest: 80

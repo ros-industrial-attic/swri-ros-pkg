@@ -1,8 +1,8 @@
 navigator:
   arm_group: sia20d_arm
   gripper_group: sia20d_gripper
-  wrist_link: sia20d_arm/link_t
-  gripper_link: sia20d_arm/palm
+  wrist_link: sia20d_arm_link_t
+  gripper_link: sia20d_arm_palm
   planner_service_name: sia20d_arm/path_planning/plan_kinematic_path
   trajectory_filter_service_name: sia20d_arm/trajectory_filter_server/filter_trajectory_with_constraints
   segmentation_service_name: sia20d_arm/tabletop_segmentation
