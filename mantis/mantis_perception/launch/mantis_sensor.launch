@@ -1,9 +1,10 @@
 <?xml version="1.0" ?>
 <launch>
   <arg name="arm_prefix" default=""/>
+  <arg name="camera_name" default="camera"/>
   <include file="$(find openni_launch)/launch/openni.launch">
     <arg name="publish_tf" default="true" />
-    <arg name="camera" default="camera" />
+    <arg name="camera" default="$(arg camera_name)" />
     <!--arg name="launch_prefix" default="" /-->
     <arg name="rgb_frame_id" default="/$(arg arm_prefix)kinect_rgb_optical_frame"/>    
     <arg name="depth_frame_id" default="/$(arg arm_prefix)kinect_ir_optical_frame"/>
