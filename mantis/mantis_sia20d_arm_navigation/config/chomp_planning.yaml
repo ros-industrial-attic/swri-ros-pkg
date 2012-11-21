@@ -19,22 +19,22 @@ collision_links:
   sia20d_arm_kinect_keepout
 
 joint_costs:
-  sia20d_arm_joint_s: 1.0
-  sia20d_arm_joint_l: 1.0
-  sia20d_arm_joint_e: 1.0
-  sia20d_arm_joint_u: 1.0
-  sia20d_arm_joint_r: 1.0
-  sia20d_arm_joint_b: 1.0
-  sia20d_arm_joint_t: 1.0
+  joint_s: 1.0
+  joint_l: 1.0
+  joint_e: 1.0
+  joint_u: 1.0
+  joint_r: 1.0
+  joint_b: 1.0
+  joint_t: 1.0
 
 joint_velocity_limits:
-  sia20d_arm_joint_s: 0.5
-  sia20d_arm_joint_l: 0.5
-  sia20d_arm_joint_e: 0.5
-  sia20d_arm_joint_u: 0.5
-  sia20d_arm_joint_r: 0.5
-  sia20d_arm_joint_b: 0.5
-  sia20d_arm_joint_t: 0.5
+  joint_s: 0.5
+  joint_l: 0.5
+  joint_e: 0.5
+  joint_u: 0.5
+  joint_r: 0.5
+  joint_b: 0.5
+  joint_t: 0.5
 
 
 reference_frame: workcell_frame
