@@ -72,6 +72,8 @@ class MantisSegmentor
   double cluster_distance_;
   //! Min number of points for a cluster
   int min_cluster_size_;
+  int max_cluster_size_;
+  double plane_dist_thresh_;
   //! Clouds are transformed into this frame before processing; leave empty if clouds
   //! are to be processed in their original frame
   std::string processing_frame_;
@@ -138,6 +140,8 @@ class MantisSegmentor
     priv_nh_.param<double>("table_z_filter_max", table_z_filter_max_, 0.50);
     priv_nh_.param<double>("cluster_distance", cluster_distance_, 0.03);
     priv_nh_.param<int>("min_cluster_size", min_cluster_size_, 300);
+    priv_nh_.param<int>("max_cluster_size", max_cluster_size_, 25000);
+    priv_nh_.param<double>("plane_dist_thresh", plane_dist_thresh_, 0.0075);
     priv_nh_.param<std::string>("processing_frame", processing_frame_, "");
     priv_nh_.param<double>("up_direction", up_direction_, -1.0);
     priv_nh_.param<bool>("flatten_table", flatten_table_, false);
@@ -155,12 +159,12 @@ bool MantisSegmentor::serviceCallback(tabletop_object_detector::TabletopSegmenta
 		tabletop_object_detector::TabletopSegmentation::Response &response)
 {
 
-/*
-  static tf::TransformBroadcaster broadcaster;
 
+  static tf::TransformBroadcaster broadcaster;
+/*
   broadcaster.sendTransform(
 		  tf::StampedTransform(
-			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.545, -0.18, 0.049)),
+			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.749, -0, 0.0205)),
 			ros::Time::now(),"/base_link", "/object_training_frame"));
 */
   ros::Time start_time = ros::Time::now();
@@ -259,8 +263,8 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   seg.setOptimizeCoefficients (true);
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setMaxIterations (100);
-  seg.setDistanceThreshold (0.0075);
+  seg.setMaxIterations (500);
+  seg.setDistanceThreshold (plane_dist_thresh_);//0.0075
 
   //std::cout << "Spatial filtering...\n";
   //Spatial filter.
@@ -333,9 +337,9 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance (0.01); // 2cm
+  ec.setClusterTolerance (cluster_distance_); // 2cm
   ec.setMinClusterSize (min_cluster_size_);
-  ec.setMaxClusterSize (25000);
+  ec.setMaxClusterSize (max_cluster_size_);
   ec.setSearchMethod (tree);
   ec.setInputCloud (cloud_filtered);
   ec.extract (cluster_indices);
@@ -381,7 +385,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 	  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> out_remove;
 	  out_remove.setInputCloud(cloud_cut);
 	  out_remove.setNegative(false);
-	  out_remove.setMeanK(50);
+	  out_remove.setMeanK(1);
 	  out_remove.setStddevMulThresh(1.0);
 	  out_remove.filter(cloud_noise);
 

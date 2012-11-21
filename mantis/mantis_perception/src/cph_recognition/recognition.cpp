@@ -149,7 +149,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 
   //Depending on label and angle, assign marker mesh, model_id, position for mesh and for part frame
   ROS_WARN_STREAM("Object labeled as "<< label.substr(found+1));
-  if(label.substr(found+1)=="enclosure_1" || label.substr(found+1)=="enclosuref")
+  if(label.substr(found+1)=="enclosure_1" || label.substr(found+1)=="enclosuref"|| label.substr(found+1)=="enclosure_a_1")
   {
     main_response.model_id=1;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
