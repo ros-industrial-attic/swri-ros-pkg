@@ -45,9 +45,9 @@ bool mesh_cb(mantis_data_collection::marker::Request &req, mantis_data_collectio
 	mesh_marker.scale.x = 1;
 	mesh_marker.scale.y = 1;
 	mesh_marker.scale.z = 1;
-	mesh_marker.pose.position.x = 0.545;
-	mesh_marker.pose.position.y = -0.18;
-	mesh_marker.pose.position.z = 0.049;
+	mesh_marker.pose.position.x = 0.749;
+	mesh_marker.pose.position.y = -0;
+	mesh_marker.pose.position.z = 0.021;
 	mesh_marker.pose.orientation.x = 0.0;
 	mesh_marker.pose.orientation.y = 0.0;
 	//need to convert from angle representation to quaternion representation
