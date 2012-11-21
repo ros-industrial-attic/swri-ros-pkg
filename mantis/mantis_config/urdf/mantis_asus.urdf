@@ -326,7 +326,7 @@
     <parent link="base_link"/>
     <child link="kinect"/>
     <origin rpy="0 1.25 3.13" xyz="1.14 -0.055 1.5"/>
-  </joint>
+  </joint> 
 <!--	<link name="kinect1">
 		<visual>
 			<origin rpy="0 0 0" xyz="0 0 0"/>
@@ -375,40 +375,54 @@
 			</geometry>
 		</visual>
 	</link>
-  <joint name="base-kinect1" type="fixed"> 
+  <joint name="base-kinect1-z" type="prismatic"> 
     <parent link="base_link"/>
     <child link="kinect1"/>
     <origin rpy="0 0 0" xyz="0 0 1.5"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="100" lower="-0.25" upper="0.25" velocity="3.48"/>
   </joint>
-  <joint name="kinect1-kinect2" type="fixed">
+  <joint name="kinect1-kinect2-y" type="prismatic">
     <parent link="kinect1"/>
     <child link="kinect2"/>
     <origin rpy="0 0 0" xyz="0 -0.055 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="100" lower="-0.1" upper="0.1" velocity="3.48"/>
   </joint>
-  <joint name="kinect2-kinect3" type="fixed">
+  <joint name="kinect2-kinect3-x" type="prismatic">
     <parent link="kinect2"/>
     <child link="kinect3"/>
     <origin rpy="0 0 0" xyz="1.14 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="100" lower="-0.15" upper="0.15" velocity="3.48"/>
   </joint>
-  <joint name="kinect3-kinect4" type="fixed">
+  <joint name="kinect3-kinect4-y" type="revolute">
     <parent link="kinect3"/>
     <child link="kinect4"/>
     <origin rpy="0 0 3.13" xyz="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="100" lower="-0.52" upper="0.52" velocity="3.48"/>
   </joint>
-  <joint name="kinect4-kinect5" type="fixed">
+  <joint name="kinect4-kinect5-p" type="revolute">
     <parent link="kinect4"/>
     <child link="kinect5"/>
     <origin rpy="0 1.25 0" xyz="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="100" lower="-0.52" upper="0.52" velocity="3.48"/>
   </joint>
-  <joint name="kinect5-kinect6" type="fixed">
+  <joint name="kinect5-kinect6-r" type="revolute">
     <parent link="kinect5"/>
     <child link="kinect6"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="100" lower="-0.1" upper="0.1" velocity="3.48"/>
   </joint>
-  <joint name="kinect6-kinect" type="fixed">
-    <parent link="kinect5"/>
+  <joint name="kinect6-kinect" type="revolute">
+    <parent link="kinect6"/>
     <child link="kinect"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="100" lower="-0.1" upper="0.1" velocity="3.48"/>
   </joint> -->
 <!-- END EXPERIMENT base_link to kinect-->
   <joint name="table-keepout_1" type="fixed">
