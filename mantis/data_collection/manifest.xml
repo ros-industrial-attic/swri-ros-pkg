@@ -1,13 +1,13 @@
 <package>
-  <description brief="data_collection">
+  <description brief="mantis_data_collection">
 
-     data_collection
+     mantis_data_collection
 
   </description>
-  <author>Alex</author>
+  <author>CG</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/data_collection</url>
+  <url>http://ros.org/wiki/mantis_data_collection</url>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="sensor_msgs"/> 
