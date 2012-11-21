@@ -14,7 +14,7 @@
 #include <pcl/point_types_conversion.h>
 #include <pcl_ros/point_cloud.h>
 
-#include "data_collection/process_cloud.h"
+#include "mantis_data_collection/process_cloud.h"
 #include "euclidean_segmentation.h"
 #include "nrg_object_recognition/segmentation.h"
 #include "cph.h"
@@ -25,8 +25,8 @@
 
 ros::ServiceClient seg_client;
   
-bool cloud_cb(data_collection::process_cloud::Request &req,
-	      data_collection::process_cloud::Response &res)
+bool cloud_cb(mantis_data_collection::process_cloud::Request &req,
+	      mantis_data_collection::process_cloud::Response &res)
 {
   ROS_INFO("starting feature extraction process");
   //Segment from cloud:

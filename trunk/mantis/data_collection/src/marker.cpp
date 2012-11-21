@@ -2,7 +2,7 @@
 #include "std_msgs/String.h"
 #include <sensor_msgs/PointCloud2.h>
 #include <sstream>
-#include "data_collection/marker.h"
+#include "mantis_data_collection/marker.h"
 #include "mantis_perception/mantis_segmentation.h"
 #include <visualization_msgs/Marker.h>
 #include <tf/transform_broadcaster.h>
@@ -19,7 +19,7 @@
 ros::Publisher vis_pub;
 ros::ServiceClient seg_client;
 
-bool mesh_cb(data_collection::marker::Request &req, data_collection::marker::Response &res)
+bool mesh_cb(mantis_data_collection::marker::Request &req, mantis_data_collection::marker::Response &res)
 {
 /*
 	static tf::TransformBroadcaster broadcaster;

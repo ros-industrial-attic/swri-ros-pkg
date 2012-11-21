@@ -26,7 +26,7 @@
 #include "nrg_object_recognition/recognition.h"
 #include "tabletop_object_detector/Table.h"
 #include "tabletop_object_detector/TabletopSegmentation.h"
-#include "data_collection/marker.h"
+#include "mantis_data_collection/marker.h"
 
 ros::ServiceClient segmentation_client, marker_client;
 
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "mantis_recognition_test");
   ros::NodeHandle n;
 
-  marker_client = n.serviceClient<data_collection::marker>("/data_collect_mesh");
+  marker_client = n.serviceClient<mantis_data_collection::marker>("/data_collect_mesh");
   segmentation_client = n.serviceClient<mantis_perception::mantis_segmentation>("/tabletop_segmentation", true);
 
   //seg_pub = n.advertise<sensor_msgs::PointCloud2>("/segmentation_result",1);
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     sensor_msgs::convertPointCloudToPointCloud2(clustervector, segcluster);
     segcluster.header.frame_id=seg_srv.response.table.pose.header.frame_id;
 
-    data_collection::marker mark_trans_srv;
+    mantis_data_collection::marker mark_trans_srv;
     //mark_trans_srv.request.clusters = seg_srv.response.clusters;
     int ang = atoi(argv[1]);
     ROS_INFO_STREAM("char angle input: "<< argv[1]);

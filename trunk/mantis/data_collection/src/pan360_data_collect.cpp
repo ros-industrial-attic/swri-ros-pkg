@@ -1,8 +1,8 @@
 #include "ros/ros.h"
 #include "std_msgs/UInt16.h"
 #include "std_msgs/String.h"
-#include "data_collection/dataCollect.h"
-#include "data_collection/process_cloud.h"
+#include "mantis_data_collection/dataCollect.h"
+#include "mantis_data_collection/process_cloud.h"
 #include <sensor_msgs/PointCloud2.h>_
 #include <sstream>
 #include <visualization_msgs/Marker.h>
@@ -17,11 +17,11 @@ void kinect_cb(sensor_msgs::PointCloud2 fromKinect)
 	cloud_to_process = fromKinect;
 }
 
-bool rotate_cb(data_collection::dataCollect::Request &req, data_collection::dataCollect::Response &res)
+bool rotate_cb(mantis_data_collection::dataCollect::Request &req, mantis_data_collection::dataCollect::Response &res)
 {
 std_msgs::UInt16 command;
 command.data=0;
-data_collection::process_cloud srv;
+mantis_data_collection::process_cloud srv;
 
 srv.request.objectName = req.objectName;
 //following line added by CG along with following // comments to make useful for one angle
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 	pan_pub = n.advertise<std_msgs::UInt16>("/pan_command",1);
 	ros::ServiceServer pan_serv = n.advertiseService("/pan360_data_collect", rotate_cb);
 	ros::Subscriber pan_sub = n.subscribe("/camera/depth_registered/points", 1, kinect_cb);
-	pan_client = n.serviceClient<data_collection::process_cloud>("process_cloud");
+	pan_client = n.serviceClient<mantis_data_collection::process_cloud>("process_cloud");
 	vis_pub = n.advertise<visualization_msgs::Marker>( "matching_mesh_marker", 10 );
 
 	ROS_INFO("Ready!");
