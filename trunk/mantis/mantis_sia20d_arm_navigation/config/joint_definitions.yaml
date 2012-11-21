@@ -1,25 +1,25 @@
 joint_trajectory_action:
   joints:
-    - sia20d_arm_joint_s
-    - sia20d_arm_joint_l
-    - sia20d_arm_joint_e
-    - sia20d_arm_joint_u
-    - sia20d_arm_joint_r
-    - sia20d_arm_joint_b
-    - sia20d_arm_joint_t
+    - joint_s
+    - joint_l
+    - joint_e
+    - joint_u
+    - joint_r
+    - joint_b
+    - joint_t
   constraints:
     goal_time: 0.3
-    sia20d_arm_joint_s:
+    joint_s:
       goal: 0.04
-    sia20d_arm_joint_l:
+    joint_l:
       goal: 0.04
-    sia20d_arm_joint_e:
+    joint_e:
       goal: 0.04
-    sia20d_arm_joint_u:
+    joint_u:
       goal: 0.04
-    sia20d_arm_joint_r:
+    joint_r:
       goal: 0.04
-    sia20d_arm_joint_b:
+    joint_b:
       goal: 0.04
-    sia20d_arm_joint_t:
+    joint_t:
       goal: 0.04
