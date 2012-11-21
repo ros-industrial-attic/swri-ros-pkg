@@ -134,7 +134,7 @@ int main(int argc, char **argv)
   //Offer services that can be called from the terminal:
   ros::ServiceServer joint_test_serv = n.advertiseService("process_cloud", cloud_cb );
   //seg_client = n.serviceClient<nrg_object_recognition::segmentation>("segmentation");
-  seg_client = n.serviceClient<mantis_perception::mantis_segmentation>("mantis_segmentation", true);
+  seg_client = n.serviceClient<mantis_perception::mantis_segmentation>("tabletop_segmentation", true);
   //Set up service clients:
  
   ros::spin();
