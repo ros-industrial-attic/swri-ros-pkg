@@ -5,14 +5,14 @@
 	<arg name="controller_ip" default="192.168.32.3"/>
 
 	<!-- ____________________________ Fixed Parameters ____________________________  -->
-	<arg name="robot_description" value="$(find mantis_config)/urdf/mantis_sia20d.urdf"/>
+	<arg name="robot_description" value="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_sia20d_arm_workspace.xacro'"/>
 	<arg name="arm_namespace" value="sia20d_arm"/>
 
 	<group ns="$(arg arm_namespace)">
 
 		<!-- ____________________________ General Launch ____________________________  -->
 		<!-- URDF loaded to parameter server -->
-		<param name="robot_description"  textfile="$(arg robot_description)"/>
+		<param name="robot_description"  command="$(arg robot_description)"/>
 		<!-- Get TF -->
 		<node pkg="robot_state_publisher" name="st_pub" type="state_publisher"/>
 
@@ -28,7 +28,7 @@
 		<!-- __________________________________ Simulation only __________________________________  -->
 		<rosparam if="$(arg sim_only)" command="load" file="$(find mantis_sia20d_arm_navigation)/config/joint_definitions.yaml"/>
 		<node if="$(arg sim_only)" pkg="dx100" type="joint_trajectory_action" name="joint_trajectory_action" output="screen"/>
-		<node if="$(arg sim_only)" pkg="object_manipulation_tools" name="simulated_robot_controller" type="simulated_robot_controller" 			
+		<node if="$(arg sim_only)" pkg="object_manipulation_tools" name="simulated_robot_controller" type="simulated_robot_controller"
 			output="screen"/>
 
 		<!-- gripper executer action node -->

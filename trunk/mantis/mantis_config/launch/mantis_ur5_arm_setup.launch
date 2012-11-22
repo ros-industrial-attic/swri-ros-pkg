@@ -5,8 +5,8 @@
 	<arg name="use_custom_segmentation" default="true"/>
 
 	<!-- fixed parameters -->
-	<arg name="arm_namespace" value="sia20d_arm"/>
-	<arg name="robot_description" value="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_sia20d_arm_workspace.xacro'"/>
+	<arg name="arm_namespace" value="ur5_arm"/>
+	<arg name="robot_description" value="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_ur5_arm_workspace.xacro'"/>
 
 	<!-- camera sensor setup (must be placed outside the group namespace) -->
 	<remap from="/camera/depth_registered/points"
@@ -18,14 +18,14 @@
 
 	<!-- gripper description (needs to be outside the scope of the namespace)-->
 	<rosparam  command="load" 
-		file="$(find mantis_sia20d_arm_navigation)/config/vacuum_gripper_description_parameters.yaml"/>
+		file="$(find mantis_ur5_arm_navigation)/config/vacuum_gripper_description_parameters.yaml"/>
 
 	<group ns="$(arg arm_namespace)">
 
 		<!-- planning enviroment parameter setup-->
 		<param name="robot_description" command="$(arg robot_description)" />
 		<rosparam command="load" ns="robot_description_planning" 
-			file="$(find mantis_sia20d_arm_navigation)/config/mantis_sia20d_planning_description.yaml" />
+			file="$(find mantis_ur5_arm_navigation)/config/mantis_ur5_planning_description.yaml" />
 
 		<!-- planning environment server start -->
 		<include  file="$(find planning_environment)/launch/environment_server.launch">
@@ -38,24 +38,24 @@
 			from="/$(arg arm_namespace)/chomp_planner_longrange/plan_path" 
 			to="/$(arg arm_namespace)/path_planning/plan_kinematic_path"/>
 		<include if="$(arg use_chomp)"  
-			file="$(find mantis_sia20d_arm_navigation)/launch/chomp_planning.launch"/>
+			file="$(find mantis_ur5_arm_navigation)/launch/chomp_planning.launch"/>
 
 		<!-- if ompl was selected -->
 		<remap unless="$(arg use_chomp)" 
-			from="/ompl_planning/plan_kinematic_path" 
-			to="/path_planning/plan_kinematic_path"/>
+			from="/$(arg arm_namespace)/ompl_planning/plan_kinematic_path" 
+			to="/$(arg arm_namespace)/path_planning/plan_kinematic_path"/>
 		<include  unless="$(arg use_chomp)" 
-			file="$(find mantis_sia20d_arm_navigation)/launch/ompl_planning.launch"/>   
+			file="$(find mantis_ur5_arm_navigation)/launch/ompl_planning.launch"/>   
 
 
 		<!-- trajectory filter -->
 		<node  pkg="trajectory_filter_server" 
 			name="trajectory_filter_server" type="trajectory_filter_server" output="screen">
-			<rosparam command="load" file="$(find mantis_sia20d_arm_navigation)/config/joint_limits.yaml"/>
+			<rosparam command="load" file="$(find mantis_ur5_arm_navigation)/config/joint_limits.yaml"/>
 			<rosparam unless="$(arg use_chomp)" command="load" 
-				file="$(find mantis_sia20d_arm_navigation)/config/ompl_filters.yaml"/>
+				file="$(find mantis_ur5_arm_navigation)/config/ompl_filters.yaml"/>
 			<rosparam if="$(arg use_chomp)" command="load" 
-				file="$(find mantis_sia20d_arm_navigation)/config/chomp_filters.yaml"/>
+				file="$(find mantis_ur5_arm_navigation)/config/chomp_filters.yaml"/>
 		</node>
 
 		<!-- grasp planner -->
@@ -73,8 +73,8 @@
 			<arg name="z_filter_max" value="0.5"/>
 			<arg name="y_filter_min" value="-1.0"/>
 			<arg name="y_filter_max" value="0.8"/>
-			<arg name="x_filter_min" value="0.2"/>
-			<arg name="x_filter_max" value="1.0"/>
+			<arg name="x_filter_min" value="-1.2"/>
+			<arg name="x_filter_max" value="-0.4"/>
 		</include>
 
 		<include  unless="$(arg use_custom_segmentation)" 
@@ -88,8 +88,8 @@
 			<arg name="z_filter_max" value="0.5"/>
 			<arg name="y_filter_min" value="-1.0"/>
 			<arg name="y_filter_max" value="0.8"/>
-			<arg name="x_filter_min" value="0.2"/>
-			<arg name="x_filter_max" value="1.0"/>
+			<arg name="x_filter_min" value="-1.2"/>
+			<arg name="x_filter_max" value="-0.4"/>
 		</include>
 
 		<!-- recognition -->
