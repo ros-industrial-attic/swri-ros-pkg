@@ -45,3 +45,5 @@ target_link_libraries(simulated_robot_controller object_manipulation_tools)
 
 rosbuild_add_executable(overhead_grasp_planner_server src/nodes/overhead_grasp_service_node.cpp) 
 target_link_libraries(overhead_grasp_planner_server object_manipulation_tools)
+
+rosbuild_add_executable(joint_trajectory_action src/nodes/joint_trajectory_action.cpp) 
