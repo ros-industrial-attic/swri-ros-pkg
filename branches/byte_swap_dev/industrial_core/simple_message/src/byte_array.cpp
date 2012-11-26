@@ -56,7 +56,7 @@ ByteArray::ByteArray(void)
 {
   this->init();
 #ifdef BYTE_SWAPPING
-  LOG_WARN("Byte swapping enabled");
+  LOG_COMM("Byte swapping enabled");
 #endif
 }
 
@@ -108,9 +108,6 @@ void ByteArray::swap(void *value, shared_int byteSize)
 {
   LOG_COMM("Executing byte swapping");
 
-  //char* valuePtr = (char*)value;
-
-  //LOG_COMM("valuePtr: %p, value: %p", &valuePtr, &value);
   LOG_COMM("Value (swapping-input): %u", (unsigned int)(*(unsigned int*)value));
   for (unsigned int i = 0; i < byteSize / 2; i++)
   {
@@ -124,9 +121,7 @@ void ByteArray::swap(void *value, shared_int byteSize)
 
     LOG_COMM("Swap beginIndex i: %u, endIndex: %u, begin[]: %u, end[]: %u",
              beginIndex, endIndex, beginInt, endInt);
-    //LOG_WARN("Swapping %x with %x", valuePtr[endIndex], beginByte);
     ((char*)value)[endIndex] = beginByte;
-    //LOG_WARN("Swapping %c with %c", valuePtr[beginIndex], endByte);
     ((char*)value)[beginIndex] = endByte;
   }
   LOG_COMM("Value (swapping-output): %u", (unsigned int)(*(unsigned int*)value));
@@ -328,6 +323,39 @@ bool ByteArray::unload(void* value, shared_int byteSize)
   return rtn;
 }
 
+
+
+/****************************************************************
+ // unloadFront(*)
+ //
+ // Methods for unloading various data types.  Unloading data shortens
+ // the internal buffer and requires a memmove.  These functions should
+ // be used sparingly, as they are expensive.
+ //
+ */
+bool ByteArray::unloadFront(industrial::shared_types::shared_real &value)
+{
+  bool rtn = this->unloadFront(&value, sizeof(shared_real));
+
+#ifdef BYTE_SWAPPING
+  LOG_COMM("Value (unloading-input): %f", value);
+  this->swap(&value, sizeof(shared_real));
+  LOG_COMM("Value (unloading-output): %f", value);
+#endif
+  return rtn;
+}
+
+bool ByteArray::unloadFront(industrial::shared_types::shared_int &value)
+{
+  bool rtn = this->unloadFront(&value, sizeof(shared_int));
+
+#ifdef BYTE_SWAPPING
+  LOG_COMM("Value (unloading-input): %d", value);
+  this->swap(&value, sizeof(shared_int));
+  LOG_COMM("Value (unloading-output): %d", value);
+#endif
+  return rtn;
+}
 bool ByteArray::unloadFront(void* value, const industrial::shared_types::shared_int byteSize)
 {
   bool rtn;
@@ -382,6 +410,15 @@ unsigned int ByteArray::getBufferSize()
 unsigned int ByteArray::getMaxBufferSize()
 {
   return this->MAX_SIZE;
+}
+
+
+bool ByteArray::isByteSwapEnabled()
+{
+#ifdef BYTE_SWAPPING
+  return true;
+#endif
+  return false;
 }
 
 bool ByteArray::setBufferSize(shared_int size)

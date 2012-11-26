@@ -27,8 +27,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-rosbuild_add_library(simple_message 
-					src/byte_array.cpp
+set(SRC_FILES src/byte_array.cpp
 					src/simple_message.cpp
 					src/smpl_msg_connection.cpp
 					
@@ -51,49 +50,28 @@ rosbuild_add_library(simple_message
 					src/messages/joint_message.cpp
 					src/messages/joint_traj_pt_message.cpp
 					
-					src/simple_comms_fault_handler.cpp
-					)
-				
+					src/simple_comms_fault_handler.cpp)
 
+# The simple message make file builds two libraries: simple_message and
+# simple_message_byte_swapping.
+#
+# simple_message - is the default library.  This library should be used
+# when the target for the simple message is the same endian (i.e. both
+# big-endian or little-endian).  Intel based machines are little endian
+#
+# simple_message_byte_swapping - is an alternative library that can be used
+# when the target for simple message is a DIFFERENT endian AND when the target
+# targe cannot perform byte swapping (as is the case for some industrial
+# controllers).  This library performs byte swapping at the lowest load/unload
+# levels.
+
+# DEFAULT LIBRARY (SAME ENDIAN)
+rosbuild_add_library(simple_message ${SRC_FILES})
 rosbuild_add_gtest(utest test/utest.cpp)
 target_link_libraries(utest simple_message)
 
-
-
-rosbuild_add_library(simple_message_byte_swapping 
-					src/byte_array.cpp
-					src/simple_message.cpp
-					src/smpl_msg_connection.cpp
-					
-					src/socket/simple_socket.cpp
-					src/socket/udp_socket.cpp
-					src/socket/udp_client.cpp
-					src/socket/udp_server.cpp
-					src/socket/tcp_socket.cpp
-					src/socket/tcp_client.cpp
-					src/socket/tcp_server.cpp
-					
-					src/message_handler.cpp
-					src/message_manager.cpp
-					src/ping_handler.cpp
-					src/ping_message.cpp
-					src/joint_data.cpp
-					src/joint_traj_pt.cpp
-					src/joint_traj.cpp
-
-					src/messages/joint_message.cpp
-					src/messages/joint_traj_pt_message.cpp
-					
-					src/simple_comms_fault_handler.cpp
-					)
-				
-
+# ALTERNATIVE LIBRARY (DIFFERENT ENDIAN)
+rosbuild_add_library(simple_message_bswap ${SRC_FILES})
 rosbuild_add_gtest(utest_byte_swapping test/utest.cpp)
-target_link_libraries(utest_byte_swapping simple_message_byte_swapping)
-set_target_properties(simple_message_byte_swapping PROPERTIES COMPILE_FLAGS "-DBYTE_SWAPPING")
-					
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+target_link_libraries(utest_byte_swapping simple_message_bswap)
+set_target_properties(simple_message_bswap PROPERTIES COMPILE_FLAGS "-DBYTE_SWAPPING")

@@ -36,11 +36,16 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_executable(robot_state 
 						src/robot_state.cpp
 						src/joint_relay_handler.cpp)
+target_link_libraries(robot_state simple_message)
+
 rosbuild_add_executable(motion_interface
 						src/motion_interface.cpp
 						src/joint_trajectory_handler.cpp
             src/joint_trajectory_downloader.cpp)
 rosbuild_link_boost(motion_interface thread)
+target_link_libraries(motion_interface simple_message)
+
 rosbuild_add_executable(joint_trajectory_action
 						src/joint_trajectory_action.cpp)
 rosbuild_link_boost(joint_trajectory_action thread)
+target_link_libraries(joint_trajectory_action simple_message)
