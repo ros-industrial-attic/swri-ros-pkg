@@ -442,7 +442,7 @@
     <collision>
       <material name="ur5_arm_color_b"/>
       <geometry>
-        <box size="0.2 0.32 0.9"/>
+        <box size="0.2 0.32 0.7"/>
       </geometry>
     </collision>
   </link>
@@ -507,25 +507,25 @@
   <joint name="ur5_arm_ur5_arm_base_link_to_kinect" type="fixed">
     <parent link="ur5_arm_base_link"/>
     <child link="ur5_arm_kinect"/>
-    <origin rpy="0 0.5235 2.536" xyz="1.08 -0.72 0.82"/>
+    <origin rpy="0 0.5235 2.536" xyz="1.08 -0.72 0.62"/>
   </joint>
   <joint name="ur5_arm_ur5_arm_base_link_to_kinect_keepout" type="fixed">
     <parent link="ur5_arm_base_link"/>
     <child link="ur5_arm_kinect_keepout"/>
-    <origin rpy="0 0 2.536" xyz="1.08 -0.72 0.45"/>
+    <origin rpy="0 0 2.536" xyz="1.08 -0.72 0.35"/>
   </joint>
   <!-- end of sensor definitions -->
   <!-- arm-workcell link definitions -->
   <link name="ur5_stand">
     <visual>
       <geometry>
-        <cylinder length="0.20" radius="0.0735"/>
+        <cylinder length="0.2" radius="0.0735"/>
       </geometry>
       <material name="orange_transparent"/>
     </visual>
     <collision>
       <geometry>
-        <cylinder length="0.20" radius="0.0735"/>
+        <cylinder length="0.2" radius="0.0735"/>
       </geometry>
       <material name="blue_transparent"/>
     </collision>
