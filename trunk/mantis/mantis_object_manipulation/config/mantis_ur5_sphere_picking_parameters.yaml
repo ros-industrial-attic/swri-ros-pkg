@@ -41,4 +41,4 @@ goal:
     max_spacing: 0.08 # meters
     place_region_radius: 0.2 # meters
 joints:
-  side_position: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  side_position: [-1.51, -1.03, 1.48, -2.03, -1.55, -0.17]

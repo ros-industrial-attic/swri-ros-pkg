@@ -9,6 +9,7 @@
 
 #include <object_manipulation_tools/robot_navigators/RobotNavigator.h>
 #include <perception_tools/segmentation/SphereSegmentation.h>
+#include <object_manipulation_tools/manipulation_utils/GraspSequenceValidator.h>
 
 class SpherePickingRobotNavigator : public RobotNavigator
 {
