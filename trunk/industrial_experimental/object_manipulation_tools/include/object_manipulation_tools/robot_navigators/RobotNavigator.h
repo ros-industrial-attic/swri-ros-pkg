@@ -35,10 +35,13 @@
 #include <planning_environment/util/construct_object.h>
 #include <object_manipulation_tools/controller_utils/GraspPoseControllerHandler.h>
 #include <object_manipulation_tools/manipulation_utils/PlaceSequenceValidator.h>
+#include <object_manipulation_tools/manipulation_utils/GraspSequenceValidator.h>
 #include <tf/transform_listener.h>
 
 typedef actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPostureExecutionAction>  GraspActionServerClient;
-typedef boost::shared_ptr<object_manipulator::GraspTesterFast> GraspTesterPtr;
+//typedef boost::shared_ptr<object_manipulator::GraspTesterFast> GraspTesterPtr;
+typedef boost::shared_ptr<GraspSequenceValidator> GraspTesterPtr;
+typedef boost::shared_ptr<object_manipulator::GraspTesterFast> GraspTesterFastPtr;
 typedef boost::shared_ptr<PlaceSequenceValidator> PlaceSequencePtr;
 
 using namespace trajectory_execution_monitor;
@@ -231,7 +234,8 @@ protected:
 
 	// grasp move sequence generators
 	//object_manipulator::PlaceTesterFast* place_tester_;
-	boost::shared_ptr<object_manipulator::GraspTesterFast> grasp_tester_;
+	//boost::shared_ptr<object_manipulator::GraspTesterFast> grasp_tester_;
+	boost::shared_ptr<GraspSequenceValidator> grasp_tester_;
 	boost::shared_ptr<PlaceSequenceValidator> place_tester_;
 
 	arm_navigation_msgs::PlanningScene current_planning_scene_;
