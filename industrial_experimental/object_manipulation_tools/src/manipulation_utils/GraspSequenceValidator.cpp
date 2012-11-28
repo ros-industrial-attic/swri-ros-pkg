@@ -18,7 +18,7 @@ using namespace object_manipulator;
 
 GraspSequenceValidator::GraspSequenceValidator(planning_environment::CollisionModels* cm,
 				   const std::string& plugin_name)
-  : GraspTester(),
+  : GraspTester(),// GraspTesterFast(),
     consistent_angle_(M_PI/12.0),
     num_points_(10),
     redundancy_(2),
@@ -242,6 +242,22 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
   std::vector<std::string> end_effector_links, arm_links;
   getGroupLinks(handDescription().gripperCollisionName(pickup_goal.arm_name), end_effector_links);
   getGroupLinks(handDescription().armGroup(pickup_goal.arm_name), arm_links);
+
+  std::stringstream ss;
+  if(!end_effector_links.empty())
+  {
+	  ss<<"\n\tUsing gripper collision group:";
+	  for(std::size_t i = 0; i < end_effector_links.size();i++)
+	  {
+		  ss<<"\n\t"<<end_effector_links[i];
+	  }
+
+	  ROS_INFO_STREAM(ss.str());
+  }
+  else
+  {
+	  ROS_WARN_STREAM("Collision for the end-effector links will not be disabled");
+  }
 
   collision_space::EnvironmentModel::AllowedCollisionMatrix original_acm = cm->getCurrentAllowedCollisionMatrix();
   cm->disableCollisionsForNonUpdatedLinks(pickup_goal.arm_name);
