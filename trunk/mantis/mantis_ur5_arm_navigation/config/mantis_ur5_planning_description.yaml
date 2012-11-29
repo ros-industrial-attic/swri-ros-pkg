@@ -16,8 +16,6 @@ groups:
       - ur5_arm_gripper_frame
       - ur5_arm_tcp_frame
       - ur5_arm_gripper_body
-#    base_link: ur5_arm_ee_link
-#    tip_link: ur5_arm_gripper_body
 default_collision_operations:
   - object1: workcell_frame
     object2: ur5_arm_kinect
