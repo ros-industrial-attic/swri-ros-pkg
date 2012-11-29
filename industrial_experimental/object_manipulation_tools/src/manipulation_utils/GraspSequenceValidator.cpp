@@ -429,6 +429,7 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
     tf::Vector3 distance_pregrasp_dir = pregrasp_dir*fabs(grasps[0].desired_approach_distance);
     tf::Transform pre_grasp_trans(tf::Quaternion(0,0,0,1.0), distance_pregrasp_dir);
     tf::Transform pre_grasp_pose = grasp_poses[i]*pre_grasp_trans;
+    //tf::Transform pre_grasp_pose = pre_grasp_trans * grasp_poses[i]
     state->updateKinematicStateWithLinkAt(handDescription().gripperFrame(pickup_goal.arm_name),pre_grasp_pose);
 
     if(cm->isKinematicStateInCollision(*state))
@@ -539,7 +540,7 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
                             grasps[i].desired_approach_distance,
                             solution.position,
                             true,
-                            false,
+                            true,
                             execution_info[i].approach_trajectory_))
       {
         ROS_DEBUG_STREAM("No interpolated IK for pre-grasp to grasp");
