@@ -4,15 +4,9 @@
   <arg name="log_to_warehouse" default="false" />
   <arg name="use_chomp" default="false" />
 
-  <include file="$(find mantis_perception)/launch/mantis_sensor.launch"/>
+  <include file="$(find mantis_perception)/launch/mantis_sensor_asus.launch"/>
 
   <include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
-    <arg name="z_filter_min" default="-0.1"/>
-    <arg name="z_filter_max" default="0.5"/>
-    <arg name="y_filter_min" default="-0.7"/>
-    <arg name="y_filter_max" default="0.65"/>
-    <arg name="x_filter_min" default="0.2"/>
-    <arg name="x_filter_max" default="1.2"/>
   </include>
 
   <!-- URDF Universal Robot Description File -->
@@ -25,7 +19,7 @@
 <!-- recognition -->
   <node pkg="mantis_perception" name="cph_recognition" type="cph_recognition" 
 	output="screen" args="$(find mantis_perception)/data">
-  </node>
+  </node> 
    <node pkg="mantis_perception" name="mantis_object_recognition" type="mantis_object_recognition" output="screen">
   </node>
 </launch>

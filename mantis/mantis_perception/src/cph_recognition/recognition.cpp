@@ -37,18 +37,18 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
             mantis_perception::mantis_recognition::Response &main_response)
 {  
 
-  float pvct_1_x_offset = 0.004324;
-  float pvct_1_y_offset = -0.008176;
-  float pvct_1_z_offset = 0.01698;
-  float plug_1_x_offset = 0.00988;
-  float plug_1_y_offset = -0.010399;
-  float plug_1_z_offset = 0.03052;
-  float enc_1_x_offset = 0.0085645;
-  float enc_1_y_offset = -0.0099451;
-  float enc_1_z_offset = 0.03923;
-  float pvc_elbow_1_x_offset = 0.004949;
-  float pvc_elbow_1_y_offset = -0.006247;
-  float pvc_elbow_1_z_offset = 0.0182536;
+  float pvct_1_x_offset = 0.0044;		//kinect_1=0.004324 asus_1=0.0045
+  float pvct_1_y_offset = -0.0019;	//kinect_1=-0.008176 asus_1=-0.0019
+  float pvct_1_z_offset = 0.015;		//kinect_1=0.01698 asus_1=0.032
+  float plug_1_x_offset = 0.0036;		//kinect_1=0.00988 asus_1=0.000811
+  float plug_1_y_offset = -0.0021;	//kinect_1=-0.010399 asus_1=-0.00199
+  float plug_1_z_offset = 0.028;		//kinect_1=0.03052 asus_1=0.0163
+  float enc_1_x_offset = 0.00563;		//kinect_1=0.0085645 asus_1=0.00269
+  float enc_1_y_offset = -0.0044;	//kinect_1=-0.0099451 asus_1=0.0010989
+  float enc_1_z_offset = 0.0381;		//kinect_1=0.03923 asus_1=0.03701
+  float pvc_elbow_1_x_offset = 0.005878;//kinect_1=0.004949 asus_1=0.005878, avg=0.00541
+  float pvc_elbow_1_y_offset = -0.00108;//kinect_1=-0.006247 asus_1=-0.00108, avg=-0.00366
+  float pvc_elbow_1_z_offset = 0.02261;//kinect_1=0.0182536 asus_1=0.02261, avg=0.02043
   float plug_pick_point_z = 0.048;
   float enc_pick_point_x = 0.027;
   float enc_pick_point_z = 0.051;
@@ -70,10 +70,10 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   nrg_object_recognition::recognition rec_srv;
 
   rec_srv.request.cluster = cluster;
-  rec_srv.request.threshold = 1000;
+  rec_srv.request.threshold = 1500;
       
   //Call recognition service
-  cph_client.call(rec_srv);
+
   if (!cph_client.call(rec_srv))
   {
     ROS_ERROR("Call to cph recognition service failed");
@@ -83,6 +83,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   static tf::TransformBroadcaster obj_broadcaster;
 
 
+  ROS_INFO("CPH recognition complete");
 
 ////////////////////Assign response values/////////////////////////
   main_response.label = rec_srv.response.label;
@@ -90,21 +91,22 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 
   ROS_INFO_STREAM("Recgonized pose: \n x: " << rec_srv.response.pose.x << "\n y: "<<rec_srv.response.pose.y <<
 		  "\n z: "<<rec_srv.response.pose.z << "\n theta: "<<rec_srv.response.pose.rotation);
+  ROS_INFO_STREAM("Object labeled as "<< rec_srv.response.label);
 
   tf::Quaternion part_orientation;
   part_orientation.setValue(0, 0, sin(theta/2), cos(theta/2));
-  tf::Vector3 part_origin;
+/*  tf::Vector3 part_origin;
   part_origin.setValue(rec_srv.response.pose.x, rec_srv.response.pose.y, rec_srv.response.pose.z);
   tf::Transform part_frame;
   part_frame.setOrigin(part_origin);
   part_frame.setRotation(part_orientation);
   ROS_INFO_STREAM("Pick point frame origin: X: "<<part_origin.x()<< " Y: "<<part_origin.y()<< " Z: "<<part_origin.z());
   tf::Point enc_pick_point;
-  enc_pick_point.setValue(enc_pick_point_x, enc_pick_point_x, enc_pick_point_z);
+  enc_pick_point.setValue(enc_pick_point_x, 0, enc_pick_point_z);
   ROS_INFO_STREAM("Pick point for enclosure: X: "<<enc_pick_point.x()<< " Y: "<<enc_pick_point.y()<< " Z: "<<enc_pick_point.z());
   tf::Point enc_pick = part_frame * enc_pick_point;
   ROS_INFO_STREAM("Pick point in part frame: X: "<<enc_pick.x()<< " Y: "<<enc_pick.y()<< " Z: "<<enc_pick.z());
-
+*/
 
   tf::Quaternion rot_part;
   rot_part.setValue(sin(3.14159/2), 0, 0, cos(3.14159/2));
@@ -153,23 +155,26 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   {
     main_response.model_id=1;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
-    pick_pose.pose.position.x = enc_pick.x();// - (enc_1_x_offset);//+enc_pick_point_x;
-    pick_pose.pose.position.y = enc_pick.y();//rec_srv.response.pose.y - (enc_1_y_offset);
+    pick_pose.pose.position.x = rec_srv.response.pose.x - (enc_1_x_offset);//+enc_pick_point_x;//enc_pick.x();
+    pick_pose.pose.position.y = rec_srv.response.pose.y - (enc_1_y_offset);//enc_pick.y();
     pick_pose.pose.position.z = rec_srv.response.pose.z - (enc_1_z_offset)+enc_pick_point_z;
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (enc_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (enc_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (enc_1_z_offset);
-    /*obj_broadcaster.sendTransform(tf::StampedTransform(
-  	        tf::Transform(tf::Quaternion(pick_pose.pose.orientation.x, pick_pose.pose.orientation.y, pick_pose.pose.orientation.z, pick_pose.pose.orientation.w),
-  	        tf::Vector3(pick_pose.pose.position.x, pick_pose.pose.position.y, pick_pose.pose.position.z)),
-  	      main_request.table.pose.header.stamp,"/base_link", "/object_training_frame"));*/
+
   }
-  else if (label.substr(found+1)=="coupling" || label.substr(found+1)=="couplingf")
+  else if (label.substr(found+1)=="small_plug_a_1" || label.substr(found+1)=="small_plug_a_2" || label.substr(found+1)=="small_plug_a_3")
   {
     main_response.model_id=2;
-    mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/rubber_coupler_clamps.STL";
+    mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/small_plug.STL";
+    pick_pose.pose.position.x = rec_srv.response.pose.x;
+	pick_pose.pose.position.y = rec_srv.response.pose.y;
+	pick_pose.pose.position.z = rec_srv.response.pose.z-0.030;
+	mesh_marker.pose.position.x=rec_srv.response.pose.x;
+	mesh_marker.pose.position.y=rec_srv.response.pose.y;
+	mesh_marker.pose.position.z=rec_srv.response.pose.z-0.030;
   }
-  else if (label.substr(found+1)=="pvc_t_1" || label.substr(found+1)=="pvct")
+  else if (label.substr(found+1)=="pvc_t_1" || label.substr(found+1)=="pvct" || label.substr(found+1)=="pvct_a_1")
   {
     main_response.model_id=3;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
@@ -179,12 +184,9 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (pvct_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (pvct_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (pvct_1_z_offset);
-    /*obj_broadcaster.sendTransform(tf::StampedTransform(
-  	        tf::Transform(tf::Quaternion(pick_pose.pose.orientation.x, pick_pose.pose.orientation.y, pick_pose.pose.orientation.z, pick_pose.pose.orientation.w),
-  	        tf::Vector3(pick_pose.pose.position.x, pick_pose.pose.position.y, pick_pose.pose.position.z)),
-  	      main_request.table.pose.header.stamp,"/base_link", "/object_training_frame"));*/
+
   }
-  else if (label.substr(found+1)=="plug_1" || label.substr(found+1)=="plugf")
+  else if (label.substr(found+1)=="plug_1" || label.substr(found+1)=="plugf" || label.substr(found+1)=="plug_a_1" | label.substr(found+1)=="plug_a_2")
   {
     main_response.model_id=4;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.STL";
@@ -194,12 +196,9 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (plug_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (plug_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (plug_1_z_offset);
-    /*obj_broadcaster.sendTransform(tf::StampedTransform(
-  	        tf::Transform(tf::Quaternion(pick_pose.pose.orientation.x, pick_pose.pose.orientation.y, pick_pose.pose.orientation.z, pick_pose.pose.orientation.w),
-  	        tf::Vector3(pick_pose.pose.position.x, pick_pose.pose.position.y, pick_pose.pose.position.z)),
-  	      main_request.table.pose.header.stamp,"/base_link", "/object_training_frame"));*/
+
   }
-  else if (label.substr(found+1)=="pvc_elbow_1" || label.substr(found+1)=="pvcelbow")
+  else if (label.substr(found+1)=="pvc_elbow_1" || label.substr(found+1)=="pvcelbow" || label.substr(found+1)=="pvc_elbow_a_1")
   {
     main_response.model_id=5;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_elbow.STL";
@@ -209,10 +208,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (pvc_elbow_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (pvc_elbow_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (pvc_elbow_1_z_offset);
-    /*obj_broadcaster.sendTransform(tf::StampedTransform(
-  	        tf::Transform(tf::Quaternion(pick_pose.pose.orientation.x, pick_pose.pose.orientation.y, pick_pose.pose.orientation.z, pick_pose.pose.orientation.w),
-  	        tf::Vector3(pick_pose.pose.position.x, pick_pose.pose.position.y, pick_pose.pose.position.z)),
-  	      main_request.table.pose.header.stamp,"/base_link", "/object_training_frame"));*/
+
   }
   else
   {
@@ -237,7 +233,6 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   main_response.mesh_marker = mesh_marker;
   vis_pub.publish( mesh_marker );
 
-  ROS_INFO("CPH recognition complete");
 
 //////Visualization: Matching PointCloud//////////////////////////////////////////////////////
       //Import pcd file which matches recognition response
