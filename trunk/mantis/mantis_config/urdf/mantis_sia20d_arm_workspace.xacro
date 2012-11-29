@@ -10,7 +10,6 @@
 	<xacro:property name="workcell_height" value="1"/>
 	<xacro:property name="vacuum_gripper_width" value="0.088"/>
 	<xacro:property name="arm1_prefix" value="sia20d_arm_"/>
-	<!--xacro:property name="arm1_prefix" value=""/-->
 	<xacro:property name="arm1_name" value="sia20d"/>
 	
 	<!-- instantiating workcell definitions -->
