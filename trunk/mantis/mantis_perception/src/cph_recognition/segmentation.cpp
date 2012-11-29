@@ -73,7 +73,10 @@ class MantisSegmentor
   //! Min number of points for a cluster
   int min_cluster_size_;
   int max_cluster_size_;
+  //!threshold for inclusion in plane
   double plane_dist_thresh_;
+  //!number of neighbors to analyze for each point
+  double cluster_outlier_it_;
   //! Clouds are transformed into this frame before processing; leave empty if clouds
   //! are to be processed in their original frame
   std::string processing_frame_;
@@ -142,6 +145,7 @@ class MantisSegmentor
     priv_nh_.param<int>("min_cluster_size", min_cluster_size_, 300);
     priv_nh_.param<int>("max_cluster_size", max_cluster_size_, 25000);
     priv_nh_.param<double>("plane_dist_thresh", plane_dist_thresh_, 0.0075);
+    priv_nh_.param<double>("cluster_outlier_it", cluster_outlier_it_, 50);
     priv_nh_.param<std::string>("processing_frame", processing_frame_, "");
     priv_nh_.param<double>("up_direction", up_direction_, -1.0);
     priv_nh_.param<bool>("flatten_table", flatten_table_, false);
@@ -159,12 +163,12 @@ bool MantisSegmentor::serviceCallback(tabletop_object_detector::TabletopSegmenta
 		tabletop_object_detector::TabletopSegmentation::Response &response)
 {
 
-
-  static tf::TransformBroadcaster broadcaster;
 /*
+  static tf::TransformBroadcaster broadcaster;
+
   broadcaster.sendTransform(
 		  tf::StampedTransform(
-			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.749, -0, 0.0205)),
+			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.749, -0, 0.018)),
 			ros::Time::now(),"/base_link", "/object_training_frame"));
 */
   ros::Time start_time = ros::Time::now();
@@ -330,7 +334,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   cloud_filtered_pc2.header = in_cloud.header;
   cluster_pub.publish(cloud_filtered_pc2);
 
-     //std::cout << "Number of points in remaining clusters: " << cloud_filtered->points.size()  << std::endl;
+  std::cout << "Number of points in remaining clusters: " << cloud_filtered->points.size()  << std::endl;
   // Creating the KdTree object for the search method of the extraction
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud (cloud_filtered);
@@ -345,7 +349,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   ec.extract (cluster_indices);
 
   std::vector<sensor_msgs::PointCloud2> pc2_clusters;
-  //std::cout << "length of cluster_indices: " << cluster_indices.size() << std::endl;
+  std::cout << "length of cluster_indices: " << cluster_indices.size() << std::endl;
   int j = 0;
   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
   {
@@ -379,17 +383,18 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 	  pcl::PassThrough<pcl::PointXYZ> pass;
 	  pass.setInputCloud (cluster_ptr);
 	  pass.setFilterFieldName ("z");
-	  pass.setFilterLimits (0, 0.08);
+	  pass.setFilterLimits (0, 0.085);
 	  pass.filter (*cloud_cut);
 
 	  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> out_remove;
 	  out_remove.setInputCloud(cloud_cut);
 	  out_remove.setNegative(false);
-	  out_remove.setMeanK(1);
+	  out_remove.setMeanK(cluster_outlier_it_);
 	  out_remove.setStddevMulThresh(1.0);
 	  out_remove.filter(cloud_noise);
 
 	  pcl::toROSMsg (cloud_noise, ocloud);
+	  //pcl::toROSMsg (cloud_cut, ocloud);
 	  sensor_msgs::convertPointCloud2ToPointCloud(ocloud, out_cloud);
 	  out_clusters.push_back(out_cloud);
   }

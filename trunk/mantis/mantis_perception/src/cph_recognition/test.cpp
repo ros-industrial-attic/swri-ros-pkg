@@ -74,8 +74,13 @@ int main(int argc, char **argv)
       ROS_ERROR("Call to mantis recognition service failed");
     }
 
-    ROS_INFO("Model label: %s", rec_srv.response.label.c_str());
+    std::size_t found;
+    std::string label = rec_srv.response.label;
+    found=label.find_last_of("/");
+    ROS_INFO("Model label: %s", label.substr(found+1).c_str());
     ROS_INFO("Model id: %d", rec_srv.response.model_id);
+    ROS_INFO_STREAM("Angle: " << rec_srv.response.pose.rotation );
+
 /*
     object_point.header.frame_id = "/base_link";
     object_point.header.stamp = ros::Time();

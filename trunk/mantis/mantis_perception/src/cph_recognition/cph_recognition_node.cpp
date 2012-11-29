@@ -129,9 +129,9 @@ bool recognize_cb(nrg_object_recognition::recognition::Request &srv_request,
   //Compute cph:
   cph.setInputCloud (cluster);
   std::vector<float> feature;
-  //std::cout << "computing feature... ";
+  std::cout << "computing feature... ";
   cph.compute(feature);
-  //std::cout << "done.\n";
+  std::cout << "done.\n";
 
   //Algorithm parameters  
  // float thresh = 280; //similarity threshold
@@ -141,20 +141,20 @@ bool recognize_cb(nrg_object_recognition::recognition::Request &srv_request,
   histogram.second.resize(histSize);
   
   
-  //std::cout << "copying feature to histogram... ";
+  std::cout << "copying feature to histogram... ";
   for (size_t i = 0; i < histSize; ++i)
   {
       histogram.second[i] = feature.at(i);
   }
-  //std::cout << "done.\n";
+  std::cout << "done copying to histogram\n";
   //KNN classification
   nearestKSearch (index, histogram, k, k_indices, k_distances);
   
   //determine label and pose:
   if(k_distances[0][0] < srv_request.threshold){
     //std::cout << "distance: " << k_distances[0][0] << std::endl;
-    //ROS_INFO("%f", k_distances[0][0]);
-    
+    ROS_INFO("%f", k_distances[0][0]);
+    ROS_INFO("Loading nearest match");
     //Load nearest match
     std::string cloud_name = models.at(k_indices[0][0]).first;
 
@@ -166,7 +166,11 @@ bool recognize_cb(nrg_object_recognition::recognition::Request &srv_request,
     srv_response.label = label;
     srv_response.pose.rotation = angle;        
   }
-  return(1);
+  else
+  {
+	  ROS_INFO("Did not find distance/match within given threshold.");
+  }
+		  return(1);
 }
 
 
