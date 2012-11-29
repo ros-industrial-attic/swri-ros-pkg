@@ -5,7 +5,7 @@
 		<rosparam command="load" file="$(find mantis_sia20d_arm_navigation)/config/chomp_planning.yaml" />
 		<param name="animate_path" value="false"/>
 		<param name="animate_endeffector" value="false"/>
-		<param name="animate_endeffector_segment" value="sia20d_arm/palm"/>
+		<param name="animate_endeffector_segment" value="sia20d_arm_palm"/>
 	  	<param name="use_signed_environment_field" value="true"/>
 	  	<param name="use_signed_self_field" value="false"/>
 		<param name="trajectory_duration" value="4.0"/>

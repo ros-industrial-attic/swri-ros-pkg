@@ -10,7 +10,7 @@ hand_description:
     hand_joints: []
     hand_touch_links: [sia20d_arm_palm]
     hand_fingertip_links: []
-    hand_approach_direction: [0.0,0.0,1.0]
+    hand_approach_direction: [0.0,0.0,-1.0]
     arm_joints: [sia20d_arm_joint_s, sia20d_arm_joint_l, sia20d_arm_joint_e, sia20d_arm_joint_u,
 sia20d_arm_joint_r, sia20d_arm_joint_b, sia20d_arm_joint_t]
 
