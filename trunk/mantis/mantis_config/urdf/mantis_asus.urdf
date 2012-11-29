@@ -325,7 +325,7 @@
   <joint name="base-kinect" type="fixed">
     <parent link="base_link"/>
     <child link="kinect"/>
-    <origin rpy="0.08 1.19 3.19" xyz="1.15 -0.01 1.265"/>
+    <origin rpy="0.06 1.19 3.19" xyz="1.15 -0.01 1.42"/>
   </joint>  
 <!--	<link name="kinect1">
 		<visual>
@@ -378,7 +378,7 @@
   <joint name="base-kinect1-z" type="prismatic"> 
     <parent link="base_link"/>
     <child link="kinect1"/>
-    <origin rpy="0 0 0" xyz="0 0 1.265"/>
+    <origin rpy="0 0 0" xyz="0 0 1.42"/>
     <axis xyz="0 0 1"/>
     <limit effort="100" lower="-0.5" upper="0.5" velocity="3.48"/>
   </joint>
@@ -413,7 +413,7 @@
   <joint name="kinect5-kinect6-r" type="revolute">
     <parent link="kinect5"/>
     <child link="kinect6"/>
-    <origin rpy="0.08 0 0" xyz="0 0 0"/>
+    <origin rpy="0.06 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="100" lower="-0.1" upper="0.1" velocity="3.48"/>
   </joint>
