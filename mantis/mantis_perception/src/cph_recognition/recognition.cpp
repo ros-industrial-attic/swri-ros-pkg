@@ -174,7 +174,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 	mesh_marker.pose.position.y=rec_srv.response.pose.y;
 	mesh_marker.pose.position.z=rec_srv.response.pose.z-0.030;
   }
-  else if (label.substr(found+1)=="pvc_t_1" || label.substr(found+1)=="pvct" || label.substr(found+1)=="pvct_a_1")
+  else if (label.substr(found+1)=="pvc_t_1" || label.substr(found+1)=="pvct" || label.substr(found+1)=="pvct_a_1"|| label.substr(found+1)=="pvct_a_2")
   {
     main_response.model_id=3;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
