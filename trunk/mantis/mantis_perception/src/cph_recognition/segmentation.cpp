@@ -226,7 +226,7 @@ bool MantisSegmentor::serviceCallback(tabletop_object_detector::TabletopSegmenta
   else
   {
     processCloud(*recent_cloud, response, request.table);
-    //clearOldMarkers(recent_cloud->header.frame_id);
+    clearOldMarkers(recent_cloud->header.frame_id);
   }
 
   //add the timestamp from the original cloud
@@ -376,7 +376,7 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 	  sensor_msgs::PointCloud out_cloud;
 	  sensor_msgs::PointCloud2 ocloud;
 	  pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_ptr (new pcl::PointCloud<pcl::PointXYZ>);
-	  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cut (new pcl::PointCloud<pcl::PointXYZ>);
+	  pcl::PointCloud<pcl::PointXYZ> cloud_cut;// (new pcl::PointCloud<pcl::PointXYZ>);
 	  pcl::PointCloud<pcl::PointXYZ> cloud_noise;
 	  pcl::fromROSMsg (pc2_clusters.at(i), *cluster_ptr);
 
@@ -384,8 +384,8 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 	  pass.setInputCloud (cluster_ptr);
 	  pass.setFilterFieldName ("z");
 	  pass.setFilterLimits (0, 0.085);
-	  pass.filter (*cloud_cut);
-
+	  pass.filter (cloud_cut);
+/*
 	  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> out_remove;
 	  out_remove.setInputCloud(cloud_cut);
 	  out_remove.setNegative(false);
@@ -393,21 +393,30 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 	  out_remove.setStddevMulThresh(1.0);
 	  out_remove.filter(cloud_noise);
 
-	  pcl::toROSMsg (cloud_noise, ocloud);
-	  //pcl::toROSMsg (cloud_cut, ocloud);
+	  pcl::toROSMsg (cloud_noise, ocloud);*/
+	  pcl::toROSMsg (cloud_cut, ocloud);
 	  sensor_msgs::convertPointCloud2ToPointCloud(ocloud, out_cloud);
 	  out_clusters.push_back(out_cloud);
   }
-  sensor_msgs::PointCloud2 big_cluster;
+/*  sensor_msgs::PointCloud2 big_cluster;
   sensor_msgs::PointCloud bcluster;
   bcluster = out_clusters.at(0);
   sensor_msgs::convertPointCloudToPointCloud2(bcluster, big_cluster);
   //big_cluster=pc2_clusters.at(0);
   big_cluster.header = in_cloud.header;
-  first_cluster_pub.publish(big_cluster);
-
+  first_cluster_pub.publish(big_cluster);*/
   ROS_INFO("Cluster converted from PointCloud2 array to PointCloud array");
   seg_response.clusters=out_clusters;
+  for (size_t i=0; i<out_clusters.size(); i++)
+  {
+    visualization_msgs::Marker cloud_marker =  tabletop_object_detector::MarkerGenerator::getCloudMarker(out_clusters[i]);
+    cloud_marker.header = in_cloud.header;
+    cloud_marker.pose.orientation.w = 1;
+    cloud_marker.ns = "tabletop_node";
+    cloud_marker.id = current_marker_id_++;
+    marker_pub_.publish(cloud_marker);
+  }
+
 
 //MAKE THE TABLE ////////////////////////////////////////
   // Step 1 : Filter, remove NaNs and downsample

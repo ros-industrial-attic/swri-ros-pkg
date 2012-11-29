@@ -12,7 +12,7 @@
     <arg name="y_filter_min" default="-0.9"/>
     <arg name="y_filter_max" default="0.7"/>
     <arg name="x_filter_min" default="0.2"/>
-    <arg name="x_filter_max" default="1.2"/>
+    <arg name="x_filter_max" default="1.1"/>
     <arg name="table_z_filter_min" default="-0.5"/>
     <arg name="table_z_filter_max" default="-0.01"/>
 
