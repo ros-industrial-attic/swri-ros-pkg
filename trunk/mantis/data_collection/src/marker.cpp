@@ -37,17 +37,13 @@ bool mesh_cb(mantis_data_collection::marker::Request &req, mantis_data_collectio
 	mesh_marker.action = visualization_msgs::Marker::ADD;
 	mesh_marker.lifetime = ros::Duration();
 	mesh_marker.header.frame_id = "base_link";
-	//note: data collection to this point has been done in a way such that a response rotation of 225
-	//corresponds to a table frame rotation of 0.
-	//good z value for pvc_t=0.0317044
-	//good z value for pvc_elbow z: 0.0662595-0.025 (should be a tiny bit higher)
 	mesh_marker.header.stamp= ros::Time();
 	mesh_marker.scale.x = 1;
 	mesh_marker.scale.y = 1;
 	mesh_marker.scale.z = 1;
 	mesh_marker.pose.position.x = 0.749;
 	mesh_marker.pose.position.y = -0;
-	mesh_marker.pose.position.z = 0.021;
+	mesh_marker.pose.position.z = 0.032;//t-, pl-0.016
 	mesh_marker.pose.orientation.x = 0.0;
 	mesh_marker.pose.orientation.y = 0.0;
 	//need to convert from angle representation to quaternion representation
@@ -57,7 +53,7 @@ bool mesh_cb(mantis_data_collection::marker::Request &req, mantis_data_collectio
 	mesh_marker.color.r = 0.0;
 	mesh_marker.color.g = 1.0;
 	mesh_marker.color.b = 0.0;
-	mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
+	mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
 	vis_pub.publish( mesh_marker );
 
 	ROS_INFO("Finished publishing mesh");
