@@ -7,13 +7,14 @@
 	<!-- fixed parameters -->
 	<arg name="arm_namespace" value="sia20d_arm"/>
 	<arg name="robot_description" value="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_sia20d_arm_workspace.xacro'"/>
+	<arg name="sensor_name" value="$(arg arm_namespace)_kinect"/>
 
 	<!-- camera sensor setup (must be placed outside the group namespace) -->
-	<remap from="/camera/depth_registered/points"
+	<remap from="/$(arg sensor_name)/depth/points"
 		to="/$(arg arm_namespace)/camera/depth_registered/points"/>
 	<include  file="$(find mantis_perception)/launch/mantis_sensor.launch">
 		<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
-		<!--arg name="camera_name" value="$(arg arm_namespace)_camera"/-->
+		<arg name="camera_name" value="$(arg sensor_name)"/>
 	</include>
 
 	<!-- gripper description (needs to be outside the scope of the namespace)-->
@@ -42,8 +43,8 @@
 
 		<!-- if ompl was selected -->
 		<remap unless="$(arg use_chomp)" 
-			from="/ompl_planning/plan_kinematic_path" 
-			to="/path_planning/plan_kinematic_path"/>
+			from="/$(arg arm_namespace)/ompl_planning/plan_kinematic_path" 
+			to="/$(arg arm_namespace)/path_planning/plan_kinematic_path"/>
 		<include  unless="$(arg use_chomp)" 
 			file="$(find mantis_sia20d_arm_navigation)/launch/ompl_planning.launch"/>   
 
@@ -65,31 +66,33 @@
 		<include  if="$(arg use_custom_segmentation)" 
 			file="$(find mantis_perception)/launch/mantis_segmentation.launch">
 
+			<!--arg name="tabletop_segmentation_points_in" 
+				value="/$(arg arm_namespace)/camera/depth_registered/points"/-->
 			<arg name="tabletop_segmentation_points_in" 
-				value="camera/depth_registered/points"/>
+				value="/$(arg sensor_name)/depth_registered/points"/>
 			<arg name="processing_frame" value="workcell_frame"/>
 			<arg name="up_direction" value="1.0"/>
 			<arg name="z_filter_min" value="-0.1"/>
 			<arg name="z_filter_max" value="0.5"/>
 			<arg name="y_filter_min" value="-1.0"/>
 			<arg name="y_filter_max" value="0.8"/>
-			<arg name="x_filter_min" value="0.2"/>
-			<arg name="x_filter_max" value="1.0"/>
+			<arg name="x_filter_min" value="0.4"/>
+			<arg name="x_filter_max" value="1.2"/>
 		</include>
 
 		<include  unless="$(arg use_custom_segmentation)" 
 			file="$(find mantis_perception)/launch/tabletop_segmentation.launch">
 
 			<arg name="tabletop_segmentation_points_in" 
-				value="camera/depth_registered/points"/>
+				value="/$(arg sensor_name)/depth_registered/points"/>
 			<arg name="processing_frame" value="workcell_frame"/>
 			<arg name="up_direction" value="1.0"/>
 			<arg name="z_filter_min" value="-0.1"/>
 			<arg name="z_filter_max" value="0.5"/>
 			<arg name="y_filter_min" value="-1.0"/>
 			<arg name="y_filter_max" value="0.8"/>
-			<arg name="x_filter_min" value="0.2"/>
-			<arg name="x_filter_max" value="1.0"/>
+			<arg name="x_filter_min" value="0.4"/>
+			<arg name="x_filter_max" value="1.2"/>
 		</include>
 
 		<!-- recognition -->

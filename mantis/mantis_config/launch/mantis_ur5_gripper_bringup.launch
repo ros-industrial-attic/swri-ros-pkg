@@ -18,31 +18,42 @@
 		<!-- Get TF -->
 		<node pkg="robot_state_publisher" name="st_pub" type="state_publisher"/>
 
-		<!-- ____________________________ Start robot specific nodes ____________________________  -->
-		<!-- driver -->
-		<node unless="$(arg sim_only)" name="ur5_driver" pkg="ur5_driver" type="driver.py" args="192.168.32.5" required="true" output="screen" />
+		<!-- ____________________________ Real robot nodes and drivers____________________________  -->
+		<group unless="$(arg sim_only)">
+			<!-- driver -->
+			<remap from="/$(arg arm_namespace)/follow_joint_trajectory/status" to="/$(arg arm_namespace)/joint_trajectory_action/status" />
+			<remap from="/$(arg arm_namespace)/follow_joint_trajectory/feedback" to="/$(arg arm_namespace)/joint_trajectory_action/feedback" />
+			<remap from="/$(arg arm_namespace)/follow_joint_trajectory/result" to="/$(arg arm_namespace)/joint_trajectory_action/result" />
+			<remap from="/$(arg arm_namespace)/follow_joint_trajectory/goal" to="/$(arg arm_namespace)/joint_trajectory_action/goal" />
+			<remap from="/$(arg arm_namespace)/follow_joint_trajectory/cancel" to="/$(arg arm_namespace)/joint_trajectory_action/cancel" />
+			<node unless="$(arg sim_only)" name="ur5_driver" pkg="ur5_driver" 
+				type="driver.py" args="192.168.32.5" required="true" output="screen" >
+				<param name="prefix" value="$(arg arm_namespace)_"/>
+				<param name="prevent_programming" value="false"/>
+			</node>
 
-		<!-- TF Buffer Server -->
-		<node unless="$(arg sim_only)" pkg="tf2_ros" type="buffer_server" name="tf2_buffer_server" output="screen">
-			<param name="buffer_size" value="120.0"/>
-		</node>
+			<!-- TF Buffer Server -->
+			<node pkg="tf2_ros" type="buffer_server" name="tf2_buffer_server" output="screen">
+				<param name="buffer_size" value="120.0"/>
+			</node>
 
-		<!-- gripper interface -->
-		<include unless="$(arg sim_only)" file="$(find mantis_io)/launch/mantis_io.launch"/>
+			<!-- gripper interface -->
+			<!-- include unless="$(arg sim_only)" file="$(find mantis_io)/launch/mantis_io.launch"/-->
+			<node pkg="object_manipulation_tools" 
+				type="grasp_action_service" name="gripper_interface" output="screen"/>
+		</group>
 
 		<!-- __________________________________ Simulation only __________________________________  -->
-		<rosparam if="$(arg sim_only)" command="load" file="$(find mantis_ur5_arm_navigation)/config/joint_definitions.yaml"/>
-		<node if="$(arg sim_only)" pkg="object_manipulation_tools" name="simulated_robot_controller"
-			type="simulated_robot_controller" output="screen"/>
+		<group if="$(arg sim_only)">
+			<rosparam command="load" file="$(find mantis_ur5_arm_navigation)/config/joint_definitions.yaml"/>
+			<node pkg="object_manipulation_tools" name="simulated_robot_controller"
+				type="simulated_robot_controller" output="screen"/>
 
-  		<node if="$(arg sim_only)" pkg="object_manipulation_tools" name="joint_trajectory_action" type="joint_trajectory_action" output="screen"/>
+	  		<node pkg="object_manipulation_tools" name="joint_trajectory_action" type="joint_trajectory_action" output="screen"/>
 
-		<!--node if="$(arg sim_only)" pkg="tf2_ros" type="buffer_server" name="tf2_buffer_server" output="screen">
-			<param name="buffer_size" value="120.0"/>
-		</node-->
-
-		<!-- gripper executer action node -->
-		<node if="$(arg sim_only)" pkg="object_manipulation_tools" type="grasp_action_service" name="gripper_interface" output="screen"/>
+			<!-- gripper executer action node -->
+			<node pkg="object_manipulation_tools" type="grasp_action_service" name="gripper_interface" output="screen"/>
+		</group>
 	 
 	</group>
 </launch>
