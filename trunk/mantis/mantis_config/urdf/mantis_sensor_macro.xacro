@@ -12,7 +12,7 @@
 			<color rgba="0.6 0.6 0.6 1"/>
 		</material> 
 		<!-- sensor main components -->
-		<link name="${prefix}kinect">
+		<link name="${prefix}kinect_link">
 			<collision>
 				<material name="${prefix}color_a"/>			
 				<geometry>
@@ -68,7 +68,7 @@
 
 		<!-- sensor joints -->
 		<joint name="${prefix}kinect_frame_joint" type="fixed">
-			<parent link="${prefix}kinect"/>
+			<parent link="${prefix}kinect_link"/>
 			<child link="${prefix}kinect_frame"/>
 			<origin rpy="0 0 0" xyz="0 0 0"/>
 		</joint>
@@ -95,9 +95,9 @@
 	  	<!-- end of sensor joints -->	
 
 		<!-- world joints -->
-		<joint name="${prefix}${parent_link}_to_kinect" type="fixed">
+		<joint name="${prefix}${parent_link}_to_kinect_link" type="fixed">
 			<parent link="${parent_link}"/>
-			<child link="${prefix}kinect"/>
+			<child link="${prefix}kinect_link"/>
 			<origin xyz="${x_val} ${y_val} ${z_val}" rpy="0 ${pitch} ${yaw}"/>
 		</joint>
 		<joint name="${prefix}${parent_link}_to_kinect_keepout" type="fixed">
