@@ -29,12 +29,12 @@ joint_costs:
 
 
 joint_velocity_limits:
-  ur5_arm_shoulder_pan_joint: 0.5
-  ur5_arm_shoulder_lift_joint: 0.5
-  ur5_arm_elbow_joint: 0.5
-  ur5_arm_wrist_1_joint: 0.5
-  ur5_arm_wrist_2_joint: 0.5
-  ur5_arm_wrist_3_joint: 0.5
+  ur5_arm_shoulder_pan_joint: 0.4
+  ur5_arm_shoulder_lift_joint: 0.4
+  ur5_arm_elbow_joint: 0.4
+  ur5_arm_wrist_1_joint: 0.4
+  ur5_arm_wrist_2_joint: 0.4
+  ur5_arm_wrist_3_joint: 0.4
 
 reference_frame: workcell_frame
 
