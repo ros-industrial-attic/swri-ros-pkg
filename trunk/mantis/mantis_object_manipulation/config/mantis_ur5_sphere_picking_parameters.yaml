@@ -25,10 +25,11 @@ segmentation:
   align_to_top_centroid: true
 goal:
   frame_id: ur5_arm_base_link
+#  frame_id: workcell_frame
   position:
     x: 0.451
-    y: -0.493
-    z: 0.2
+    y: -0.4
+    z: 0.0
   orientation:
     axis:
       x: 0
@@ -41,4 +42,5 @@ goal:
     max_spacing: 0.08 # meters
     place_region_radius: 0.2 # meters
 joints:
-  side_position: [-1.51, -1.03, 1.48, -2.03, -1.55, -0.17]
+   side_position: [-1.51, -1.07948096023743, 1.7135035147002855, -2.2049080765129627, -1.57158764211257, -1.6830470243995475]
+#  side_position: [-1.51, -1.04, 1.91, -2.49, -1.58, -0.15]
