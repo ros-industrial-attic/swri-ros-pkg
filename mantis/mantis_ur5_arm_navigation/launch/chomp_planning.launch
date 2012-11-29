@@ -8,10 +8,10 @@
 		<param name="animate_endeffector_segment" value="ur5_arm/palm"/>
 	  	<param name="use_signed_environment_field" value="true"/>
 	  	<param name="use_signed_self_field" value="false"/>
-		<param name="trajectory_duration" value="4.0"/>
+		<param name="trajectory_duration" value="6.0"/>
 		<param name="trajectory_discretization" value="0.05"/>
 		<param name="learning_rate" value="100.0" />
-		<param name="max_iterations" value="500"/>
+		<param name="max_iterations" value="200"/>
 		<param name="max_iterations_after_collision_free" value="5" />
 		<param name="smoothness_cost_weight" value="0.00001"/>
 		<param name="obstacle_cost_weight" value="1.0" />
