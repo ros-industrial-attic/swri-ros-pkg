@@ -9,7 +9,7 @@ collision_links:
   sia20d_arm_link_r
   sia20d_arm_link_b
   sia20d_arm_link_t
-  sia20d_arm_palm
+  sia20d_arm_gripper_body
   sia20d_arm_coupler
   table_base1
   back_wall1
@@ -107,7 +107,7 @@ chomp_collision_operations:
     object2: sia20d_arm_coupler
     operation: disable  # Adjacent in collision
   - object1: sia20d_arm_coupler
-    object2: sia20d_arm_palm
+    object2: sia20d_arm_gripper_body
     operation: disable  # Adjacent in collision
   - object1: workcell_frame
     object2: back_wall1
@@ -197,7 +197,7 @@ chomp_collision_operations:
     object2: sia20d_arm_link_u
     operation: disable  # Occasionally in collision
   - object1: sia20d_arm_kinect
-    object2: sia20d_arm_palm
+    object2: sia20d_arm_gripper_body
     operation: disable  # Occasionally in collision
   - object1: sia20d_arm_kinect_frame
     object2: sia20d_arm_link_b
@@ -209,10 +209,10 @@ chomp_collision_operations:
     object2: sia20d_arm_link_t
     operation: disable  # Occasionally in collision
   - object1: sia20d_arm_kinect_frame
-    object2: sia20d_arm_palm
+    object2: sia20d_arm_gripper_body
     operation: disable  # Occasionally in collision
   - object1: sia20d_arm_kinect_ir_link
-    object2: sia20d_arm_palm
+    object2: sia20d_arm_gripper_body
     operation: disable  # Occasionally in collision
   - object1: back_wall1
     object2: front_wall1
@@ -473,7 +473,7 @@ chomp_collision_operations:
     object2: sia20d_arm_link_u
     operation: disable  # Never in collision
   - object1: sia20d_arm_link_b
-    object2: sia20d_arm_palm
+    object2: sia20d_arm_gripper_body
     operation: disable  # Never in collision
   - object1: sia20d_arm_link_e
     object2: sia20d_arm_link_r
@@ -485,7 +485,7 @@ chomp_collision_operations:
     object2: sia20d_arm_link_t
     operation: disable  # Never in collision
   - object1: sia20d_arm_link_e
-    object2: sia20d_arm_palm
+    object2: sia20d_arm_gripper_body
     operation: disable  # Never in collision
   - object1: sia20d_arm_link_e
     object2: table_base1
@@ -509,7 +509,7 @@ chomp_collision_operations:
     object2: sia20d_arm_link_t
     operation: disable  # Never in collision
   - object1: sia20d_arm_link_r
-    object2: sia20d_arm_palm
+    object2: sia20d_arm_gripper_body
     operation: disable  # Never in collision
   - object1: sia20d_arm_link_s
     object2: sia20d_arm_link_u
@@ -521,8 +521,8 @@ chomp_collision_operations:
     object2: sia20d_arm_link_u
     operation: disable  # Never in collision
   - object1: sia20d_arm_link_t
-    object2: sia20d_arm_palm
+    object2: sia20d_arm_gripper_body
     operation: disable  # Never in collision
   - object1: sia20d_arm_link_u
-    object2: sia20d_arm_palm
+    object2: sia20d_arm_gripper_body
     operation: disable  # Never in collision
