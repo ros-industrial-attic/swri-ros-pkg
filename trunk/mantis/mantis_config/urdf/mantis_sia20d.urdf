@@ -4,6 +4,7 @@
 <!-- |    EDITING THIS FILE BY HAND IS NOT RECOMMENDED                                 | -->
 <!-- =================================================================================== -->
 <robot name="mantis_sia20d" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!--include filename="$(find mantis_config)/urdf/vacuum_gripper.xacro"/-->
   <material name="yellow_transparent">
     <color rgba="0 1 1 0.4"/>
   </material>
@@ -18,7 +19,6 @@
   </material>
   <link name="workcell_frame"/>
   <!-- property list -->
-  <!--xacro:property name="arm1_prefix" value=""/-->
   <!-- instantiating workcell definitions -->
   <link name="table_base1">
     <visual>
@@ -119,7 +119,7 @@
   </joint>
   <!-- end of workcell definitions -->
   <!-- instantiating sensor definitions -->
-  <!--xacro:sensor_definitions prefix="${arm1_prefix}" parent_link="workcell_frame" 
+  <!--xacro:sensor_definitions prefix="${arm_prefix}" parent_link="workcell_frame" 
 		x_val="1.20" y_val="0" z_val="0.4" pitch="0.5235" yaw="3.147"/-->
   <material name="sia20d_arm_color_b">
     <color rgba="0 0.8 1 0.4"/>
@@ -130,7 +130,7 @@
   <material name="sia20d_arm_silver">
     <color rgba="0.6 0.6 0.6 1"/>
   </material>
-  <link name="sia20d_arm_kinect">
+  <link name="sia20d_arm_kinect_link">
     <collision>
       <material name="sia20d_arm_color_a"/>
       <geometry>
@@ -180,7 +180,7 @@
   <link name="sia20d_arm_kinect_ir_optical_frame"/>
   <link name="sia20d_arm_kinect_rgb_optical_frame"/>
   <joint name="sia20d_arm_kinect_frame_joint" type="fixed">
-    <parent link="sia20d_arm_kinect"/>
+    <parent link="sia20d_arm_kinect_link"/>
     <child link="sia20d_arm_kinect_frame"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
@@ -204,9 +204,9 @@
     <child link="sia20d_arm_kinect_rgb_optical_frame"/>
     <origin rpy="-1.57 0 -1.57" xyz="0 0 0"/>
   </joint>
-  <joint name="sia20d_arm_sia20d_arm_base_link_to_kinect" type="fixed">
+  <joint name="sia20d_arm_sia20d_arm_base_link_to_kinect_link" type="fixed">
     <parent link="sia20d_arm_base_link"/>
-    <child link="sia20d_arm_kinect"/>
+    <child link="sia20d_arm_kinect_link"/>
     <origin rpy="0 0.5235 2.356" xyz="1.08 -0.72 0.82"/>
   </joint>
   <joint name="sia20d_arm_sia20d_arm_base_link_to_kinect_keepout" type="fixed">
@@ -216,9 +216,14 @@
   </joint>
   <!-- end of sensor definitions -->
   <!-- instantiating arm and gripper -->
-  <link name="sia20d_arm_palm">
+  <link name="sia20d_arm_gripper_frame"/>
+  <link name="sia20d_arm_gripper_body">
     <visual>
-      <origin rpy="0 0 0" xyz="0 0.036 -0.1"/>
+      <!--origin xyz="0 0.036 -0.0473" rpy="0 0 0"/-->
+      <!--geometry>
+					<box size="${gripper_length} ${gripper_width} ${gripper_height}"/>
+				</geometry-->
+      <origin rpy="0 0 0" xyz="0 0 -0.048"/>
       <geometry>
         <mesh filename="package://mantis_config/config/meshes/vacuum_gripper.STL"/>
       </geometry>
@@ -227,15 +232,25 @@
       </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="0 0.036 -0.1"/>
       <geometry>
-        <mesh filename="package://mantis_config/config/meshes/vacuum_gripper.stl"/>
+        <box size="0.044 0.088 0.0946"/>
       </geometry>
       <material name="another_blue2">
         <color rgba="0.38 0.54 0.83 1"/>
       </material>
     </collision>
   </link>
+  <link name="sia20d_arm_tcp_frame"/>
+  <joint name="sia20d_arm_gripper_to_palm" type="fixed">
+    <parent link="sia20d_arm_gripper_frame"/>
+    <child link="sia20d_arm_gripper_body"/>
+    <origin rpy="0 0 0" xyz="0 0 0.0473"/>
+  </joint>
+  <joint name="sia20d_arm_gripper_to_tcp" type="fixed">
+    <parent link="sia20d_arm_gripper_frame"/>
+    <child link="sia20d_arm_tcp_frame"/>
+    <origin rpy="0 0 0" xyz=" 0 0.022 0.0946"/>
+  </joint>
   <link name="sia20d_arm_base_link">
     <visual>
       <geometry>
@@ -443,15 +458,19 @@
   </link>
   <!-- end of arm-gripper coupling link definitions -->
   <!-- arm-gripper coupling joint definitions -->
-  <joint name="tool-coupler" type="fixed">
+  <!--joint name="tool-coupler" type="fixed"-->
+  <joint name="sia20d_arm_tool_to_coupler" type="fixed">
     <parent link="sia20d_arm_link_t"/>
     <child link="sia20d_arm_coupler"/>
     <origin rpy="1.570 0 -0.785" xyz="0 0 0"/>
   </joint>
-  <joint name="coupler-hand" type="fixed">
+  <!--joint name="coupler-hand" type="fixed"-->
+  <joint name="sia20d_arm_coupler_to_hand" type="fixed">
     <parent link="sia20d_arm_coupler"/>
-    <child link="sia20d_arm_palm"/>
-    <origin rpy="-1.570 0 0" xyz="0 0.182 0.036"/>
+    <child link="sia20d_arm_gripper_frame"/>
+    <!--child link="${arm_prefix}palm"/-->
+    <origin rpy="-1.570 0 0" xyz="0 0.087 0"/>
+    <!--origin xyz="0 0.182 0.036" rpy="-1.570 0 0"/-->
   </joint>
   <!-- end of arm-gripper coupling joint definitions -->
 </robot>
