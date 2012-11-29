@@ -44,7 +44,7 @@
 	<joint name="workcell_to_stand" type="fixed">
 		<parent link="workcell_frame"/>
 		<child link="ur5_stand"/>
-		<origin xyz="-0.238 0 0.10"/>
+		<origin xyz="-0.238 0 ${robot_stand_height * 0.5}"/>
 	</joint>
 	<!-- end of arm-workcell link definitions -->
 
@@ -52,7 +52,7 @@
 	<joint name="${arm2_name}_to_stand" type="fixed">
 		<parent link="ur5_stand"/>
 		<child link="${arm2_prefix}base_link"/>
-		<origin xyz="0 0 0.10" rpy="0 0 -3.14"/>
+		<origin xyz="0 0 ${robot_stand_height * 0.5}" rpy="0 0 -3.14"/>
 	</joint>
 		
 	<!-- end of arm workcell joint definitions-->
