@@ -7,16 +7,10 @@
   <!-- URDF Universal Robot Description File -->
 <!--  <param name="robot_description"  textfile="$(find mantis_config)/urdf/mantis_asus.urdf"/> -->
   <!-- Start kinect -->
-  <include file="$(find mantis_perception)/launch/mantis_sensor.launch"/>
+  <include file="$(find mantis_perception)/launch/mantis_sensor_asus.launch"/>
   
   <!-- Start segmentation node -->	
   <include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
-    <arg name="z_filter_min" default="-0.1"/>
-    <arg name="z_filter_max" default="0.5"/>
-    <arg name="y_filter_min" default="-0.7"/>
-    <arg name="y_filter_max" default="0.65"/>
-    <arg name="x_filter_min" default="0.2"/>
-    <arg name="x_filter_max" default="1.2"/>
   </include> 
  
   <!-- Run feature node -->
