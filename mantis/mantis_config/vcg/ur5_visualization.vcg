@@ -1,7 +1,7 @@
 Background\ ColorB=1
 Background\ ColorG=0.364706
 Background\ ColorR=0
-Camera\ Config=0.554799 1.67554 2.50981 -0.655983 -0.371806 -0.119763
+Camera\ Config=0.524799 1.11554 1.15544 -1.05142 -0.376187 0.0175971
 Camera\ Type=rviz::OrbitViewController
 Fixed\ Frame=/workcell_frame
 Grid.Alpha=0.5
@@ -26,6 +26,10 @@ Marker.tabletop_node=1
 Marker2.Enabled=0
 Marker2.Marker\ Topic=/ur5_arm/planning_scene_markers
 Marker2.Queue\ Size=100
+Marker3.=1
+Marker3.Enabled=1
+Marker3.Marker\ Topic=/ur5_arm/matching_mesh_marker
+Marker3.Queue\ Size=100
 MarkerArray.Enabled=1
 MarkerArray.Marker\ Array\ Topic=/ur5_arm/planning_scene_markers_array
 MarkerArray.Queue\ Size=100
@@ -62,7 +66,7 @@ PointCloud2.Selectable=1
 PointCloud2.Style=0
 PointCloud2.Topic=/ur5_arm_kinect/depth_registered/points
 Property\ Grid\ Splitter=743,78
-Property\ Grid\ State=expanded=.Global Options,Grid.Enabled,PointCloud2.Enabled,TF.Enabled,Marker.Enabled,Marker2.Enabled,MarkerArray.Enabled,TF2.Enabled;splitterratio=0.5
+Property\ Grid\ State=expanded=.Global Options,Grid.Enabled,PointCloud2.Enabled,TF.Enabled,Marker.Enabled,Marker2.Enabled,MarkerArray.Enabled,TF2.Enabled,Marker3.Enabled,Marker3.Namespaces;splitterratio=0.5
 QMainWindow=000000ff00000000fd00000003000000000000023800000387fc0200000001fb000000100044006900730070006c006100790073010000001d00000387000000ee00ffffff000000010000014a00000387fc0200000003fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000001d000001290000006700fffffffb0000000a00560069006500770073000000001d000001c1000000bb00fffffffb0000001200530065006c0065006300740069006f006e000000001d000003870000006700ffffff00000003000005000000003efc0100000001fb0000000800540069006d0065010000000000000500000002bf00ffffff000002c20000038700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
 Robot\:\ RobotModel\ Link\ back_wall2Alpha=1
 Robot\:\ RobotModel\ Link\ back_wall2Enabled=1
@@ -198,12 +202,17 @@ Name=MarkerArray
 [Display7]
 ClassName=rviz::TFDisplay
 Name=TF2
+[Display8]
+ClassName=rviz::MarkerDisplay
+Name=Marker3
 [TF2.Frames.]
 back_wall2.Enabled=0
+base_link.Enabled=1
 cover_part1.Enabled=0
 cover_part2.Enabled=0
 front_wall2.Enabled=0
 left_wall2.Enabled=0
+object_training_frame.Enabled=1
 right_wall2.Enabled=0
 table_base2.Enabled=0
 ur5_arm_base_link.Enabled=0
