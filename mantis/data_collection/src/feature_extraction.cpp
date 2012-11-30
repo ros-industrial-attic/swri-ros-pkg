@@ -50,7 +50,7 @@ bool cloud_cb(mantis_data_collection::process_cloud::Request &req,
   //std::cout << "found " << clouds.size() << " clusters.\n"; 
 
     mantis_perception::mantis_segmentation seg_srv;
-    seg_client.call(seg_srv);
+
     ROS_INFO("mantis segmentation called");
 
     if (!seg_client.call(seg_srv))

@@ -10,7 +10,7 @@
   <include file="$(find mantis_perception)/launch/mantis_sensor_asus.launch"/>
   
   <!-- Start segmentation node -->	
-  <include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
+  <include file="$(find mantis_perception)/launch/mantis_segmentation_asus.launch">
   </include> 
  
   <!-- Run feature node -->
