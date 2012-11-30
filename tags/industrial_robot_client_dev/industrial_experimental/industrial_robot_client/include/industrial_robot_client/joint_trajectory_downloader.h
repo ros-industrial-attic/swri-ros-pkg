@@ -32,82 +32,26 @@
 #ifndef JOINT_TRAJECTORY_DOWNLOADER_H
 #define JOINT_TRAJECTORY_DOWNLOADER_H
 
-#include "simple_message/smpl_msg_connection.h"
-#include "ros/ros.h"
-#include <trajectory_msgs/JointTrajectory.h>
+#include "industrial_robot_client/joint_trajectory_interface.h"
 
 namespace industrial_robot_client
 {
 namespace joint_trajectory_downloader
 {
 
+using industrial_robot_client::joint_trajectory_interface::JointTrajectoryInterface;
+using industrial::joint_traj_pt_message::JointTrajPtMessage;
+
 /**
  * \brief Message handler that downloads joint trajectories to
  * a robot controller that supports the trajectory downloading interface
- *
- * THIS CLASS IS NOT THREAD-SAFE
- *
  */
-class JointTrajectoryDownloader
+class JointTrajectoryDownloader : public JointTrajectoryInterface
 {
 
 public:
 
-  JointTrajectoryDownloader();
-
-  /**
-   * \brief Constructor
-   *
-   * \param n ROS node handle (used for subscribing)
-   * \param robot_connection message connection (used for publishing (to the robot controller))
-   * \param joint_names ordered list of joint names (controller order)
-   */
-	JointTrajectoryDownloader(ros::NodeHandle &n,
-	                          industrial::smpl_msg_connection::SmplMsgConnection* robot_connecton,
-	                          std::vector<std::string> &joint_names);
-
-  /**
-   * \brief Destructor
-   *
-   */
-  ~JointTrajectoryDownloader();
-
-  /**
-   * \brief Joint trajectory callback.  When receiving a joint trajectory, this
-   * method formats it for sending to the robot controller.
-   *
-   * \param msg joint trajectory
-   */
-  void jointTrajectoryCB(const trajectory_msgs::JointTrajectoryConstPtr &msg);
-
-private:
-  /**
-   * \brief Robot connection
-   */
-  industrial::smpl_msg_connection::SmplMsgConnection* robot_;
-
-  /**
-   * \brief Joint trajectory subscriber
-   */
-  ros::Subscriber sub_joint_trajectory_; //subscribe to "command"
-
-  /**
-   * \brief ROS Node
-   *
-   */
-  ros::NodeHandle node_;
-
-  /**
-   * \brief Order list of joint names (controller order).  This list is used to
-   * check and reorder of trajectories that are sent to the controller.
-   *
-   */
-  std::vector<std::string> joint_names_;
-
-  /**
-   * \brief Internal method for sending trajectory stop command to the controller
-   */
-  void trajectoryStop();
+  bool send_to_robot(const std::vector<JointTrajPtMessage>& messages);
 
 };
 

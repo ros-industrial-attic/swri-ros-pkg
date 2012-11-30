@@ -34,7 +34,7 @@
 
 using industrial::smpl_msg_connection::SmplMsgConnection;
 using industrial_utils::param::getJointNames;
-using namespace industrial::simple_socket;
+namespace StandardSocketPorts = industrial::simple_socket::StandardSocketPorts;
 
 namespace industrial_robot_client
 {
@@ -69,6 +69,15 @@ bool RobotStateInterface::init()
 
 bool RobotStateInterface::init(SmplMsgConnection* connection)
 {
+  std::vector<std::string> joint_names;
+  if (!getJointNames("controller_joint_names", 6, joint_names))
+    ROS_WARN("Unable to read 'controller_joint_names' param.  Using standard 6-DOF joint names.");
+
+  return init(connection, joint_names);
+}
+
+bool RobotStateInterface::init(SmplMsgConnection* connection, std::vector<std::string>& joint_names)
+{
   this->connection_ = connection;
   connection_->makeConnect();
 
@@ -77,10 +86,6 @@ bool RobotStateInterface::init(SmplMsgConnection* connection)
     return false;
 
   // initialize default handlers
-  std::vector<std::string> joint_names;
-  if (!getJointNames("controller_joint_names", 6, joint_names))
-    ROS_WARN("Unable to read 'controller_joint_names' param.  Using standard 6-DOF joint names.");
-
   if (!default_handler_.init(connection_, joint_names))
     return false;
   this->add_handler(&default_handler_);

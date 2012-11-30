@@ -33,6 +33,8 @@
 #ifndef ROBOT_STATE_INTERFACE_H
 #define ROBOT_STATE_INTERFACE_H
 
+#include <vector>
+#include <string>
 #include "simple_message/smpl_msg_connection.h"
 #include "simple_message/message_manager.h"
 #include "simple_message/message_handler.h"
@@ -78,11 +80,24 @@ public:
   /**
    * \brief Initialize robot connection using specified method.
    *
-   * \param new robot-connection instance (ALREADY INITIALIZED).
+   * \param connection new robot-connection instance (ALREADY INITIALIZED).
    *
    * \return true on success, false otherwise
    */
   bool init(SmplMsgConnection* connection);
+
+  /**
+   * \brief Initialize robot connection using specified method and joint-names.
+   *
+   * \param connection new robot-connection instance (ALREADY INITIALIZED).
+   * \param joint_names list of joint-names for ROS topic
+   *   - Count and order should match data sent to robot connection.
+   *   - Use blank-name to skip (not publish) a joint-position
+   *
+   * \return true on success, false otherwise
+   */
+  bool init(SmplMsgConnection* connection, std::vector<std::string>& joint_names);
+
   /**
    * \brief Begin processing messages and publishing topics.
    */
