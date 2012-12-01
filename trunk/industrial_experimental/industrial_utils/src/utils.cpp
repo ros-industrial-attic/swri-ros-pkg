@@ -56,7 +56,7 @@ bool isSimilar(std::vector<std::string> lhs, std::vector<std::string> rhs)
 }
 
 
-bool isSame(const std::vector<std::string> lhs, const std::vector<std::string> rhs)
+bool isSame(const std::vector<std::string> & lhs, const std::vector<std::string> & rhs)
 {
   bool rtn = false;
 

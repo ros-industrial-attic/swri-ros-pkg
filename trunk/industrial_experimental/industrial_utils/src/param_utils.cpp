@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2012, Southwest Research Institute
@@ -29,40 +29,74 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UTILS_H_
-#define UTILS_H_
+#include <sstream>
 
-#include <vector>
-#include <string>
+#include "industrial_utils/param_utils.h"
+#include "ros/ros.h"
 
 namespace industrial_utils
 {
+namespace param
+{
+bool getListParam(const std::string param_name, std::vector<std::string> & list_param)
+{
+  bool rtn = false;
+  XmlRpc::XmlRpcValue rpc_list;
 
-/**
- * \brief Checks to see if sets are similar(same members, any order)
- * NOTE: Vectors are passed by copy because they are modified by the
- * function(i.e. ordered).
- * This function should not be used for large vectors or in loops (it
- * is slow!)
- *
- * \param lhs first vector
- * \param rhs second vector
- *
- * \return true set are similar (same members, any order)
- */
-bool isSimilar(std::vector<std::string> lhs, std::vector<std::string> rhs);
+  list_param.clear(); //clear out return value
 
-/**
- * \brief Checks to see if sets are the same(same members, same order)
- * Wraps std::equal method.
- *
- * \param lhs first vector
- * \param rhs second vector
- *
- * \return true set are similar (same members, same order)
- */
-bool isSame(const std::vector<std::string> & lhs, const std::vector<std::string> & rhs);
+  rtn = ros::param::get(param_name, rpc_list);
 
+  if (rtn)
+  {
+    rtn = (rpc_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+
+    if (rtn)
+    {
+
+      for (int i = 0; i < rpc_list.size(); ++i)
+      {
+        rtn = (rpc_list[i].getType() == XmlRpc::XmlRpcValue::TypeString);
+        if (rtn)
+        {
+          ROS_INFO_STREAM("Adding " << rpc_list[i] << " to list parameter");
+          list_param.push_back(static_cast<std::string>(rpc_list[i]));
+        }
+        else
+        {
+          ROS_ERROR_STREAM("List item for: " << param_name << " not of string type");
+        }
+      }
+    }
+    else
+    {
+      ROS_ERROR_STREAM("Parameter: " << param_name << " not of list type");
+    }
+  }
+  else
+  {
+    ROS_ERROR_STREAM("Failed to get parameter: " << param_name);
+  }
+
+  return rtn;
+
+}
+
+bool getJointNames(const std::string param_name, int num_joints, std::vector<std::string> & joint_names)
+{
+  if (ros::param::has(param_name) && getListParam(param_name, joint_names))
+    return true;
+
+  joint_names.clear();
+  for (int i=0; i<num_joints; ++i)
+  {
+    std::stringstream tmp;
+    tmp << "joint_" << i+1;
+    joint_names.push_back(tmp.str());
+  }
+
+    return false;
+}
+
+} //industrial_utils::param
 } //industrial_utils
-
-#endif /* UTILS_H_ */
