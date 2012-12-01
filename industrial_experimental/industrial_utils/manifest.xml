@@ -9,6 +9,12 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/industrial_utils</url>
 
+  <depend package="roscpp"/>
+  
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lindustrial_utils"/>
+  </export>
+  
 </package>
 
 
