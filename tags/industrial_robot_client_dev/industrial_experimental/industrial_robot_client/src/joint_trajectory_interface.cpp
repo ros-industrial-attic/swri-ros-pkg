@@ -78,6 +78,7 @@ bool JointTrajectoryInterface::init(SmplMsgConnection* connection, const std::ve
 {
   this->connection_ = connection;
   this->all_joint_names_ = joint_names;
+  connection_->makeConnect();
 
   this->sub_joint_trajectory_ = this->node_.subscribe("command", 0, &JointTrajectoryInterface::jointTrajectoryCB, this);
 
