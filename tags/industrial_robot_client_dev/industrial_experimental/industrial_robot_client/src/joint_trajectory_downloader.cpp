@@ -63,12 +63,12 @@ bool JointTrajectoryDownloader::send_to_robot(const std::vector<JointTrajPtMessa
 
   for (int i = 0; i < (int)points.size(); ++i)
   {
-    ROS_INFO("Sending joints trajectory point[%d]", i);
+    ROS_DEBUG("Sending joints trajectory point[%d]", i);
 
     points[i].toTopic(msg);
     bool ptRslt = this->connection_->sendMsg(msg);
     if (ptRslt)
-      ROS_INFO("Point[%d] sent to controller", i);
+      ROS_DEBUG("Point[%d] sent to controller", i);
     else
       ROS_WARN("Failed sent joint point, skipping point");
 

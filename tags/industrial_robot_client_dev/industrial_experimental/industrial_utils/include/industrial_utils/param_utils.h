@@ -33,6 +33,7 @@
 #ifndef PARAM_UTILS_H_
 #define PARAM_UTILS_H_
 
+#include <map>
 #include <vector>
 #include <string>
 
@@ -62,6 +63,16 @@ bool getListParam(const std::string param_name, std::vector<std::string> & list_
  * \return true if parameter found, false if defaults used
  */
 bool getJointNames(const std::string param_name, int num_joints, std::vector<std::string> & joint_names);
+
+/**
+ * \brief Tries to read joint velocity limits from the specified URDF parameter
+ *
+ * \param[in] urdf_param_name name of URDF parameter
+ * \param[out] velocity_limits map of velocity limits for each URDF joint
+ *
+ * \return true if parameter found, false if not found
+ */
+bool getJointVelocityLimits(const std::string urdf_param_name, std::map<std::string, double> &velocity_limits);
 
 } //industrial_utils::param
 } //industrial_utils

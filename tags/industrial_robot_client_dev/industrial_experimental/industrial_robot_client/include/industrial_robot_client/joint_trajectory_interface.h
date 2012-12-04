@@ -32,6 +32,7 @@
 #ifndef JOINT_TRAJECTORY_INTERFACE_H
 #define JOINT_TRAJECTORY_INTERFACE_H
 
+#include <map>
 #include <vector>
 #include <string>
 
@@ -68,7 +69,7 @@ public:
  /**
   * \brief Default constructor.
   */
-    JointTrajectoryInterface() : default_joint_val_(0.0) {};
+    JointTrajectoryInterface() : default_joint_pos_(0.0), default_vel_ratio_(0.1), default_duration_(10.0) {};
 
     /**
      * \brief Initialize robot connection using default method.
@@ -94,10 +95,12 @@ public:
    *   - Count and order should match data sent to robot connection.
    *   - Use blank-name to insert a placeholder joint position (typ. 0.0).
    *   - Joints in the incoming JointTrajectory stream that are NOT listed here will be ignored.
-   *
+   * \param velocity_limits map of maximum velocities for each joint
+   *   - leave empty to lookup from URDF
    * \return true on success, false otherwise (an invalid message type)
    */
-  virtual bool init(SmplMsgConnection* connection, const std::vector<std::string> &joint_names);
+  virtual bool init(SmplMsgConnection* connection, const std::vector<std::string> &joint_names,
+                    const std::map<std::string, double> &velocity_limits = std::map<std::string, double>());
 
   virtual ~JointTrajectoryInterface();
 
@@ -136,14 +139,14 @@ protected:
    * \brief Transform joint positions before publishing.
    * Can be overridden to implement, e.g. robot-specific joint coupling.
    *
-   * \param[in] pos_in joint positions, in same order as expected for robot-connection.
-   * \param[out] pos_out transformed joint positions (in same order/count as input positions)
+   * \param[in] pt_in trajectory-point, in same order as expected for robot-connection.
+   * \param[out] pt_out transformed trajectory-point (in same order/count as input positions)
    *
    * \return true on success, false otherwise
    */
-  virtual bool transform(const std::vector<double>& pos_in, std::vector<double>* pos_out)
+  virtual bool transform(const trajectory_msgs::JointTrajectoryPoint& pt_in, trajectory_msgs::JointTrajectoryPoint* pt_out)
   {
-    *pos_out = pos_in;  // by default, no transform is applied
+    *pt_out = pt_in;  // by default, no transform is applied
     return true;
   }
 
@@ -151,21 +154,49 @@ protected:
    * \brief Select specific joints for sending to the robot
    *
    * \param[in] ros_joint_names joint names from ROS command
-   * \param[in] ros_joint_pos joint positions from ROS command
+   * \param[in] ros_pt target pos/vel from ROS command
    * \param[in] rbt_joint_names joint names, in order/count expected by robot connection
-   * \param[out] rbt_joint_pos joint positions, matching rbt_joint_names
+   * \param[out] rbt_pt target pos/vel, matching rbt_joint_names
    *
    * \return true on success, false otherwise
    */
-  virtual bool select(const std::vector<std::string>& ros_joint_names, const std::vector<double>& ros_joint_pos,
-                      const std::vector<std::string>& rbt_joint_names, std::vector<double>* rbt_joint_pos);
+  virtual bool select(const std::vector<std::string>& ros_joint_names, const trajectory_msgs::JointTrajectoryPoint& ros_pt,
+                      const std::vector<std::string>& rbt_joint_names, trajectory_msgs::JointTrajectoryPoint* rbt_pt);
 
   /**
    * \brief Reduce the ROS velocity commands (per-joint velocities) to a single scalar for communication to the robot.
    *   For flexibility, the robot command message contains both "velocity" and "duration" fields.  The specific robot
    *   implementation can utilize either or both of these fields, as appropriate.
+   *
+   * \param[in] pt trajectory point data, in order/count expected by robot connection
+   * \param[out] rbt_velocity computed velocity scalar for robot message (if needed by robot)
+   * \param[out] rbt_duration computed move duration for robot message (if needed by robot)
+   *
+   * \return true on success, false otherwise
    */
-  virtual bool calc_velocity(const std::vector<double>& ros_velocities, double* rbt_velocity, double* rbt_duration);
+  virtual bool calc_speed(const trajectory_msgs::JointTrajectoryPoint& pt, double* rbt_velocity, double* rbt_duration);
+
+  /**
+   * \brief Reduce the ROS velocity commands (per-joint velocities) to a single scalar for communication to the robot.
+   *   If unneeded by the robot server, set to 0 (or any value).
+   *
+   * \param[in] pt trajectory point data, in order/count expected by robot connection
+   * \param[out] rbt_velocity computed velocity scalar for robot message (if needed by robot)
+   *
+   * \return true on success, false otherwise
+   */
+  virtual bool calc_velocity(const trajectory_msgs::JointTrajectoryPoint& pt, double* rbt_velocity);
+
+  /**
+   * \brief Compute the expected move duration for communication to the robot.
+   *   If unneeded by the robot server, set to 0 (or any value).
+   *
+   * \param[in] pt trajectory point data, in order/count expected by robot connection
+   * \param[out] rbt_duration computed move duration for robot message (if needed by robot)
+   *
+   * \return true on success, false otherwise
+   */
+  virtual bool calc_duration(const trajectory_msgs::JointTrajectoryPoint& pt, double* rbt_duration);
 
   /**
    * \brief Send trajectory to robot, using this node's robot-connection.
@@ -183,7 +214,10 @@ protected:
   SmplMsgConnection* connection_;
   ros::Subscriber sub_joint_trajectory_; // handle for joint-trajectory topic subscription
   std::vector<std::string> all_joint_names_;
-  double default_joint_val_;  // default value to use for "blank-named" joint commands
+  double default_joint_pos_;  // default position to use for "dummy joints", if none specified
+  double default_vel_ratio_;  // default velocity ratio to use for joint commands, if no velocity or max_vel specified
+  double default_duration_;   // default duration to use for joint commands, if no
+  std::map<std::string, double> joint_vel_limits_;  // cache of max joint velocities from URDF
 
 private:
   static JointTrajPtMessage create_message(int seq, std::vector<double> joint_pos, double velocity, double duration);
