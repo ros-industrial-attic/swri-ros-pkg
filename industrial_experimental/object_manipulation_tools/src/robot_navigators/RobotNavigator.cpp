@@ -17,6 +17,9 @@ std::string RobotNavigator::MARKER_ARM_LINK = "arm_links";
 std::string RobotNavigator::MARKER_ATTACHED_OBJECT = "attached_object";
 std::string RobotNavigator::VISUALIZATION_TOPIC = "visualization_markers";
 
+// global variables
+const double GRAP_ACTION_TIMEOUT = 4.0f;
+
 void RobotNavigator::fetchParameters(std::string nameSpace)
 {
 	ros::NodeHandle nh;
@@ -1098,6 +1101,7 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
                           const object_manipulator::GraspExecutionInfo& gei) {
 
   std::vector<std::string> segment_names;
+  std::size_t approachMoveIndex = 0;
 
   //first open the gripper
   std::vector<TrajectoryExecutionRequest> ter_reqs;
@@ -1167,6 +1171,7 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   arm_ter.callback_function_ = boost::bind(&RobotNavigator::attachCollisionObjectCallback, this, _1);
   ter_reqs.push_back(arm_ter);
   segment_names.push_back("approach");
+  approachMoveIndex = ter_reqs.size() - 1;
 
   //now close the gripper
   gripper_ter.trajectory_ = getGripperTrajectory(group_name, false);
@@ -1196,6 +1201,7 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
    * method can only handle a single trajectory at a time.
    */
   start_execution = ros::WallTime::now();
+  bool graspSucceded = true;
   for(unsigned int i = 0;i < ter_reqs.size(); i++)
   {
 	  std::vector<TrajectoryExecutionRequest> tempRequest;
@@ -1207,12 +1213,42 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
 		  boost::unique_lock<boost::mutex> lock(execution_mutex_);
 		  execution_completed_.wait(lock);
 	  }
+
 	  ROS_INFO_STREAM(NODE_NAME << ": gripper "<<segment_names[i] <<" trajectory completed");
+
+	  if(i == approachMoveIndex)
+	  {
+		  // calling grasp action in order to check state of vacuum sensor
+		  graspGoal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP;
+
+		  ROS_INFO_STREAM(NODE_NAME << ": Requesting grasp action ");
+		  grasp_exec_action_client_->sendGoal(graspGoal);
+		  if(!grasp_exec_action_client_->waitForResult(ros::Duration(GRAP_ACTION_TIMEOUT)))
+		  {
+			  ROS_ERROR_STREAM(NODE_NAME << ": Grasp request timeout, aborting pick sequence");
+			  graspSucceded = false;
+		  }
+		  else
+		  {
+			  if(grasp_exec_action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+			  {
+				  ROS_INFO_STREAM(NODE_NAME << ": Grasp request succeeded with state: "
+						  <<grasp_exec_action_client_->getState().toString());
+			  }
+			  else
+			  {
+				  ROS_ERROR_STREAM(NODE_NAME << ": Grasp request failed with state: "
+						  <<grasp_exec_action_client_->getState().toString());
+				  graspSucceded =  false;
+			  }
+		  }
+	  }
+
   }
 
   execution_duration_ += (ros::WallTime::now()-start_execution);
 
-  return trajectories_succeeded_;
+  return trajectories_succeeded_ && graspSucceded;
 }
 
 bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
@@ -1508,11 +1544,16 @@ void RobotNavigator::run()
 	srand(time(NULL));
 
 	setup();// full setup
-	moveArmToSide();
 
 	while(ros::ok())
 	{
 	    startCycleTimer();
+
+		if(!moveArmToSide())
+		{
+			ROS_WARN_STREAM(NODE_NAME << ": Side moved failed, exiting");
+			break;
+		}
 
 		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 		if(!performSegmentation())
@@ -1552,12 +1593,6 @@ void RobotNavigator::run()
 		else
 		{
 			ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
-		}
-
-		if(!moveArmToSide())
-		{
-			ROS_WARN_STREAM(NODE_NAME << ": Final side moved failed");
-			break;
 		}
 
 	    printTiming();
