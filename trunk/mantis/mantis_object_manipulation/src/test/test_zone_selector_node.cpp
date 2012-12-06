@@ -181,16 +181,16 @@ int main(int argc,char** argv)
 	OBJECT_MARKER_MSG.ns = nodeName;
 	OBJECT_MARKER_MSG.type = visualization_msgs::Marker::SPHERE;
 	OBJECT_MARKER_MSG.action = visualization_msgs::Marker::ADD;
-	OBJECT_MARKER_MSG.scale.x = TEST_OBJECT_RADIUS;
-	OBJECT_MARKER_MSG.scale.y = TEST_OBJECT_RADIUS;
-	OBJECT_MARKER_MSG.scale.z = TEST_OBJECT_RADIUS;
+	OBJECT_MARKER_MSG.scale.x = TEST_OBJECT_RADIUS*2.0f;
+	OBJECT_MARKER_MSG.scale.y = TEST_OBJECT_RADIUS*2.0f;
+	OBJECT_MARKER_MSG.scale.z = TEST_OBJECT_RADIUS*2.0f;
 	OBJECT_MARKER_MSG.color.a = 1.0;
 	OBJECT_MARKER_MSG.color.r = 0.0;
 	OBJECT_MARKER_MSG.color.g = 0.4f;
 	OBJECT_MARKER_MSG.color.b = 0.8f;
 
 	// setting up zone markers
-	zoneSelector.getAllActiveZonesMarkers(ZONE_MARKER_ARRAY);
+	zoneSelector.getAllActiveZonesCombinedMarkers(ZONE_MARKER_ARRAY);
 
 	// printing found place zones
 	std::cout<<"There are "<<zoneSelector.getAllPlaceZones().size()<<" place zones\n";
@@ -246,9 +246,9 @@ int main(int argc,char** argv)
 		objDetails.Size = tf::Vector3(2.0f*TEST_OBJECT_RADIUS,2.0f*TEST_OBJECT_RADIUS,2.0f*TEST_OBJECT_RADIUS);
 
 		// updateing marker size
-		OBJECT_MARKER_MSG.scale.x = TEST_OBJECT_RADIUS;
-		OBJECT_MARKER_MSG.scale.y = TEST_OBJECT_RADIUS;
-		OBJECT_MARKER_MSG.scale.z = TEST_OBJECT_RADIUS;
+		OBJECT_MARKER_MSG.scale.x = TEST_OBJECT_RADIUS*2.0f;
+		OBJECT_MARKER_MSG.scale.y = TEST_OBJECT_RADIUS*2.0f;
+		OBJECT_MARKER_MSG.scale.z = TEST_OBJECT_RADIUS*2.0f;
 
 		std::cout<<"\nGenerating Poses :\n";
 		generatePosesInRequestedMode(zoneSelector,objDetails,NUM_OBJECTS_IN_ZONE);
@@ -261,7 +261,7 @@ int main(int argc,char** argv)
 		removeZoneMarkers();
 
 		ROS_INFO_STREAM(nodeName<<": getting new zone markers");
-		zoneSelector.getAllActiveZonesMarkers(ZONE_MARKER_ARRAY);
+		zoneSelector.getAllActiveZonesCombinedMarkers(ZONE_MARKER_ARRAY);
 
 		ROS_INFO_STREAM(nodeName<<": End of cycle, going to next zone");
 	}

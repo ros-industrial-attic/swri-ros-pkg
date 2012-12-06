@@ -60,11 +60,12 @@ void PickPlaceZoneSelector::initializeColorArray()
 	}
 
 	// yellow
-	color.r = 1.0f; color.g = 1.0f; color.b = 0.0f;
+	color.r = 1.0f; color.g = 1.0f; color.b = 0.0f; color.a = 0.2f;
 	marker_colors_.push_back(color);
 
 	//red
-	color.r = 1.0f; color.g = 0.0f; color.b = 0.0f; color.a = 0.2f;
+	//color.r = 1.0f; color.g = 0.0f; color.b = 0.0f; color.a = 0.2f;
+	//marker_colors_.push_back(color);
 
 }
 
@@ -135,12 +136,12 @@ bool PickPlaceZoneSelector::isInPickZone(const sensor_msgs::PointCloud &cluster)
 			tfListener.lookupTransform(pickZone.FrameId,cluster.header.frame_id,ros::Time::now(),clusterTransform);
 			tf::TransformTFToEigen(clusterTransform,tfEigen);
 			pcl::transformPointCloud(cloud,cloud,Eigen::Affine3f(tfEigen));
+			ROS_INFO_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": transformed cluster to frame: "<<pickZone.FrameId);
 		}
 		catch(tf::LookupException &e)
 		{
-			ROS_WARN_STREAM(ros::this_node::getName()<<": lookup exception thrown, not transforming to frame");
+			ROS_WARN_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": lookup exception thrown, not transforming to frame");
 		}
-
 	}
 
 	// finding centroid
@@ -162,6 +163,66 @@ bool PickPlaceZoneSelector::isInPickZone(const sensor_msgs::PointCloud &cluster)
 	return true;
 }
 
+void PickPlaceZoneSelector::addObstacleClusters(std::vector<sensor_msgs::PointCloud> &clusters)
+{
+	for(std::vector<sensor_msgs::PointCloud>::iterator i = clusters.begin(); i != clusters.end(); i++)
+	{
+		addObstacleCluster(*i);
+	}
+}
+
+void PickPlaceZoneSelector::addObstacleCluster(sensor_msgs::PointCloud &cluster)
+{
+	// converting cloud
+	PclCloud cloud;
+	sensor_msgs::PointCloud2 clusterMsg;
+	sensor_msgs::convertPointCloudToPointCloud2(cluster,clusterMsg);
+	pcl::fromROSMsg(clusterMsg,cloud);
+
+	// reference to active pick zone
+	ZoneBounds &pickZone = pick_zones_[pick_zone_index_];
+
+	// checking frame ids and transforming cloud if they are different
+	tf::TransformListener tfListener;
+	tf::StampedTransform clusterTransform;// = tf::StampedTransform( tf::Transform::getIdentity());
+	Eigen::Affine3d tfEigen;
+	if(pickZone.FrameId.compare(cluster.header.frame_id) != 0)
+	{
+		try
+		{
+			tfListener.lookupTransform(pickZone.FrameId,cluster.header.frame_id,ros::Time::now(),clusterTransform);
+			tf::TransformTFToEigen(clusterTransform,tfEigen);
+			pcl::transformPointCloud(cloud,cloud,Eigen::Affine3f(tfEigen));
+		}
+		catch(tf::LookupException &e)
+		{
+			ROS_WARN_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": lookup exception thrown, not transforming cluster to frame "<< pickZone.FrameId);
+		}
+	}
+
+	// finding centroid
+	Eigen::Vector4f centroid;
+	pcl::compute3DCentroid(cloud,centroid);
+
+	// checking if centroid of cloud is in bounds of pick zone
+	pcl::PointXYZ clusterCentroid;
+	clusterCentroid.x = centroid[0];
+	clusterCentroid.y = centroid[1];
+
+	// finding size (overestimating by using largest size)
+	pcl::PointXYZ min, max, size;
+	pcl::getMinMax3D(cloud,min,max);
+	size.x = std::abs(max.x - min.x);
+	size.y = std::abs(max.y - min.y);
+	size.z = std::abs(max.z - min.z);
+
+	double maxSide = (size.x > size.y)? size.x : size.y;
+
+	PlaceZone obstacleZone = PlaceZone(tf::Vector3(maxSide,maxSide,maxSide),tf::Vector3(clusterCentroid.x,clusterCentroid.y,0.0f));
+	obstacle_objects_.push_back(obstacleZone);
+
+}
+
 bool  PickPlaceZoneSelector::generateNextLocationCandidates(std::vector<geometry_msgs::PoseStamped> &placePoses)
 {
 	std::vector<PlaceZone* > nearbyZones;
@@ -178,7 +239,16 @@ bool  PickPlaceZoneSelector::generateNextLocationCandidates(std::vector<geometry
 			// creating array with available place zones not including the current one
 			nearbyZones.assign(active_place_zones_.begin(),active_place_zones_.end());
 			nearbyZones.erase(nearbyZones.begin() + i);
+
+			// inserting inactive place zone
 			nearbyZones.insert(nearbyZones.end(),inactive_place_zones_.begin(),inactive_place_zones_.end());
+
+			// inserting detected environment obstacles
+			for(std::vector<PlaceZone>::iterator iter = obstacle_objects_.begin(); iter != obstacle_objects_.end(); iter++)
+			{
+				//PlaceZone &obstacleZone = *iter;
+				nearbyZones.push_back(&(*iter));
+			}
 
 			placeZone.setNextObjectDetails(next_obj_details_);
 			if(placeZone.generateNextLocationCandidates(placePoses,nearbyZones))
@@ -210,6 +280,24 @@ void PickPlaceZoneSelector::getPickZoneMarker(visualization_msgs::Marker &marker
 	// filling additional fields
 	marker.color = color;
 	marker.ns = "pick_zone";
+	marker.header.stamp = ros::Time(0);
+	marker.header.frame_id = zone.FrameId;
+}
+
+void PickPlaceZoneSelector::getPickZoneTextMarker(visualization_msgs::Marker &marker)
+{
+	ZoneBounds &zone = pick_zones_[pick_zone_index_];
+	zone.getTextMarker(marker);
+
+	// computing transform
+	tf::Vector3 center = zone.getCenter();
+	tf::Quaternion q = tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),0.0f);
+	tf::Transform zoneTf = tf::Transform(q,center);
+	tf::poseTFToMsg(zoneTf,marker.pose);
+	marker.pose.position.z = PICK_ZONE_HEIGHT*0.5f;
+
+	// filling additional fields
+	marker.ns = "pick_zone_name";
 	marker.header.stamp = ros::Time(0);
 	marker.header.frame_id = zone.FrameId;
 }
@@ -254,9 +342,40 @@ void PickPlaceZoneSelector::getAllActiveZonesMarkers(visualization_msgs::MarkerA
 
 	visualization_msgs::Marker pickZoneMarker;
 	getPickZoneMarker(pickZoneMarker);
-	pickZoneMarker.ns = markerNs;
+	//pickZoneMarker.ns = markerNs;
 	pickZoneMarker.id = active_place_zones_.size();
 	markers.markers.push_back(pickZoneMarker);
+}
+
+void PickPlaceZoneSelector::getAllActiveZonesTextMarkers(visualization_msgs::MarkerArray &markers)
+{
+	std::string markerNs = "zone_names";
+	for(unsigned int i = 0; i < active_place_zones_.size(); i++)
+	{
+		PlaceZone &placeZone = *active_place_zones_[i];
+		visualization_msgs::Marker marker;
+		placeZone.getTextMarker(marker);
+		marker.header.frame_id = placeZone.FrameId;
+		marker.header.stamp = ros::Time(0);
+		marker.pose = placeZone.getZoneCenterPose();
+		marker.pose.position.z = PLACE_ZONE_HEIGHT*0.5f;
+		marker.id= i;
+		marker.ns = markerNs;
+
+		markers.markers.push_back(marker);
+	}
+
+	visualization_msgs::Marker pickZoneMarker;
+	getPickZoneTextMarker(pickZoneMarker);
+	//pickZoneMarker.ns = markerNs;
+	pickZoneMarker.id = active_place_zones_.size();
+	markers.markers.push_back(pickZoneMarker);
+}
+
+void PickPlaceZoneSelector::getAllActiveZonesCombinedMarkers(visualization_msgs::MarkerArray &markers)
+{
+	getAllActiveZonesMarkers(markers);
+	getAllActiveZonesTextMarkers(markers);
 }
 
 void PickPlaceZoneSelector::PlaceZone::resetZone()
@@ -267,6 +386,10 @@ void PickPlaceZoneSelector::PlaceZone::resetZone()
 	tf::Vector3 zoneSize = getSize();
 	grid_x_size_ = std::floor(zoneSize.x()/MinObjectSpacing);
 	grid_y_size_ = std::floor(zoneSize.y()/MinObjectSpacing);
+
+	ROS_INFO_STREAM("ZoneSelector: Grid size set to: X "<<grid_x_size_<<" x Y "<<grid_y_size_);
+	grid_x_size_ = (grid_x_size_ > 0)?grid_x_size_:1;
+	grid_y_size_ = (grid_y_size_ > 0)?grid_y_size_:1;
 }
 
 void PickPlaceZoneSelector::PlaceZone::setNextObjectDetails(const PickPlaceZoneSelector::ObjectDetails &objDetails)
@@ -478,7 +601,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInRandomizedMode(std
 			}
 
 			double distFromCenter = (getCenter() - nextTf.getOrigin()).length();
-			ROS_INFO_STREAM(ros::this_node::getName()<<": Found available position at a distance of "<< distFromCenter
+			ROS_INFO_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Found available position at a distance of "<< distFromCenter
 					<<" from the center after "<<iter<<" iterations");
 
 			// adjusting place point to object height
@@ -489,7 +612,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInRandomizedMode(std
 
 		if(!foundNewPlaceLocation)
 		{
-			ROS_WARN_STREAM(ros::this_node::getName()<<": Could not find available position after "<<iter<<" iterations");
+			ROS_WARN_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Could not find available position after "<<iter<<" iterations");
 			return false;
 		}
 	}
@@ -576,12 +699,12 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInZigZagXMode(std::v
 	}
 	if(overlapFound)
 	{
-		ROS_ERROR_STREAM(ros::this_node::getName()<<": Did not find location after "<<maxIterations<<" iterations, exiting");
+		ROS_ERROR_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Did not find location after "<<maxIterations<<" iterations, exiting");
 	}
 	else
 	{
 		// passed all intersection test
-		ROS_INFO_STREAM(ros::this_node::getName()<<": Found available position for Id: "<<next_object_details_.Id);
+		ROS_INFO_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Found available position for Id: "<<next_object_details_.Id);
 
 		// adjusting place point to object height
 		nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
@@ -671,12 +794,12 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInZigZagYMode(std::v
 	}
 	if(overlapFound)
 	{
-		ROS_ERROR_STREAM(ros::this_node::getName()<<": Did not find location after "<<maxIterations<<" iterations, exiting");
+		ROS_ERROR_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Did not find location after "<<maxIterations<<" iterations, exiting");
 	}
 	else
 	{
 		// passed all intersection test
-		ROS_INFO_STREAM(ros::this_node::getName()<<": Found available position for Id: "<<next_object_details_.Id);
+		ROS_INFO_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Found available position for Id: "<<next_object_details_.Id);
 
 		// adjusting place point to object height
 		nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
@@ -732,7 +855,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridXWise(std::vec
 		if(!ZoneBounds::contains(*this,nextObjectBounds))
 		{
 			overlapFound = true;
-			ROS_ERROR_STREAM(ZoneName<<": No more space in zone, exiting");
+			ROS_ERROR_STREAM(ZoneName<<": Object falls outside place zone, exiting");
 			return false;// exit no more space
 		}
 
@@ -829,7 +952,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridYWise(std::vec
 		if(!ZoneBounds::contains(*this,nextObjectBounds))
 		{
 			overlapFound = true;
-			ROS_ERROR_STREAM(ZoneName<<": No more space in zone, exiting");
+			ROS_ERROR_STREAM(ZoneName<<": Object falls outside place zone, exiting");
 			return false;// exit no more space
 		}
 
@@ -889,6 +1012,28 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridYWise(std::vec
 bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInCircle(std::vector<geometry_msgs::PoseStamped> &placePoses,
 		std::vector<PlaceZone* > &otherZones)
 {
+	// persistent variables
+	static std::size_t layerCount = 0;
+	static std::size_t nextLayerCount = 0;
+	const static int elementsInFirstLayer = 6;
+	const static int maxIterations = 50;
+	const static double deltaTheta = 2.0f * M_PI/(double)elementsInFirstLayer;
+
+	// initializing persistent variables
+	if(objects_in_zone_.size() == 0)
+	{
+		layerCount = 0;
+		nextLayerCount = 1;
+	}
+	else
+	{
+		if(nextLayerCount == objects_in_zone_.size())
+		{
+			layerCount++;
+			nextLayerCount = nextLayerCount + elementsInFirstLayer * std::pow(2.0f,layerCount - 1);
+		}
+	}
+
 	// next object details
 	ZoneBounds nextObjectBounds;;
 	int nextIndex = (int)objects_in_zone_.size();
@@ -896,10 +1041,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInCircle(std::vector
 	// will use next object id (even or odd) to determine its location
 	tf::Transform nextTf = tf::Transform::getIdentity();
 
-	// search parameters
-	const int maxIterations = 50;
-	int segments = 6; // # segments in first layer
-	double deltaTheta = M_PI/3.0f;
+	// current search variables
 	int counter = 0;
 	double xCoor;
 	double yCoor;
@@ -910,11 +1052,13 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInCircle(std::vector
 	while(counter < maxIterations)
 	{
 		overlapFound = false;
-		double factor = std::ceil((double)nextIndex/(double)segments);
-		radius = factor * MinObjectSpacing/2.0f;
-		theta = (nextIndex%segments)*(radius == 0.0f ? 0.0f : deltaTheta/factor);
-		xCoor = center.x() + 2.0f * radius * std::cos(theta);
-		yCoor = center.y() + 2.0f * radius * std::sin(theta);
+
+		radius = layerCount * MinObjectSpacing;
+		theta = (layerCount == 0)? 0 : (nextLayerCount - nextIndex) * (deltaTheta/(double)std::pow(2.0f,layerCount - 1));
+		xCoor = center.x() + radius * std::cos(theta);
+		yCoor = center.y() + radius * std::sin(theta);
+		//ROS_WARN_STREAM("Zone Selection: Circle mode factor: "<<factor<<", angle: "<<theta);
+
 
 		// incrementing counter
 		counter++;
@@ -931,8 +1075,7 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInCircle(std::vector
 			overlapFound = true;
 			nextIndex++;
 			continue;
-//			ROS_ERROR_STREAM(ZoneName<<": No more space in zone, "<<ZoneName<< " exiting");
-//			return false;// exit no more space
+			ROS_ERROR_STREAM("Zone Selection:  Object falls outside zone "<<ZoneName);
 		}
 
 		// checking if overlaps with objects in place zone
@@ -942,6 +1085,11 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInCircle(std::vector
 			ZoneBounds objInZoneBounds(iter->Size,iter->Trans.getOrigin());
 			if(ZoneBounds::boundingCirclesIntersect(nextObjectBounds,objInZoneBounds))
 			{
+				ROS_ERROR_STREAM("Zone Selection: bounding circles of object in zone "<<ZoneName<<" intersect\n\t"
+						<<"New object radius: "<<nextObjectBounds.getBoundingRadius()<<"\n\t"
+						<<"Object in zone radius: "<<objInZoneBounds.getBoundingRadius()<<"\n\t"
+						<<"Layer Count: "<<layerCount<<"\n\t"
+						<<"Object Count: "<<nextIndex);
 				overlapFound = true;
 				break;
 			}

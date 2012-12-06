@@ -25,6 +25,12 @@ const std::string TABLETOP_SEGMT_XMAX_NAME = "x_filter_max";
 const std::string TABLETOP_SEGMT_YMIN_NAME = "y_filter_min";
 const std::string TABLETOP_SEGMT_YMAX_NAME = "y_filter_max";
 
+// global variables
+const double PLACE_ZONE_HEIGHT = 1.0f;
+const double PICK_ZONE_HEIGHT = 1.4f;
+const double PICK_ZONE_MARKER_TEXT_SIZE = 0.08f;
+const double PLACE_ZONE_MARKER_TEXT_SIZE = 0.08f;
+
 class PickPlaceZoneSelector
 {
 public:
@@ -74,11 +80,22 @@ public:
 			marker.type = visualization_msgs::Marker::CUBE;
 			marker.scale.x = zoneSize.x();
 			marker.scale.y = zoneSize.y();
-			marker.scale.z = 1;
-			marker.color.a = 1.0;
-			marker.color.r = 0.0;
-			marker.color.g = 1.0;
-			marker.color.b = 0.0;
+			marker.scale.z = PICK_ZONE_HEIGHT;
+			marker.color.a = 1.0f;
+			marker.color.r = 0.0f;
+			marker.color.g = 1.0f;
+			marker.color.b = 0.0f;
+		}
+
+		void getTextMarker(visualization_msgs::Marker &marker) const
+		{
+			marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+			marker.text = ZoneName;
+			marker.scale.z = PICK_ZONE_MARKER_TEXT_SIZE; // height of uppercase "A"
+			marker.color.a = 1.0f;
+			marker.color.r = 1.0f;
+			marker.color.g = 1.0f;
+			marker.color.b = 1.0f;
 		}
 
 		double getBoundingRadius() const
@@ -235,7 +252,7 @@ public:
 				XmlRpc::XmlRpcValue nextParam;
 				structMember = "next_location"; nextParam = val[structMember];
 				structMember = "min_spacing"; MinObjectSpacing = static_cast<double>(nextParam[structMember]);
-				structMember = "max_spacing"; MinObjectSpacing = static_cast<double>(nextParam[structMember]);
+				structMember = "max_spacing"; MaxObjectSpacing = static_cast<double>(nextParam[structMember]);
 				structMember = "generation_mode"; NextLocationGenMode = static_cast<int>(nextParam[structMember]);
 
 				XmlRpc::XmlRpcValue axisParam;
@@ -283,8 +300,15 @@ public:
 		void getMarker(visualization_msgs::Marker &marker) const
 		{
 			ZoneBounds::getMarker(marker);
-			marker.scale.z = 1.6;
+			marker.scale.z = PLACE_ZONE_HEIGHT;
 		}
+
+		void getTextMarker(visualization_msgs::Marker &marker) const
+		{
+			ZoneBounds::getTextMarker(marker);
+			marker.scale.z = PLACE_ZONE_MARKER_TEXT_SIZE; // height of uppercase "A"
+		}
+
 
 	public:
 
@@ -406,9 +430,21 @@ public:
 		next_obj_details_ = obj;
 	}
 
+	void addObstacleClusters(std::vector<sensor_msgs::PointCloud> &clusters);
+	void addObstacleCluster(sensor_msgs::PointCloud &cluster);
+	void clearObstableClusters()
+	{
+		obstacle_objects_.clear();
+	}
+
+
+
 	void getActivePlaceZonesMarkers(visualization_msgs::MarkerArray &markers);
 	void getPickZoneMarker(visualization_msgs::Marker &marker);
+	void getPickZoneTextMarker(visualization_msgs::Marker &marker);
 	void getAllActiveZonesMarkers(visualization_msgs::MarkerArray &markers); // includes pick and active place zones
+	void getAllActiveZonesTextMarkers(visualization_msgs::MarkerArray &markers);
+	void getAllActiveZonesCombinedMarkers(visualization_msgs::MarkerArray &markers); // combines zone and text markers into a single array
 
 	const std::vector<ZoneBounds>& getPickZones()
 	{
@@ -436,6 +472,7 @@ protected:
 	std::vector<PlaceZone* > active_place_zones_;  // reference array to place zones that do not overlap with current pick zone
 	std::vector<PlaceZone* > inactive_place_zones_;
 	ObjectDetails next_obj_details_;
+	std::vector<PlaceZone > obstacle_objects_; // bounding boxes of sensed clusters in environment
 
 	// markers
 	std::vector<std_msgs::ColorRGBA> marker_colors_;
