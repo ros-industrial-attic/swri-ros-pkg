@@ -38,6 +38,9 @@
 
 #include <object_manipulation_tools/controller_utils/GraspPoseControllerHandler.h>
 
+// global variables
+static const double GRASP_COMMAND_EXECUTION_TIMEOUT = 4.0f;
+
 GraspPoseControllerHandler::GraspPoseControllerHandler(const std::string& group_name,const std::string& controller_name)
 :TrajectoryControllerHandler(group_name, controller_name),
  grasp_posture_execution_action_client_(controller_name, true)
@@ -60,15 +63,44 @@ bool GraspPoseControllerHandler::executeTrajectory(
 	initializeRecordedTrajectory(trajectory);
 
 	object_manipulation_msgs::GraspHandPostureExecutionGoal goal;
-	if(trajectory.points[0].positions[0] == 0.0)
+	std::string graspMoveName = "Grasp";
+	int graspCode = (int)trajectory.header.seq;
+//	if(trajectory.points[0].positions[0] == 0.0)
+//	{
+//		ROS_INFO_STREAM("Should be commanding grasp");
+//		goal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP;
+//	}
+//	else
+//	{
+//		ROS_INFO_STREAM("Should be commanding release");
+//		goal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE;
+//	}
+
+	switch(graspCode)
 	{
-		ROS_INFO_STREAM("Should be commanding grasp");
+	case object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP:
+
+		ROS_INFO_STREAM("Grasp Controller should be commanding grasp");
+		graspMoveName = "Grasp";
 		goal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP;
-	}
-	else
-	{
-		ROS_INFO_STREAM("Should be commanding release");
+		break;
+
+	case object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP:
+
+		ROS_INFO_STREAM("Grasp Controller should be commanding pre-grasp");
+		graspMoveName = "Pre-grasp";
+		goal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP;
+		break;
+
+	case object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE:
+
+		ROS_INFO_STREAM("Grasp Controller should be commanding release");
+		graspMoveName = "Release";
 		goal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE;
+		break;
+
+	default:
+		return false;
 	}
 
 	grasp_posture_execution_action_client_.sendGoal(goal,
@@ -77,6 +109,25 @@ bool GraspPoseControllerHandler::executeTrajectory(
 												  boost::bind(&GraspPoseControllerHandler::controllerFeedbackCallback, this, _1));
 	recorder_->registerCallback(group_controller_combo_name_,
 							  boost::bind(&GraspPoseControllerHandler::addNewStateToRecordedTrajectory, this, _1, _2, _3));
+
+	// waiting for result
+	if(!grasp_posture_execution_action_client_.waitForResult(ros::Duration(GRASP_COMMAND_EXECUTION_TIMEOUT)))
+	{
+	  ROS_ERROR_STREAM("Grasp Controller: "<< graspMoveName <<" request timeout, exiting");
+	  return false;
+	}
+
+	// checking execution result status
+	if(grasp_posture_execution_action_client_.getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
+	{
+	  ROS_ERROR_STREAM("Grasp Controller: "<< graspMoveName <<" request unsuccessful, exiting");
+	  return false;
+	}
+	else
+	{
+	  ROS_INFO_STREAM("Grasp Controller: "<< graspMoveName <<" completed");
+	}
+
 	return true;
 }
 
@@ -89,17 +140,17 @@ void GraspPoseControllerHandler::controllerDoneCallback(const actionlib::SimpleC
 		const object_manipulation_msgs::GraspHandPostureExecutionResultConstPtr& result)
 {
 	recorder_->deregisterCallback(group_controller_combo_name_);
-	ROS_INFO_STREAM("Controller is done with state " << (state == actionlib::SimpleClientGoalState::SUCCEEDED));
+	ROS_INFO_STREAM("Grasp Controller is done with state " << (state == actionlib::SimpleClientGoalState::SUCCEEDED)?"SUCCESS":"FAULT");
 	done();
 }
 
 void GraspPoseControllerHandler::controllerActiveCallback()
 {
-	ROS_DEBUG_STREAM("Controller went active");
+	ROS_INFO_STREAM("Grasp Controller went active");
 }
 
 void GraspPoseControllerHandler::controllerFeedbackCallback(const object_manipulation_msgs::GraspHandPostureExecutionFeedbackConstPtr& feedback)
 {
-	ROS_INFO_STREAM("Got feedback");
+	ROS_INFO_STREAM("Grasp Controller Got feedback");
 }
 

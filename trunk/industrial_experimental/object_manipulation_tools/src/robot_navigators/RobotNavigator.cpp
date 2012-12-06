@@ -155,15 +155,13 @@ bool RobotNavigator::trajectoriesFinishedCallbackFunction(TrajectoryExecutionDat
 
    last_trajectory_execution_data_vector_ = tedv;
 
-   trajectories_succeeded_ = (tedv.back().result_ == SUCCEEDED
-                              || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_OK
-                              || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_CLOSE_ENOUGH);
-
-   ROS_INFO_STREAM(NODE_NAME<<": Trajectories " << tedv.size() << " ok " << trajectories_succeeded_);
-
-   for(unsigned int i = 0; i < tedv.size(); i++)
+   // combining trajectory state flags;
    {
-     ROS_INFO_STREAM("Recorded trajectory " << i << " has " << tedv[i].recorded_trajectory_.points.size());
+	   ROS_INFO_STREAM(NODE_NAME<<": Locking execution mutex in order to combine trajectory result flags");
+	   boost::mutex::scoped_lock lock(execution_mutex_);
+	   trajectories_succeeded_ = (tedv.back().result_ == SUCCEEDED
+								  || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_OK
+								  || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_CLOSE_ENOUGH);
    }
    execution_completed_.notify_all();
    return true;
@@ -1103,12 +1101,12 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   std::vector<std::string> segment_names;
   std::size_t approachMoveIndex = 0;
 
-  //first open the gripper
+  // commanding gripper release
   std::vector<TrajectoryExecutionRequest> ter_reqs;
   TrajectoryExecutionRequest gripper_ter;
   gripper_ter.group_name_ = gripper_group_name_;
   gripper_ter.controller_name_ = grasp_action_service_;
-  gripper_ter.trajectory_ = getGripperTrajectory(group_name, true);
+  gripper_ter.trajectory_ = getGripperTrajectory(object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE);
   gripper_ter.failure_ok_ = true;
   gripper_ter.test_for_close_enough_ = false;
   ter_reqs.push_back(gripper_ter);
@@ -1136,28 +1134,34 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   trajectories_succeeded_ = false;
 
   // request gripper pre-grasp command
-  object_manipulation_msgs::GraspHandPostureExecutionGoal graspGoal;
-  graspGoal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP;
+//  object_manipulation_msgs::GraspHandPostureExecutionGoal graspGoal;
+//  graspGoal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP;
+//
+//  ROS_INFO_STREAM(NODE_NAME << ": Requesting pre-grasp");
+//  grasp_exec_action_client_->sendGoal(graspGoal);
+//  if(!grasp_exec_action_client_->waitForResult(ros::Duration(2.0f)))
+//  {
+//	  ROS_ERROR_STREAM(NODE_NAME << ": Pre-grasp request timeout, exiting");
+//	  return false;
+//  }
+//
+//  if(grasp_exec_action_client_->getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
+//  {
+//	  ROS_ERROR_STREAM(NODE_NAME << ": Pre-grasp request unsuccessful, exiting");
+//	  return false;
+//  }
+//  else
+//  {
+//	  ROS_INFO_STREAM(NODE_NAME << ": Pre-grasp completed");
+//  }
 
-  ROS_INFO_STREAM(NODE_NAME << ": Requesting pre-grasp");
-  grasp_exec_action_client_->sendGoal(graspGoal);
-  if(!grasp_exec_action_client_->waitForResult(ros::Duration(2.0f)))
-  {
-	  ROS_ERROR_STREAM(NODE_NAME << ": Pre-grasp request timeout, exiting");
-	  return false;
-  }
+  // setting up gripper pre-grasp
+  gripper_ter.trajectory_ = getGripperTrajectory(object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP);
+  validateJointTrajectory(gripper_ter.trajectory_);
+  ter_reqs.push_back(gripper_ter);
+  segment_names.push_back("pre-grasp");
 
-  if(grasp_exec_action_client_->getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
-  {
-	  ROS_ERROR_STREAM(NODE_NAME << ": Pre-grasp request unsuccessful, exiting");
-	  return false;
-  }
-  else
-  {
-	  ROS_INFO_STREAM(NODE_NAME << ": Pre-grasp completed");
-  }
-
-  //now do approach
+  // setting up approach move
   TrajectoryExecutionRequest arm_ter;
   arm_ter.group_name_ = group_name;
   arm_ter.controller_name_ = arm_controller_handler_->getControllerName();
@@ -1173,11 +1177,11 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   segment_names.push_back("approach");
   approachMoveIndex = ter_reqs.size() - 1;
 
-  //now close the gripper
-  gripper_ter.trajectory_ = getGripperTrajectory(group_name, false);
+  // setting up gripper grasp
+  gripper_ter.trajectory_ = getGripperTrajectory(object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP);
   validateJointTrajectory(gripper_ter.trajectory_);
   ter_reqs.push_back(gripper_ter);
-  segment_names.push_back("close");
+  segment_names.push_back("grasp");
 
   // updating attached  marker operation
   if(hasMarker(MARKER_ATTACHED_OBJECT))
@@ -1187,7 +1191,7 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
 	  addMarker(MARKER_ATTACHED_OBJECT,m);
   }
 
-  //and do the lift
+  //setting up lift move
   arm_ter.trajectory_ = gei.lift_trajectory_;
   validateJointTrajectory(arm_ter.trajectory_);
   performTrajectoryFiltering(group_name, arm_ter.trajectory_);
@@ -1201,54 +1205,57 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
    * method can only handle a single trajectory at a time.
    */
   start_execution = ros::WallTime::now();
-  bool graspSucceded = true;
   for(unsigned int i = 0;i < ter_reqs.size(); i++)
   {
 	  std::vector<TrajectoryExecutionRequest> tempRequest;
 	  tempRequest.push_back(ter_reqs[i]);
-	  ROS_INFO_STREAM(NODE_NAME << ": gripper "<<segment_names[i] <<" trajectory in progress");
+	  ROS_INFO_STREAM(NODE_NAME << ": "<<segment_names[i] <<" trajectory in progress");
 	  trajectory_execution_monitor_.executeTrajectories(tempRequest,
 														trajectories_finished_function_);
 	  {
 		  boost::unique_lock<boost::mutex> lock(execution_mutex_);
 		  execution_completed_.wait(lock);
-	  }
 
-	  ROS_INFO_STREAM(NODE_NAME << ": gripper "<<segment_names[i] <<" trajectory completed");
-
-	  if(i == approachMoveIndex)
-	  {
-		  // calling grasp action in order to check state of vacuum sensor
-		  graspGoal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP;
-
-		  ROS_INFO_STREAM(NODE_NAME << ": Requesting grasp action ");
-		  grasp_exec_action_client_->sendGoal(graspGoal);
-		  if(!grasp_exec_action_client_->waitForResult(ros::Duration(GRAP_ACTION_TIMEOUT)))
+		  if(trajectories_succeeded_)
 		  {
-			  ROS_ERROR_STREAM(NODE_NAME << ": Grasp request timeout, aborting pick sequence");
-			  graspSucceded = false;
+			  ROS_INFO_STREAM(NODE_NAME << ": "<<segment_names[i] <<" trajectory completed");
 		  }
 		  else
 		  {
-			  if(grasp_exec_action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-			  {
-				  ROS_INFO_STREAM(NODE_NAME << ": Grasp request succeeded with state: "
-						  <<grasp_exec_action_client_->getState().toString());
-			  }
-			  else
-			  {
-				  ROS_ERROR_STREAM(NODE_NAME << ": Grasp request failed with state: "
-						  <<grasp_exec_action_client_->getState().toString());
-				  graspSucceded =  false;
-			  }
+			  ROS_ERROR_STREAM(NODE_NAME << ": "<<segment_names[i] <<" trajectory interrupted, aborting pick sequence and start recovery move");
+			  break;
 		  }
 	  }
 
   }
 
-  execution_duration_ += (ros::WallTime::now()-start_execution);
+  // moving arm to start of approach move and commanding a grasp release
+  if(!trajectories_succeeded_)
+  {
+	  updateCurrentJointStateToLastTrajectoryPoint(last_trajectory_execution_data_vector_.back().recorded_trajectory_);
 
-  return trajectories_succeeded_ && graspSucceded;
+	  // moving arm back to start of pick move
+	  ROS_INFO_STREAM(NODE_NAME << ": arm moving to beginning of approach move trajectory in progress");
+	  if(!moveArm(group_name, gei.approach_trajectory_.points[0].positions))
+	  {
+		  ROS_ERROR_STREAM(NODE_NAME << ": move arm to start failed, aborting recovery move");
+		  return false;
+	  }
+
+	  // request gripper release command
+	  object_manipulation_msgs::GraspHandPostureExecutionGoal graspGoal;
+	  graspGoal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE;
+	  ROS_INFO_STREAM(NODE_NAME << ": Requesting grasp release");
+	  grasp_exec_action_client_->sendGoal(graspGoal);
+	  if(!grasp_exec_action_client_->waitForResult(ros::Duration(2.0f)))
+	  {
+		  ROS_ERROR_STREAM(NODE_NAME << ": Release request timeout, aborting recovery move");
+		  return false;
+	  }
+  }
+
+  execution_duration_ += (ros::WallTime::now()-start_execution);
+  return trajectories_succeeded_ ;
 }
 
 bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
@@ -1263,7 +1270,7 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
   trajectories_succeeded_ = false;
   std::vector<std::string> segment_names;
 
-  //now do descend
+  // setting up descend move
   TrajectoryExecutionRequest arm_ter;
   arm_ter.group_name_ = group_name;
   arm_ter.controller_name_ = arm_controller_handler_->getControllerName();
@@ -1277,16 +1284,16 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
   ter_reqs.push_back(arm_ter);
   segment_names.push_back("descend");
 
-  //open gripper
+  // setting up  gripper release
   TrajectoryExecutionRequest gripper_ter;
   gripper_ter.group_name_ = gripper_group_name_;
   gripper_ter.controller_name_ = grasp_action_service_;
-  gripper_ter.trajectory_ = getGripperTrajectory(group_name, true);
+  gripper_ter.trajectory_ = getGripperTrajectory(object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE);
   validateJointTrajectory(gripper_ter.trajectory_);
   gripper_ter.failure_ok_ = true;
   gripper_ter.test_for_close_enough_ = false;
   ter_reqs.push_back(gripper_ter);
-  segment_names.push_back("open_gripper");
+  segment_names.push_back("release");
 
   // updating attached object marker operation
   if(hasMarker(MARKER_ATTACHED_OBJECT))
@@ -1320,34 +1327,49 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
 	  {
 		  boost::unique_lock<boost::mutex> lock(execution_mutex_);
 		  execution_completed_.wait(lock);
+
+		  if(trajectories_succeeded_)
+		  {
+			  ROS_INFO_STREAM(NODE_NAME << ": "<<segment_names[i] <<" trajectory completed");
+		  }
+		  else
+		  {
+			  ROS_ERROR_STREAM(NODE_NAME << ": "<<segment_names[i] <<" trajectory interrupted, aborting place sequence");
+			  break;
+		  }
 	  }
-	  ROS_INFO_STREAM(NODE_NAME << ": gripper "<<segment_names[i] <<" trajectory completed");
   }
 
   execution_duration_ += (ros::WallTime::now()-start_execution);
   return trajectories_succeeded_;
 }
 
-trajectory_msgs::JointTrajectory RobotNavigator::getGripperTrajectory(const std::string& arm_name,bool open)
+trajectory_msgs::JointTrajectory RobotNavigator::getGripperTrajectory(int graspMove)
 {
+  trajectory_msgs::JointTrajectoryPoint jp;
   trajectory_msgs::JointTrajectory gt;
-  if(arm_name == "right_arm") {
-    gt.joint_names.push_back("r_gripper_l_finger_joint");
-    gt.joint_names.push_back("r_gripper_r_finger_joint");
-    gt.joint_names.push_back("r_gripper_r_finger_tip_joint");
-    gt.joint_names.push_back("r_gripper_l_finger_tip_joint");
-  } else {
-    gt.joint_names.push_back("l_gripper_l_finger_joint");
-    gt.joint_names.push_back("l_gripper_r_finger_joint");
-    gt.joint_names.push_back("l_gripper_r_finger_tip_joint");
-    gt.joint_names.push_back("l_gripper_l_finger_tip_joint");
+
+  jp.positions = std::vector<double>(1,0);
+  jp.velocities = std::vector<double>(1,0);
+  jp.accelerations = std::vector<double>(1,0);
+  gt.header.seq = 0;
+  gt.points.push_back(jp);
+
+  switch(graspMove)
+  {
+  case object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP:
+	  gt.header.seq = (unsigned int)object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP;
+	  break;
+
+  case object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP:
+	  gt.header.seq = (unsigned int)object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP;
+	  break;
+
+  case object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE:
+	  gt.header.seq = (unsigned int)object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE;
+	  break;
   }
-  gt.points.resize(1);
-  if(open) {
-    gt.points[0].positions.resize(4, .1);
-  } else {
-    gt.points[0].positions.resize(4, 0.0);
-  }
+
   return gt;
 }
 
