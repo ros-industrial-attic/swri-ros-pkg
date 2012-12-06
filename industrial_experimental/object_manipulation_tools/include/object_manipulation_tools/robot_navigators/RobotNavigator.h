@@ -174,7 +174,9 @@ protected:
 
 	// trajectory utilities
 	virtual std::vector<std::string> getJointNames(const std::string& group);
-	virtual trajectory_msgs::JointTrajectory getGripperTrajectory(const std::string& arm_name,bool open);
+	virtual trajectory_msgs::JointTrajectory getGripperTrajectory(int graspMove = object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP);
+	//virtual trajectory_msgs::JointTrajectory getGripperTrajectory(const std::string& arm_name,bool open);
+
 	void printJointTrajectory(const trajectory_msgs::JointTrajectory &jt);
 	bool validateJointTrajectory(trajectory_msgs::JointTrajectory &jt); // checks for null arrays and fill with zeros as needed
 
