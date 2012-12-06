@@ -18,7 +18,7 @@ using namespace object_manipulator;
 
 GraspSequenceValidator::GraspSequenceValidator(planning_environment::CollisionModels* cm,
 				   const std::string& plugin_name)
-  : GraspTester(),
+  : GraspTester(),// GraspTesterFast(),
     consistent_angle_(M_PI/12.0),
     num_points_(10),
     redundancy_(2),
@@ -243,6 +243,22 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
   getGroupLinks(handDescription().gripperCollisionName(pickup_goal.arm_name), end_effector_links);
   getGroupLinks(handDescription().armGroup(pickup_goal.arm_name), arm_links);
 
+  std::stringstream ss;
+  if(!end_effector_links.empty())
+  {
+	  ss<<"\n\tUsing gripper collision group:";
+	  for(std::size_t i = 0; i < end_effector_links.size();i++)
+	  {
+		  ss<<"\n\t"<<end_effector_links[i];
+	  }
+
+	  ROS_INFO_STREAM(ss.str());
+  }
+  else
+  {
+	  ROS_WARN_STREAM("Collision for the end-effector links will not be disabled");
+  }
+
   collision_space::EnvironmentModel::AllowedCollisionMatrix original_acm = cm->getCurrentAllowedCollisionMatrix();
   cm->disableCollisionsForNonUpdatedLinks(pickup_goal.arm_name);
   collision_space::EnvironmentModel::AllowedCollisionMatrix group_disable_acm = cm->getCurrentAllowedCollisionMatrix();
@@ -413,6 +429,7 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
     tf::Vector3 distance_pregrasp_dir = pregrasp_dir*fabs(grasps[0].desired_approach_distance);
     tf::Transform pre_grasp_trans(tf::Quaternion(0,0,0,1.0), distance_pregrasp_dir);
     tf::Transform pre_grasp_pose = grasp_poses[i]*pre_grasp_trans;
+    //tf::Transform pre_grasp_pose = pre_grasp_trans * grasp_poses[i]
     state->updateKinematicStateWithLinkAt(handDescription().gripperFrame(pickup_goal.arm_name),pre_grasp_pose);
 
     if(cm->isKinematicStateInCollision(*state))
@@ -523,7 +540,7 @@ void GraspSequenceValidator::testGrasps(const object_manipulation_msgs::PickupGo
                             grasps[i].desired_approach_distance,
                             solution.position,
                             true,
-                            false,
+                            true,
                             execution_info[i].approach_trajectory_))
       {
         ROS_DEBUG_STREAM("No interpolated IK for pre-grasp to grasp");

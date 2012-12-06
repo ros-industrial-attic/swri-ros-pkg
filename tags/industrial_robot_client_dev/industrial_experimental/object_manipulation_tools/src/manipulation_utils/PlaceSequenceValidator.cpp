@@ -358,7 +358,7 @@ void PlaceSequenceValidator::testPlaces(const object_manipulation_msgs::PlaceGoa
                             place_goal.desired_retreat_distance,
                             solution.position,
                             false,
-                            false,
+                            true,
                             execution_info[i].retreat_trajectory_))
       {
         ROS_INFO_STREAM("No interpolated IK for place to retreat");

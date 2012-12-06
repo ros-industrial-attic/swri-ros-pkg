@@ -62,6 +62,10 @@ public:
 	std::string getPlannerName();
 	void fetchParameters(bool useNodeNamespace);
 
+	// rotates about the approach vector to generate candidate grasp poses
+	void generateGraspPoses(const geometry_msgs::Pose &pose,int numCandidates,
+			std::vector<geometry_msgs::Pose> &poses);
+
 protected:
 	static const std::string _GraspPlannerName;
 	std::string _WorldFrameId;

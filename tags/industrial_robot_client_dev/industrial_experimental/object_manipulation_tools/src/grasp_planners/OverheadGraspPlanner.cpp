@@ -63,47 +63,28 @@ void OverheadGraspPlanner::fetchParameters(bool useNodeNamespace)
 	_UsingDefaultApproachVector = true;
 	_ParamVals.ApproachVector = PARAM_DEFAULT_APPROACH_VECTOR;
 
-	// additional error checking
-	bool valid = false;
-	_UsingDefaultApproachVector = !valid;
-	_ParamVals.ApproachVector = _ParamVals.ApproachVector.normalize();
-	if(ros::param::has(paramNamespace + PARAM_NAME_APPROACH_VECTOR))
+	if(ros::param::get(paramNamespace + PARAM_NAME_APPROACH_VECTOR,list) && (list.getType() == XmlRpc::XmlRpcValue::TypeArray) &&
+			(list.size() > 2) && (list[0].getType() == XmlRpc::XmlRpcValue::TypeDouble))
 	{
-		ros::param::get(paramNamespace + PARAM_NAME_APPROACH_VECTOR,list);
+		double val;
+		val = static_cast<double>(list[0]);_ParamVals.ApproachVector.setX(val);
+		val = static_cast<double>(list[1]);_ParamVals.ApproachVector.setY(val);
+		val = static_cast<double>(list[2]);_ParamVals.ApproachVector.setZ(val);
 
-		std::string warnExpr;
-		valid = list.getType() == XmlRpc::XmlRpcValue::TypeArray;
-		if(!valid)
-		{
-			ROS_WARN("%s",std::string("Invalid data type for '" + paramNamespace + PARAM_NAME_APPROACH_VECTOR + "', using default").c_str());
-			return;
-		}
+		_UsingDefaultApproachVector = false;
 
-		valid = list.size()== 3;
-		if(!valid)
-		{
-			ROS_WARN("%s",std::string("Incorrect size for '"+ paramNamespace + PARAM_NAME_APPROACH_VECTOR + "', using default").c_str());
-			return;
-		}
-
-		_UsingDefaultApproachVector = !valid;
-		if(valid)
-		{
-			// converting into vector3 object
-			for(int i = 0; i < list.size(); i++)
-			{
-				if(list[i].getType() != XmlRpc::XmlRpcValue::TypeDouble)
-				{
-					ROS_WARN("%s",std::string("Value in '" + paramNamespace + PARAM_NAME_APPROACH_VECTOR + "'is invalid, using default").c_str());
-					valid = false;
-					_ParamVals.ApproachVector = PARAM_DEFAULT_APPROACH_VECTOR;
-					_UsingDefaultApproachVector = !valid;
-					return;
-				}
-				_ParamVals.ApproachVector.m_floats[i] = static_cast<double>(list[i]);
-			}
-		}
+		tf::Vector3 &v = _ParamVals.ApproachVector;
+		ROS_INFO_STREAM("Overhead Grasp Planer found approach vector: ["<<v.x()<<", "<<v.y()<<", "<<v.z()<<"]");
 	}
+	else
+	{
+		_UsingDefaultApproachVector = true;
+
+		tf::Vector3 &v = _ParamVals.ApproachVector;
+		ROS_ERROR_STREAM("Overhead Grasp Planner could not read/find approach vector under parameter "<< PARAM_NAME_APPROACH_VECTOR<<
+				", will use default vector: ["<<v.x()<<", "<<v.y()<<", "<<v.z()<<"] instead");
+	}
+
 }
 
 std::string OverheadGraspPlanner::getPlannerName()
@@ -116,6 +97,40 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 {
 	// updating parameters
 	fetchParameters(true);
+
+	// checking if grasp to evaluate were passed
+	if(!req.grasps_to_evaluate.empty())
+	{
+		object_manipulation_msgs::Grasp candidateGrasp;
+		std::vector<geometry_msgs::Pose> candidatePoses;
+		sensor_msgs::JointState jointState;
+		jointState.name = std::vector<std::string>();
+		jointState.position = std::vector<double>();
+		jointState.velocity = std::vector<double>();
+ 		candidateGrasp.grasp_pose = geometry_msgs::Pose();
+
+ 		// generating candidate poses
+		candidateGrasp.grasp_posture = jointState;
+		candidateGrasp.pre_grasp_posture = jointState;
+		candidateGrasp.desired_approach_distance = _ParamVals.DefaultPregraspDistance;
+		candidateGrasp.min_approach_distance = _ParamVals.DefaultPregraspDistance;
+ 		for(std::size_t i = 0;i < req.grasps_to_evaluate.size(); i++)
+ 		{
+ 			object_manipulation_msgs::Grasp &graspEval = req.grasps_to_evaluate[i];
+ 			geometry_msgs::Pose &poseToEval = graspEval.grasp_pose;
+ 			generateGraspPoses(poseToEval,_ParamVals.NumCandidateGrasps,candidatePoses);
+ 		}
+
+ 		// storing all candidate poses
+ 		for(std::size_t i = 0; i < candidatePoses.size(); i++)
+ 		{
+ 			candidateGrasp.grasp_pose = candidatePoses[i];
+ 			res.grasps.push_back(candidateGrasp);
+ 		}
+
+ 		res.error_code.value = object_manipulation_msgs::GraspPlanningErrorCode::SUCCESS;
+ 		return true;
+	}
 
 	// local variables
 	ros::NodeHandle nh;
@@ -398,6 +413,26 @@ bool OverheadGraspPlanner::planGrasp(object_manipulation_msgs::GraspPlanning::Re
 	res.grasps = grasps;
 	res.error_code.value = object_manipulation_msgs::GraspPlanningErrorCode::SUCCESS;
 	return true;
+}
+
+void OverheadGraspPlanner::generateGraspPoses(const geometry_msgs::Pose &pose,int numCandidates,
+		std::vector<geometry_msgs::Pose> &poses)
+{
+	tf::Transform graspTf = tf::Transform::getIdentity();
+	tf::Transform candidateTf;
+	tfScalar angle = tfScalar(2*M_PI/(double(numCandidates)));
+
+	// converting initial pose to tf
+	tf::poseMsgToTF(pose,graspTf);
+
+	for(int i = 0; i < numCandidates; i++)
+	{
+		candidateTf = graspTf*tf::Transform(tf::Quaternion(_ParamVals.ApproachVector,i*angle),
+				tf::Vector3(0.0f,0.0f,0.0f));
+		geometry_msgs::Pose candidatePose = geometry_msgs::Pose();
+		tf::poseTFToMsg(candidateTf,candidatePose);
+		poses.push_back(candidatePose);
+	}
 }
 
 
