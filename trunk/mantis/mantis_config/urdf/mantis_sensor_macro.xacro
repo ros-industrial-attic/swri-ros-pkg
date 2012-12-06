@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <robot name="mantis_sensor" xmlns:xacro="http://ros.org/wiki/xacro">
 
-	<xacro:macro name="sensor_definitions" params="prefix parent_link x_val y_val z_val pitch yaw" >
+	<xacro:macro name="sensor_definitions" params="prefix parent_link x_val y_val z_val roll pitch yaw" >
 		<material name="${prefix}color_b">
 			<color rgba="0 0.8 1 0.4"/>
 		</material>	
@@ -98,7 +98,7 @@
 		<joint name="${prefix}${parent_link}_to_kinect_link" type="fixed">
 			<parent link="${parent_link}"/>
 			<child link="${prefix}kinect_link"/>
-			<origin xyz="${x_val} ${y_val} ${z_val}" rpy="0 ${pitch} ${yaw}"/>
+			<origin xyz="${x_val} ${y_val} ${z_val}" rpy="${roll} ${pitch} ${yaw}"/>
 		</joint>
 		<joint name="${prefix}${parent_link}_to_kinect_keepout" type="fixed">
 			<parent link="${parent_link}"/>
