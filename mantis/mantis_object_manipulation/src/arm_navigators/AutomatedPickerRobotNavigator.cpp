@@ -580,7 +580,7 @@ void AutomatedPickerRobotNavigator::updateMarkerArrayMsg()
 		}
 		marker_array_pub_.publish(marker_array_msg_);
 		marker_array_msg_.markers.clear();
-		zone_selector_.getAllActiveZonesMarkers(marker_array_msg_);
+		zone_selector_.getAllActiveZonesCombinedMarkers(marker_array_msg_);
 	}
 }
 
