@@ -19,9 +19,10 @@
 
 	<!-- instantiating sensor definitions -->
 	<!--xacro:sensor_definitions prefix="${arm_prefix}" parent_link="workcell_frame" 
-		x_val="1.20" y_val="0" z_val="0.4" pitch="0.5235" yaw="3.147"/-->
+		x_val="1.20" y_val="0" z_val="0.4" pitch="0.5235" yaw="3.147"/
+		rpy="0.06+0.06 1.19 3.19+0.06" xyz="1.15-.16 -0.01 1.42+.16"-->
 	<xacro:sensor_definitions prefix="${arm_prefix}" parent_link="${arm_prefix}base_link" 
-		x_val="1.08" y_val="-0.72" z_val="0.82" pitch="0.5235" yaw="2.356"/>
+		x_val="0.99" y_val="-0.04" z_val="1.58" roll="0.12" pitch="1.19" yaw="3.25"/>
 	<!-- end of sensor definitions -->
 
 	<!-- instantiating arm and gripper -->	
