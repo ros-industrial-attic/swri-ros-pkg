@@ -29,14 +29,31 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
-target_link_libraries(robot_state simple_message)
 
-rosbuild_add_library(industrial_robot_client
-  src/joint_relay_handler.cpp
-  src/joint_trajectory_downloader.cpp
-  src/joint_trajectory_interface.cpp
-  src/joint_trajectory_streamer.cpp
-  src/robot_state_interface.cpp)
+set(SRC_FILES src/joint_relay_handler.cpp
+              src/joint_trajectory_downloader.cpp
+              src/joint_trajectory_interface.cpp
+              src/joint_trajectory_streamer.cpp
+              src/robot_state_interface.cpp)
+
+# This library depends on the simple_message library, which is available
+# in two formats to support endian differences between robot & PC.
+#
+# As in simple_message, two libraries are created: one that does direct
+# passthrough of binary numeric data to the robot controller, and one that
+# uses byte-swapping to account for endian mis-matches.
+#
+# Due to rosmake dependency limitations, higher-level code must explicitly
+# link to the desired industrial_robot_client library:
+#    target_link_libraries(my_node industrial_robot_client)
+#      or
+#    target_link_libraries(my_node industrial_robot_client_bswap)
+
+rosbuild_add_library(industrial_robot_client ${SRC_FILES})
+target_link_libraries(industrial_robot_client simple_message)
+
+rosbuild_add_library(industrial_robot_client_bswap ${SRC_FILES})
+target_link_libraries(industrial_robot_client_bswap simple_message_bswap)
 
 rosbuild_add_executable(robot_state
   src/generic_robot_state_node.cpp)
@@ -46,12 +63,10 @@ rosbuild_add_executable(motion_streaming_interface
   src/generic_joint_streamer_node.cpp)
 target_link_libraries(motion_streaming_interface industrial_robot_client)
 rosbuild_link_boost(motion_streaming_interface thread)
-target_link_libraries(motion_streaming simple_message)
 
 rosbuild_add_executable(motion_download_interface
   src/generic_joint_downloader_node.cpp)
 target_link_libraries(motion_download_interface industrial_robot_client)
-target_link_libraries(motion_download_interface simple_message)
 
 rosbuild_add_executable(joint_trajectory_action src/joint_trajectory_action.cpp)
 rosbuild_link_boost(joint_trajectory_action thread)

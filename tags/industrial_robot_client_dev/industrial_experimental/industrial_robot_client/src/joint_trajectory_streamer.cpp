@@ -108,6 +108,8 @@ bool JointTrajectoryStreamer::send_to_robot(const std::vector<JointTrajPtMessage
     this->streaming_start_ = ros::Time::now();
   }
   this->mutex_.unlock();
+
+  return true;
 }
 
 bool JointTrajectoryStreamer::trajectory_to_msgs(const trajectory_msgs::JointTrajectoryConstPtr &traj, std::vector<JointTrajPtMessage>* msgs)

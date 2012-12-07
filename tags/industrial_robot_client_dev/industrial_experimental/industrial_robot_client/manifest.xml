@@ -6,7 +6,7 @@
      simple message protocol.
 
   </description>
-  <author>Christina Gomez</author>
+  <author>Jeremy Zoss</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/industrial_robot_client</url>
@@ -23,6 +23,6 @@
   <depend package="industrial_utils"/>
   
   <export>
-    <cpp cflags="-I${prefix}/include/" lflags="-L${prefix}/lib -lindustrial_robot_client"/>
+    <cpp cflags="-I${prefix}/include/" lflags="-L${prefix}/lib"/>
   </export>
 </package>
