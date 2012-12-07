@@ -12,6 +12,7 @@
 	<xacro:property name="vacuum_gripper_width" value="0.088"/>
 	<xacro:property name="arm_prefix" value="ur5_arm_"/>
 	<xacro:property name="arm_name" value="ur5"/>	
+	<xacro:property name="temp_base_offset" value="0.045"/>
 
 	<!-- instantiating arm and gripper -->	
 	<xacro:ur5_robot prefix="${arm_prefix}"/>
@@ -39,7 +40,7 @@
 
 	<!-- instantiating sensor definitions -->
 	<xacro:sensor_definitions prefix="${arm_prefix}" parent_link="ur5_stand" 
-		x_val="-1.08" y_val="0.72" z_val="${0.82 - 0.5 * robot_stand_height}" pitch="0.5235" yaw="-0.604"/>
+		x_val="-0.75" y_val="-0.03" z_val="1.37" pitch="1.19" yaw="0.0" roll="0.07" /> 
 	<!--xacro:sensor_definitions prefix="${arm_prefix}" parent_link="${arm_prefix}base_link" 
 		x_val="1.08" y_val="-0.72" z_val="${0.82 - robot_stand_height}" pitch="0.5235" yaw="2.536"/-->
 	<!-- end of sensor definitions -->
@@ -55,7 +56,7 @@
 	<joint name="${arm_name}_to_stand" type="fixed">
 		<parent link="ur5_stand"/>
 		<child link="${arm_prefix}base_link"/>
-		<origin xyz="0 0 ${robot_stand_height * 0.5}" rpy="0 0 2.355"/>
+		<origin xyz="0 0 ${robot_stand_height * 0.5 + temp_base_offset}" rpy="0 0 2.355"/>
 	</joint>
 		
 	<!-- end of arm workcell joint definitions-->
@@ -64,7 +65,7 @@
 	<joint name="${arm_prefix}to_gripper" type="fixed">
 		<parent link="${arm_prefix}ee_link"/>
 		<child link="${arm_prefix}gripper_frame"/>
-		<origin xyz="0 0 0" rpy="0 1.57 0"/>
+		<origin xyz="0 0 0" rpy="-1.57 0 -1.57"/> <!-- 0 1.57 0 -->
 	</joint>
 	<!-- end of arm-gripper coupling joint definitions -->
 </robot>
