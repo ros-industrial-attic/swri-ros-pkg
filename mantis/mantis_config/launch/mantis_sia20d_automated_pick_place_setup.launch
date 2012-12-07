@@ -21,6 +21,7 @@
 	<include  file="$(find mantis_perception)/launch/mantis_sensor.launch">
 		<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
 		<arg name="camera_name" value="$(arg sensor_name)"/>
+		<arg name="device_id" value="1@0"/>
 	</include>
 
 	<!-- gripper description (needs to be outside the scope of the namespace)-->
