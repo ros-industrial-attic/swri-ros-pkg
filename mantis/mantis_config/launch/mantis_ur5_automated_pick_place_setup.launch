@@ -8,7 +8,7 @@
 	<arg name="run_sensor_locally" default="true"/>
 	<arg name="manual_usb" default="true"/>
 	<arg name="usb_bus" default="002"/>
-	<arg name="usb_device" default="004"/>
+	<arg name="usb_device" default="011"/>
 
 	<!-- fixed parameters -->
 	<arg name="arm_namespace" value="ur5_arm"/>
