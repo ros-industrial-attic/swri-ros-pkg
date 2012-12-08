@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2012, Southwest Research Institute
@@ -29,51 +29,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "abb_common/abb_utils.h"
+#include "ros/ros.h"
 
-#ifndef PARAM_UTILS_H_
-#define PARAM_UTILS_H_
-
-#include <map>
-#include <vector>
-#include <string>
-
-namespace industrial_utils
+namespace abb
 {
-namespace param
+namespace utils
 {
 
-/**
- * \brief Gets parameter list as vector of strings
- *
- * \param param_name name of list parameter
- * \param list_param populated with parameter value(s)
- *
- * \return true if parameter
- */
-bool getListParam(const std::string param_name, std::vector<std::string> & list_param);
+// TBD: This transform should also account for velocity/acceleration affects due to linkage, so that velocity calculation is accurate
+void linkage_transform(const trajectory_msgs::JointTrajectoryPoint& pt_in, trajectory_msgs::JointTrajectoryPoint* pt_out, double J23_factor)
+{
+  *pt_out = pt_in;
+  linkage_transform(pt_in.positions, &(pt_out->positions), J23_factor);
+}
 
-/**
- * \brief Tries to read joint names from given parameter,
- * with a fallback to default joint names if parameter not available.
- *
- * \param param_name name of joint-names parameter
- * \param num_joints number of joints to use, if parameter not found
- * \param[out] joint_names list of joint names
- *
- * \return true if parameter found, false if defaults used
- */
-bool getJointNames(const std::string param_name, int num_joints, std::vector<std::string> & joint_names);
+void linkage_transform(const std::vector<double>& points_in, std::vector<double>* points_out, double J23_factor)
+{
+  ROS_ASSERT(points_in.size() > 3);
 
-/**
- * \brief Tries to read joint velocity limits from the specified URDF parameter
- *
- * \param[in] urdf_param_name name of URDF parameter
- * \param[out] velocity_limits map of velocity limits for each URDF joint
- *
- * \return true if parameter found, false if not found
- */
-bool getJointVelocityLimits(const std::string urdf_param_name, std::map<std::string, double> &velocity_limits);
+  *points_out = points_in;
+  points_out->at(2) += J23_factor * points_out->at(1);
+}
 
-} //industrial_utils::param
-} //industrial_utils
-#endif /* PARAM_UTILS_H_ */
+} //abb
+
+} //utils
