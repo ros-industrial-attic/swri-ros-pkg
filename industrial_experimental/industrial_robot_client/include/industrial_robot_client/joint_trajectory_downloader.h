@@ -32,56 +32,30 @@
 #ifndef JOINT_TRAJECTORY_DOWNLOADER_H
 #define JOINT_TRAJECTORY_DOWNLOADER_H
 
-#include "simple_message/smpl_msg_connection.h"
-#include "ros/ros.h"
-#include <trajectory_msgs/JointTrajectory.h>
+#include "industrial_robot_client/joint_trajectory_interface.h"
 
 namespace industrial_robot_client
 {
 namespace joint_trajectory_downloader
 {
 
-/**
- * \brief Message handler that downloads joint trajectories to the
- * motoman controller
- */
+using industrial_robot_client::joint_trajectory_interface::JointTrajectoryInterface;
+using industrial::joint_traj_pt_message::JointTrajPtMessage;
 
-//* JointTrajectoryDownloader
 /**
- *
- * THIS CLASS IS NOT THREAD-SAFE
- *
+ * \brief Message handler that downloads joint trajectories to
+ * a robot controller that supports the trajectory downloading interface
  */
-class JointTrajectoryDownloader
+class JointTrajectoryDownloader : public JointTrajectoryInterface
 {
 
 public:
 
-	JointTrajectoryDownloader();
-
-  /**
-   * \brief Constructor
-   *
-   * \param ROS node handle (used for subscribing)
-   * \param ROS node handle (used for publishing (to the robot controller))
-   */
-	JointTrajectoryDownloader(ros::NodeHandle &n, industrial::smpl_msg_connection::SmplMsgConnection* robotConnecton);
-
-  ~JointTrajectoryDownloader();
-
-  void jointTrajectoryCB(const trajectory_msgs::JointTrajectoryConstPtr &msg);
-
-private:
-
-  industrial::smpl_msg_connection::SmplMsgConnection* robot_;
-  ros::Subscriber sub_joint_trajectory_; //subscribe to "command"
-  ros::NodeHandle node_;
-
-  void trajectoryStop();
+  bool send_to_robot(const std::vector<JointTrajPtMessage>& messages);
 
 };
 
 } //joint_trajectory_downloader
-} //motoman
+} //industrial_robot_client
 
 #endif /* JOINT_TRAJECTORY_DOWNLOADER_H */

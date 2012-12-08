@@ -29,51 +29,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef ABB_UTILS_H_
+#define ABB_UTILS_H_
 
-#ifndef PARAM_UTILS_H_
-#define PARAM_UTILS_H_
-
-#include <map>
 #include <vector>
-#include <string>
+#include "trajectory_msgs/JointTrajectory.h"
 
-namespace industrial_utils
+namespace abb
 {
-namespace param
+namespace utils
 {
 
 /**
- * \brief Gets parameter list as vector of strings
+ * \brief Corrects for parallel linkage coupling between joints.
  *
- * \param param_name name of list parameter
- * \param list_param populated with parameter value(s)
- *
- * \return true if parameter
+ * \param[in] joints_in input joint angles
+ * \param[out] joints_out output joint angles
+ * \param[in] J23_factor  Linkage factor for J2-J3.
+ *   J3_out = J3_in + j23_factor * J2_in
  */
-bool getListParam(const std::string param_name, std::vector<std::string> & list_param);
+void linkage_transform(const std::vector<double>& joints_in, std::vector<double>* joints_out, double J23_factor=0);
 
 /**
- * \brief Tries to read joint names from given parameter,
- * with a fallback to default joint names if parameter not available.
+ * \brief Corrects for parallel linkage coupling between joints.
  *
- * \param param_name name of joint-names parameter
- * \param num_joints number of joints to use, if parameter not found
- * \param[out] joint_names list of joint names
- *
- * \return true if parameter found, false if defaults used
+ * \param[in] pt_in input joint trajectory point
+ * \param[out] pt_out output joint trajectory point
+ * \param[in] J23_factor  Linkage factor for J2-J3.
+ *   J3_out = J3_in + j23_factor * J2_in
  */
-bool getJointNames(const std::string param_name, int num_joints, std::vector<std::string> & joint_names);
+void linkage_transform(const trajectory_msgs::JointTrajectoryPoint& pt_in, trajectory_msgs::JointTrajectoryPoint* pt_out, double J23_factor=0);
 
-/**
- * \brief Tries to read joint velocity limits from the specified URDF parameter
- *
- * \param[in] urdf_param_name name of URDF parameter
- * \param[out] velocity_limits map of velocity limits for each URDF joint
- *
- * \return true if parameter found, false if not found
- */
-bool getJointVelocityLimits(const std::string urdf_param_name, std::map<std::string, double> &velocity_limits);
+} //abb
+} //utils
 
-} //industrial_utils::param
-} //industrial_utils
-#endif /* PARAM_UTILS_H_ */
+#endif /* ABB_UTILS_H_ */

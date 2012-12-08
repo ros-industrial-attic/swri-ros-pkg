@@ -33,6 +33,7 @@
 
 #include "industrial_utils/param_utils.h"
 #include "ros/ros.h"
+#include "urdf/model.h"
 
 namespace industrial_utils
 {
@@ -96,6 +97,25 @@ bool getJointNames(const std::string param_name, int num_joints, std::vector<std
   }
 
     return false;
+}
+
+bool getJointVelocityLimits(const std::string urdf_param_name, std::map<std::string, double> &velocity_limits)
+{
+  urdf::Model model;
+  std::map<std::string, boost::shared_ptr<urdf::Joint> >::iterator iter;
+
+  if (!ros::param::has(urdf_param_name) || !model.initParam(urdf_param_name))
+    return false;
+    
+  velocity_limits.clear();
+  for (iter=model.joints_.begin(); iter!=model.joints_.end(); ++iter)
+  {
+    std::string joint_name(iter->first);
+    double limit = iter->second->limits->velocity;
+    velocity_limits.insert(std::pair<std::string,double>(joint_name,limit));
+  }
+  
+  return true;
 }
 
 } //industrial_utils::param

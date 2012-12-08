@@ -1,34 +1,33 @@
 /*
-* Software License Agreement (BSD License)
-*
-* Copyright (c) 2011, Southwest Research Institute
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*
-*       * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*       * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*       * Neither the name of the Southwest Research Institute, nor the names
-*       of its contributors may be used to endorse or promote products derived
-*       from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*/
-
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2011, Southwest Research Institute
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *       * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *       * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *       * Neither the name of the Southwest Research Institute, nor the names
+ *       of its contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "ros/ros.h"
 #include <actionlib/server/action_server.h>
@@ -46,12 +45,8 @@ private:
   typedef JTAS::GoalHandle GoalHandle;
 public:
   JointTrajectoryExecuter(ros::NodeHandle &n) :
-    node_(n),
-    action_server_(node_, "joint_trajectory_action",
-                   boost::bind(&JointTrajectoryExecuter::goalCB, this, _1),
-                   boost::bind(&JointTrajectoryExecuter::cancelCB, this, _1),
-                   false),
-    has_active_goal_(false)
+    node_(n), action_server_(node_, "joint_trajectory_action", boost::bind(&JointTrajectoryExecuter::goalCB, this, _1),
+                             boost::bind(&JointTrajectoryExecuter::cancelCB, this, _1), false), has_active_goal_(false)
   {
     using namespace XmlRpc;
     ros::NodeHandle pn("~");
@@ -80,34 +75,31 @@ public:
     }
     pn.param("constraints/stopped_velocity_tolerance", stopped_velocity_tolerance_, 0.01);
 
+    pub_controller_command_ = node_.advertise<trajectory_msgs::JointTrajectory> ("command", 1);
+    sub_controller_state_ = node_.subscribe("feedback_states", 1, &JointTrajectoryExecuter::controllerStateCB, this);
 
-    pub_controller_command_ =
-      node_.advertise<trajectory_msgs::JointTrajectory>("command", 1);
-    sub_controller_state_ =
-      node_.subscribe("feedback_states", 1, &JointTrajectoryExecuter::controllerStateCB, this);
-    
     action_server_.start();
   }
 
   ~JointTrajectoryExecuter()
   {
-   pub_controller_command_.shutdown();
+    pub_controller_command_.shutdown();
     sub_controller_state_.shutdown();
     watchdog_timer_.stop();
   }
 
-  bool withinGoalConstraints(const control_msgs::FollowJointTrajectoryFeedbackConstPtr &msg,
-                             const std::map<std::string, double>& constraints,
-                             const trajectory_msgs::JointTrajectory& traj) {
+  bool withinGoalConstraints(const control_msgs::FollowJointTrajectoryFeedbackConstPtr &msg, const std::map<
+      std::string, double>& constraints, const trajectory_msgs::JointTrajectory& traj)
+  {
     ROS_DEBUG("Checking goal constraints");
     int last = traj.points.size() - 1;
     for (size_t i = 0; i < msg->joint_names.size(); ++i)
     {
-      double abs_error = fabs(msg->actual.positions[i]-traj.points[last].positions[i]);
+      double abs_error = fabs(msg->actual.positions[i] - traj.points[last].positions[i]);
       double goal_constraint = constraints.at(msg->joint_names[i]);
       if (goal_constraint >= 0 && abs_error > goal_constraint)
       {
-	ROS_DEBUG("Bad constraint: %f, abs_errs: %f", goal_constraint, abs_error);
+        ROS_DEBUG("Bad constraint: %f, abs_errs: %f", goal_constraint, abs_error);
         return false;
       }
       ROS_DEBUG("Checking constraint: %f, abs_errs: %f", goal_constraint, abs_error);
@@ -153,7 +145,7 @@ private:
       {
         should_abort = true;
         ROS_WARN("Aborting goal because we haven't heard from the controller in %.3lf seconds",
-                 (now - last_controller_state_->header.stamp).toSec());
+            (now - last_controller_state_->header.stamp).toSec());
       }
 
       if (should_abort)
@@ -196,13 +188,14 @@ private:
     }
 
     // Sends the trajectory along to the controller
-    if(withinGoalConstraints(last_controller_state_,
-                             goal_constraints_,
-                             gh.getGoal()->trajectory)) {
+    if (withinGoalConstraints(last_controller_state_, goal_constraints_, gh.getGoal()->trajectory))
+    {
       ROS_INFO_STREAM("Already within goal constraints");
       gh.setAccepted();
       gh.setSucceeded();
-    } else {
+    }
+    else
+    {
       gh.setAccepted();
       active_goal_ = gh;
       has_active_goal_ = true;
@@ -230,7 +223,6 @@ private:
     }
   }
 
-
   ros::NodeHandle node_;
   JTAS action_server_;
   ros::Publisher pub_controller_command_;
@@ -241,10 +233,9 @@ private:
   GoalHandle active_goal_;
   trajectory_msgs::JointTrajectory current_traj_;
 
-
   std::vector<std::string> joint_names_;
-  std::map<std::string,double> goal_constraints_;
-  std::map<std::string,double> trajectory_constraints_;
+  std::map<std::string, double> goal_constraints_;
+  std::map<std::string, double> trajectory_constraints_;
   double goal_time_constraint_;
   double stopped_velocity_tolerance_;
 
@@ -267,9 +258,9 @@ private:
       return;
     }
     /* NOT CONCERNED ABOUT TRAJECTORY TIMING AT THIS POINT
-    if (now < current_traj_.header.stamp + current_traj_.points[0].time_from_start)
-      return;
-    */
+     if (now < current_traj_.header.stamp + current_traj_.points[0].time_from_start)
+     return;
+     */
 
     if (!setsEqual(joint_names_, msg->joint_names))
     {
@@ -281,9 +272,8 @@ private:
     // Checks that we have ended inside the goal constraints
 
     ROS_DEBUG("Checking goal contraints");
-    if(withinGoalConstraints(msg, 
-                             goal_constraints_,
-                             current_traj_)) {
+    if (withinGoalConstraints(msg, goal_constraints_, current_traj_))
+    {
       ROS_INFO("Inside goal contraints, return success for action");
       active_goal_.setSucceeded();
       has_active_goal_ = false;
@@ -292,69 +282,68 @@ private:
     /*  DISABLING THIS MORE COMPLICATED GOAL CHECKING AND ERROR DETECTION
 
 
-    int last = current_traj_.points.size() - 1;
-    ros::Time end_time = current_traj_.header.stamp + current_traj_.points[last].time_from_start;
-    if (now < end_time)
-    {
-      // Checks that the controller is inside the trajectory constraints.
-      for (size_t i = 0; i < msg->joint_names.size(); ++i)
-      {
-        double abs_error = fabs(msg->error.positions[i]);
-        double constraint = trajectory_constraints_[msg->joint_names[i]];
-        if (constraint >= 0 && abs_error > constraint)
-        {
-          // Stops the controller.
-          trajectory_msgs::JointTrajectory empty;
-          empty.joint_names = joint_names_;
-          pub_controller_command_.publish(empty);
+     int last = current_traj_.points.size() - 1;
+     ros::Time end_time = current_traj_.header.stamp + current_traj_.points[last].time_from_start;
+     if (now < end_time)
+     {
+     // Checks that the controller is inside the trajectory constraints.
+     for (size_t i = 0; i < msg->joint_names.size(); ++i)
+     {
+     double abs_error = fabs(msg->error.positions[i]);
+     double constraint = trajectory_constraints_[msg->joint_names[i]];
+     if (constraint >= 0 && abs_error > constraint)
+     {
+     // Stops the controller.
+     trajectory_msgs::JointTrajectory empty;
+     empty.joint_names = joint_names_;
+     pub_controller_command_.publish(empty);
 
-          active_goal_.setAborted();
-          has_active_goal_ = false;
-          ROS_WARN("Aborting because we would up outside the trajectory constraints");
-          return;
-        }
-      }
-    }
-    else
-    {
-      // Checks that we have ended inside the goal constraints
-      bool inside_goal_constraints = true;
-      for (size_t i = 0; i < msg->joint_names.size() && inside_goal_constraints; ++i)
-      {
-        double abs_error = fabs(msg->error.positions[i]);
-        double goal_constraint = goal_constraints_[msg->joint_names[i]];
-        if (goal_constraint >= 0 && abs_error > goal_constraint)
-          inside_goal_constraints = false;
+     active_goal_.setAborted();
+     has_active_goal_ = false;
+     ROS_WARN("Aborting because we would up outside the trajectory constraints");
+     return;
+     }
+     }
+     }
+     else
+     {
+     // Checks that we have ended inside the goal constraints
+     bool inside_goal_constraints = true;
+     for (size_t i = 0; i < msg->joint_names.size() && inside_goal_constraints; ++i)
+     {
+     double abs_error = fabs(msg->error.positions[i]);
+     double goal_constraint = goal_constraints_[msg->joint_names[i]];
+     if (goal_constraint >= 0 && abs_error > goal_constraint)
+     inside_goal_constraints = false;
 
-        // It's important to be stopped if that's desired.
-        if (fabs(msg->desired.velocities[i]) < 1e-6)
-        {
-          if (fabs(msg->actual.velocities[i]) > stopped_velocity_tolerance_)
-            inside_goal_constraints = false;
-        }
-      }
+     // It's important to be stopped if that's desired.
+     if (fabs(msg->desired.velocities[i]) < 1e-6)
+     {
+     if (fabs(msg->actual.velocities[i]) > stopped_velocity_tolerance_)
+     inside_goal_constraints = false;
+     }
+     }
 
-      if (inside_goal_constraints)
-      {
-        active_goal_.setSucceeded();
-        has_active_goal_ = false;
-      }
-      else if (now < end_time + ros::Duration(goal_time_constraint_))
-      {
-        // Still have some time left to make it.
-      }
-      else
-      {
-        ROS_WARN("Aborting because we wound up outside the goal constraints");
-        active_goal_.setAborted();
-        has_active_goal_ = false;
-      }
+     if (inside_goal_constraints)
+     {
+     active_goal_.setSucceeded();
+     has_active_goal_ = false;
+     }
+     else if (now < end_time + ros::Duration(goal_time_constraint_))
+     {
+     // Still have some time left to make it.
+     }
+     else
+     {
+     ROS_WARN("Aborting because we wound up outside the goal constraints");
+     active_goal_.setAborted();
+     has_active_goal_ = false;
+     }
 
-    }
-    */
+     }
+     */
   }
 };
-
 
 int main(int argc, char** argv)
 {
@@ -366,7 +355,4 @@ int main(int argc, char** argv)
 
   return 0;
 }
-
-
-
 
