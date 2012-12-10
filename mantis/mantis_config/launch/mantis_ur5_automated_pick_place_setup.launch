@@ -5,19 +5,17 @@
 	<arg name="launch_bringup" default="true"/>
 	<arg name="sim_only" default="true"/>
 
-	<arg name="run_sensor_locally" default="true"/>
-	<arg name="manual_usb" default="true"/>
-	<arg name="usb_bus" default="002"/>
-	<arg name="usb_device" default="011"/>
+	<arg name="sensor_usb_manual_setup" default="false"/>
+	<arg name="sensor_usb_bus" default="002"/>
+	<arg name="sensor_usb_device" default="004"/>
 
 	<!-- fixed parameters -->
 	<arg name="arm_namespace" value="ur5_arm"/>
 	<arg name="robot_description" value="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_ur5_arm_workspace.xacro'"/>
 	<arg name="sensor_name" value="$(arg arm_namespace)_kinect"/>
 
-	<arg name="remote_machine_ip" value="192.168.32.6"/>
-	<arg name="local_machine_ip" value="192.168.32.10"/>
-	<arg name="user_name" value="jnicho"/>
+	<!-- launching environment configuration -->
+	<include file="$(find mantis_config)/launch/environment_setup.launch"/>
 
 	<!-- launching bringup -->
 	<include if="$(arg launch_bringup)" file="$(find mantis_config)/launch/mantis_ur5_gripper_bringup.launch">
@@ -25,28 +23,13 @@
 	</include>
 
 	<!-- camera sensor setup (must be placed outside the group namespace) -->
-	<group if="$(arg run_sensor_locally)">
-		<remap from="/$(arg sensor_name)/depth/points"
-			to="/$(arg arm_namespace)/camera/depth_registered/points"/>
-		<include  file="$(find mantis_perception)/launch/mantis_sensor.launch">
-			<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
-			<arg name="camera_name" value="$(arg sensor_name)"/>
-			<arg if="$(arg manual_usb)" name="device_id" value="$(arg usb_bus)@$(arg usb_device)" />
-		</include>
-	</group>
-	<group unless="$(arg run_sensor_locally)">
-		<env name="ROS_MASTER_URI" value="http://$(arg local_machine_ip):11311"/>
-		<env name="ROS_IP" value="$(arg local_machine_ip)"/>
-		<machine name="sensor_machine" address="$(arg remote_machine_ip)" user="$(arg user_name)">
-			<env name="ROS_MASTER_URI" value="http://$(arg local_machine_ip):11311"/>
-			<env name="ROS_IP" value="$(arg remote_machine_ip)"/>
-		</machine>
-		<include  machine="sensor_machine" file="$(find mantis_perception)/launch/mantis_sensor_asus.launch">
-			<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
-			<arg name="camera_name" value="$(arg sensor_name)"/>
-			<arg name="device_id" value="$(arg usb_bus)@$(arg usb_device)" />
-		</include>
-	</group>  
+	<remap from="/$(arg sensor_name)/depth/points"
+		to="/$(arg arm_namespace)/camera/depth_registered/points"/>
+	<include  file="$(find mantis_perception)/launch/mantis_sensor_asus.launch">
+		<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
+		<arg name="camera_name" value="$(arg sensor_name)"/>
+		<arg if="$(arg sensor_usb_manual_setup)" name="device_id" value="$(arg sensor_usb_bus)@$(arg sensor_usb_device)" />
+	</include> 
 
 	<!-- gripper description (needs to be outside the scope of the namespace)-->
 	<rosparam  command="load" 
