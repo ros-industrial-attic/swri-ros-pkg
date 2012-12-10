@@ -5,10 +5,9 @@
 	<arg name="launch_bringup" default="true"/>
 	<arg name="sim_only" default="true"/>
 
-	<arg name="run_sensor_locally" default="true"/>
-	<arg name="manual_usb" default="false"/>
-	<arg name="usb_bus" default="002"/>
-	<arg name="usb_device" default="004"/>
+	<arg name="sensor_usb_manual_setup" default="false"/>
+	<arg name="sensor_usb_bus" default="002"/>
+	<arg name="sensor_usb_device" default="004"/>
 
 	<!-- fixed parameters -->
 	<arg name="arm_namespace" value="ur5_arm"/>
@@ -24,15 +23,13 @@
 	</include>
 
 	<!-- camera sensor setup (must be placed outside the group namespace) -->
-	<group if="$(arg run_sensor_locally)">
-		<remap from="/$(arg sensor_name)/depth/points"
-			to="/$(arg arm_namespace)/camera/depth_registered/points"/>
-		<include  file="$(find mantis_perception)/launch/mantis_sensor.launch">
-			<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
-			<arg name="camera_name" value="$(arg sensor_name)"/>
-			<arg if="$(arg manual_usb)" name="device_id" value="$(arg usb_bus)@$(arg usb_device)" />
-		</include>
-	</group>
+	<remap from="/$(arg sensor_name)/depth/points"
+		to="/$(arg arm_namespace)/camera/depth_registered/points"/>
+	<include  file="$(find mantis_perception)/launch/mantis_sensor_asus.launch">
+		<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
+		<arg name="camera_name" value="$(arg sensor_name)"/>
+		<arg if="$(arg sensor_usb_manual_setup)" name="device_id" value="$(arg sensor_usb_bus)@$(arg sensor_usb_device)" />
+	</include>
 
 	<!-- gripper description (needs to be outside the scope of the namespace)-->
 	<rosparam  command="load" 
