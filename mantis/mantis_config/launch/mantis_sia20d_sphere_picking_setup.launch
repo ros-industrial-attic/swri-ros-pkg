@@ -7,7 +7,7 @@
 
 	<arg name="sensor_usb_manual_setup" default="false"/>
 	<arg name="sensor_usb_bus" default="001"/>
-	<arg name="sensor_usb_device" default="000"/>
+	<arg name="sensor_usb_device" default="002"/>
 
 	<!-- fixed parameters -->
 	<arg name="arm_namespace" value="sia20d_arm"/>
@@ -28,6 +28,7 @@
 	<include  file="$(find mantis_perception)/launch/mantis_sensor_asus.launch">
 		<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
 		<arg name="camera_name" value="$(arg sensor_name)"/>
+		<arg name="publish_tf" value="false" />
 		<arg if="$(arg sensor_usb_manual_setup)" name="device_id" value="$(arg sensor_usb_bus)@$(arg sensor_usb_device)" />
 	</include>
 
