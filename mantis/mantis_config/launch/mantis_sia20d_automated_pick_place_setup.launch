@@ -25,7 +25,7 @@
 	<!-- camera sensor setup (must be placed outside the group namespace) -->
 	<remap from="/$(arg sensor_name)/depth/points"
 		to="/$(arg arm_namespace)/camera/depth_registered/points"/>
-	<include  file="$(find mantis_perception)/launch/mantis_sensor_asus.launch">
+	<include  file="$(find mantis_perception)/launch/mantis_sia20d_sensor.launch">
 		<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
 		<arg name="camera_name" value="$(arg sensor_name)"/>
 		<arg name="publish_tf" value="false" />
