@@ -12,6 +12,7 @@
 	<xacro:property name="arm_prefix" value="sia20d_arm_"/>
 	<xacro:property name="arm_name" value="sia20d"/>
 	<xacro:property name="coupler_height" value="0.087"/>
+	<xacro:property name="temp_base_offset" value="0.045"/>
 	
 	<!-- instantiating workcell definitions -->
 	<xacro:workcell_zone1_components/>
@@ -33,7 +34,7 @@
 	<joint name="${arm_name}_to_workcell" type="fixed">
 		<parent link="workcell_frame"/>
 		<child link="${arm_prefix}base_link"/>
-		<origin xyz="0.241 0 0" rpy="0 0 0"/>
+		<origin xyz="0.241 0 ${temp_base_offset}" rpy="0 0 0"/>
 	</joint>
 		
 	<!-- end of arm workcell joint definitions-->
