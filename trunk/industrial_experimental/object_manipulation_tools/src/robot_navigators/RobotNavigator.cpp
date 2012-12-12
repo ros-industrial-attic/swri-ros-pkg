@@ -1132,28 +1132,6 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   ROS_INFO_STREAM(NODE_NAME << ": arm approach trajectory completed");
   trajectories_succeeded_ = false;
 
-  // request gripper pre-grasp command
-//  object_manipulation_msgs::GraspHandPostureExecutionGoal graspGoal;
-//  graspGoal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP;
-//
-//  ROS_INFO_STREAM(NODE_NAME << ": Requesting pre-grasp");
-//  grasp_exec_action_client_->sendGoal(graspGoal);
-//  if(!grasp_exec_action_client_->waitForResult(ros::Duration(2.0f)))
-//  {
-//	  ROS_ERROR_STREAM(NODE_NAME << ": Pre-grasp request timeout, exiting");
-//	  return false;
-//  }
-//
-//  if(grasp_exec_action_client_->getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
-//  {
-//	  ROS_ERROR_STREAM(NODE_NAME << ": Pre-grasp request unsuccessful, exiting");
-//	  return false;
-//  }
-//  else
-//  {
-//	  ROS_INFO_STREAM(NODE_NAME << ": Pre-grasp completed");
-//  }
-
   // setting up gripper pre-grasp
   gripper_ter.trajectory_ = getGripperTrajectory(object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP);
   validateJointTrajectory(gripper_ter.trajectory_);

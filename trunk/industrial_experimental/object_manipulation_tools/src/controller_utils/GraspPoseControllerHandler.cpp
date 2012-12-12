@@ -108,8 +108,11 @@ bool GraspPoseControllerHandler::executeTrajectory(
 												  boost::bind(&GraspPoseControllerHandler::controllerDoneCallback, this, _1, _2),
 												  boost::bind(&GraspPoseControllerHandler::controllerActiveCallback, this),
 												  boost::bind(&GraspPoseControllerHandler::controllerFeedbackCallback, this, _1));
+
+	//grasp_posture_execution_action_client_.sendGoal(goal);
 	recorder_->registerCallback(group_controller_combo_name_,
-							  boost::bind(&GraspPoseControllerHandler::addNewStateToRecordedTrajectory, this, _1, _2, _3));
+							  boost::bind(&GraspPoseControllerHandler::addNewStateToRecordedTrajectory
+									  , this, _1, _2, _3));
 
 	// waiting for result
 //	if(!grasp_posture_execution_action_client_.waitForResult(ros::Duration(GRASP_COMMAND_EXECUTION_TIMEOUT)))
