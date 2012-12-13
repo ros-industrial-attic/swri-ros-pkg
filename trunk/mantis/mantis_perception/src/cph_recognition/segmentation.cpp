@@ -375,17 +375,18 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
   {
 	  sensor_msgs::PointCloud out_cloud;
 	  sensor_msgs::PointCloud2 ocloud;
-	  pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+	  //pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+	  pcl::PointCloud<pcl::PointXYZ> cluster_ptr;
 	  pcl::PointCloud<pcl::PointXYZ> cloud_cut;// (new pcl::PointCloud<pcl::PointXYZ>);
 	  pcl::PointCloud<pcl::PointXYZ> cloud_noise;
-	  pcl::fromROSMsg (pc2_clusters.at(i), *cluster_ptr);
-
+	  pcl::fromROSMsg (pc2_clusters.at(i), cluster_ptr);
+/*
 	  pcl::PassThrough<pcl::PointXYZ> pass;
 	  pass.setInputCloud (cluster_ptr);
 	  pass.setFilterFieldName ("z");
-	  pass.setFilterLimits (0, 0.085);
+	  pass.setFilterLimits (0, 1);//0.085
 	  pass.filter (cloud_cut);
-/*
+
 	  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> out_remove;
 	  out_remove.setInputCloud(cloud_cut);
 	  out_remove.setNegative(false);
@@ -394,17 +395,18 @@ void MantisSegmentor::processCloud(const sensor_msgs::PointCloud2 &in_cloud,
 	  out_remove.filter(cloud_noise);
 
 	  pcl::toROSMsg (cloud_noise, ocloud);*/
-	  pcl::toROSMsg (cloud_cut, ocloud);
+	  pcl::toROSMsg (cluster_ptr, ocloud);
 	  sensor_msgs::convertPointCloud2ToPointCloud(ocloud, out_cloud);
 	  out_clusters.push_back(out_cloud);
   }
-/*  sensor_msgs::PointCloud2 big_cluster;
+  sensor_msgs::PointCloud2 big_cluster;
   sensor_msgs::PointCloud bcluster;
   bcluster = out_clusters.at(0);
   sensor_msgs::convertPointCloudToPointCloud2(bcluster, big_cluster);
   //big_cluster=pc2_clusters.at(0);
   big_cluster.header = in_cloud.header;
-  first_cluster_pub.publish(big_cluster);*/
+  pc2_clusters.at(0).header = in_cloud.header;
+  first_cluster_pub.publish(pc2_clusters.at(0));//(big_cluster);
   ROS_INFO("Cluster converted from PointCloud2 array to PointCloud array");
   seg_response.clusters=out_clusters;
   for (size_t i=0; i<out_clusters.size(); i++)
@@ -688,7 +690,7 @@ int main(int argc, char **argv)
   first_cluster_pub = nh.advertise<sensor_msgs::PointCloud2>("/biggest_cluster",1);
   //ros::ServiceServer serv = n.advertiseService("/segmentation", segment_cb);
 
-
+  ROS_INFO("Segmentation node ready");
 
 
   MantisSegmentor node(nh);
