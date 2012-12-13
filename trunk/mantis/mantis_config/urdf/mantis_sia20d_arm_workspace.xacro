@@ -12,7 +12,7 @@
 	<xacro:property name="arm_prefix" value="sia20d_arm_"/>
 	<xacro:property name="arm_name" value="sia20d"/>
 	<xacro:property name="coupler_height" value="0.087"/>
-	<xacro:property name="temp_base_offset" value="0.045"/>
+	<xacro:property name="temp_base_offset" value="0.0"/>
 	
 	<!-- instantiating workcell definitions -->
 	<xacro:workcell_zone1_components/>
@@ -23,7 +23,7 @@
 		x_val="1.20" y_val="0" z_val="0.4" pitch="0.5235" yaw="3.147"/
 		rpy="0.06+0.06 1.19 3.19+0.06" xyz="1.15-.16 -0.01 1.42+.16"-->
 	<xacro:sensor_definitions prefix="${arm_prefix}" parent_link="${arm_prefix}base_link" 
-		x_val="0.99" y_val="-0.04" z_val="1.52" roll="0.12" pitch="1.19" yaw="3.25"/>
+		x_val="0.99" y_val="-0.09" z_val="1.25" roll="0.055" pitch="1.12" yaw="3.15"/>
 	<!-- end of sensor definitions -->
 
 	<!-- instantiating arm and gripper -->	
