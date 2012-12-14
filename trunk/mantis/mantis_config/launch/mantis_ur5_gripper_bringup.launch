@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
 <launch>
+	
 	<!-- ____________________________ Input Arguments ____________________________  -->
 	<arg name="sim_only" default="true"/>
 	<arg name="controller_ip" default="192.168.32.3"/>
@@ -9,6 +10,9 @@
 		default="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_ur5_arm_workspace.xacro'"/>
 
 	<arg name="arm_namespace" value="ur5_arm"/>
+
+	<!-- starting io -->
+	<include unless="$(arg sim_only)" file="$(find mantis_io)/launch/mantis_io.launch"/>
 
 	<group ns="$(arg arm_namespace)">
 
@@ -38,9 +42,12 @@
 			</node>
 
 			<!-- gripper interface -->
-			<!-- include unless="$(arg sim_only)" file="$(find mantis_io)/launch/mantis_io.launch"/-->
-			<node pkg="object_manipulation_tools" 
-				type="grasp_action_service" name="gripper_interface" output="screen"/>
+			<param name="suction_on_output_channel" value="2"/>
+			<param name="suction_check_output_channel" value="1"/>
+			<param name="use_sensor_feedback" value="false"/>
+			<node name="gripper" pkg="mantis_io" type="suction_gripper" output="screen"/>
+			<!--node pkg="object_manipulation_tools" 
+				type="grasp_action_service" name="gripper_interface" output="screen"/-->
 		</group>
 
 		<!-- __________________________________ Simulation only __________________________________  -->
