@@ -1,22 +1,22 @@
 pick_zones:
  - zone_name: zone_a
-   x_min: -1.2
-   x_max: -0.6
-   y_min: -1.0
+   x_min: -1.0
+   x_max: -0.4
+   y_min: -0.7
    y_max: 0.0
    frame_id: workcell_frame
  - zone_name: zone_b
    x_min: -1.2
-   x_max: -0.6
+   x_max: -0.4
    y_min: 0.01
-   y_max: 0.8
+   y_max: 0.7
    frame_id: workcell_frame
 place_zones:
  - zone_name: place_zone_a_1
-   x_min: -1.2
-   x_max: -0.6
+   x_min: -1.0
+   x_max: -0.4
    y_min: -1.0
-   y_max: -0.51
+   y_max: -0.311
    frame_id: workcell_frame
    pose_candidates: 8
    orientation_axis:
@@ -30,9 +30,9 @@ place_zones:
     generation_mode: 2
    ids_allowed: [1,3,5]
  - zone_name: place_zone_a_2
-   x_min: -1.2
-   x_max: -0.6
-   y_min: -0.50
+   x_min: -1.0
+   x_max: -0.4
+   y_min: -0.31
    y_max: -0.01
    frame_id: workcell_frame
    pose_candidates: 8
@@ -47,10 +47,10 @@ place_zones:
     generation_mode: 2
    ids_allowed: [0,2]
  - zone_name: place_zone_b_1
-   x_min: -1.2
-   x_max: -0.882
-   y_min: 0.01
-   y_max: 0.8
+   x_min: -1.0
+   x_max: -0.750
+   y_min: 0.00
+   y_max: 0.7
    frame_id: workcell_frame
    pose_candidates: 8
    orientation_axis:
@@ -64,10 +64,10 @@ place_zones:
     generation_mode: 0
    ids_allowed: [1, 3, 5]
  - zone_name: place_zone_b_2
-   x_min: -0.88
-   x_max: -0.6
-   y_min: 0.01
-   y_max: 0.4
+   x_min: -0.751
+   x_max: -0.4
+   y_min: 0.00
+   y_max: 0.25
    frame_id: workcell_frame
    pose_candidates: 8
    orientation_axis:
@@ -81,10 +81,10 @@ place_zones:
     generation_mode: 0
    ids_allowed: [2]
  - zone_name: place_zone_b_4
-   x_min: -0.88
-   x_max: -0.6
-   y_min: 0.401
-   y_max: 0.8
+   x_min: -0.751
+   x_max: -0.4
+   y_min: 0.251
+   y_max: 0.7
    frame_id: workcell_frame
    pose_candidates: 8
    orientation_axis:
