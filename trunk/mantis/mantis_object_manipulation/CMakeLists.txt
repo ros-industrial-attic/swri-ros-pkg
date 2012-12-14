@@ -66,4 +66,5 @@ target_link_libraries(test_zone_selector_node RobotNavigator)
 rosbuild_add_executable(automated_pick_place_node src/nodes/automated_pick_place_node.cpp)
 target_link_libraries(automated_pick_place_node RobotNavigator)
 
-rosbuild_add_executable(sensor_data_redirect_node src/nodes/sensor_data_redirect.cpp)
+#rosbuild_add_executable(sensor_data_redirect_node src/nodes/sensor_data_redirect.cpp)
+#rosbuild_add_executable(test_grasp_action_server src/test/test_grasp_action_server_node.cpp)
