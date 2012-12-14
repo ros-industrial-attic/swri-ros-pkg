@@ -140,7 +140,7 @@ void RobotNavigator::setup()
 		place_tester_ = PlaceSequencePtr(new PlaceSequenceValidator(&cm_, ik_plugin_name_));
 
 		trajectories_finished_function_ = boost::bind(&RobotNavigator::trajectoriesFinishedCallbackFunction, this, _1);
-
+		grasp_action_finished_function_ = boost::bind(&RobotNavigator::graspActionFinishedCallbackFunction, this, _1);
 		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 	}
 }
@@ -153,7 +153,7 @@ bool RobotNavigator::trajectoriesFinishedCallbackFunction(TrajectoryExecutionDat
 		return true;
 	}
 
-   last_trajectory_execution_data_vector_ = tedv;
+   ROS_INFO_STREAM(NODE_NAME<<":Trajectory execution result flag: "<<tedv.back().result_);
 
    // combining trajectory state flags;
    //boost::unique_lock<boost::mutex> lock(execution_mutex_);;
@@ -161,10 +161,36 @@ bool RobotNavigator::trajectoriesFinishedCallbackFunction(TrajectoryExecutionDat
 							  || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_OK
 							  || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_CLOSE_ENOUGH);
 
+   ROS_INFO_STREAM(NODE_NAME<<":Storing last trajectory");
+   last_trajectory_execution_data_vector_ = tedv;
+
+
    ROS_INFO_STREAM(NODE_NAME<<": Trajectory finished callback notifying all awaiting threads");
    execution_completed_.notify_all();
    return true;
  }
+
+bool RobotNavigator::graspActionFinishedCallbackFunction(TrajectoryExecutionDataVector tedv)
+{
+	if(tedv.size()==0)
+	{
+		ROS_ERROR_STREAM(NODE_NAME <<": trajectory finished callback received empty vector");
+		return true;
+	}
+
+   ROS_INFO_STREAM(NODE_NAME<<":Trajectory execution result flag: "<<tedv.back().result_);
+
+   // combining trajectory state flags;
+   //boost::unique_lock<boost::mutex> lock(execution_mutex_);;
+   trajectories_succeeded_ = (tedv.back().result_ == SUCCEEDED
+							  || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_OK
+							  || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_CLOSE_ENOUGH);
+
+
+   ROS_INFO_STREAM(NODE_NAME<<": Trajectory finished callback notifying all awaiting threads");
+   execution_completed_.notify_all();
+   return true;
+}
 
 void RobotNavigator::revertPlanningScene()
 {
@@ -320,7 +346,7 @@ bool RobotNavigator::moveArm(const std::string& group_name,const std::vector<dou
 
   ros::WallTime start_execution = ros::WallTime::now();
 
-  ROS_INFO_STREAM(NODE_NAME<<": Should be trying to move arm");
+  ROS_INFO_STREAM("Arm Trajectory in progress");
   trajectory_execution_monitor_.executeTrajectories(ter_reqs,trajectories_finished_function_);
 
   boost::unique_lock<boost::mutex> lock(execution_mutex_);
@@ -331,12 +357,12 @@ bool RobotNavigator::moveArm(const std::string& group_name,const std::vector<dou
   if(trajectories_succeeded_)
   {
     error_code.val = error_code.SUCCESS;
-    ROS_INFO_STREAM(NODE_NAME<<": Trajectory execution has succeeded");
+    ROS_INFO_STREAM("Trajectory execution has succeeded");
   }
   else
   {
     error_code.val = error_code.PLANNING_FAILED;
-    ROS_INFO_STREAM(NODE_NAME<<": Trajectory execution has failed");
+    ROS_ERROR_STREAM("Trajectory execution has failed");
   }
 
   return trajectories_succeeded_;
@@ -344,6 +370,9 @@ bool RobotNavigator::moveArm(const std::string& group_name,const std::vector<dou
 
 bool RobotNavigator::validateJointTrajectory(trajectory_msgs::JointTrajectory &jt)
 {
+	const ros::Duration timeIncrement(1.0f);
+	ros::Duration currentTime = timeIncrement ;
+
 	for(unsigned int i = 0; i < jt.points.size(); i++)
 	{
 		trajectory_msgs::JointTrajectoryPoint &p = jt.points[i];
@@ -361,6 +390,9 @@ bool RobotNavigator::validateJointTrajectory(trajectory_msgs::JointTrajectory &j
 		{
 			p.accelerations = std::vector<double>(jt.joint_names.size(),0.0f);
 		}
+
+		p.time_from_start = currentTime;
+		currentTime = currentTime+ timeIncrement;
 	}
 
 	return true;
@@ -426,9 +458,9 @@ bool RobotNavigator::performTrajectoryFiltering(const std::string& group_name,tr
   {
     jvals[jt.joint_names[i]] = jt.points[0].positions[i];
 
-    ROS_INFO_STREAM(NODE_NAME<<": Populating joint names: " << jt.joint_names[i]
-                    << ", jvals: " << jvals[jt.joint_names[i]]
-                    << ", jt.points: " << jt.points[0].positions[i]);
+//    ROS_INFO_STREAM(NODE_NAME<<": Populating joint names: " << jt.joint_names[i]
+//                    << ", jvals: " << jvals[jt.joint_names[i]]
+//                    << ", jt.points: " << jt.points[0].positions[i]);
   }
 
   planning_models::KinematicState state(*current_robot_state_);
@@ -441,8 +473,7 @@ bool RobotNavigator::performTrajectoryFiltering(const std::string& group_name,tr
 
   if(!trajectory_filter_service_client_.call(filter_req, filter_res))
   {
-    ROS_INFO_STREAM(NODE_NAME<<": Fast Filter service call failed");
-    ROS_INFO_STREAM(NODE_NAME<<": Return true anyway");
+    ROS_WARN_STREAM(NODE_NAME<<": Fast Filter service call failed");
     return true;
   }
 
@@ -455,8 +486,7 @@ bool RobotNavigator::performTrajectoryFiltering(const std::string& group_name,tr
       ROS_WARN_STREAM(NODE_NAME<<": Filter returned an empty trajectory (ignoring for now)");
   }
 
-  ROS_INFO_STREAM(NODE_NAME<<": Filtered number of joints: " << jt.joint_names.size());
-  ROS_INFO_STREAM(NODE_NAME<<": Filtered number of points: " << jt.points.size());
+
   return true;
 }
 
@@ -1098,6 +1128,7 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
                           const object_manipulator::GraspExecutionInfo& gei) {
 
   std::vector<std::string> segment_names;
+  std::vector<boost::function<bool(TrajectoryExecutionDataVector)>* > callbacks;
 
   // commanding gripper release
   std::vector<TrajectoryExecutionRequest> ter_reqs;
@@ -1105,38 +1136,40 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   gripper_ter.group_name_ = gripper_group_name_;
   gripper_ter.controller_name_ = grasp_action_service_;
   gripper_ter.trajectory_ = getGripperTrajectory(object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE);
-  gripper_ter.failure_ok_ = true;
+  gripper_ter.failure_ok_ = false;
   gripper_ter.test_for_close_enough_ = false;
+  //gripper_ter.monitor_overshoot_ = false;
   ter_reqs.push_back(gripper_ter);
 
   ros::WallTime start_execution = ros::WallTime::now();
-  ROS_INFO_STREAM(NODE_NAME << ": Open gripper trajectory in progress");
-  trajectory_execution_monitor_.executeTrajectories(ter_reqs,trajectories_finished_function_);
+  ROS_INFO_STREAM(NODE_NAME << ": Gripper Release trajectory in progress");
+  //trajectory_execution_monitor_.executeTrajectories(ter_reqs,trajectories_finished_function_);
+  trajectory_execution_monitor_.executeTrajectories(ter_reqs,grasp_action_finished_function_);
   {
     boost::unique_lock<boost::mutex> lock(execution_mutex_);
-    //boost::mutex::scoped_lock lock(execution_mutex_);
     execution_completed_.wait(lock);
   }
 
   execution_duration_ += (ros::WallTime::now()-start_execution);
-  ROS_INFO_STREAM(NODE_NAME << ": Open gripper trajectory completed");
+  ROS_INFO_STREAM( NODE_NAME << ": Gripper Release trajectory completed");
   ter_reqs.clear();
 
   // moving arm from current configuration to pre-grasp configuration
   updateCurrentJointStateToLastTrajectoryPoint(last_trajectory_execution_data_vector_.back().recorded_trajectory_);
-  ROS_INFO_STREAM(NODE_NAME << ": arm approach trajectory in progress");
+  ROS_INFO_STREAM(NODE_NAME << ": Moving arm to beginning of pick trajectory");
   if(!moveArm(group_name, gei.approach_trajectory_.points[0].positions))
   {
     return false;
   }
-  ROS_INFO_STREAM(NODE_NAME << ": arm approach trajectory completed");
+  ROS_INFO_STREAM(NODE_NAME << ": Move completed");
   trajectories_succeeded_ = false;
 
   // setting up gripper pre-grasp
   gripper_ter.trajectory_ = getGripperTrajectory(object_manipulation_msgs::GraspHandPostureExecutionGoal::PRE_GRASP);
   validateJointTrajectory(gripper_ter.trajectory_);
   ter_reqs.push_back(gripper_ter);
-  segment_names.push_back("pre-grasp");
+  segment_names.push_back("Pre-grasp");
+  callbacks.push_back(&grasp_action_finished_function_);
 
   // setting up approach move
   TrajectoryExecutionRequest arm_ter;
@@ -1146,19 +1179,23 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   validateJointTrajectory(arm_ter.trajectory_);
   performTrajectoryFiltering(arm_ter.group_name_, arm_ter.trajectory_);
   arm_ter.test_for_close_enough_ = false;
+  arm_ter.monitor_overshoot_ = false;
+  arm_ter.min_overshoot_time_ = ros::Duration(0.0f);
+  arm_ter.max_overshoot_time_ = ros::Duration(5.0f);
   arm_ter.failure_ok_ = false;
-  arm_ter.max_joint_distance_ = .01;
+  arm_ter.max_joint_distance_ = .1;
   arm_ter.failure_time_factor_ = 1000;
   arm_ter.callback_function_ = boost::bind(&RobotNavigator::attachCollisionObjectCallback, this, _1);
   ter_reqs.push_back(arm_ter);
-  segment_names.push_back("approach");
-  //approachMoveIndex = ter_reqs.size() - 1;
+  segment_names.push_back("Approach");
+  callbacks.push_back(&trajectories_finished_function_);
 
   // setting up gripper grasp
   gripper_ter.trajectory_ = getGripperTrajectory(object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP);
   validateJointTrajectory(gripper_ter.trajectory_);
   ter_reqs.push_back(gripper_ter);
-  segment_names.push_back("grasp");
+  segment_names.push_back("Grasp");
+  callbacks.push_back(&grasp_action_finished_function_);
 
   // updating attached  marker operation
   if(hasMarker(MARKER_ATTACHED_OBJECT))
@@ -1174,7 +1211,8 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   performTrajectoryFiltering(group_name, arm_ter.trajectory_);
   arm_ter.callback_function_ = NULL;
   ter_reqs.push_back(arm_ter);
-  segment_names.push_back("lift");
+  segment_names.push_back("Lift");
+  callbacks.push_back(&trajectories_finished_function_);
 
   /*
    * executing all trajectories
@@ -1182,24 +1220,26 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
    * method can only handle a single trajectory at a time.
    */
   start_execution = ros::WallTime::now();
+  ROS_INFO_STREAM(" Starting Execution of trajectories");
   for(unsigned int i = 0;i < ter_reqs.size(); i++)
   {
 	  std::vector<TrajectoryExecutionRequest> tempRequest;
 	  tempRequest.push_back(ter_reqs[i]);
-	  ROS_INFO_STREAM(NODE_NAME << ": "<<segment_names[i] <<" trajectory in progress");
-	  trajectory_execution_monitor_.executeTrajectories(tempRequest,
-														trajectories_finished_function_);
+	  ROS_INFO_STREAM("\t- "<<segment_names[i] <<" trajectory in progress");
+//	  trajectory_execution_monitor_.executeTrajectories(tempRequest,
+//														trajectories_finished_function_);
+	  trajectory_execution_monitor_.executeTrajectories(tempRequest,*callbacks[i]);
 	  {
 		  boost::unique_lock<boost::mutex> lock(execution_mutex_);
 		  execution_completed_.wait(lock);
 
 		  if(trajectories_succeeded_)
 		  {
-			  ROS_INFO_STREAM(NODE_NAME << ": "<<segment_names[i] <<" trajectory completed");
+			  ROS_INFO_STREAM("\t- "<<segment_names[i] <<" trajectory completed");
 		  }
 		  else
 		  {
-			  ROS_ERROR_STREAM(NODE_NAME << ": "<<segment_names[i] <<" trajectory interrupted, aborting pick sequence and start recovery move");
+			  ROS_ERROR_STREAM("\t- "<<segment_names[i] <<" trajectory interrupted, aborting pick move sequence");
 			  break;
 		  }
 	  }
@@ -1212,25 +1252,29 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
 	  updateCurrentJointStateToLastTrajectoryPoint(last_trajectory_execution_data_vector_.back().recorded_trajectory_);
 
 	  // moving arm back to start of pick move
-	  ROS_INFO_STREAM(NODE_NAME << ": arm moving to beginning of approach move trajectory in progress");
+	  ROS_WARN_STREAM(" Starting recovery move");
+	  ROS_WARN_STREAM("\t- Moving arm to beginning of approach move trajectory");
 	  if(!moveArm(group_name, gei.approach_trajectory_.points[0].positions))
 	  {
-		  ROS_ERROR_STREAM(NODE_NAME << ": move arm to start failed, aborting recovery move");
+		  ROS_ERROR_STREAM("\t-"<< "Move start pose failed, aborting recovery move");
 		  return false;
 	  }
 
 	  // request gripper release command
 	  object_manipulation_msgs::GraspHandPostureExecutionGoal graspGoal;
 	  graspGoal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE;
-	  ROS_INFO_STREAM(NODE_NAME << ": Requesting grasp release");
+	  ROS_WARN_STREAM("\t- Requesting grasp release");
 	  grasp_exec_action_client_->sendGoal(graspGoal);
 	  if(!grasp_exec_action_client_->waitForResult(ros::Duration(2.0f)))
 	  {
-		  ROS_ERROR_STREAM(NODE_NAME << ": Release request timeout, aborting recovery move");
-		  return false;
+		  ROS_ERROR_STREAM(" Release request timeout, aborting recovery move");
 	  }
+
+	  ROS_WARN_STREAM(" Completed recovery move");
+	  return false;
   }
 
+  ROS_INFO_STREAM("Finished executing all trajectories");
   execution_duration_ += (ros::WallTime::now()-start_execution);
   return trajectories_succeeded_ ;
 }
@@ -1239,13 +1283,15 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
                           const object_manipulator::PlaceExecutionInfo& pei) {
   std::vector<TrajectoryExecutionRequest> ter_reqs;
 
-  if(!moveArm(group_name,
-              pei.descend_trajectory_.points[0].positions)) {
+  // moving arm to beginning of place move
+  if(!moveArm(group_name,pei.descend_trajectory_.points[0].positions))
+  {
     return false;
   }
 
   trajectories_succeeded_ = false;
   std::vector<std::string> segment_names;
+  std::vector<boost::function<bool(TrajectoryExecutionDataVector)>* > callbacks;
 
   // setting up descend move
   TrajectoryExecutionRequest arm_ter;
@@ -1254,12 +1300,16 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
   arm_ter.trajectory_ = pei.descend_trajectory_;
   validateJointTrajectory(arm_ter.trajectory_);
   performTrajectoryFiltering(group_name, arm_ter.trajectory_);
-  arm_ter.test_for_close_enough_ = false;
-  arm_ter.max_joint_distance_ = .05;
+  arm_ter.failure_ok_ = false;
+  arm_ter.monitor_overshoot_ = false;
+  arm_ter.min_overshoot_time_ = ros::Duration(0.0f);
+  arm_ter.max_overshoot_time_ = ros::Duration(5.0f);
+  arm_ter.max_joint_distance_ = .1;
   arm_ter.failure_time_factor_ = 1000;
   arm_ter.callback_function_ = boost::bind(&RobotNavigator::detachCollisionObjectCallback, this, _1);
   ter_reqs.push_back(arm_ter);
-  segment_names.push_back("descend");
+  segment_names.push_back("Descend");
+  callbacks.push_back(&trajectories_finished_function_);
 
   // setting up  gripper release
   TrajectoryExecutionRequest gripper_ter;
@@ -1270,7 +1320,8 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
   gripper_ter.failure_ok_ = true;
   gripper_ter.test_for_close_enough_ = false;
   ter_reqs.push_back(gripper_ter);
-  segment_names.push_back("release");
+  segment_names.push_back("Release");
+  callbacks.push_back(&grasp_action_finished_function_);
 
   // updating attached object marker operation
   if(hasMarker(MARKER_ATTACHED_OBJECT))
@@ -1286,7 +1337,8 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
   performTrajectoryFiltering(group_name, arm_ter.trajectory_);
   arm_ter.callback_function_ = 0;
   ter_reqs.push_back(arm_ter);
-  segment_names.push_back("retreat");
+  segment_names.push_back("Retreat");
+  callbacks.push_back(&trajectories_finished_function_);
 
   /*
    * executing all trajectories
@@ -1294,28 +1346,31 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
    * method can only handle a single trajectory at a time.
    */
   ros::WallTime start_execution = ros::WallTime::now();
+  ROS_INFO_STREAM( NODE_NAME <<": Starting Execution of trajectories");
   for(unsigned int i = 0;i < ter_reqs.size(); i++)
   {
 	  std::vector<TrajectoryExecutionRequest> tempRequest;
 	  tempRequest.push_back(ter_reqs[i]);
-	  ROS_INFO_STREAM(NODE_NAME << ": gripper "<<segment_names[i] <<" trajectory in progress");
-	  trajectory_execution_monitor_.executeTrajectories(tempRequest,
-														trajectories_finished_function_);
+
+	  ROS_INFO_STREAM("\t"<< "- "<<segment_names[i] <<" trajectory in progress");
+	  trajectory_execution_monitor_.executeTrajectories(tempRequest,*callbacks[i]);
+
 	  {
 		  boost::unique_lock<boost::mutex> lock(execution_mutex_);
 		  execution_completed_.wait(lock);
 
 		  if(trajectories_succeeded_)
 		  {
-			  ROS_INFO_STREAM(NODE_NAME << ": "<<segment_names[i] <<" trajectory completed");
+			  ROS_INFO_STREAM("\t"<< "- "<<segment_names[i] <<" trajectory completed");
 		  }
 		  else
 		  {
-			  ROS_ERROR_STREAM(NODE_NAME << ": "<<segment_names[i] <<" trajectory interrupted, aborting place sequence");
+			  ROS_INFO_STREAM("\t"<< "- "<<segment_names[i] <<" trajectory interrupted, aborting place sequence");
 			  break;
 		  }
 	  }
   }
+  ROS_INFO_STREAM(NODE_NAME <<"Finished executing all trajectories");
 
   execution_duration_ += (ros::WallTime::now()-start_execution);
   return trajectories_succeeded_;
@@ -1537,6 +1592,7 @@ void RobotNavigator::run()
 	{
 	    startCycleTimer();
 
+
 		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 		if(!performSegmentation())
 		{
@@ -1556,31 +1612,35 @@ void RobotNavigator::run()
 			ROS_INFO_STREAM(NODE_NAME << ": Recognition stage completed");
 		}
 
-		ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage started");
+		ROS_INFO_STREAM(NODE_NAME << ": Grasp Pickup stage started");
 		if(!moveArmThroughPickSequence())
 		{
-		  ROS_WARN_STREAM(NODE_NAME << ": grasp pickup stage failed");
+		  ROS_WARN_STREAM(NODE_NAME << ": Grasp Pickup stage failed");
+		  moveArmToSide();
 		  continue;
 		}
 		else
 		{
-			ROS_INFO_STREAM(NODE_NAME << ": grasp pickup stage completed");
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Pickup stage completed");
 		}
 
-		ROS_INFO_STREAM(NODE_NAME + ": grasp place stage started");
+		ROS_INFO_STREAM(NODE_NAME + ": Grasp Place stage started");
 		if(!moveArmThroughPlaceSequence())
 		{
-			ROS_WARN_STREAM(NODE_NAME << ": grasp place stage failed");
+			ROS_WARN_STREAM(NODE_NAME << ": Grasp Place stage failed");
+			moveArmToSide();
+			continue;
 		}
 		else
 		{
-			ROS_INFO_STREAM(NODE_NAME << ": grasp place stage completed");
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Place stage completed");
 		}
 
 		if(!moveArmToSide())
 		{
 			ROS_WARN_STREAM(NODE_NAME << ": Side moved failed");
 		}
+
 
 	    printTiming();
 	  }

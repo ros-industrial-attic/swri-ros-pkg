@@ -140,6 +140,7 @@ protected:
 	// callbacks
 	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt);
 	virtual bool trajectoriesFinishedCallbackFunction(TrajectoryExecutionDataVector tedv);
+	virtual bool graspActionFinishedCallbackFunction(TrajectoryExecutionDataVector tedv);
 
 	// planning scene
 	void attachCollisionObjectCallback(const std::string& group_name);
@@ -228,6 +229,7 @@ protected:
 
 	trajectory_execution_monitor::TrajectoryExecutionMonitor trajectory_execution_monitor_;
 	boost::function<bool(TrajectoryExecutionDataVector)> trajectories_finished_function_;
+	boost::function<bool(TrajectoryExecutionDataVector)> grasp_action_finished_function_;
 
 	// action services
 	// will use grasp execution client to request pre-grasp action since the default gripper controller handler
