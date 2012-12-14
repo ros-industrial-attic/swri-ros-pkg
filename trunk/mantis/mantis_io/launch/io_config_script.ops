@@ -3,7 +3,7 @@
  Master.displayAvailableDrivers() 
  
  # Default nic is eth0, set if different. e.g.
- Master.ifname = "eth2"
+ Master.ifname = "eth1"
 
  # Crawls the network and identifies attached devices.  Devices are loaded 
  # (if a driver exists) and given names "Slave_1***".  The *** appear to be 
