@@ -47,7 +47,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   float plug_1_z_offset = 0.028;		//kinect_1=0.03052 asus_1=0.0163
   float enc_1_x_offset = 0.00563;		//kinect_1=0.0085645 asus_1=0.00269
   float enc_1_y_offset = -0.0044;	//kinect_1=-0.0099451 asus_1=0.0010989
-  float enc_1_z_offset = 0.025;		//kinect_1=0.03923 asus_1=0.03701
+  float enc_1_z_offset = 0.05;		//kinect_1=0.03923 asus_1=0.03701
   float pvc_elbow_1_x_offset = 0.005878;//kinect_1=0.004949 asus_1=0.005878, avg=0.00541
   float pvc_elbow_1_y_offset = -0.00108;//kinect_1=-0.006247 asus_1=-0.00108, avg=-0.00366
   float pvc_elbow_1_z_offset = 0.02261;//kinect_1=0.0182536 asus_1=0.02261, avg=0.02043
