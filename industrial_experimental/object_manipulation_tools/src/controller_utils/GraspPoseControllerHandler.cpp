@@ -65,17 +65,6 @@ bool GraspPoseControllerHandler::executeTrajectory(
 	int graspCode = (int)trajectory.points[0].positions[0];
 	std::string graspMoveName;
 
-//	if(trajectory.points[0].positions[0] == 0.0)
-//	{
-//		ROS_INFO_STREAM("Should be commanding grasp");
-//		goal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP;
-//	}
-//	else
-//	{
-//		ROS_INFO_STREAM("Should be commanding release");
-//		goal.goal = object_manipulation_msgs::GraspHandPostureExecutionGoal::RELEASE;
-//	}
-
 	switch(graspCode)
 	{
 	case object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP:
@@ -115,15 +104,17 @@ bool GraspPoseControllerHandler::executeTrajectory(
 									  , this, _1, _2, _3));
 
 	// waiting for result
-//	if(!grasp_posture_execution_action_client_.waitForResult(ros::Duration(GRASP_COMMAND_EXECUTION_TIMEOUT)))
-//	{
-//	  ROS_ERROR_STREAM("Grasp Controller: "<< graspMoveName <<" request timeout, exiting");
-//	  return false;
-//	}
-//	else
+//	bool success = grasp_posture_execution_action_client_.waitForResult(ros::Duration(GRASP_COMMAND_EXECUTION_TIMEOUT));
+//	if(success)
 //	{
 //		ROS_INFO_STREAM("Grasp Controller: "<< graspMoveName <<" completed");
 //	}
+//	else
+//	{
+//		ROS_ERROR_STREAM("Grasp Controller: "<< graspMoveName <<" request timeout, exiting");
+//	}
+
+	//done();
 
 	return true;
 }
@@ -136,9 +127,21 @@ void GraspPoseControllerHandler::cancelExecution()
 void GraspPoseControllerHandler::controllerDoneCallback(const actionlib::SimpleClientGoalState& state,
 		const object_manipulation_msgs::GraspHandPostureExecutionResultConstPtr& result)
 {
+
+	bool success = (state == actionlib::SimpleClientGoalState::SUCCEEDED);
+
+	// setting controller state and passing result to callback
+	trajectory_execution_monitor::TrajectoryControllerState controllerState;
+	controllerState = (success) ? trajectory_execution_monitor::TrajectoryControllerStates::SUCCESS :
+		trajectory_execution_monitor::TrajectoryControllerStates::EXECUTION_FAILURE;
+
+	// finalizing and storing results
+	controller_state_ = controllerState;
 	recorder_->deregisterCallback(group_controller_combo_name_);
+
 	ROS_INFO_STREAM("Grasp Controller is done with state " <<
-			(state == actionlib::SimpleClientGoalState::SUCCEEDED)?"SUCCESS":"FAULT");
+			(success?"SUCCESS":"FAULT"));
+
 	done();
 }
 
