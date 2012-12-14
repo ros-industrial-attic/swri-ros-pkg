@@ -1,7 +1,7 @@
 Background\ ColorB=1
 Background\ ColorG=0.364706
 Background\ ColorR=0
-Camera\ Config=0.364799 4.98553 4.09963 -0.56238 0.265092 0.403896
+Camera\ Config=0.4248 4.45052 3.26985 -0.797276 0.300763 0.481568
 Camera\ Type=rviz::OrbitViewController
 Fixed\ Frame=/workcell_frame
 Grid.Alpha=0.5
@@ -181,7 +181,7 @@ TF2.All\ Enabled=0
 TF2.Enabled=1
 TF2.Frame\ Timeout=15
 TF2.Marker\ Scale=1
-TF2.Show\ Arrows=1
+TF2.Show\ Arrows=0
 TF2.Show\ Axes=1
 TF2.Show\ Names=1
 TF2.Update\ Interval=0
