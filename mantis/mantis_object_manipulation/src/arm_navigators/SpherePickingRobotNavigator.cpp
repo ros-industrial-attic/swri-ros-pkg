@@ -101,7 +101,7 @@ void SpherePickingRobotNavigator::setup()
 //		grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_);
 //		place_tester_ = new PlaceSequenceValidator(&cm_, ik_plugin_name_);
 		trajectories_finished_function_ = boost::bind(&SpherePickingRobotNavigator::trajectoriesFinishedCallbackFunction, this, _1);
-
+		grasp_action_finished_function_ = boost::bind(&SpherePickingRobotNavigator::graspActionFinishedCallbackFunction, this, _1);
 		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 	}
 

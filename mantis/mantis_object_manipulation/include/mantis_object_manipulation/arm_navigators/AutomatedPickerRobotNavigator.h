@@ -13,6 +13,9 @@
 #include <mantis_object_manipulation/zone_selection/PickPlaceZoneSelector.h>
 #include <boost/thread/mutex.hpp>
 
+static const std::string PARAM_NAME_NUM_GRASP_ATTEMTPTS = "num_of_grasp_attempts";
+static const std::string PARAM_NAME_NEW_GRASP_OFFSET = "new_grasp_offset";
+
 class AutomatedPickerRobotNavigator: public RobotNavigator
 {
 public:
@@ -75,6 +78,7 @@ public:
 protected:
 
 	virtual void setup();
+	virtual void fetchParameters(std::string nameSpace = "");
 
 	virtual bool performSegmentation();
 	bool performSphereSegmentation();
@@ -83,18 +87,26 @@ protected:
 
 	virtual bool createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses);
 	virtual bool moveArmToSide();
+	virtual bool moveArmThroughPickSequence();
 
 	// callback overrides
 	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt);
 
+	// helper methods
 	void updateMarkerArrayMsg();
+	void generateGraspPoses(const geometry_msgs::Pose &pose,int numCandidates,
+		std::vector<geometry_msgs::Pose> &poses); // generates extra grasp poses by rotating about the approach vector
+
+
 
 
 protected:
 
 	// ros parameters
 	PickPlaceZoneSelector zone_selector_;
-	JointConfiguration _JointConfigurations;
+	JointConfiguration joint_configuration_;
+	int num_of_grasp_attempts_; // number of additional pick attempts
+	double offset_from_first_grasp_;// distance from original pick grasp to used in new pick attempt
 
 	// segmentation
 	SphereSegmentation _SphereSegmentation;

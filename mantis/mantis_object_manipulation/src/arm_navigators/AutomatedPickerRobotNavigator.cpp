@@ -22,7 +22,9 @@ const double OBJECT_ABB_SIDE = 0.1f; // this variable will be used to set the bo
 									// service will provide this value and this variable will be removed.
 
 AutomatedPickerRobotNavigator::AutomatedPickerRobotNavigator()
-:RobotNavigator()
+:RobotNavigator(),
+ num_of_grasp_attempts_(4),
+ offset_from_first_grasp_(0.01f) //1 cm
 {
 	// TODO Auto-generated constructor stub
 	GOAL_NAMESPACE = NODE_NAME + "/" + GOAL_NAMESPACE;
@@ -116,7 +118,7 @@ void AutomatedPickerRobotNavigator::setup()
 		grasp_tester_ = GraspTesterPtr(new GraspSequenceValidator(&cm_, ik_plugin_name_));
 		place_tester_ = PlaceSequencePtr(new PlaceSequenceValidator(&cm_, ik_plugin_name_));
 		trajectories_finished_function_ = boost::bind(&AutomatedPickerRobotNavigator::trajectoriesFinishedCallbackFunction, this, _1);
-
+		grasp_action_finished_function_ = boost::bind(&AutomatedPickerRobotNavigator::graspActionFinishedCallbackFunction, this, _1);
 		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 	}
 
@@ -136,6 +138,15 @@ void AutomatedPickerRobotNavigator::setup()
 		// pick and place zone markers
 		updateMarkerArrayMsg();
 	}
+}
+
+void AutomatedPickerRobotNavigator::fetchParameters(std::string nameSpace)
+{
+	RobotNavigator::fetchParameters(nameSpace);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_NUM_GRASP_ATTEMTPTS,num_of_grasp_attempts_,
+			num_of_grasp_attempts_);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_NEW_GRASP_OFFSET,offset_from_first_grasp_,
+			offset_from_first_grasp_);
 }
 
 bool AutomatedPickerRobotNavigator::performSphereSegmentation()
@@ -543,8 +554,135 @@ bool AutomatedPickerRobotNavigator::performSegmentation()
 bool AutomatedPickerRobotNavigator::moveArmToSide()
 {
 
-    _JointConfigurations.fetchParameters(JOINT_CONFIGURATIONS_NAMESPACE);
-    return updateChangesToPlanningScene() && moveArm(arm_group_name_,_JointConfigurations.SideAngles);
+    joint_configuration_.fetchParameters(JOINT_CONFIGURATIONS_NAMESPACE);
+    return updateChangesToPlanningScene() && moveArm(arm_group_name_,joint_configuration_.SideAngles);
+}
+
+bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
+{
+	// pushing local changes to planning scene
+	updateChangesToPlanningScene();
+
+	// grasp planning
+	bool success = performGraspPlanning();
+	if(!success)
+	{
+		ROS_INFO_STREAM(NODE_NAME<<": Pick Move attempt aborted");
+		return false;
+	}
+
+	// will attempt to grasp object multiple times if current pick attempt fails
+	object_manipulation_msgs::Grasp firstGrasp =  grasp_candidates_[0];
+	const int numCandidates = grasp_candidates_.size();
+	double angleIncrement = 2*M_PI/((double)num_of_grasp_attempts_);
+	int graspIndex = 0; // index to last successful grasp;
+
+	for(int i = 0; i <= num_of_grasp_attempts_; i++)
+	{
+		// creating pick move sequence
+		ROS_INFO_STREAM(NODE_NAME<<": Generating new move sequence for pick");
+		std::vector<object_manipulator::GraspExecutionInfo> graspSequence;
+		createPickMoveSequence(grasp_pickup_goal_,grasp_candidates_,graspSequence);
+
+		// try each successful grasp
+		success = false;
+		graspIndex = 0; // index to grasp array
+		BOOST_FOREACH(object_manipulator::GraspExecutionInfo graspMoves,graspSequence)
+		{
+			bool proceed = (graspMoves.result_.result_code == object_manipulation_msgs::GraspResult::SUCCESS);
+			if(proceed)
+			{
+				ROS_INFO_STREAM(NODE_NAME<<": Attempting Pick grasp sequence");
+				success = attemptGraspSequence(arm_group_name_,graspMoves);
+				if(!success)
+				{
+					ROS_INFO_STREAM(NODE_NAME<<": Grasp pick move failed");
+				}
+				else
+				{
+				  ROS_INFO_STREAM(NODE_NAME<<": Grasp pick move succeeded");
+				}
+
+				break;
+			}
+			else
+			{
+				ROS_WARN_STREAM(NODE_NAME<<": Grasp pick move unreachable, skipping to next.");
+			}
+			graspIndex++;
+		}
+
+		if(!success)
+		{
+			if(i == num_of_grasp_attempts_ )
+			{
+				// currently on last iteration, all options have been attempted, exiting
+				ROS_ERROR_STREAM(NODE_NAME<<"No more pick attempts remain, aborting pick");
+				return false;
+			}
+			else
+			{
+				ROS_WARN_STREAM(NODE_NAME<<"Generating new candidate grasps with offset: "<<offset_from_first_grasp_
+						<<" and angle: "<<angleIncrement * i);
+			}
+
+			// generating grasp pose near original
+			tf::Transform newGraspTf;
+			geometry_msgs::Pose newGraspPose;
+			std::vector<geometry_msgs::Pose> candidatePoses;
+
+			// converting first pose into tf type
+			tf::poseMsgToTF(firstGrasp.grasp_pose,newGraspTf);
+
+			// offsetting first grasp a small amount in the x-y plane
+			tf::Vector3 offsetVect = newGraspTf.getOrigin();
+			offsetVect.setX(offsetVect.getX() + offset_from_first_grasp_ * std::cos(angleIncrement * i));
+			offsetVect.setY(offsetVect.getY() + offset_from_first_grasp_ * std::sin(angleIncrement * i));
+			newGraspTf.setOrigin(offsetVect);
+
+			// converting back into pose msg
+			tf::poseTFToMsg(newGraspTf,newGraspPose);
+
+			// generating new candidate poses
+			generateGraspPoses(newGraspPose,numCandidates,candidatePoses);
+
+			// assigning poses to grasp candidates
+			for(std::size_t j = 0; j < grasp_candidates_.size(); j++)
+			{
+				object_manipulation_msgs::Grasp &grasp = grasp_candidates_[j];
+				grasp.grasp_pose = candidatePoses[j];
+			}
+		}
+		else
+		{
+			break;
+		}
+
+	}
+
+
+
+	// storing current grasp data for marker publishing
+	object_manipulation_msgs::Grasp tempGrasp;
+	tf::StampedTransform gripperTcpToWrist = tf::StampedTransform();// wrist pose relative to gripper
+	tf::Transform wristInObjPose;
+	_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),gripperTcpToWrist);
+
+	tf::poseMsgToTF(grasp_candidates_[graspIndex].grasp_pose,wristInObjPose);
+	tf::poseTFToMsg(wristInObjPose*(gripperTcpToWrist.inverse()),tempGrasp.grasp_pose);
+	current_grasp_map_[arm_group_name_] = tempGrasp;
+	current_grasped_object_name_[arm_group_name_] = grasp_pickup_goal_.collision_object_name;
+
+	// updating attached object marker pose
+	if(hasMarker(MARKER_ATTACHED_OBJECT))
+	{
+		visualization_msgs::Marker &m = getMarker(MARKER_ATTACHED_OBJECT);
+		tf::poseTFToMsg(wristInObjPose.inverse(),m.pose);
+		m.header.frame_id = gripper_link_name_;
+		addMarker(MARKER_ATTACHED_OBJECT,m);
+	}
+
+	return success;
 }
 
 bool AutomatedPickerRobotNavigator::createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses)
@@ -584,5 +722,26 @@ void AutomatedPickerRobotNavigator::updateMarkerArrayMsg()
 	}
 }
 
+void AutomatedPickerRobotNavigator::generateGraspPoses(const geometry_msgs::Pose &pose,int numCandidates,
+		std::vector<geometry_msgs::Pose> &poses)
+{
+	tf::Transform graspTf = tf::Transform::getIdentity();
+	tf::Transform candidateTf;
+	tfScalar angle = tfScalar(2*M_PI/(double(numCandidates)));
 
+	// converting initial pose to tf
+	tf::poseMsgToTF(pose,graspTf);
+
+	// obtaining approach vector
+	tf::Vector3 approachVector = graspTf.getBasis().getColumn(2);
+
+	for(int i = 0; i < numCandidates; i++)
+	{
+		candidateTf = graspTf*tf::Transform(tf::Quaternion(approachVector,i*angle),
+				tf::Vector3(0.0f,0.0f,0.0f));
+		geometry_msgs::Pose candidatePose = geometry_msgs::Pose();
+		tf::poseTFToMsg(candidateTf,candidatePose);
+		poses.push_back(candidatePose);
+	}
+}
 
