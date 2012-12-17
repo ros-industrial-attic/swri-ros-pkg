@@ -38,8 +38,17 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "mantis_recognition_test");
   ros::NodeHandle n;
 
-  recognition_client = n.serviceClient<mantis_perception::mantis_recognition>("/mantis_object_recognition");
-  segmentation_client = n.serviceClient<mantis_perception::mantis_segmentation>("/tabletop_segmentation", true);
+
+  //get some parameters that will be global to the move base node
+  ros::NodeHandle private_nh("~");
+  std::string arm_name_;
+  const std::string PARAM_ARM_NAME_DEFAULT= "arm_name";
+  const std::string ARM_NAME_DEFAULT= "";
+  private_nh.param(PARAM_ARM_NAME_DEFAULT, arm_name_, ARM_NAME_DEFAULT);
+
+
+  recognition_client = n.serviceClient<mantis_perception::mantis_recognition>(arm_name_ + "/mantis_object_recognition");
+  segmentation_client = n.serviceClient<mantis_perception::mantis_segmentation>(arm_name_ + "/tabletop_segmentation", true);
 
   text_pub = n.advertise<visualization_msgs::Marker>("/text_messages",1);
 
