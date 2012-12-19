@@ -98,11 +98,10 @@ void SpherePickingRobotNavigator::setup()
 		//grasp_tester_ = GraspTesterPtr(new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_));
 		grasp_tester_ = GraspTesterPtr(new GraspSequenceValidator(&cm_, ik_plugin_name_));
 		place_tester_ = PlaceSequencePtr(new PlaceSequenceValidator(&cm_, ik_plugin_name_));
-//		grasp_tester_ = new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_);
-//		place_tester_ = new PlaceSequenceValidator(&cm_, ik_plugin_name_);
-		trajectories_finished_function_ = boost::bind(&SpherePickingRobotNavigator::trajectoriesFinishedCallbackFunction, this, _1);
-		grasp_action_finished_function_ = boost::bind(&SpherePickingRobotNavigator::graspActionFinishedCallbackFunction, this, _1);
-		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
+
+		// trajectory callbacks
+		trajectories_finished_function_ = boost::bind(&SpherePickingRobotNavigator::trajectoryFinishedCallback, this, true,_1);
+		grasp_action_finished_function_ = boost::bind(&SpherePickingRobotNavigator::trajectoryFinishedCallback, this, false,_1);
 	}
 
 	ROS_INFO_STREAM(NODE_NAME<<": Setting up published markers");
@@ -118,6 +117,8 @@ void SpherePickingRobotNavigator::setup()
 		addMarker(MARKER_SEGMENTED_OBJECT,marker);
 		addMarker(MARKER_ATTACHED_OBJECT,marker);
 	}
+
+	ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 }
 
 bool SpherePickingRobotNavigator::performSphereSegmentation()
@@ -128,8 +129,8 @@ bool SpherePickingRobotNavigator::performSphereSegmentation()
 	  sensor_msgs::PointCloud sphereCluster;
 
 	  //  ===================================== calling segmentation =====================================
-	  _SphereSegmentation.fetchParameters(SEGMENTATION_NAMESPACE);
-	  bool success = _SphereSegmentation.segment(segmented_clusters_,obj,bestClusterIndex);
+	  sphere_segmentation_.fetchParameters(SEGMENTATION_NAMESPACE);
+	  bool success = sphere_segmentation_.segment(segmented_clusters_,obj,bestClusterIndex);
 
 	  // ===================================== checking results ========================================
 	  if(!success)
@@ -143,7 +144,7 @@ bool SpherePickingRobotNavigator::performSphereSegmentation()
 	  obj.id = makeCollisionObjectNameFromModelId(0);
 
 	  // retrieving segmented sphere cluster
-	  _SphereSegmentation.getSphereCluster(sphereCluster);
+	  sphere_segmentation_.getSphereCluster(sphereCluster);
 
 	  // storing best cluster
 	  segmented_clusters_.clear();

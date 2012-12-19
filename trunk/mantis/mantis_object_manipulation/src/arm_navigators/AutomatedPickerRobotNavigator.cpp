@@ -10,6 +10,7 @@
 #include <mantis_object_manipulation/arm_navigators/AutomatedPickerRobotNavigator.h>
 #include <mantis_object_manipulation/arm_navigators/AutomatedPickerRobotNavigator.h>
 #include <mantis_perception/mantis_recognition.h>
+#include <algorithm>
 
 std::string AutomatedPickerRobotNavigator::MARKER_SEGMENTED_OBJECT = "segmented_obj";
 std::string AutomatedPickerRobotNavigator::SEGMENTATION_NAMESPACE = "segmentation";
@@ -18,13 +19,14 @@ std::string AutomatedPickerRobotNavigator::JOINT_CONFIGURATIONS_NAMESPACE = "joi
 std::string AutomatedPickerRobotNavigator::MARKER_ARRAY_TOPIC = "object_array";
 
 // global variables
-const double OBJECT_ABB_SIDE = 0.1f; // this variable will be used to set the bounds of each object perceived.  Eventually, the recognition
-									// service will provide this value and this variable will be removed.
+static const double COLLISION_SPHERE_RADIUS = 0.01f;
+
 
 AutomatedPickerRobotNavigator::AutomatedPickerRobotNavigator()
 :RobotNavigator(),
  num_of_grasp_attempts_(4),
- offset_from_first_grasp_(0.01f) //1 cm
+ offset_from_first_grasp_(0.01f), //1 cm
+ attached_obj_bb_side_(0.1f)
 {
 	// TODO Auto-generated constructor stub
 	GOAL_NAMESPACE = NODE_NAME + "/" + GOAL_NAMESPACE;
@@ -113,13 +115,14 @@ void AutomatedPickerRobotNavigator::setup()
 
 		ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
 
-		// others
-		//grasp_tester_ = GraspTesterPtr(new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_));
+		// trajectory generators
 		grasp_tester_ = GraspTesterPtr(new GraspSequenceValidator(&cm_, ik_plugin_name_));
 		place_tester_ = PlaceSequencePtr(new PlaceSequenceValidator(&cm_, ik_plugin_name_));
-		trajectories_finished_function_ = boost::bind(&AutomatedPickerRobotNavigator::trajectoriesFinishedCallbackFunction, this, _1);
-		grasp_action_finished_function_ = boost::bind(&AutomatedPickerRobotNavigator::graspActionFinishedCallbackFunction, this, _1);
-		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
+
+		// trajectory callbacks
+		trajectories_finished_function_ = boost::bind(&AutomatedPickerRobotNavigator::trajectoryFinishedCallback, this, true,_1);
+		grasp_action_finished_function_ = boost::bind(&AutomatedPickerRobotNavigator::trajectoryFinishedCallback, this, false,_1);
+
 	}
 
 	ROS_INFO_STREAM(NODE_NAME<<": Setting up published markers");
@@ -138,11 +141,15 @@ void AutomatedPickerRobotNavigator::setup()
 		// pick and place zone markers
 		updateMarkerArrayMsg();
 	}
+
+	ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 }
 
 void AutomatedPickerRobotNavigator::fetchParameters(std::string nameSpace)
 {
 	RobotNavigator::fetchParameters(nameSpace);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_ATTACHED_OBJECT_BB_SIDE,attached_obj_bb_side_,
+			attached_obj_bb_side_);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_NUM_GRASP_ATTEMTPTS,num_of_grasp_attempts_,
 			num_of_grasp_attempts_);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_NEW_GRASP_OFFSET,offset_from_first_grasp_,
@@ -157,8 +164,8 @@ bool AutomatedPickerRobotNavigator::performSphereSegmentation()
 	  sensor_msgs::PointCloud sphereCluster;
 
 	  //  ===================================== calling segmentation =====================================
-	  _SphereSegmentation.fetchParameters(SEGMENTATION_NAMESPACE);
-	  bool success = _SphereSegmentation.segment(segmented_clusters_,obj,bestClusterIndex);
+	  sphere_segmentation_.fetchParameters(SEGMENTATION_NAMESPACE);
+	  bool success = sphere_segmentation_.segment(segmented_clusters_,obj,bestClusterIndex);
 
 	  // ===================================== checking results ========================================
 	  if(!success)
@@ -172,7 +179,7 @@ bool AutomatedPickerRobotNavigator::performSphereSegmentation()
 	  obj.id = makeCollisionObjectNameFromModelId(0);
 
 	  // retrieving segmented sphere cluster
-	  _SphereSegmentation.getSphereCluster(sphereCluster);
+	  sphere_segmentation_.getSphereCluster(sphereCluster);
 
 	  // storing best cluster
 	  segmented_clusters_.clear();
@@ -267,6 +274,7 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 
 	// preparing recognition results
 	arm_navigation_msgs::CollisionObject obj;
+	double sphereRadius = COLLISION_SPHERE_RADIUS;
 	obj.id = makeCollisionObjectNameFromModelId(0);
 	mantis_perception::mantis_recognition rec_srv;
 	rec_srv.request.clusters = segmented_clusters_;
@@ -275,7 +283,7 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	// recognition call
 	if (!recognition_client_.call(rec_srv))
 	{
-	  ROS_ERROR("Call to mantis recognition service failed");
+	  ROS_ERROR_STREAM(NODE_NAME<<": Call to mantis recognition service failed");
 	  return false;
 	}
 	else
@@ -292,6 +300,9 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	t.setOrigin(tf::Vector3(tempPose.x,tempPose.y,tempPose.z));
 	t.setRotation(tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),tempPose.rotation));
 
+	ROS_INFO_STREAM(NODE_NAME<<": Recognized object position in world coordinates is: [ "<<
+			t.getOrigin().x()<<", "<<t.getOrigin().y()<<" "<<t.getOrigin().z()<<" ]");
+
 	// storing pose
 	geometry_msgs::PoseStamped pose;
 	tf::poseTFToMsg(t,pose.pose);
@@ -299,15 +310,18 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	recognized_obj_pose_map_[std::string(obj.id)] = pose;
 
 	// adding collision obj to planning scene
+	ROS_INFO_STREAM(NODE_NAME<<": Adding Object bounding sphere to planning scene with frame id "
+			<<cm_.getWorldFrameId()<<" and radius: "<<sphereRadius);
 	obj.header.frame_id = cm_.getWorldFrameId();
-	obj.padding = 0.0f;
+	obj.padding = 0;
 	obj.shapes = std::vector<arm_navigation_msgs::Shape>();
 	arm_navigation_msgs::Shape shape;
 	shape.type = arm_navigation_msgs::Shape::SPHERE;
 	//shape.dimensions.push_back(zone_selector_.getPlaceZone().MinObjectSpacing/2.0f); // radius;
-	shape.dimensions.push_back(0.02f);
+	shape.dimensions.push_back(sphereRadius);
 	obj.shapes.push_back(shape);
 	obj.poses.push_back(pose.pose);
+	obj.poses[0].position.z  = pose.pose.position.z - sphereRadius;
 	addDetectedObjectToLocalPlanningScene(obj);
 
 	// storing model detail for path planning
@@ -320,7 +334,6 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	models.model_list.push_back(model);
 	recognized_models_.clear();
 	recognized_models_.push_back(models);
-	//recognized_model_description_.name = segmentation_results_.table.pose.header.frame_id;
 
 	// storing grasp candidate poses
 	candidate_pick_poses_.clear();
@@ -328,14 +341,12 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	{
 		candidate_pick_poses_.assign(rec_srv.response.pick_poses.begin(),rec_srv.response.pick_poses.end());
 	}
+	// Finished storing recognition results
 
-/*
- * Finished storing recognition results
- */
-
+	// ==================================================================================
 	// passed recognized object details to zone selector
-	double bbBoxSide = OBJECT_ABB_SIDE;
-	tf::Vector3 objSize = tf::Vector3(bbBoxSide,bbBoxSide,bbBoxSide);
+	updateMarkerArrayMsg();
+	tf::Vector3 objSize = tf::Vector3(attached_obj_bb_side_,attached_obj_bb_side_,attached_obj_bb_side_);
 	PickPlaceZoneSelector::ObjectDetails objDetails(tf::Transform::getIdentity(),objSize,
 			rec_srv.response.model_id,rec_srv.response.label);
 	zone_selector_.setNextObjectDetails(objDetails);
@@ -343,17 +354,17 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	// computing poses so that no move is attempted if no locations are available in the place zone.
 	candidate_place_poses_.clear();
 
-	ROS_WARN_STREAM(NODE_NAME<<": using box with size "<<OBJECT_ABB_SIDE);
+	ROS_WARN_STREAM(NODE_NAME<<": using box with size "<<attached_obj_bb_side_);
 	if(!zone_selector_.generateNextLocationCandidates(candidate_place_poses_))
 	{
 		ROS_WARN_STREAM(NODE_NAME<<": Couldn't find available location for object, swapping zones.");
 		// no more locations available, swapping zones
 		zone_selector_.goToNextPickZone();
 		updateMarkerArrayMsg();
-		//CurrentIdCount = 1;
 		return false;
 	}
-	ROS_WARN_STREAM(NODE_NAME<<": found place location for object ");
+
+	ROS_INFO_STREAM(NODE_NAME<<": Found place location for object ");
 
 #endif
 
@@ -381,9 +392,6 @@ bool AutomatedPickerRobotNavigator::performGraspPlanning()
 	object_manipulation_msgs::GraspPlanning::Request request;
 	object_manipulation_msgs::GraspPlanning::Response response;
 	std::string modelId = makeCollisionObjectNameFromModelId(modelPose.model_id);
-
-	//modelPose.pose = geometry_msgs::PoseStamped();
-	//modelPose.pose.pose.orientation.w = 1.0;
 	modelPose.pose = recognized_obj_pose_map_[modelId];
 	modelPose.pose.header.frame_id = recognized_model_description_.name; // should be updated during recognition stage
 	modelPose.pose.header.stamp = ros::Time::now();
@@ -436,7 +444,7 @@ bool AutomatedPickerRobotNavigator::performGraspPlanning()
 	if(request.target.reference_frame_id != recognized_model_description_.name ||
 		  request.target.reference_frame_id != modelPose.pose.header.frame_id)
 	{
-	  ROS_WARN_STREAM("Cluster does not match recognition");
+	  ROS_WARN_STREAM(NODE_NAME<<": Cluster does not match recognition");
 	}
 
 	//  ===================================== storing results =====================================
@@ -484,17 +492,6 @@ bool AutomatedPickerRobotNavigator::performGraspPlanning()
 	planning_models::KinematicState state(*current_robot_state_);
 	state.updateKinematicStateWithLinkAt(gripper_link_name_, first_grasp_in_world_tf);
 
-	//  ===================================== generating markers results =====================================
-	// publishing marker of gripper at pre-grasp
-//	visualization_msgs::MarkerArray arr;
-//	std_msgs::ColorRGBA col_pregrasp;
-//	col_pregrasp.r = 0.0;
-//	col_pregrasp.g = 1.0;
-//	col_pregrasp.b = 1.0;
-//	col_pregrasp.a = 1.0;
-//	std::vector<std::string> links = cm_.getKinematicModel()->getModelGroup(gripper_group_name_)->getGroupLinkNames();
-//	cm_.getRobotMarkersGivenState(state, arr, col_pregrasp,"first_grasp", ros::Duration(0.0), &links);
-//	marker_array_publisher_.publish(arr);
 
 	// ===================================== printing completion info message =====================================
 	ROS_INFO_STREAM(NODE_NAME<<": Grasp is " << response.grasps[0].grasp_pose.position.x << " "
@@ -516,6 +513,9 @@ bool AutomatedPickerRobotNavigator::performSegmentation()
 		return false;
 	}
 
+	// clearing obstacle clusters from zone
+	zone_selector_.clearObstableClusters();
+
 	// check if at least one cluster is located in pick zone
 	std::vector<int> inZone;
 	success = zone_selector_.isInPickZone(segmented_clusters_,inZone);
@@ -523,21 +523,40 @@ bool AutomatedPickerRobotNavigator::performSegmentation()
 	{
 		ROS_WARN_STREAM(NODE_NAME<<": Neither cluster was found in pick zone, swapping zones");
 		zone_selector_.goToNextPickZone();
-		updateMarkerArrayMsg();
+
 		return false;
 	}
 	else
 	{
 		ROS_INFO_STREAM(NODE_NAME<<": A total of "<<inZone.size()<<" were found in pick zone");
 
-		// retaining only cluster in pick zone
+		// finding clusters outside of pick zone to be used as obstacles
 		std::vector<sensor_msgs::PointCloud> tempArray;
-		for(unsigned int i = 0;i < inZone.size();i++)
+		for(std::size_t i = 0;i < segmented_clusters_.size();i++)
+		{
+			if(std::find(inZone.begin(),inZone.end(),i) == inZone.end())
+			{
+				// not in pick zone
+				tempArray.push_back(segmented_clusters_[i]);
+			}
+		}
+
+		// adding clusters
+		if(tempArray.size() > 0)
+		{
+			zone_selector_.addObstacleClusters(tempArray);
+			tempArray.clear();
+		}
+
+		// retaining only cluster in pick zone
+		for(std::size_t i = 0;i < inZone.size();i++)
 		{
 			tempArray.push_back(segmented_clusters_[inZone[i]]);
 		}
 		segmented_clusters_.assign(tempArray.begin(),tempArray.end());
 	}
+
+	updateMarkerArrayMsg();
 
 #ifdef USE_SPHERE_SEGMENTATION
 	success =  performSphereSegmentation();
@@ -567,13 +586,13 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 	bool success = performGraspPlanning();
 	if(!success)
 	{
+		zone_selector_.removeLastObjectAdded();
 		ROS_INFO_STREAM(NODE_NAME<<": Pick Move attempt aborted");
 		return false;
 	}
 
 	// will attempt to grasp object multiple times if current pick attempt fails
 	object_manipulation_msgs::Grasp firstGrasp =  grasp_candidates_[0];
-	const int numCandidates = grasp_candidates_.size();
 	double angleIncrement = 2*M_PI/((double)num_of_grasp_attempts_);
 	int graspIndex = 0; // index to last successful grasp;
 
@@ -618,40 +637,35 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 			{
 				// currently on last iteration, all options have been attempted, exiting
 				ROS_ERROR_STREAM(NODE_NAME<<"No more pick attempts remain, aborting pick");
+				zone_selector_.removeLastObjectAdded();
 				return false;
 			}
 			else
 			{
-				ROS_WARN_STREAM(NODE_NAME<<"Generating new candidate grasps with offset: "<<offset_from_first_grasp_
-						<<" and angle: "<<angleIncrement * i);
+				ROS_WARN_STREAM(NODE_NAME<<"Generating new object pose with offset: "<<offset_from_first_grasp_
+						<<" and angle: "<<angleIncrement * i << " from original");
 			}
 
-			// generating grasp pose near original
-			tf::Transform newGraspTf;
-			geometry_msgs::Pose newGraspPose;
+			// generating object6 pose near original
+			tf::Transform newObjTf;
+			geometry_msgs::Pose newObjPose;
 			std::vector<geometry_msgs::Pose> candidatePoses;
 
 			// converting first pose into tf type
-			tf::poseMsgToTF(firstGrasp.grasp_pose,newGraspTf);
+			tf::poseMsgToTF(recognized_obj_pose_map_[grasp_pickup_goal_.collision_object_name].pose,newObjTf);
 
 			// offsetting first grasp a small amount in the x-y plane
-			tf::Vector3 offsetVect = newGraspTf.getOrigin();
+			tf::Vector3 offsetVect = newObjTf.getOrigin();
 			offsetVect.setX(offsetVect.getX() + offset_from_first_grasp_ * std::cos(angleIncrement * i));
 			offsetVect.setY(offsetVect.getY() + offset_from_first_grasp_ * std::sin(angleIncrement * i));
-			newGraspTf.setOrigin(offsetVect);
+			newObjTf.setOrigin(offsetVect);
 
 			// converting back into pose msg
-			tf::poseTFToMsg(newGraspTf,newGraspPose);
+			tf::poseTFToMsg(newObjTf,newObjPose);
 
-			// generating new candidate poses
-			generateGraspPoses(newGraspPose,numCandidates,candidatePoses);
-
-			// assigning poses to grasp candidates
-			for(std::size_t j = 0; j < grasp_candidates_.size(); j++)
-			{
-				object_manipulation_msgs::Grasp &grasp = grasp_candidates_[j];
-				grasp.grasp_pose = candidatePoses[j];
-			}
+			// updating grasp pick goal object
+			household_objects_database_msgs::DatabaseModelPose &model =	grasp_pickup_goal_.target.potential_models[0];
+			model.pose.pose = newObjPose;
 		}
 		else
 		{
@@ -682,6 +696,18 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 		addMarker(MARKER_ATTACHED_OBJECT,m);
 	}
 
+	return success;
+}
+
+bool AutomatedPickerRobotNavigator::moveArmThroughPlaceSequence()
+{
+	bool success = RobotNavigator::moveArmThroughPlaceSequence();
+	if(!success)
+	{
+		zone_selector_.removeLastObjectAdded();
+	}
+
+	updateMarkerArrayMsg();
 	return success;
 }
 
@@ -719,6 +745,7 @@ void AutomatedPickerRobotNavigator::updateMarkerArrayMsg()
 		marker_array_pub_.publish(marker_array_msg_);
 		marker_array_msg_.markers.clear();
 		zone_selector_.getAllActiveZonesCombinedMarkers(marker_array_msg_);
+		zone_selector_.getAllObjectsMarkers(marker_array_msg_);
 	}
 }
 
