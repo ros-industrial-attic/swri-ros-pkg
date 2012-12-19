@@ -28,8 +28,8 @@
 
 			<!-- gripper interface -->
 			<param name="suction_on_output_channel" value="1"/>
-			<param name="suction_check_output_channel" value="1"/>
-			<param name="use_sensor_feedback" value="false"/>
+			<param name="suction_check_output_channel" value="0"/>
+			<param name="use_sensor_feedback" value="true"/>
 			<node name="gripper" pkg="mantis_io" type="suction_gripper" output="screen"/>
 			<!--node pkg="object_manipulation_tools" 
 				type="grasp_action_service" name="gripper_interface" output="screen"/-->
