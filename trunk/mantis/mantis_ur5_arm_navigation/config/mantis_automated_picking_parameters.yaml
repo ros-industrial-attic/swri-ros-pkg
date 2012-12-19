@@ -13,6 +13,9 @@ navigator:
   joint_state_topic: /ur5_arm/joint_states
   joint_trajectory_service_name: /ur5_arm/joint_trajectory_action
   grasp_action_service_name: /ur5_arm/grasp_execution_action
+  num_of_grasp_attempts: 4
+  offset_from_first_grasp: 0.01 #1cm
+  attached_object_bb_side: 0.1 #10cm
 segmentation:
   world_frame_id: workcell_frame
   k_nearest: 40
@@ -24,4 +27,4 @@ segmentation:
   min_fitness_score: 20 # minimum number of inliers
   align_to_top_centroid: true
 joints:
-  side_position: [-0.80, -1.07948096023743, 1.7135035147002855, -2.2049080765129627, -1.57158764211257, -1.6830470243995475]
+  side_position: [-0.80, -1.07948096023743, 1.7135035147002855, -2.2049080765129627, -1.57158764211257, -0.48]
