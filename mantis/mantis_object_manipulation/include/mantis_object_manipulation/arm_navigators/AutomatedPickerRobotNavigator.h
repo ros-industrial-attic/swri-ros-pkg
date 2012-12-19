@@ -15,6 +15,7 @@
 
 static const std::string PARAM_NAME_NUM_GRASP_ATTEMTPTS = "num_of_grasp_attempts";
 static const std::string PARAM_NAME_NEW_GRASP_OFFSET = "new_grasp_offset";
+static const std::string PARAM_NAME_ATTACHED_OBJECT_BB_SIDE = "attached_object_bb_side";
 
 class AutomatedPickerRobotNavigator: public RobotNavigator
 {
@@ -88,7 +89,7 @@ protected:
 	virtual bool createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses);
 	virtual bool moveArmToSide();
 	virtual bool moveArmThroughPickSequence();
-
+	virtual bool moveArmThroughPlaceSequence();
 	// callback overrides
 	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt);
 
@@ -107,9 +108,10 @@ protected:
 	JointConfiguration joint_configuration_;
 	int num_of_grasp_attempts_; // number of additional pick attempts
 	double offset_from_first_grasp_;// distance from original pick grasp to used in new pick attempt
+	double attached_obj_bb_side_;
 
 	// segmentation
-	SphereSegmentation _SphereSegmentation;
+	SphereSegmentation sphere_segmentation_;
 
 	//services
 	ros::ServiceClient recognition_client_;

@@ -219,7 +219,7 @@ protected:
 	JointConfiguration _JointConfigurations;
 
 	// segmentation
-	SphereSegmentation _SphereSegmentation;
+	SphereSegmentation sphere_segmentation_;
 
 };
 

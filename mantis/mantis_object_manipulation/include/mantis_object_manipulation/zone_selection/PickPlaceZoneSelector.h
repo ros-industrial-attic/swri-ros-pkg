@@ -50,6 +50,8 @@ public:
 			XMin = topLeft.x() - size.x();
 			YMax = topLeft.y();
 			YMin = topLeft.y() - size.y();
+			ZMax = size.z();
+			ZMin = 0.0f;
 
 		}
 
@@ -57,12 +59,14 @@ public:
 		double XMax;
 		double YMin;
 		double YMax;
+		double ZMax;
+		double ZMin;
 		std::string ZoneName;
 		std::string FrameId;
 
 		tf::Vector3 getSize() const
 		{
-			return tf::Vector3(std::abs(XMax - XMin),std::abs(YMax - YMin),0.0f);
+			return tf::Vector3(std::abs(XMax - XMin),std::abs(YMax - YMin),std::abs(ZMax - ZMin));
 		}
 
 		tf::Vector3 getCenter() const
@@ -77,6 +81,8 @@ public:
 
 			//marker.header.frame_id = place_zone_.FrameId;
 			//marker.pose = place_zone_.getZoneCenterPose();
+			marker.header.frame_id = FrameId;
+			marker.header.stamp = ros::Time(0);
 			marker.type = visualization_msgs::Marker::CUBE;
 			marker.scale.x = zoneSize.x();
 			marker.scale.y = zoneSize.y();
@@ -185,6 +191,20 @@ public:
 
 		}
 
+		void getMarker(visualization_msgs::Marker &marker) const
+		{
+
+			marker.type = visualization_msgs::Marker::CUBE;
+			marker.scale.x = Size.x();
+			marker.scale.y = Size.y();
+			marker.scale.z = Size.z();
+			marker.color.a = 1.0f;
+			marker.color.r = 0.0f;
+			marker.color.g = 1.0f;
+			marker.color.b = 0.0f;
+			tf::poseTFToMsg(Trans,marker.pose);
+		}
+
 
 		tf::Transform Trans;
 		tf::Vector3 Size;
@@ -289,6 +309,11 @@ public:
 
 		void setNextObjectDetails(const ObjectDetails &objectDetails);
 
+		void removeLastObjectAdded()
+		{
+			objects_in_zone_.pop_back();
+		}
+
 		bool isIdInZone(int i);
 
 		bool generateNextLocationCandidates(std::vector<geometry_msgs::PoseStamped> &placePoses,std::vector<PlaceZone* > &otherZones);
@@ -301,6 +326,27 @@ public:
 		{
 			ZoneBounds::getMarker(marker);
 			marker.scale.z = PLACE_ZONE_HEIGHT;
+		}
+
+		void getObjectsInZoneMarkers(visualization_msgs::MarkerArray &markers,std::string nameSpace = "")
+		{
+			visualization_msgs::Marker objMarker;
+			objMarker.ns = nameSpace + "/" + ZoneName + "/objects_in_zone";
+			objMarker.header.frame_id = FrameId;
+			objMarker.header.stamp = ros::Time(0);
+			objMarker.color.r = 1.0f; objMarker.color.g = 1.0f;
+			objMarker.color.b = 0.0f; objMarker.color.a = 0.2f;
+			for(std::size_t i = 0; i < objects_in_zone_.size(); i++)
+			{
+				ObjectDetails &obj = objects_in_zone_[i];
+				objMarker.id = i;
+				obj.getMarker(objMarker);
+				objMarker.scale.z = objMarker.scale.z/2.0f;
+				objMarker.pose.position.z = objMarker.pose.position.z - objMarker.scale.z;
+				objMarker.color.r = 1.0f; objMarker.color.g = 1.0f;
+				objMarker.color.b = 0.0f; objMarker.color.a = 0.8f;
+				markers.markers.push_back(objMarker);
+			}
 		}
 
 		void getTextMarker(visualization_msgs::Marker &marker) const
@@ -429,6 +475,7 @@ public:
 	{
 		next_obj_details_ = obj;
 	}
+	void removeLastObjectAdded();
 
 	void addObstacleClusters(std::vector<sensor_msgs::PointCloud> &clusters);
 	void addObstacleCluster(sensor_msgs::PointCloud &cluster);
@@ -445,6 +492,8 @@ public:
 	void getAllActiveZonesMarkers(visualization_msgs::MarkerArray &markers); // includes pick and active place zones
 	void getAllActiveZonesTextMarkers(visualization_msgs::MarkerArray &markers);
 	void getAllActiveZonesCombinedMarkers(visualization_msgs::MarkerArray &markers); // combines zone and text markers into a single array
+
+	void getAllObjectsMarkers(visualization_msgs::MarkerArray &markers);
 
 	const std::vector<ZoneBounds>& getPickZones()
 	{
@@ -473,6 +522,7 @@ protected:
 	std::vector<PlaceZone* > inactive_place_zones_;
 	ObjectDetails next_obj_details_;
 	std::vector<PlaceZone > obstacle_objects_; // bounding boxes of sensed clusters in environment
+	ObjectDetails last_object_added_;
 
 	// markers
 	std::vector<std_msgs::ColorRGBA> marker_colors_;

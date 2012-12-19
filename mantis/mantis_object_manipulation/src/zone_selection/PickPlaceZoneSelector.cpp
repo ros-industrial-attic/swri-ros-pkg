@@ -196,7 +196,8 @@ void PickPlaceZoneSelector::addObstacleCluster(sensor_msgs::PointCloud &cluster)
 		}
 		catch(tf::LookupException &e)
 		{
-			ROS_WARN_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": lookup exception thrown, not transforming cluster to frame "<< pickZone.FrameId);
+			ROS_WARN_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": lookup exception thrown, not transforming cluster from '"<<
+					cluster.header.frame_id<<"' to frame '"<< pickZone.FrameId<<"'");
 		}
 	}
 
@@ -218,7 +219,10 @@ void PickPlaceZoneSelector::addObstacleCluster(sensor_msgs::PointCloud &cluster)
 
 	double maxSide = (size.x > size.y)? size.x : size.y;
 
-	PlaceZone obstacleZone = PlaceZone(tf::Vector3(maxSide,maxSide,maxSide),tf::Vector3(clusterCentroid.x,clusterCentroid.y,0.0f));
+	std::stringstream ss; ss<< obstacle_objects_.size();
+	PlaceZone obstacleZone = PlaceZone(tf::Vector3(maxSide,maxSide,size.z),tf::Vector3(clusterCentroid.x,clusterCentroid.y,0.0f));
+	obstacleZone.FrameId = pickZone.FrameId;
+	obstacleZone.ZoneName = "obstacle" + ss.str();
 	obstacle_objects_.push_back(obstacleZone);
 
 }
@@ -261,7 +265,36 @@ bool  PickPlaceZoneSelector::generateNextLocationCandidates(std::vector<geometry
 
 		ROS_WARN_STREAM("ZoneSelector: Did not located id in zone "<<placeZone.ZoneName);
 	}
+
+	// storing last added object
+	if(locationFound)
+	{
+
+		last_object_added_ = next_obj_details_;
+	}
+	else
+	{
+		last_object_added_.Id = -1;
+	}
+
 	return locationFound;
+}
+
+void PickPlaceZoneSelector::removeLastObjectAdded()
+{
+	for(std::size_t i = 0; i < active_place_zones_.size(); i++)
+	{
+		PlaceZone& placeZone = *active_place_zones_[i];
+		if(placeZone.isIdInZone(last_object_added_.Id))
+		{
+			ZoneBounds objectBounds = ZoneBounds(last_object_added_.Size,last_object_added_.Trans.getOrigin());
+			if(ZoneBounds::contains(placeZone,objectBounds))
+			{
+				placeZone.removeLastObjectAdded();
+				return;
+			}
+		}
+	}
 }
 
 void PickPlaceZoneSelector::getPickZoneMarker(visualization_msgs::Marker &marker)
@@ -378,6 +411,31 @@ void PickPlaceZoneSelector::getAllActiveZonesCombinedMarkers(visualization_msgs:
 	getAllActiveZonesTextMarkers(markers);
 }
 
+void PickPlaceZoneSelector::getAllObjectsMarkers(visualization_msgs::MarkerArray &markers)
+{
+	for(std::size_t i = 0 ; i < active_place_zones_.size(); i++)
+	{
+		PlaceZone &zone = *active_place_zones_[i];
+		zone.getObjectsInZoneMarkers(markers,"place_zones");
+	}
+
+	visualization_msgs::Marker obstacleMarker;
+	obstacleMarker.ns = "obstacles";
+	obstacleMarker.header.frame_id = getPickZones()[0].FrameId;
+	for(std::size_t i = 0; i < obstacle_objects_.size(); i++)
+	{
+		PlaceZone &obstacle = obstacle_objects_[i];
+		obstacleMarker.id = i;
+		obstacle.getMarker(obstacleMarker);
+		obstacleMarker.scale.z = obstacle.getSize().z();
+		obstacleMarker.pose = obstacle.getZoneCenterPose();
+		obstacleMarker.color = marker_colors_[marker_colors_.size() - 2];
+		obstacleMarker.color.a = 0.8f;
+		obstacleMarker.pose.position.z = obstacleMarker.pose.position.z + obstacleMarker.scale.z;
+		markers.markers.push_back(obstacleMarker);
+	}
+}
+
 void PickPlaceZoneSelector::PlaceZone::resetZone()
 {
 	objects_in_zone_.clear();
@@ -476,9 +534,14 @@ bool PickPlaceZoneSelector::PlaceZone::checkOverlaps(ZoneBounds &nextObjBounds,s
 	for(Iter i = zones.begin();i != zones.end(); i++)
 	{
 		PlaceZone zone = **i;
-		if(!ZoneBounds::intersect(zone,nextObjBounds) && !ZoneBounds::contains(zone,nextObjBounds))
+//		if(!ZoneBounds::intersect(zone,nextObjBounds) && !ZoneBounds::contains(zone,nextObjBounds))
+//		{
+//			continue;
+//		}
+
+		if(ZoneBounds::intersect(zone,nextObjBounds) || ZoneBounds::contains(zone,nextObjBounds))
 		{
-			continue;
+			return true;
 		}
 
 		std::vector<ObjectDetails> &objInZone = (*i)->objects_in_zone_;
