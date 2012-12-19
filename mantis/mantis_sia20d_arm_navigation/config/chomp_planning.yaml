@@ -16,7 +16,7 @@ collision_links:
   front_wall1
   left_wall1
   right_wall1
-  sia20d_arm_kinect_keepout
+  #sia20d_arm_kinect_keepout
 
 joint_costs:
   joint_s: 1.0
