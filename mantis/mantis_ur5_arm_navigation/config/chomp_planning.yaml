@@ -15,9 +15,9 @@ collision_links:
   ur5_arm_wrist_1_link
   ur5_arm_wrist_2_link
   ur5_arm_wrist_3_link
-  ur5_arm_ee_link
   ur5_arm_gripper_body
-  ur5_arm_kinect_keepout
+  #ur5_arm_ee_link
+  #ur5_arm_kinect_keepout
 
 joint_costs:
   ur5_arm_shoulder_pan_joint: 1.0

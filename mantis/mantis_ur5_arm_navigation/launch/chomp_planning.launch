@@ -5,19 +5,19 @@
 		<rosparam command="load" file="$(find mantis_ur5_arm_navigation)/config/chomp_planning.yaml" />
 		<param name="animate_path" value="false"/>
 		<param name="animate_endeffector" value="false"/>
-		<param name="animate_endeffector_segment" value="ur5_arm/palm"/>
+		<param name="animate_endeffector_segment" value="ur5_arm_gripper_body"/>
 	  	<param name="use_signed_environment_field" value="true"/>
 	  	<param name="use_signed_self_field" value="false"/>
 		<param name="trajectory_duration" value="6.0"/>
 		<param name="trajectory_discretization" value="0.05"/>
 		<param name="learning_rate" value="100.0" />
-		<param name="max_iterations" value="200"/>
+		<param name="max_iterations" value="500"/>
 		<param name="max_iterations_after_collision_free" value="5" />
 		<param name="smoothness_cost_weight" value="0.00001"/>
 		<param name="obstacle_cost_weight" value="1.0" />
 		<param name="joint_update_limit" value="0.05" />
 		<param name="ridge_factor" value="0.0" />
-		<param name="use_pseudo_inverse" value="false" />
+		<param name="use_pseudo_inverse" value="true" />
 		<param name="pseudo_inverse_ridge_factor" value="0.0001" />
 		<param name="collision_threshold" value="0.125" />
 		<param name="smoothness_cost_velocity" value="0.0" />
