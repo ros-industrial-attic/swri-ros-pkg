@@ -139,8 +139,7 @@ protected:
 
 	// callbacks
 	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt);
-	virtual bool trajectoriesFinishedCallbackFunction(TrajectoryExecutionDataVector tedv);
-	virtual bool graspActionFinishedCallbackFunction(TrajectoryExecutionDataVector tedv);
+	virtual bool trajectoryFinishedCallback(bool storeLastTraj,TrajectoryExecutionDataVector tedv);
 
 	// planning scene
 	void attachCollisionObjectCallback(const std::string& group_name);

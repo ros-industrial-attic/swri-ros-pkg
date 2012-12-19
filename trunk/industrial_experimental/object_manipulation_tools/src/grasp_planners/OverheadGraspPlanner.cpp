@@ -429,6 +429,8 @@ void OverheadGraspPlanner::generateGraspPoses(const geometry_msgs::Pose &pose,in
 	{
 		candidateTf = graspTf*tf::Transform(tf::Quaternion(_ParamVals.ApproachVector,i*angle),
 				tf::Vector3(0.0f,0.0f,0.0f));
+//		candidateTf = graspTf;
+//		candidateTf.setRotation(tf::Quaternion(_ParamVals.ApproachVector,i*angle));
 		geometry_msgs::Pose candidatePose = geometry_msgs::Pose();
 		tf::poseTFToMsg(candidateTf,candidatePose);
 		poses.push_back(candidatePose);

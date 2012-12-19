@@ -135,61 +135,45 @@ void RobotNavigator::setup()
 		ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
 
 		// others
-		//grasp_tester_ = GraspTesterPtr(new object_manipulator::GraspTesterFast(&cm_, ik_plugin_name_));
 		grasp_tester_ = GraspTesterPtr(new GraspSequenceValidator(&cm_, ik_plugin_name_));
 		place_tester_ = PlaceSequencePtr(new PlaceSequenceValidator(&cm_, ik_plugin_name_));
 
-		trajectories_finished_function_ = boost::bind(&RobotNavigator::trajectoriesFinishedCallbackFunction, this, _1);
-		grasp_action_finished_function_ = boost::bind(&RobotNavigator::graspActionFinishedCallbackFunction, this, _1);
+		trajectories_finished_function_ = boost::bind(&RobotNavigator::trajectoryFinishedCallback, this, true,_1);
+		grasp_action_finished_function_ = boost::bind(&RobotNavigator::trajectoryFinishedCallback, this, false,_1);
 		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 	}
 }
 
-bool RobotNavigator::trajectoriesFinishedCallbackFunction(TrajectoryExecutionDataVector tedv)
+bool RobotNavigator::trajectoryFinishedCallback(bool storeLastTraj,TrajectoryExecutionDataVector tedv)
 {
-	if(tedv.size()==0)
-	{
-		ROS_ERROR_STREAM(NODE_NAME <<": trajectory finished callback received empty vector");
-		return true;
-	}
+	ROS_INFO_STREAM(NODE_NAME<<":Trajectory execution result flag: "<<tedv.back().result_);
 
-   ROS_INFO_STREAM(NODE_NAME<<":Trajectory execution result flag: "<<tedv.back().result_);
-
-   // combining trajectory state flags;
-   //boost::unique_lock<boost::mutex> lock(execution_mutex_);;
-   trajectories_succeeded_ = (tedv.back().result_ == SUCCEEDED
+	// combining trajectory state flags;
+	trajectories_succeeded_ = (tedv.back().result_ == SUCCEEDED
 							  || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_OK
 							  || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_CLOSE_ENOUGH);
 
-   ROS_INFO_STREAM(NODE_NAME<<":Storing last trajectory");
-   last_trajectory_execution_data_vector_ = tedv;
-
-
-   ROS_INFO_STREAM(NODE_NAME<<": Trajectory finished callback notifying all awaiting threads");
-   execution_completed_.notify_all();
-   return true;
- }
-
-bool RobotNavigator::graspActionFinishedCallbackFunction(TrajectoryExecutionDataVector tedv)
-{
-	if(tedv.size()==0)
+	if(storeLastTraj)
 	{
-		ROS_ERROR_STREAM(NODE_NAME <<": trajectory finished callback received empty vector");
-		return true;
+		if(tedv.size()==0)
+		{
+			ROS_ERROR_STREAM(NODE_NAME <<": trajectory finished callback received empty vector");
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME<<": trajectory finished callback storing last trajectory");
+			last_trajectory_execution_data_vector_ = tedv;
+		}
+	}
+	else
+	{
+		ROS_INFO_STREAM(NODE_NAME<<": trajectory finished callback will not store last trajectory");
 	}
 
-   ROS_INFO_STREAM(NODE_NAME<<":Trajectory execution result flag: "<<tedv.back().result_);
 
-   // combining trajectory state flags;
-   //boost::unique_lock<boost::mutex> lock(execution_mutex_);;
-   trajectories_succeeded_ = (tedv.back().result_ == SUCCEEDED
-							  || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_OK
-							  || tedv.back().result_ == HANDLER_REPORTS_FAILURE_BUT_CLOSE_ENOUGH);
-
-
-   ROS_INFO_STREAM(NODE_NAME<<": Trajectory finished callback notifying all awaiting threads");
-   execution_completed_.notify_all();
-   return true;
+	ROS_INFO_STREAM(NODE_NAME<<": Trajectory finished callback notifying all awaiting threads");
+	execution_completed_.notify_all();
+	return true;
 }
 
 void RobotNavigator::revertPlanningScene()
@@ -1128,7 +1112,7 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
                           const object_manipulator::GraspExecutionInfo& gei) {
 
   std::vector<std::string> segment_names;
-  std::vector<boost::function<bool(TrajectoryExecutionDataVector)>* > callbacks;
+  std::vector< boost::function<bool(TrajectoryExecutionDataVector)> > callbacks;
 
   // commanding gripper release
   std::vector<TrajectoryExecutionRequest> ter_reqs;
@@ -1169,7 +1153,7 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   validateJointTrajectory(gripper_ter.trajectory_);
   ter_reqs.push_back(gripper_ter);
   segment_names.push_back("Pre-grasp");
-  callbacks.push_back(&grasp_action_finished_function_);
+  callbacks.push_back(grasp_action_finished_function_);
 
   // setting up approach move
   TrajectoryExecutionRequest arm_ter;
@@ -1188,14 +1172,14 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   arm_ter.callback_function_ = boost::bind(&RobotNavigator::attachCollisionObjectCallback, this, _1);
   ter_reqs.push_back(arm_ter);
   segment_names.push_back("Approach");
-  callbacks.push_back(&trajectories_finished_function_);
+  callbacks.push_back(trajectories_finished_function_);
 
   // setting up gripper grasp
   gripper_ter.trajectory_ = getGripperTrajectory(object_manipulation_msgs::GraspHandPostureExecutionGoal::GRASP);
   validateJointTrajectory(gripper_ter.trajectory_);
   ter_reqs.push_back(gripper_ter);
   segment_names.push_back("Grasp");
-  callbacks.push_back(&grasp_action_finished_function_);
+  callbacks.push_back(grasp_action_finished_function_);
 
   // updating attached  marker operation
   if(hasMarker(MARKER_ATTACHED_OBJECT))
@@ -1212,7 +1196,7 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   arm_ter.callback_function_ = NULL;
   ter_reqs.push_back(arm_ter);
   segment_names.push_back("Lift");
-  callbacks.push_back(&trajectories_finished_function_);
+  callbacks.push_back(trajectories_finished_function_);
 
   /*
    * executing all trajectories
@@ -1228,7 +1212,7 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
 	  ROS_INFO_STREAM("\t- "<<segment_names[i] <<" trajectory in progress");
 //	  trajectory_execution_monitor_.executeTrajectories(tempRequest,
 //														trajectories_finished_function_);
-	  trajectory_execution_monitor_.executeTrajectories(tempRequest,*callbacks[i]);
+	  trajectory_execution_monitor_.executeTrajectories(tempRequest,callbacks[i]);
 	  {
 		  boost::unique_lock<boost::mutex> lock(execution_mutex_);
 		  execution_completed_.wait(lock);
@@ -1291,7 +1275,7 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
 
   trajectories_succeeded_ = false;
   std::vector<std::string> segment_names;
-  std::vector<boost::function<bool(TrajectoryExecutionDataVector)>* > callbacks;
+  std::vector<boost::function<bool(TrajectoryExecutionDataVector)> > callbacks;
 
   // setting up descend move
   TrajectoryExecutionRequest arm_ter;
@@ -1309,7 +1293,7 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
   arm_ter.callback_function_ = boost::bind(&RobotNavigator::detachCollisionObjectCallback, this, _1);
   ter_reqs.push_back(arm_ter);
   segment_names.push_back("Descend");
-  callbacks.push_back(&trajectories_finished_function_);
+  callbacks.push_back(trajectories_finished_function_);
 
   // setting up  gripper release
   TrajectoryExecutionRequest gripper_ter;
@@ -1321,7 +1305,7 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
   gripper_ter.test_for_close_enough_ = false;
   ter_reqs.push_back(gripper_ter);
   segment_names.push_back("Release");
-  callbacks.push_back(&grasp_action_finished_function_);
+  callbacks.push_back(grasp_action_finished_function_);
 
   // updating attached object marker operation
   if(hasMarker(MARKER_ATTACHED_OBJECT))
@@ -1338,7 +1322,7 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
   arm_ter.callback_function_ = 0;
   ter_reqs.push_back(arm_ter);
   segment_names.push_back("Retreat");
-  callbacks.push_back(&trajectories_finished_function_);
+  callbacks.push_back(trajectories_finished_function_);
 
   /*
    * executing all trajectories
@@ -1353,7 +1337,7 @@ bool RobotNavigator::attemptPlaceSequence(const std::string& group_name,
 	  tempRequest.push_back(ter_reqs[i]);
 
 	  ROS_INFO_STREAM("\t"<< "- "<<segment_names[i] <<" trajectory in progress");
-	  trajectory_execution_monitor_.executeTrajectories(tempRequest,*callbacks[i]);
+	  trajectory_execution_monitor_.executeTrajectories(tempRequest,callbacks[i]);
 
 	  {
 		  boost::unique_lock<boost::mutex> lock(execution_mutex_);
