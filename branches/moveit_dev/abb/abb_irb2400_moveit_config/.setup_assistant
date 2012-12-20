@@ -1,0 +1,6 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: 
+    relative_path: /home/jzoss/ros/swri-ros-pkg/abb/irb_2400_arm_navigation/urdf/irb_2400.urdf
+  SRDF:
+    relative_path: config/irb_2400.srdf
