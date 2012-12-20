@@ -5,7 +5,7 @@
     <link name="${prefix}base_link">
       <visual>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/visual/BASE_LINK.STL" />
+          <mesh filename="../meshes/visual/BASE_LINK.STL" />
         </geometry>
         <material name="orange">
           <color rgba="1 0.43 0 1"/>
@@ -13,7 +13,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/collision/BASE_LINK.STL" />
+          <mesh filename="../meshes/collision/BASE_LINK.STL" />
         </geometry>
         <material name="yellow">
           <color rgba="0 1 1 1"/>
@@ -24,13 +24,13 @@
     <link name="${prefix}link_1">
       <visual>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/visual/LINK_1.STL" />
+          <mesh filename="../meshes/visual/LINK_1.STL" />
         </geometry>
         <material name="orange" />
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/collision/LINK_1.STL" />
+          <mesh filename="../meshes/collision/LINK_1.STL" />
         </geometry>
         <material name="yellow"/>
       </collision>
@@ -39,7 +39,7 @@
     <link name="${prefix}link_2">
       <visual>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/visual/LINK_2.STL" />
+          <mesh filename="../meshes/visual/LINK_2.STL" />
         </geometry>
         <material name="lt_black">
           <color rgba="0.3 0.3 0.3 1"/>
@@ -47,7 +47,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/collision/LINK_2.STL" />
+          <mesh filename="../meshes/collision/LINK_2.STL" />
         </geometry>
         <material name="yellow"/>
       </collision>
@@ -56,13 +56,13 @@
     <link name="${prefix}link_3">
       <visual>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/visual/LINK_3.STL" />
+          <mesh filename="../meshes/visual/LINK_3.STL" />
         </geometry>
         <material name="orange" />
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/collision/LINK_3.STL" />
+          <mesh filename="../meshes/collision/LINK_3.STL" />
         </geometry>
         <material name="yellow"/>
       </collision>
@@ -71,13 +71,13 @@
     <link name="${prefix}link_4">
       <visual>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/visual/LINK_4.STL" />
+          <mesh filename="../meshes/visual/LINK_4.STL" />
         </geometry>
         <material name="lt_black" />
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/collision/LINK_4.STL" />
+          <mesh filename="../meshes/collision/LINK_4.STL" />
         </geometry>
         <material name="yellow"/>
       </collision>
@@ -86,13 +86,13 @@
     <link name="${prefix}link_5">
       <visual>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/visual/LINK_5.STL" />
+          <mesh filename="../meshes/visual/LINK_5.STL" />
         </geometry>
         <material name="lt_black" />
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/collision/LINK_5.STL" />
+          <mesh filename="../meshes/collision/LINK_5.STL" />
         </geometry>
         <material name="yellow"/>
       </collision>
@@ -101,13 +101,13 @@
     <link name="${prefix}link_6">
       <visual>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/visual/LINK_6.STL" />
+          <mesh filename="../meshes/visual/LINK_6.STL" />
         </geometry>
         <material name="lt_black" />
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://abb_common/meshes/irb_5400/collision/LINK_6.STL" />
+          <mesh filename="../meshes/collision/LINK_6.STL" />
         </geometry>
         <material name="yellow"/>
       </collision>
