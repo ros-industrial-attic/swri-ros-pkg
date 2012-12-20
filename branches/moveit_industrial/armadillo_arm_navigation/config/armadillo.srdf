@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-
-<robot name="armadillo">
-
-   <group name="manipulator">
-      <chain base_link="base_link" tip_link="link_t"/>
-   </group>
-
-</robot>

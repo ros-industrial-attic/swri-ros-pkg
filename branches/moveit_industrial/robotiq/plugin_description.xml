@@ -1,6 +1,0 @@
-<library path="lib/librobotiq">
-  <class name="robotiq/RobotIqTrajectoryControllerHandler" type="robotiq::RobotIqTrajectoryControllerHandler" base_class_type="trajectory_execution::TrajectoryControllerHandler">
-    <description>
-    </description>
-  </class>
-</library>
