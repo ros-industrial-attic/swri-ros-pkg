@@ -1109,7 +1109,9 @@ void RobotNavigator::detachCollisionObjectCallback(const std::string& group_name
 }
 
 bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
-                          const object_manipulator::GraspExecutionInfo& gei) {
+                          const object_manipulator::GraspExecutionInfo& gei,
+                          bool performRecoveryMove)
+{
 
   std::vector<std::string> segment_names;
   std::vector< boost::function<bool(TrajectoryExecutionDataVector)> > callbacks;
@@ -1231,7 +1233,7 @@ bool RobotNavigator::attemptGraspSequence(const std::string& group_name,
   }
 
   // moving arm to start of approach move and commanding a grasp release
-  if(!trajectories_succeeded_)
+  if(!trajectories_succeeded_ && performRecoveryMove)
   {
 	  updateCurrentJointStateToLastTrajectoryPoint(last_trajectory_execution_data_vector_.back().recorded_trajectory_);
 
