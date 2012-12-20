@@ -371,20 +371,21 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	static int attemptCounter = 0;
 	if(!createCandidateGoalPoses(candidate_place_poses_))
 	{
-		ROS_ERROR_STREAM(NODE_NAME<<": Place location is not reachable, aborting ");
-
 		if(attemptCounter == maxAttempts)
 		{
+			ROS_ERROR_STREAM(NODE_NAME<<": Couldn't find reachable place location after "
+					<< maxAttempts<<" attempts, aborting ");
 			attemptCounter = 0;
 			zone_selector_.goToNextPickZone();
 			updateMarkerArrayMsg();
 		}
 		else
 		{
+			ROS_WARN_STREAM(NODE_NAME<<": Place location is not reachable, trying again ");
 			attemptCounter++;
 			zone_selector_.removeLastObjectAdded();
-		}
 
+		}
 		return false;
 	}
 
@@ -636,7 +637,7 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 			if(proceed)
 			{
 				ROS_INFO_STREAM(NODE_NAME<<": Attempting Pick grasp sequence");
-				success = attemptGraspSequence(arm_group_name_,graspMoves);
+				success = attemptGraspSequence(arm_group_name_,graspMoves,false);
 				if(!success)
 				{
 					ROS_INFO_STREAM(NODE_NAME<<": Grasp pick move failed");
@@ -690,6 +691,14 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 			// updating grasp pick goal object
 			household_objects_database_msgs::DatabaseModelPose &model =	grasp_pickup_goal_.target.potential_models[0];
 			model.pose.pose = newObjPose;
+
+			// updating approach distance
+			for(std::size_t j = 0; j < grasp_candidates_.size(); j++)
+			{
+				object_manipulation_msgs::Grasp &g = grasp_candidates_[j];
+				g.desired_approach_distance = 0.02f;
+			}
+
 		}
 		else
 		{
@@ -767,10 +776,10 @@ bool AutomatedPickerRobotNavigator::createCandidateGoalPoses(std::vector<geometr
 	grasp_place_goal_.approach.direction.vector.x = 0.0;
 	grasp_place_goal_.approach.direction.vector.y = 0.0;
 	grasp_place_goal_.approach.direction.vector.z = -1.0;
-	grasp_place_goal_.collision_object_name = grasp_pickup_goal_.collision_object_name;
+	grasp_place_goal_.collision_object_name = "attached_"+current_grasped_object_name_[arm_group_name_];
 	grasp_place_goal_.allow_gripper_support_collision = true;
 	grasp_place_goal_.collision_support_surface_name = "table";
-	grasp_place_goal_.place_padding = .01;
+	grasp_place_goal_.place_padding = .02;
 
 	// finding valid place move sequence
 	std::vector<object_manipulator::PlaceExecutionInfo> placeMoveCandidates;

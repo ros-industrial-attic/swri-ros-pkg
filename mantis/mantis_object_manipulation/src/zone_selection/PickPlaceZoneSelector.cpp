@@ -291,6 +291,7 @@ void PickPlaceZoneSelector::removeLastObjectAdded()
 			if(ZoneBounds::contains(placeZone,objectBounds))
 			{
 				placeZone.removeLastObjectAdded();
+				ROS_INFO_STREAM("Zone Selector: successfully removed last object added");
 				return;
 			}
 		}
