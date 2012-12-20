@@ -86,7 +86,10 @@ protected:
 	virtual bool performRecognition();
 	virtual bool performGraspPlanning();
 
+	// this method also check if either place pose is within the kinematic reach of the robot arm
+	// and saves the place sequence move for later execution
 	virtual bool createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses);
+
 	virtual bool moveArmToSide();
 	virtual bool moveArmThroughPickSequence();
 	virtual bool moveArmThroughPlaceSequence();
@@ -123,8 +126,10 @@ protected:
 	// candidate pick poses to evaluate
 	std::vector<geometry_msgs::PoseStamped> candidate_pick_poses_;
 
-	// place poses
+	// place move
 	std::vector<geometry_msgs::PoseStamped> candidate_place_poses_;
+	std::vector<object_manipulator::PlaceExecutionInfo> place_sequence_;
+
 
 	// publishers
 	ros::Publisher marker_array_pub_;
