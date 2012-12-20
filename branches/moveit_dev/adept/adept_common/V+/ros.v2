@@ -1,0 +1,384 @@
+.PROGRAM a.ros()
+;
+; ABSTRACT:  Main entry point for the ROS - Adept interface.  
+;
+; INPUTS:       None.
+;
+; OUTPUTS:      None.
+;
+; SIDE EFFECTS: Starts the command server and the feedback server.
+;
+; DATA STRUCT:  None.
+;
+; MISC:  Program created in ACE version 3.1.3.10
+;
+;* Copyright (c) 2012 by Adept Technology, Inc.
+
+; Define globals
+
+        cmd.port = 11000    ;TCP port for joint commands
+        fdb.port = 11002    ;TCP port for joint feedback
+        delay.cmd = 1/10    ;Loop delay for joint commands
+        delay.fdb = 1/10    ;Loop delay for joint feedback
+
+; Start running the TCP protocols
+
+        run = TRUE
+        EXECUTE 5 ros.srv.cmd()
+        EXECUTE 6 ros.srv.fdb()
+
+; Return
+
+        RETURN
+.END
+.PROGRAM ros.msg.create(msg.len, msg.type, cmd.type, msg.reply, msg.unused, $msg)
+;
+; ABSTRACT:  Format a ROS message.
+;
+; INPUTS:       msg.len     The length of the message in bytes
+;               msg.type    The message type
+;               cmd.type    The command type
+;               msg.reply   The message reply
+;               msg.unused  The unused portion of the message (0)
+;
+; OUTPUTS:      $msg        The formatted message
+;
+; SIDE EFFECTS: None.
+;
+; DATA STRUCT:  None.
+;
+; MISC:  Program created in ACE version 3.2.2.5
+;
+;* Copyright (c) 2012 by Adept Technology, Inc.
+
+        AUTO $msg.len, $msg.type, $cmd.type, $msg.reply, $msg.unused
+
+        ; Convert inputs to bytes
+
+        $msg.len = $LNGB(msg.len)
+        $msg.type = $LNGB(msg.type)
+        $cmd.type = $LNGB(cmd.type)
+        $msg.reply = $LNGB(msg.reply)
+        $msg.unused = $LNGB(msg.unused)
+
+        ; Reverse the bytes to match ROS
+
+        CALL ros.rev.bytes($msg.len, $msg.len.rev)
+        CALL ros.rev.bytes($msg.type, $msg.type.rev)
+        CALL ros.rev.bytes($cmd.type, $cmd.type.rev)
+        CALL ros.rev.bytes($msg.reply, $msg.reply.rev)
+        CALL ros.rev.bytes($msg.unused, $msg.unused.rev)
+
+        ; Format the message
+
+        $msg = ""
+        $msg = $ENCODE($msg.len.rev,$msg.type.rev,$cmd.type.rev,$msg.reply.rev,$msg.unused.rev)
+
+        RETURN
+
+.END
+.PROGRAM ros.read.4bytes(lun, long)
+;
+; ABSTRACT:  Reads 4 bytes from the ROS TCP port and converts it to a V+ string.
+;
+; INPUTS:       lun     The TCP lun to read
+;
+; OUTPUTS:      $msg    The V+ string
+;
+; SIDE EFFECTS: Reverses the incoming byte order.
+;
+; DATA STRUCT:  None.
+;
+; MISC:  Program created in ACE version 3.1.3.10
+;
+;* Copyright (c) 2012 by Adept Technology, Inc.
+
+        AUTO $tmp, i, c[4]
+
+        $tmp = ""
+        FOR i = 1 TO 4
+            c[i] = GETC(lun,2)
+            $tmp = $tmp+$CHR(c[i])
+        END
+        CALL ros.rev.bytes($tmp, $msg)
+        long = LNGB($msg)
+
+.END
+.PROGRAM ros.read.joints(lun, jts[])
+;
+; ABSTRACT: Reads 10 joint angles from ROS. 
+;
+; INPUTS:       lun     The TCP lun to read
+;
+; OUTPUTS:      jts[10] The array of joint angles in degrees
+;
+; SIDE EFFECTS: Reverses the byte order 
+;
+; DATA STRUCT:  None
+;
+; MISC:  Program created in ACE version 3.1.3.10
+;
+;* Copyright (c) 2012 by Adept Technology, Inc.
+
+        AUTO c[4], idx, $tmp, $msg.jts[10]
+
+        FOR idx = 1 TO 10
+            $tmp = ""
+            FOR i = 1 TO 4
+                c[i] = GETC(lun,2)
+                $tmp = $tmp+$CHR(c[i])
+            END
+            CALL ros.rev.bytes($tmp, $msg.jts[idx])
+            jts[idx] = FLTB($msg.jts[idx])
+            jts[idx] = (jts[idx]*180)/PI
+        END
+
+.END
+.PROGRAM ros.rev.bytes($in, $out)
+;
+; ABSTRACT: Reverse the bytes  
+;
+; INPUTS:       $in     The input string
+;
+; OUTPUTS:      $out    The output string
+;
+; SIDE EFFECTS: Reverses the bytes
+;
+; DATA STRUCT:  None.
+;
+; MISC:  Program created in ACE version 3.1.3.10
+;
+;* Copyright (c) 2012 by Adept Technology, Inc.
+
+        AUTO str.len, i, $chr
+
+        str.len = LEN($in)
+        $chr = ""
+        $out = ""
+
+        FOR i = str.len TO 1 STEP -1
+            $chr = $MID($in,i,1)
+            $out = $out+$chr
+        END
+
+        RETURN
+.END
+.PROGRAM ros.srv.cmd()
+;
+; ABSTRACT:  TCP server for listening to joint commands from ROS.
+;
+; INPUTS:       None.
+;
+; OUTPUTS:      None.
+;
+; SIDE EFFECTS: Causes robot motion.
+;
+; DATA STRUCT:  None.
+;
+; MISC:  Program created in ACE version 3.1.3.10
+;
+;* Copyright (c) 2012 by Adept Technology, Inc.
+
+        AUTO lun, status, idx
+        AUTO msg.len, msg.type, cmd.type, msg.reply, msg.unused, $msg.jts[10], $tmp.str
+        AUTO REAL jts[10]
+        AUTO $msg
+
+        ; Initialize autos
+
+        msg.len = 0
+        msg.type = 0
+        cmd.type = 0
+        msg.reply = 0
+
+        ; Initialize joints
+
+        FOR idx = 1 TO 10
+            jts[idx] = 0
+        END
+
+        ; Open a TCP port
+
+        ATTACH (lun, 4) "TCP"
+        FOPEN (lun, 16) "/LOCAL_PORT"+$ENCODE(cmd.port)+" /CLIENTS 1 /BUFFER_SIZE 1024"
+        status = IOSTAT(lun)
+        IF (status < 0) THEN
+            TYPE "Error opening cmd TCP port: "+$ERROR(status)
+            GOTO 100
+        END
+
+        ; Read 4 bytes from connection
+
+        CALL ros.read.4bytes(lun, msg.unused)
+        TYPE "ROS connected to V+ command server"
+
+        ; Attach the robot and set speeds and accels for move
+
+        SELECT ROBOT = 1
+        ATTACH ()
+        SPEED 100 ALWAYS
+        ACCEL (1) 100, 100
+
+        ; Server loop 
+
+        WHILE run DO
+
+            ; Read data from ROS
+
+            CALL ros.read.4bytes(lun, msg.len)     ;Message length
+            CALL ros.read.4bytes(lun, msg.type)    ;Message type
+            CALL ros.read.4bytes(lun, cmd.type)    ;Command type
+            CALL ros.read.4bytes(lun, msg.reply)   ;Message reply
+            CALL ros.read.4bytes(lun, msg.unused)  ;Discard 4 bytes
+            CALL ros.read.joints(lun, jts[])       ;Joint values
+
+            ; Check for STOP from ROS
+
+            IF (msg.unused == -2) THEN
+                GOTO 99
+            END
+
+            ; Type the joint values for debug
+
+            ;TYPE $ENCODE(jts[1],",",jts[2],",",jts[3],",",jts[4],",",jts[5],",",jts[6])
+
+            ; Format a reply message to send to ROS
+
+            CALL ros.msg.create(56, 10, 3, 1, 0, $msg)
+
+            ; Append the joint position to the message
+
+            SET #loc = #PPOINT(jts[1],jts[2],jts[3],jts[4],jts[5],jts[6])
+            FOR idx = 1 TO 10
+                jts[idx] = 0
+                $msg = $msg+$msg.jts[idx]
+            END
+
+            ; Send the message to ROS
+
+            WRITE (lun) $msg, /S
+
+            ; Start the move
+
+            MOVE #loc
+
+            ; Loop delay
+
+            ;WAIT.EVENT , delay.cmd
+
+        END
+
+        ; Close the TCP port
+
+    99  FCLOSE (lun)
+        DETACH (lun)
+
+        ; Return
+
+        CALL ros.stop()
+
+   100  RETURN
+
+.END
+.PROGRAM ros.srv.fdb()
+;
+; ABSTRACT:  TCP server for sending joint feedback to ROS.  
+;
+; INPUTS:       None.
+;
+; OUTPUTS:      None.
+;
+; SIDE EFFECTS: None.
+;
+; DATA STRUCT:  Server streams  <LENGTH(bytes), <10>, <1(COMM_TYPE - TOPIC)>, <0 (REPLY_TYPE - N/A)>,
+;                               <UNUSED <JOINT_DATA[10] (in rads (floats))>
+;
+; MISC:  Program created in ACE version 3.1.3.10
+;
+;* Copyright (c) 2012 by Adept Technology, Inc.
+
+        AUTO idx, lun, status
+        AUTO REAL jts[10]
+        AUTO $tmp.str, $msg.len, $msg.type, $cmd.type, $msg.reply, $msg.jts[10], $msg.unused
+        AUTO LOC #cur.loc
+        AUTO $msg
+
+        $tmp.str = ""
+
+        ; Initialize joints
+
+        FOR idx = 1 TO 10
+            jts[idx] = 0
+        END
+
+        ; Open a TCP port
+
+        ATTACH (lun, 4) "TCP"
+        FOPEN (lun, 16) "/LOCAL_PORT"+$ENCODE(fdb.port)+" /CLIENTS 1 /BUFFER_SIZE 1024"
+        status = IOSTAT(lun)
+        IF (status < 0) THEN
+            TYPE "Error opening fdb TCP port: "+$ERROR(status)
+            GOTO 100
+        END
+
+        ; Server loop 
+
+        WHILE run DO
+
+            ; Format a message to send to ROS
+
+            CALL ros.msg.create(56, 10, 1, 0, 0, $msg)
+
+            ; Get the current joint position
+
+            HERE #cur.loc
+            DECOMPOSE jts[1] = #cur.loc
+
+            ; Format the joint data and append it to the message
+
+            FOR idx = 1 TO 10
+                jts[idx] = ((jts[idx]*PI)/180)
+                $tmp.str = $FLTB(jts[idx])
+                CALL ros.rev.bytes($tmp.str, $msg.jts[idx])
+                $msg = $msg+$msg.jts[idx]
+            END
+
+            ; Send the message to ROS
+
+            WRITE (lun) $msg, /S
+
+            ; Loop delay
+
+            WAIT.EVENT , delay.fdb
+
+        END
+
+        ; Close the TCP port
+
+        FCLOSE (lun)
+        DETACH (lun)
+
+        ; Return
+
+   100  RETURN
+
+.END
+.PROGRAM ros.stop()
+;
+; ABSTRACT:  Stops the V+ servers.
+;
+; INPUTS:       None.
+;
+; OUTPUTS:      None.
+;
+; SIDE EFFECTS: Stops ros.srv.cmd() and ros.srv.fdb()
+;
+; DATA STRUCT:  None.
+;
+; MISC:  Program created in ACE version 3.1.3.10
+;
+;* Copyright (c) 2012 by Adept Technology, Inc.
+
+        run = FALSE
+
+.END
