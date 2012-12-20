@@ -161,7 +161,7 @@ protected:
 	void addDetectedObjectToLocalPlanningScene(const household_objects_database_msgs::DatabaseModelPoseList& model);
 
 	// grasp execution
-	virtual bool attemptGraspSequence(const std::string& group_name,const object_manipulator::GraspExecutionInfo& gei);
+	virtual bool attemptGraspSequence(const std::string& group_name,const object_manipulator::GraspExecutionInfo& gei,bool performRecoveryMove = true);
 	virtual bool attemptPlaceSequence(const std::string& group_name,const object_manipulator::PlaceExecutionInfo& pei);
 
 	// demo monitoring
