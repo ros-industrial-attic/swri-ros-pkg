@@ -51,45 +51,36 @@ namespace industrial
 namespace robot_status
 {
 
-
 /**
-   * \brief Enumeration mirrors industrial_msgs/RobotMode definition
-   *
-   */
+ * \brief Enumeration mirrors industrial_msgs/RobotMode definition
+ *
+ */
 namespace RobotModes
 {
 enum RobotMode
 {
   UNKNOWN = -1,
 
-  MANUAL = 1,
-  AUTO = 2,
+  MANUAL = 1, AUTO = 2,
 
   CUSTOM_MODE_BEGIN = 100
 };
 }
 typedef RobotModes::RobotMode RobotMode;
 
-
 /**
-   * \brief Enumeration mirrors industrial_msgs/TriState definition
-   *
-   */
+ * \brief Enumeration mirrors industrial_msgs/TriState definition
+ *
+ */
 namespace TriStates
 {
 enum TriState
 {
   UNKNOWN = -1,
 
-  TRUE = 1,
-  ON = 1,
-  ENABLED = 1,
-  HIGH = 1,
+  TRUE = 1, ON = 1, ENABLED = 1, HIGH = 1,
 
-  FALSE = 0,
-  OFF = 0,
-  DISABLED = 0,
-  LOW = 0
+  FALSE = 0, OFF = 0, DISABLED = 0, LOW = 0
 };
 }
 typedef TriStates::TriState TriState;
@@ -124,7 +115,7 @@ public:
    * This method creates empty data.
    *
    */
-	RobotStatus(void);
+  RobotStatus(void);
   /**
    * \brief Destructor
    *
@@ -137,66 +128,89 @@ public:
    */
   void init();
 
-  industrial::shared_types::shared_int getDrivesPowered() const
-      {
-          return drives_powered_;
-      }
+  /**
+   * \brief Initializes a full robot status message
+   *
+   */
+  void init(TriState drivesPowered,
+            TriState eStopped,
+            industrial::shared_types::shared_int errorCode,
+            TriState inError,
+            TriState inMotion,
+            RobotMode mode,
+            TriState motionPossible);
 
-      industrial::shared_types::shared_int getErrorCode() const
-      {
-          return error_code_;
-      }
 
-      industrial::shared_types::shared_int getInError() const
-      {
-          return in_error_;
-      }
 
-      industrial::shared_types::shared_int getInMotion() const
-      {
-          return in_motion_;
-      }
+  TriState getDrivesPowered() const
+  {
+    return TriState(drives_powered_);
+  }
 
-      industrial::shared_types::shared_int getMode() const
-      {
-          return mode_;
-      }
+  TriState getEStopped() const
+    {
+      return TriState(e_stopped_);
+    }
 
-      industrial::shared_types::shared_int getMotionPossible() const
-      {
-          return motion_possible_;
-      }
+  industrial::shared_types::shared_int getErrorCode() const
+  {
+    return error_code_;
+  }
 
-      void setDrivesPowered(industrial::shared_types::shared_int drives_powered)
-      {
-          this->drives_powered_ = drives_powered;
-      }
+  TriState getInError() const
+  {
+    return TriState(in_error_);
+  }
 
-      void setErrorCode(industrial::shared_types::shared_int error_code)
-      {
-          this->error_code_ = error_code;
-      }
+  TriState getInMotion() const
+  {
+    return TriState(in_motion_);
+  }
 
-      void setInError(industrial::shared_types::shared_int in_error)
-      {
-          this->in_error_ = in_error;
-      }
+  RobotMode getMode() const
+  {
+    return RobotMode(mode_);
+  }
 
-      void setInMotion(industrial::shared_types::shared_int in_motion)
-      {
-          this->in_motion_ = in_motion;
-      }
+  TriState getMotionPossible() const
+  {
+    return TriState(motion_possible_);
+  }
 
-      void setMode(industrial::shared_types::shared_int mode)
-      {
-          this->mode_ = mode;
-      }
+  void setDrivesPowered(TriState drivesPowered)
+  {
+    this->drives_powered_ = drivesPowered;
+  }
 
-      void setMotionPossible(industrial::shared_types::shared_int motion_possible)
-      {
-          this->motion_possible_ = motion_possible;
-      }
+  void setEStopped(TriState eStopped)
+    {
+      this->e_stopped_ = eStopped;
+    }
 
+  void setErrorCode(industrial::shared_types::shared_int errorCode)
+  {
+    this->error_code_ = errorCode;
+  }
+
+  void setInError(TriState inError)
+  {
+    this->in_error_ = inError;
+  }
+
+  void setInMotion(TriState inMotion)
+  {
+    this->in_motion_ = inMotion;
+  }
+
+  void setMode(RobotMode mode)
+  {
+    this->mode_ = mode;
+  }
+
+  void setMotionPossible(TriState motionPossible)
+  {
+    this->motion_possible_ = motionPossible;
+  }
 
   /**
    * \brief Copies the passed in value
@@ -228,30 +242,34 @@ private:
   industrial::shared_types::shared_int mode_;
 
   /**
-     * \brief Drive power state (see TriStates::TriState)
-     */
-    industrial::shared_types::shared_int drives_powered_;
+   * \brief E-stop state (see TriStates::TriState)
+   */
+  industrial::shared_types::shared_int e_stopped_;
 
-    /**
-       * \brief motion possible state (see TriStates::TriState)
-       */
-      industrial::shared_types::shared_int motion_possible_;
+  /**
+   * \brief Drive power state (see TriStates::TriState)
+   */
+  industrial::shared_types::shared_int drives_powered_;
 
-      /**
-         * \brief in motion state (see TriStates::TriState)
-         */
-        industrial::shared_types::shared_int in_motion_;
+  /**
+   * \brief motion possible state (see TriStates::TriState)
+   */
+  industrial::shared_types::shared_int motion_possible_;
 
-        /**
-           * \brief in error state (see TriStates::TriState)
-           */
-          industrial::shared_types::shared_int in_error_;
+  /**
+   * \brief in motion state (see TriStates::TriState)
+   */
+  industrial::shared_types::shared_int in_motion_;
 
-          /**
-             * \brief error code
-             */
-            industrial::shared_types::shared_int error_code_;
+  /**
+   * \brief in error state (see TriStates::TriState)
+   */
+  industrial::shared_types::shared_int in_error_;
 
+  /**
+   * \brief error code (non-zero is error)
+   */
+  industrial::shared_types::shared_int error_code_;
 
 };
 

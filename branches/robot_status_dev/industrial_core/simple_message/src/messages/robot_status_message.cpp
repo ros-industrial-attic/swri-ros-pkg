@@ -29,96 +29,102 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROBOT_STATUS_MESSAGE_H
-#define ROBOT_STATUS_MESSAGE_H
-
 #ifdef ROS
-#include "simple_message/typed_message.h"
-#include "simple_message/simple_message.h"
-#include "simple_message/shared_types.h"
+#include "simple_message/messages/robot_status_message.h"
 #include "simple_message/robot_status.h"
+#include "simple_message/byte_array.h"
+#include "simple_message/log_wrapper.h"
 #endif
 
 #ifdef MOTOPLUS
-#include "typed_message.h"
-#include "simple_message.h"
-#include "shared_types.h"
+#include "robot_status_message.h"
 #include "robot_status.h"
+#include "byte_array.h"
+#include "log_wrapper.h"
 #endif
+
+using namespace industrial::shared_types;
+using namespace industrial::byte_array;
+using namespace industrial::simple_message;
+using namespace industrial::robot_status;
 
 namespace industrial
 {
 namespace robot_status_message
 {
 
-
-
-/**
- * \brief Class encapsulated robot status message generation methods
- * (either to or from a industrial::simple_message::SimpleMessage type.
- *
- * This message simply wraps the industrial::joint_traj_pt::RobotStatus data type.
- * The data portion of this typed message matches RobotStatus.
- *
- *
- * THIS CLASS IS NOT THREAD-SAFE
- *
- */
-
-class RobotStatusMessage : public industrial::typed_message::TypedMessage
+RobotStatusMessage::RobotStatusMessage(void)
 {
-public:
-  /**
-   * \brief Default constructor
-   *
-   * This method creates an empty message.
-   *
-   */
-  RobotStatusMessage(void);
-  /**
-   * \brief Destructor
-   *
-   */
-  ~RobotStatusMessage(void);
-  /**
-   * \brief Initializes message from a simple message
-   *
-   * \param simple message to construct from
-   *
-   * \return true if message successfully initialized, otherwise false
-   */
-  bool init(industrial::simple_message::SimpleMessage & msg);
+  this->init();
+}
 
-  /**
-   * \brief Initializes message from a robot status structure
-   *
-   * \param status strcutre to initialize from
-   *
-   */
-  void init(industrial::robot_status::RobotStatus & status);
+RobotStatusMessage::~RobotStatusMessage(void)
+{
 
-  /**
-   * \brief Initializes a new robot status message
-   *
-   */
-  void init();
+}
 
+bool RobotStatusMessage::init(industrial::simple_message::SimpleMessage & msg)
+{
+  bool rtn = false;
+  ByteArray data = msg.getData();
+  this->init();
 
-  // Overrides - SimpleSerialize
-  bool load(industrial::byte_array::ByteArray *buffer);
-  bool unload(industrial::byte_array::ByteArray *buffer);
-
-  unsigned int byteLength()
+  if (data.unload(this->status_))
   {
-    return this->status_.byteLength();
+    rtn = true;
   }
+  else
+  {
+    LOG_ERROR("Failed to unload robot status data");
+  }
+  return rtn;
+}
 
-  industrial::robot_status::RobotStatus status_;
+void RobotStatusMessage::init(industrial::robot_status::RobotStatus & status)
+{
+  this->init();
+  this->status_.copyFrom(status);
+}
 
+void RobotStatusMessage::init()
+{
+  this->setMessageType(StandardMsgTypes::STATUS);
+  this->status_.init();
+}
 
-};
+bool RobotStatusMessage::load(ByteArray *buffer)
+{
+  bool rtn = false;
+  LOG_COMM("Executing robot status message load");
+  if (buffer->load(this->status_))
+  {
+    rtn = true;
+  }
+  else
+  {
+    rtn = false;
+    LOG_ERROR("Failed to load robot status data");
+  }
+  return rtn;
+}
+
+bool RobotStatusMessage::unload(ByteArray *buffer)
+{
+  bool rtn = false;
+  LOG_COMM("Executing robot status message unload");
+
+  if (buffer->unload(this->status_))
+  {
+    rtn = true;
+  }
+  else
+  {
+    rtn = false;
+    LOG_ERROR("Failed to unload robot status data");
+  }
+  return rtn;
+}
 
 }
 }
 
-#endif /* JOINT_MESSAGE_H */

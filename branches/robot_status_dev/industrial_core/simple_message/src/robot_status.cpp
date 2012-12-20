@@ -58,110 +58,94 @@ RobotStatus::~RobotStatus(void)
 
 void RobotStatus::init()
 {
-  this->sequence_ = 0;
-  this->velocity_ = 0.0;
-  this->duration_ = 0.0;
+  this->init(TriStates::UNKNOWN, TriStates::UNKNOWN, 0, TriStates::UNKNOWN,
+             TriStates::UNKNOWN, RobotModes::UNKNOWN, TriStates::UNKNOWN);
 }
 
-void JointTrajPt::copyFrom(JointTrajPt &src)
+void RobotStatus::init(TriState drivesPowered,
+            TriState eStopped,
+            industrial::shared_types::shared_int errorCode,
+            TriState inError,
+            TriState inMotion,
+            RobotMode mode,
+            TriState motionPossible)
 {
-  this->setSequence(src.getSequence());
-  src.getJointPosition(this->joint_position_);
-  this->setVelocity(src.getVelocity());
-  this->setDuration(src.getDuration());
+  this->setDrivesPowered(drivesPowered);
+  this->setEStopped(eStopped);
+  this->setErrorCode(errorCode);
+  this->setInError(inError);
+  this->setInMotion(inMotion);
+  this->setMode(mode);
+  this->setMotionPossible(motionPossible);
 }
 
-bool JointTrajPt::operator==(JointTrajPt &rhs)
+void RobotStatus::copyFrom(RobotStatus &src)
 {
-  return this->joint_position_ == rhs.joint_position_ && this->sequence_ == rhs.sequence_
-      && this->velocity_ == rhs.velocity_ && this->duration_ == rhs.duration_;
-
+  this->setDrivesPowered(src.getDrivesPowered());
+  this->setEStopped(src.getEStopped());
+  this->setErrorCode(src.getErrorCode());
+  this->setInError(src.getInError());
+  this->setInMotion(src.getInMotion());
+  this->setMode(src.getMode());
+  this->setMotionPossible(src.getMotionPossible());
 }
 
-bool JointTrajPt::load(industrial::byte_array::ByteArray *buffer)
+bool RobotStatus::operator==(RobotStatus &rhs)
+{
+  return this->drives_powered_ == rhs.drives_powered_ && this->e_stopped_ == rhs.e_stopped_
+      && this->error_code_ == rhs.error_code_ && this->in_error_ == rhs.in_error_ && this->in_motion_ == rhs.in_motion_
+      && this->mode_ == rhs.mode_ && this->motion_possible_ == rhs.motion_possible_;
+}
+
+bool RobotStatus::load(industrial::byte_array::ByteArray *buffer)
 {
   bool rtn = false;
 
-  LOG_COMM("Executing joint trajectory point load");
+  LOG_COMM("Executing robot status load");
 
-  if (buffer->load(this->sequence_))
+  if (buffer->load(this->drives_powered_) &&
+      buffer->load(this->e_stopped_) &&
+      buffer->load(this->error_code_)&&
+      buffer->load(this->in_error_)&&
+      buffer->load(this->in_motion_) &&
+      buffer->load(this->mode_)&&
+      buffer->load(this->motion_possible_))
   {
-    if (this->joint_position_.load(buffer))
-    {
-      if (buffer->load(this->velocity_))
-      {
-        if (buffer->load(this->duration_))
-        {
-          LOG_COMM("Trajectory point successfully loaded");
-          rtn = true;
-        }
-        else
-        {
-          rtn = false;
-          LOG_ERROR("Failed to load joint traj pt. duration");
-        }
-        rtn = true;
-      }
-      else
-      {
-        rtn = false;
-        LOG_ERROR("Failed to load joint traj pt. velocity");
-      }
 
-    }
-    else
-    {
-      rtn = false;
-      LOG_ERROR("Failed to load joint traj. pt.  position data");
-    }
+    LOG_COMM("Robot status successfully loaded");
+    rtn = true;
   }
   else
   {
+    LOG_COMM("Robot status not loaded");
     rtn = false;
-    LOG_ERROR("Failed to load joint traj. pt. sequence number");
   }
 
   return rtn;
 }
 
-bool JointTrajPt::unload(industrial::byte_array::ByteArray *buffer)
+bool RobotStatus::unload(industrial::byte_array::ByteArray *buffer)
 {
   bool rtn = false;
 
-  LOG_COMM("Executing joint traj. pt. unload");
-  if (buffer->unload(this->duration_))
+  LOG_COMM("Executing robot status unload");
+  if (buffer->unload(this->motion_possible_) &&
+      buffer->unload(this->mode_) &&
+      buffer->unload(this->in_motion_) &&
+      buffer->unload(this->in_error_) &&
+      buffer->unload(this->error_code_) &&
+      buffer->unload(this->e_stopped_) &&
+      buffer->unload(this->drives_powered_)
+      )
   {
-    if (buffer->unload(this->velocity_))
-    {
-      if (this->joint_position_.unload(buffer))
-      {
-        if (buffer->unload(this->sequence_))
-        {
-          rtn = true;
-          LOG_COMM("Joint traj. pt successfully unloaded");
-        }
-        else
-        {
-          LOG_ERROR("Failed to unload joint traj. pt. sequence number");
-          rtn = false;
-        }
-      }
-      else
-      {
-        LOG_ERROR("Failed to unload joint traj. pt.  position data");
-        rtn = false;
-      }
 
-    }
-    else
-    {
-      LOG_ERROR("Failed to unload joint traj. pt. velocity");
-      rtn = false;
-    }
+    rtn = true;
+    LOG_COMM("Robot status successfully unloaded");
   }
+
   else
   {
-    LOG_ERROR("Failed to unload joint traj. pt. duration");
+    LOG_ERROR("Failed to unload robot status");
     rtn = false;
   }
 
