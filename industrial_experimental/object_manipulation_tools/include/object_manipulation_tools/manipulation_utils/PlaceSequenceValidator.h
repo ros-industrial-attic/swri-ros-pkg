@@ -61,6 +61,10 @@ public:
             std::vector<object_manipulator::PlaceExecutionInfo> &execution_info,
             bool return_on_first_hit);
 
+	bool findIkSolution(std::string armName,const geometry_msgs::Pose &wristInWorldPose,
+			planning_models::KinematicState *state, sensor_msgs::JointState &jointSolution,arm_navigation_msgs::ArmNavigationErrorCodes &errorCode);
+
+
 protected:
 
 	tf::Transform _TcpToWristTransform;
