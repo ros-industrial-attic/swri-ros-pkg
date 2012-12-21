@@ -6,13 +6,13 @@
 
   <!-- URDF Universal Robot Description File -->
 <!--  <param name="robot_description"  textfile="$(find mantis_config)/urdf/mantis_asus.urdf"/> -->
-  <!-- Start kinect -->
+  <!-- Start kinect 
   <include file="$(find mantis_perception)/launch/mantis_sensor_asus.launch"/>
-  
-  <!-- Start segmentation node -->	
+  -->
+  <!-- Start segmentation node 	
   <include file="$(find mantis_perception)/launch/mantis_segmentation_asus.launch">
   </include> 
- 
+ -->
   <!-- Run feature node -->
 <!--  <node pkg="mantis_data_collection" name="feature_extraction" type="feature_extraction"/> -->
 
