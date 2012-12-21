@@ -51,19 +51,21 @@ bool cloud_cb(mantis_data_collection::process_cloud::Request &req,
 
     mantis_perception::mantis_segmentation seg_srv;
 
-    ROS_INFO("mantis segmentation called");
 
     if (!seg_client.call(seg_srv))
            {
               ROS_ERROR("Call to mantis segmentation service failed");
 
             }
+
+    ROS_INFO("mantis segmentation called");
     sensor_msgs::PointCloud2 segcluster;
     sensor_msgs::PointCloud clustervector;
     clustervector=seg_srv.response.clusters[0];
     sensor_msgs::convertPointCloudToPointCloud2(clustervector, segcluster);
-    segcluster.header.frame_id="/base_link";
-    //segcluster.header.stamp=seg_srv.response.table.pose.header.stamp;
+    //segcluster.header.frame_id="/base_link";
+    segcluster.header.stamp=seg_srv.response.table.pose.header.stamp;
+    segcluster.header.frame_id=seg_srv.response.table.pose.header.frame_id;
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cluster (new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg(segcluster,*cluster);
@@ -130,11 +132,16 @@ int main(int argc, char **argv)
   
   ros::NodeHandle n;
   
-  
+  ros::NodeHandle private_nh("~");
+  std::string arm_name_;
+  const std::string PARAM_ARM_NAME_DEFAULT= "arm_name";
+  const std::string ARM_NAME_DEFAULT= "ur5_arm";
+  private_nh.param(PARAM_ARM_NAME_DEFAULT, arm_name_, ARM_NAME_DEFAULT);
+
   //Offer services that can be called from the terminal:
   ros::ServiceServer joint_test_serv = n.advertiseService("process_cloud", cloud_cb );
   //seg_client = n.serviceClient<nrg_object_recognition::segmentation>("segmentation");
-  seg_client = n.serviceClient<mantis_perception::mantis_segmentation>("tabletop_segmentation", true);
+  seg_client = n.serviceClient<mantis_perception::mantis_segmentation>(arm_name_ + "/tabletop_segmentation", true);
   //Set up service clients:
  
   ros::spin();
