@@ -57,9 +57,9 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   //Set vertical offset from part frame/center to pick frame/top of part
   float plug_pick_point_z = 0.048;
   float enc_pick_point_z = 0.051;
-  float pvct_pick_point_z = 0.055;
+  float pvct_pick_point_z = 0.025;
   float pvc_elbow_pick_point_z = 0.030;
-  float small_plug_pick_point_z = 0.030;
+  float small_plug_pick_point_z = 0.045;
   bool use_region_growing = false;
 
   visualization_msgs::Marker make_marker(geometry_msgs::PoseStamped pick_pose, tf::Quaternion part_orientation);
