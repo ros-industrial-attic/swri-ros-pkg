@@ -3,13 +3,14 @@
 	<!-- ____________________________ Input Arguments ____________________________  -->
 	<arg name="sim_only" default="true"/>
 	<arg name="controller_ip" default="192.168.32.3"/>
+	<arg name="launch_io" default="false"/>
 
 	<!-- ____________________________ Fixed Parameters ____________________________  -->
 	<arg name="robot_description" value="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_sia20d_arm_workspace.xacro'"/>
 	<arg name="arm_namespace" value="sia20d_arm"/>
 
 	<!-- starting io -->
-	<include unless="$(arg sim_only)" file="$(find mantis_io)/launch/mantis_io.launch"/>
+	<include if="$(arg launch_io)" file="$(find mantis_io)/launch/mantis_io.launch"/>
 
 	<group ns="$(arg arm_namespace)">
 

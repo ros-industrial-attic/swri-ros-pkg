@@ -1,7 +1,7 @@
 Background\ ColorB=1
 Background\ ColorG=0.364706
 Background\ ColorR=0
-Camera\ Config=0.379798 5.23557 3.95661 -0.00781343 0.0480186 0.468548
+Camera\ Config=0.504799 5.31058 3.95661 -0.00781343 0.0480186 0.468548
 Camera\ Type=rviz::OrbitViewController
 Fixed\ Frame=/workcell_frame
 Grid.Alpha=0.5
@@ -30,16 +30,14 @@ Marker3.=1
 Marker3.Enabled=1
 Marker3.Marker\ Topic=/sia20d_arm/matching_mesh_marker
 Marker3.Queue\ Size=100
-MarkerArray.Enabled=1
+MarkerArray.Enabled=0
 MarkerArray.Marker\ Array\ Topic=/sia20d_arm/planning_scene_markers_array
 MarkerArray.Queue\ Size=100
-MarkerArray.collision_map_markers=1
-MarkerArray.object_0=1
-MarkerArray.table=1
 MarkerArray2.Enabled=1
 MarkerArray2.Marker\ Array\ Topic=/sia20d_arm/object_array
 MarkerArray2.Queue\ Size=100
 MarkerArray2.active_zones=1
+MarkerArray2.obstacles=1
 MarkerArray2.pick_zone=1
 MarkerArray2.pick_zone_name=1
 MarkerArray2.zone_names=1
@@ -66,14 +64,14 @@ PointCloud2.Alpha=1
 PointCloud2.Billboard\ Size=0.01
 PointCloud2.Color\ Transformer=RGB8
 PointCloud2.Decay\ Time=0
-PointCloud2.Enabled=1
+PointCloud2.Enabled=0
 PointCloud2.Position\ Transformer=XYZ
 PointCloud2.Queue\ Size=10
 PointCloud2.Selectable=1
 PointCloud2.Style=0
 PointCloud2.Topic=/sia20d_arm_kinect/depth_registered/points
 Property\ Grid\ Splitter=743,78
-Property\ Grid\ State=expanded=.Global Options,Grid.Enabled,PointCloud2.Enabled,RobotModel.Enabled,Robot: RobotModelLinks,Marker.Enabled,Marker2.Enabled,MarkerArray.Enabled,MarkerArray2.Enabled,Marker3.Enabled;splitterratio=0.5
+Property\ Grid\ State=expanded=.Global Options,Grid.Enabled,PointCloud2.Enabled,Marker.Enabled,Marker2.Enabled,MarkerArray.Enabled,MarkerArray2.Enabled,Marker3.Enabled;splitterratio=0.5
 QMainWindow=000000ff00000000fd0000000300000000000001ad00000387fc0200000001fb000000100044006900730070006c006100790073010000001d00000387000000ee00ffffff000000010000014a00000387fc0200000003fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000001d000001290000006700fffffffb0000000a00560069006500770073000000001d000001c1000000bb00fffffffb0000001200530065006c0065006300740069006f006e000000001d000003870000006700ffffff00000003000005000000003efc0100000001fb0000000800540069006d0065010000000000000500000002bf00ffffff0000034d0000038700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
 Robot\:\ RobotModel\ Link\ back_wall1Alpha=1
 Robot\:\ RobotModel\ Link\ back_wall1Enabled=0
@@ -200,12 +198,19 @@ Name=MarkerArray2
 [Display8]
 ClassName=rviz::MarkerDisplay
 Name=Marker3
+[MarkerArray2.place_zones]
+[MarkerArray2.place_zones/place_zone1_a]
+objects_in_zone=1
+[MarkerArray2.place_zones/place_zone1_b]
+objects_in_zone=1
+[MarkerArray2.place_zones/place_zone1_c]
+objects_in_zone=1
+[MarkerArray2.place_zones/place_zone2_a]
+objects_in_zone=1
 [TF.Frames.]
 back_wall1.Enabled=0
-base_link.Enabled=1
 front_wall1.Enabled=0
 left_wall1.Enabled=0
-object_training_frame.Enabled=1
 right_wall1.Enabled=0
 sia20d_arm_base_link.Enabled=0
 sia20d_arm_coupler.Enabled=0
