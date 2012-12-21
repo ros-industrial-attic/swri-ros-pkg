@@ -366,8 +366,6 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 		return false;
 	}
 
-	ROS_INFO_STREAM(NODE_NAME<<": Found reachable place location for object ");
-
 #endif
 
 	return true;
@@ -488,13 +486,14 @@ bool AutomatedPickerRobotNavigator::performGraspPlanning()
 	grasp_pickup_goal_.target.potential_models.push_back(modelPose);
 
 	//  ===================================== checking place move reachability =====================================
+	ROS_INFO_STREAM(NODE_NAME<<": Evaluating reachability for found place location.");
 	if(findIkSolutionForPlacePoses())
 	{
 		ROS_INFO_STREAM(NODE_NAME<<": Place location is reachable, continue");
 	}
 	else
 	{
-		ROS_ERROR_STREAM(NODE_NAME<<" Place location is out of reach, aboring");
+		ROS_ERROR_STREAM(NODE_NAME<<": Place location is out of reach, canceling");
 		return false;
 	}
 
@@ -599,8 +598,8 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 	bool success = performGraspPlanning();
 	if(!success)
 	{
-		zone_selector_.removeLastObjectAdded();
-		ROS_INFO_STREAM(NODE_NAME<<": Pick Move attempt aborted");
+		//zone_selector_.removeLastObjectAdded();
+		ROS_ERROR_STREAM(NODE_NAME<<": Pick Move attempt canceled");
 		return false;
 	}
 
@@ -744,24 +743,53 @@ bool AutomatedPickerRobotNavigator::findIkSolutionForPlacePoses()
 	std::string modelId = makeCollisionObjectNameFromModelId(modelPose.model_id);
 
 	// instantiating needed transforms, poses, joint states and results
+	tf::StampedTransform world_in_base_tf;
 	tf::Transform wrist_in_object_tf, object_in_world_tf;
-	geometry_msgs::Pose wrist_in_world_pose;
+	geometry_msgs::Pose wrist_in_base_pose;
+
+	// declaring argument and result variables
 	sensor_msgs::JointState jointSolution;
 	arm_navigation_msgs::ArmNavigationErrorCodes errorCode;
 
-
+	// looking up transform
+	ROS_INFO_STREAM(NODE_NAME<<" Looking up frame from "<<place_tester_->getIkSolverMap()[arm_group_name_]->getBaseName()
+			<<" to "<<cm_.getWorldFrameId());
+	_TfListener.lookupTransform(place_tester_->getIkSolverMap()[arm_group_name_]->getBaseName()
+			,cm_.getWorldFrameId(),ros::Time(0),world_in_base_tf);
 
 	// conversion from pose to tf
-	tf::poseMsgToTF(recognized_obj_pose_map_[modelId].pose, object_in_world_tf);
+	tf::poseMsgToTF(candidate_place_poses_[0].pose,object_in_world_tf);
 
+
+	//updateCurrentJointStateToLastTrajectoryPoint(last_trajectory_execution_data_vector_[0].recorded_trajectory_);
+	arm_navigation_msgs::Constraints emp;
 	for(std::size_t i = 0; i < grasp_candidates_.size(); i++)
 	{
 		tf::poseMsgToTF(grasp_candidates_[i].grasp_pose,wrist_in_object_tf);
-		tf::poseTFToMsg(object_in_world_tf*wrist_in_object_tf,wrist_in_world_pose);
+		tf::poseTFToMsg(world_in_base_tf*object_in_world_tf*wrist_in_object_tf,wrist_in_base_pose);
 
-		if(place_tester_->findIkSolution(arm_group_name_,wrist_in_world_pose,current_robot_state_,jointSolution,errorCode))
+		//adjusting planning scene state for pre-grasp
+		std::map<std::string, double> pre_grasp_values;
+		for(unsigned int j = 0; j < grasp_candidates_[i].pre_grasp_posture.name.size(); j++)
 		{
+			pre_grasp_values[grasp_candidates_[i].pre_grasp_posture.name[j]] = grasp_candidates_[i].pre_grasp_posture.position[j];
+		}
+		current_robot_state_->setKinematicState(pre_grasp_values);
+
+		if(place_tester_->getIkSolverMap()[arm_group_name_]->getPositionIK(wrist_in_base_pose,
+				current_robot_state_,jointSolution,errorCode))
+		{
+			ROS_INFO_STREAM(NODE_NAME<<": Ik solution for place location found");
+
+			// checking interpolated trajectory (see PlaceSequenceValidator.cpp 335)
+			//place_tester_->getIkSolverMap()[arm_group_name_]->getinterpolateIKDirectional();
+
+
 			return true;
+		}
+		else
+		{
+			ROS_ERROR_STREAM(NODE_NAME<<": Ik solution for place location not found, error code "<<errorCode.val);
 		}
 
 	}

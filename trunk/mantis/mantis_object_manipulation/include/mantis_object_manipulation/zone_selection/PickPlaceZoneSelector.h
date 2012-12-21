@@ -352,6 +352,14 @@ public:
 		void getTextMarker(visualization_msgs::Marker &marker) const
 		{
 			ZoneBounds::getTextMarker(marker);
+			std::stringstream ss;
+			ss<<"\n[ ";
+			for(std::size_t i = 0; i < Ids.size(); i++)
+			{
+				ss<<Ids[i]<<" ";
+			}
+			ss<<"]";
+			marker.text = marker.text + ss.str();
 			marker.scale.z = PLACE_ZONE_MARKER_TEXT_SIZE; // height of uppercase "A"
 		}
 
