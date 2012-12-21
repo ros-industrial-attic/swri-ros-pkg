@@ -23,7 +23,7 @@ place_zones:
     x: 0.0
     y: 0.0
     z: 1.0
-   release_distance: 0.01
+   release_distance: -0.02
    next_location:
     min_spacing: 0.16
     max_spacing: 0.20
@@ -40,7 +40,7 @@ place_zones:
     x: 0.0
     y: 0.0
     z: 1.0
-   release_distance: 0.01
+   release_distance: -0.02
    next_location:
     min_spacing: 0.16
     max_spacing: 0.20
@@ -57,7 +57,7 @@ place_zones:
     x: 0.0
     y: 0.0
     z: 1.0
-   release_distance: 0.01
+   release_distance: -0.02
    next_location:
     min_spacing: 0.16
     max_spacing: 0.20
@@ -74,7 +74,7 @@ place_zones:
     x: 0.0
     y: 0.0
     z: 1.0
-   release_distance: 0.01
+   release_distance: -0.02
    next_location:
     min_spacing: 0.16
     max_spacing: 0.20
@@ -91,7 +91,7 @@ place_zones:
     x: 0.0
     y: 0.0
     z: 1.0
-   release_distance: 0.01
+   release_distance: -0.02
    next_location:
     min_spacing: 0.16
     max_spacing: 0.20
