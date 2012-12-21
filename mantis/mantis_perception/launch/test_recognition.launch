@@ -2,6 +2,6 @@
 <launch>
 
   <node name="recognition_test" pkg="mantis_perception" type="mantis_recognition_test" output="screen">  
-	<param name="arm_name" value="sia20d_arm"/> <!--  -->
+	<param name="arm_name" value="ur5_arm"/> <!--  -->
   </node>
 </launch>
