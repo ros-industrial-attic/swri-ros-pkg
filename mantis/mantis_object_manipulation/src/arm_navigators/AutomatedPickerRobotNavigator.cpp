@@ -366,29 +366,6 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 		return false;
 	}
 
-	// checking that found place location is reachable
-	const static int maxAttempts = 5;
-	static int attemptCounter = 0;
-	if(!createCandidateGoalPoses(candidate_place_poses_))
-	{
-		if(attemptCounter == maxAttempts)
-		{
-			ROS_ERROR_STREAM(NODE_NAME<<": Couldn't find reachable place location after "
-					<< maxAttempts<<" attempts, aborting ");
-			attemptCounter = 0;
-			zone_selector_.goToNextPickZone();
-			updateMarkerArrayMsg();
-		}
-		else
-		{
-			ROS_WARN_STREAM(NODE_NAME<<": Place location is not reachable, trying again ");
-			attemptCounter++;
-			zone_selector_.removeLastObjectAdded();
-
-		}
-		return false;
-	}
-
 	ROS_INFO_STREAM(NODE_NAME<<": Found reachable place location for object ");
 
 #endif
@@ -509,6 +486,17 @@ bool AutomatedPickerRobotNavigator::performGraspPlanning()
 	grasp_pickup_goal_.allow_gripper_support_collision = true;
 	grasp_pickup_goal_.collision_support_surface_name = "table";
 	grasp_pickup_goal_.target.potential_models.push_back(modelPose);
+
+	//  ===================================== checking place move reachability =====================================
+	if(findIkSolutionForPlacePoses())
+	{
+		ROS_INFO_STREAM(NODE_NAME<<": Place location is reachable, continue");
+	}
+	else
+	{
+		ROS_ERROR_STREAM(NODE_NAME<<" Place location is out of reach, aboring");
+		return false;
+	}
 
 	//  ===================================== updating local planning scene =====================================
 	// updating gripper (not sure if this is necessary)
@@ -734,21 +722,7 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 
 bool AutomatedPickerRobotNavigator::moveArmThroughPlaceSequence()
 {
-	if(place_sequence_.empty())
-	{
-		// no valid place moves have been stored
-		return false;
-	}
-
-	// resetting scene
-	updateChangesToPlanningScene();
-
-	// starting timer
-	ros::WallTime start_time = ros::WallTime::now();
-
-	// try each place sequence candidate
-	bool success = attemptPlaceSequence(arm_group_name_,place_sequence_[0]);
-	if(success)
+	if(RobotNavigator::moveArmThroughPlaceSequence())
 	{
 		ROS_INFO_STREAM(NODE_NAME<<": Grasp place move succeeded");
 	}
@@ -760,50 +734,45 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPlaceSequence()
 	}
 
 	updateMarkerArrayMsg();
-	return success;
+	return true;
+}
+
+bool AutomatedPickerRobotNavigator::findIkSolutionForPlacePoses()
+{
+	// obtaining model id string
+	household_objects_database_msgs::DatabaseModelPose &modelPose = recognized_models_[0].model_list[0];
+	std::string modelId = makeCollisionObjectNameFromModelId(modelPose.model_id);
+
+	// instantiating needed transforms, poses, joint states and results
+	tf::Transform wrist_in_object_tf, object_in_world_tf;
+	geometry_msgs::Pose wrist_in_world_pose;
+	sensor_msgs::JointState jointSolution;
+	arm_navigation_msgs::ArmNavigationErrorCodes errorCode;
+
+
+
+	// conversion from pose to tf
+	tf::poseMsgToTF(recognized_obj_pose_map_[modelId].pose, object_in_world_tf);
+
+	for(std::size_t i = 0; i < grasp_candidates_.size(); i++)
+	{
+		tf::poseMsgToTF(grasp_candidates_[i].grasp_pose,wrist_in_object_tf);
+		tf::poseTFToMsg(object_in_world_tf*wrist_in_object_tf,wrist_in_world_pose);
+
+		if(place_tester_->findIkSolution(arm_group_name_,wrist_in_world_pose,current_robot_state_,jointSolution,errorCode))
+		{
+			return true;
+		}
+
+	}
+	return false;
 }
 
 bool AutomatedPickerRobotNavigator::createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses)
 {
-	// creating grasp goal
-	grasp_place_goal_.arm_name = arm_group_name_;
-	grasp_place_goal_.grasp = current_grasp_map_[arm_group_name_];
-	grasp_place_goal_.desired_retreat_distance = .1;
-	grasp_place_goal_.min_retreat_distance = .1;
-	grasp_place_goal_.approach.desired_distance = .1;
-	grasp_place_goal_.approach.min_distance = .1;
-	grasp_place_goal_.approach.direction.header.frame_id = cm_.getWorldFrameId();
-	grasp_place_goal_.approach.direction.vector.x = 0.0;
-	grasp_place_goal_.approach.direction.vector.y = 0.0;
-	grasp_place_goal_.approach.direction.vector.z = -1.0;
-	grasp_place_goal_.collision_object_name = "attached_"+current_grasped_object_name_[arm_group_name_];
-	grasp_place_goal_.allow_gripper_support_collision = true;
-	grasp_place_goal_.collision_support_surface_name = "table";
-	grasp_place_goal_.place_padding = .02;
 
-	// finding valid place move sequence
-	std::vector<object_manipulator::PlaceExecutionInfo> placeMoveCandidates;
-	createPlaceMoveSequence(grasp_place_goal_,placePoses,placeMoveCandidates);
-
-	// checking results
-	place_sequence_.clear();
-	bool success = false;
-	std::vector<object_manipulator::PlaceExecutionInfo>::iterator iter;
-	for(iter = placeMoveCandidates.begin(); iter != placeMoveCandidates.end(); iter++)
-	{
-		object_manipulator::PlaceExecutionInfo &placeMove = *iter;
-		if(placeMove.result_.result_code == object_manipulation_msgs::PlaceLocationResult::SUCCESS)
-		{
-			ROS_INFO_STREAM(NODE_NAME<<": Found valid place sequence");
-
-			// storing result and exiting;
-			place_sequence_.push_back(placeMove);
-			success = true;
-			break;
-		}
-	}
-
-	return success;
+	placePoses.assign(candidate_place_poses_.begin(),candidate_place_poses_.end());
+	return true;
 }
 
 void AutomatedPickerRobotNavigator::callbackPublishMarkers(const ros::TimerEvent &evnt)

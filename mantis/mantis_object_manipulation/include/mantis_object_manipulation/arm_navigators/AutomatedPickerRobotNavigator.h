@@ -89,6 +89,7 @@ protected:
 	// this method also check if either place pose is within the kinematic reach of the robot arm
 	// and saves the place sequence move for later execution
 	virtual bool createCandidateGoalPoses(std::vector<geometry_msgs::PoseStamped> &placePoses);
+	bool findIkSolutionForPlacePoses();
 
 	virtual bool moveArmToSide();
 	virtual bool moveArmThroughPickSequence();
