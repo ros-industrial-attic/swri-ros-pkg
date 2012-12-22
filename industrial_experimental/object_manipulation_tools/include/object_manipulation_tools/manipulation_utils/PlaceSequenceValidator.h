@@ -56,13 +56,15 @@ public:
 
 	void setTcpToWristTransform(const tf::Transform &tcpTransform); // pose of the tcp relative to the wrist;
 
+	std::map<std::string,arm_kinematics_constraint_aware::ArmKinematicsSolverConstraintAware*>& getIkSolverMap()
+	{
+		return ik_solver_map_;
+	}
+
 	void testPlaces(const object_manipulation_msgs::PlaceGoal &place_goal,
             const std::vector<geometry_msgs::PoseStamped> &place_locations,
             std::vector<object_manipulator::PlaceExecutionInfo> &execution_info,
             bool return_on_first_hit);
-
-	bool findIkSolution(std::string armName,const geometry_msgs::Pose &wristInWorldPose,
-			planning_models::KinematicState *state, sensor_msgs::JointState &jointSolution,arm_navigation_msgs::ArmNavigationErrorCodes &errorCode);
 
 
 protected:

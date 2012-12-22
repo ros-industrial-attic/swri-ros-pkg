@@ -596,30 +596,3 @@ void PlaceSequenceValidator::testPlaces(const object_manipulation_msgs::PlaceGoa
     ROS_INFO_STREAM("Outcome " << it->first << " count " << it->second);
   }
 }
-
-bool PlaceSequenceValidator::findIkSolution(std::string armName,const geometry_msgs::Pose &wristInWorldPose,
-			planning_models::KinematicState *state, sensor_msgs::JointState &jointSolution,arm_navigation_msgs::ArmNavigationErrorCodes &errorCode)
-{
-    arm_navigation_msgs::Constraints emp;
-    geometry_msgs::Pose wristInArmBasePose;
-    tf::StampedTransform worldInArmBaseTf,wristInArmBaseTf,wristInWorldTf;
-    tf::TransformListener tfListener;
-    planning_environment::CollisionModels* cm = getCollisionModels();
-
-    // conversions from pose to tf
-    tf::poseMsgToTF(wristInWorldPose,wristInWorldTf);
-
-    // find wrist pose relative to arm base
-    tfListener.lookupTransform(cm->getWorldFrameId(),ik_solver_map_[armName]->getBaseName(),ros::Time(0),worldInArmBaseTf);
-
-    // conversions from tf to pose
-    tf::poseTFToMsg(worldInArmBaseTf * wristInWorldTf,wristInArmBasePose);
-
-    return ik_solver_map_[armName]->findConstraintAwareSolution(wristInArmBasePose,
-            emp,
-            state,
-            jointSolution,
-            errorCode,
-            false);
-
-}
