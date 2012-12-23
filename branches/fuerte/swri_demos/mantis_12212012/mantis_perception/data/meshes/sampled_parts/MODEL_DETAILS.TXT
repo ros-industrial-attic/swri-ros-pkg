@@ -1,1 +1,0 @@
-These parts were generated from .ply files with the mesh2pcd programthe options use were: -leaf_size 0.002 -level 1.  For example'mesh2pcd part.ply part_sampled.pcd -leaf_size 0.002 -level 1'

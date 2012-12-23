@@ -1,8 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-   	<arg name="robot_description" default="$(find mantis_config)/urdf/mantis.urdf"/>
-	<arg name="planning_description" default="$(find mantis_arm_navigation)/config/mantis_planning_description.yaml"/>
-
-	<param name="robot_description" textfile="$(arg robot_description)" />
-	<rosparam command="load" ns="robot_description_planning" file="$(arg planning_description)" />
-</launch>
