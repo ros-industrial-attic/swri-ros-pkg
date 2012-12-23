@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<launch>
+	<node name="mantis_sphere_pick_place" pkg="mantis_object_manipulation" type="mantis_sphere_picking_node" output="screen">		
+		<rosparam command="load" file="$(find mantis_object_manipulation)/config/mantis_pick_place_parameters.yaml"/>
+	</node>  
+</launch>

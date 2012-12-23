@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<launch>
+  <!-- ____________________________ Input Arguments ____________________________  -->
+  <arg name="sim_only" default="true"/>
+
+  <!-- ____________________________ Fixed Parameters ____________________________  -->
+  <arg name="robot_description" value="$(find mantis_config)/urdf/mantis.urdf"/>
+
+  <!-- ____________________________ General Launch ____________________________  -->
+  <!-- URDF loaded to parameter server -->
+  <param name="robot_description"  textfile="$(arg robot_description)"/>
+  <!-- Get TF -->
+  <node pkg="robot_state_publisher" name="st_pub" type="state_publisher"/>
+  
+  <!-- ____________________________ Start Motoman specific nodes ____________________________  -->
+  <node unless="$(arg sim_only)" pkg="dx100" type="robot_state" name="robot_state" args="192.168.32.3" output="screen"/>
+  <node unless="$(arg sim_only)" pkg="dx100" type="motion_interface" name="motion_interface" args="192.168.32.3" output="screen"/>
+  <node unless="$(arg sim_only)" pkg="dx100" type="joint_trajectory_action" name="joint_trajectory_action" output="screen"/>
+  
+  <!-- gripper interface -->
+  <include unless="$(arg sim_only)" file="$(find mantis_io)/launch/mantis_io.launch"/>
+
+  <!-- __________________________________ Simulation only __________________________________  -->
+  <rosparam if="$(arg sim_only)" command="load" file="$(find mantis_config)/config/joint_definitions.yaml"/>
+  <node if="$(arg sim_only)" pkg="dx100" type="joint_trajectory_action" name="joint_trajectory_action" output="screen"/>
+  <node if="$(arg sim_only)" pkg="object_manipulation_tools" name="simulated_robot_controller" type="simulated_robot_controller" output="screen"/>
+  
+  <!-- gripper executer action node -->
+  <node if="$(arg sim_only)" pkg="object_manipulation_tools" type="grasp_action_service" name="gripper_interface" output="screen"/>
+ 
+
+</launch>
