@@ -1,0 +1,25 @@
+<package>
+  <description brief="object_manipulation_tools">
+
+     object_manipulation_tools
+
+  </description>
+  <author>Jnicho</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/object_manipulation_tools</url>
+  <depend package="trajectory_execution_monitor"/>
+  <depend package="object_manipulator"/>
+  <depend package="object_manipulation_msgs"/>
+  <depend package="planning_environment"/>
+  <depend package="pcl"/>
+  <depend package="pcl_ros"/>
+  <depend package="tabletop_object_detector"/>
+  <export>
+  	<rosbuild cmake_directory="${prefix}/cmake"/>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lobject_manipulation_tools"/>    
+  </export>
+
+</package>
+
+
