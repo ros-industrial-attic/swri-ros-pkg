@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<launch>
+	<node name="mantis_automated_pick_place" pkg="mantis_object_manipulation" type="automated_pick_place_node" output="screen">		
+		<rosparam command="load" file="$(find mantis_object_manipulation)/config/mantis_automated_manipulation_parameters.yaml"/>
+		<rosparam command="load" file="$(find mantis_object_manipulation)/config/mantis_zone_selector_parameters.yaml"/>
+	</node>  
+</launch>
