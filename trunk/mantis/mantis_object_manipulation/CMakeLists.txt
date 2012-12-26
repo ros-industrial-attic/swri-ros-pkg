@@ -21,7 +21,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
-#rosbuild_gensrv()
+rosbuild_gensrv()
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
@@ -52,7 +52,8 @@ rosbuild_add_library(RobotNavigator
 	src/arm_navigators/RobotPickPlaceNavigator.cpp 
 	src/arm_navigators/SpherePickingRobotNavigator.cpp
 	src/zone_selection/PickPlaceZoneSelector.cpp
-	src/arm_navigators/AutomatedPickerRobotNavigator.cpp)
+	src/arm_navigators/AutomatedPickerRobotNavigator.cpp
+	src/arm_navigators/SingulateClutterArmNavigator.cpp)
 
 rosbuild_add_executable(mantis_pick_place_node src/nodes/pick_place_demo_node.cpp)
 target_link_libraries(mantis_pick_place_node RobotNavigator)
