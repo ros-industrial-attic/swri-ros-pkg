@@ -215,7 +215,6 @@ protected:
 	ros::ServiceClient rec_srv_;
 	ros::ServiceClient planning_service_client_;
 	ros::ServiceClient trajectory_filter_service_client_;
-	//ros::ServiceClient trajectory_filter_fast_service_client_;
 	ros::ServiceClient object_database_model_mesh_client_;
 	ros::ServiceClient grasp_planning_client;
 	ros::ServiceClient object_database_model_description_client_;
