@@ -69,6 +69,22 @@ void PickPlaceZoneSelector::initializeColorArray()
 
 }
 
+void PickPlaceZoneSelector::goToPickZone(int index)
+{
+	if(index < (int)pick_zones_.size() && index >= 0)
+	{
+		while(index != pick_zone_index_)
+		{
+			goToNextPickZone();
+		}
+	}
+}
+
+bool PickPlaceZoneSelector::isPickZoneActive(int index)
+{
+	return index == pick_zone_index_;
+}
+
 void PickPlaceZoneSelector::goToNextPickZone()
 {
 	// incrementing pick zone counter

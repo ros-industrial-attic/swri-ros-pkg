@@ -11,10 +11,11 @@
 #include <object_manipulation_tools/robot_navigators/RobotNavigator.h>
 #include <perception_tools/segmentation/SphereSegmentation.h>
 #include <mantis_object_manipulation/zone_selection/PickPlaceZoneSelector.h>
+#include <object_manipulation_tools/manipulation_utils/Utilities.h>
 #include <boost/thread/mutex.hpp>
 
 static const std::string PARAM_NAME_NUM_GRASP_ATTEMTPTS = "num_of_grasp_attempts";
-static const std::string PARAM_NAME_NEW_GRASP_OFFSET = "new_grasp_offset";
+static const std::string PARAM_NAME_NEW_GRASP_OFFSET = "new_grasp_attempt_offset";
 static const std::string PARAM_NAME_ATTACHED_OBJECT_BB_SIDE = "attached_object_bb_side";
 
 class AutomatedPickerRobotNavigator: public RobotNavigator
@@ -68,7 +69,7 @@ public:
 
 	AutomatedPickerRobotNavigator();
 	virtual ~AutomatedPickerRobotNavigator();
-	//virtual void run();
+	virtual void run();
 
 	static std::string MARKER_SEGMENTED_OBJECT;
 	static std::string SEGMENTATION_NAMESPACE;

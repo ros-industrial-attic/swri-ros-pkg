@@ -20,7 +20,7 @@ std::string AutomatedPickerRobotNavigator::JOINT_CONFIGURATIONS_NAMESPACE = "joi
 std::string AutomatedPickerRobotNavigator::MARKER_ARRAY_TOPIC = "object_array";
 
 // global variables
-static const double COLLISION_SPHERE_RADIUS = 0.01f;
+static const double BOUNDING_SPHERE_RADIUS = 0.01f;
 
 
 AutomatedPickerRobotNavigator::AutomatedPickerRobotNavigator()
@@ -72,7 +72,6 @@ void AutomatedPickerRobotNavigator::setup()
 		seg_srv_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>(segmentation_service_, true);
 
 		//recognition
-		//recognition_client_ = nh.serviceClient<mantis_perception::mantis_recognition>("/mantis_object_recognition");
 		recognition_client_ = nh.serviceClient<mantis_perception::mantis_recognition>(recognition_service_,true);
 
 		// path and grasp planning
@@ -157,6 +156,88 @@ void AutomatedPickerRobotNavigator::fetchParameters(std::string nameSpace)
 			offset_from_first_grasp_);
 }
 
+void AutomatedPickerRobotNavigator::run()
+{
+	ros::NodeHandle nh;
+	ros::AsyncSpinner spinner(4);
+	spinner.start();
+	srand(time(NULL));
+
+	setup();// full setup
+
+	if(!moveArmToSide())
+	{
+		ROS_WARN_STREAM(NODE_NAME << ": Side moved failed");
+	}
+
+	while(ros::ok())
+	{
+	    startCycleTimer();
+
+		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
+		if(!performSegmentation())
+		{
+		  ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
+		  continue;
+		}
+		ROS_INFO_STREAM(NODE_NAME << " Segmentation stage completed");
+
+		ROS_INFO_STREAM(NODE_NAME << ": Recognition stage started");
+		if(!performRecognition())
+		{
+			ROS_WARN_STREAM(NODE_NAME << ": Recognition stage failed");
+			continue;
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME << ": Recognition stage completed");
+		}
+
+		ROS_INFO_STREAM(NODE_NAME << ": Grasp Pickup stage started");
+
+		if(!performGraspPlanning())
+		{
+			//zone_selector_.removeLastObjectAdded();
+			ROS_ERROR_STREAM(NODE_NAME<<": Grasp Planning stage failed");
+			continue;
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage completed");
+		}
+
+		if(!moveArmThroughPickSequence())
+		{
+		  ROS_WARN_STREAM(NODE_NAME << ": Grasp Pickup stage failed");
+		  moveArmToSide();
+		  continue;
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Pickup stage completed");
+		}
+
+		ROS_INFO_STREAM(NODE_NAME + ": Grasp Place stage started");
+		if(!moveArmThroughPlaceSequence())
+		{
+			ROS_WARN_STREAM(NODE_NAME << ": Grasp Place stage failed");
+			moveArmToSide();
+			continue;
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Place stage completed");
+		}
+
+		if(!moveArmToSide())
+		{
+			ROS_WARN_STREAM(NODE_NAME << ": Side moved failed");
+		}
+
+	    printTiming();
+	  }
+}
+
 bool AutomatedPickerRobotNavigator::performSphereSegmentation()
 {
 	//  ===================================== preparing result objects =====================================
@@ -237,45 +318,9 @@ bool AutomatedPickerRobotNavigator::performSphereSegmentation()
 
 bool AutomatedPickerRobotNavigator::performRecognition()
 {
-	// declaring temporary variables to generate object ids
-#ifdef USE_SPHERE_SEGMENTATION
-
-	static const int MaxIdCount = 8;
-	static int CurrentIdCount = 1;
-
-	ROS_WARN_STREAM(NODE_NAME<<": Using id "<<CurrentIdCount<<" for the next object");
-
-	// assigning id ( if recognition is used the id returned in the result should be used instead)
-	recognized_obj_id_ = CurrentIdCount;
-	CurrentIdCount++;
-	if(CurrentIdCount > MaxIdCount)
-	{
-		CurrentIdCount = 1;
-	}
-
-	// passed recognized object details to zone selector
-	double bbBoxSide = zone_selector_.getPlaceZone().MinObjectSpacing;
-	tf::Vector3 objSize = tf::Vector3(bbBoxSide,bbBoxSide,bbBoxSide);
-	PickPlaceZoneSelector::ObjectDetails objDetails(tf::Transform::getIdentity(),objSize,
-			CurrentIdCount,"next_object");
-	zone_selector_.getPlaceZone().setNextObjectDetails(objDetails);
-
-	// computing poses so that no move is attempted if no locations are available in the place zone.
-	candidate_place_poses_.clear();
-	if(!zone_selector_.generateNextLocationCandidates(candidate_place_poses_))
-	{
-		ROS_WARN_STREAM(NODE_NAME<<": Couldn't find available location for object, swapping zones and resetting counter.");
-		// no more locations available, swapping zones
-		zone_selector_.swapPickPlaceZones();
-		CurrentIdCount = 1;
-		return false;
-	}
-
-#else
 
 	// preparing recognition results
 	arm_navigation_msgs::CollisionObject obj;
-	double sphereRadius = COLLISION_SPHERE_RADIUS;
 	obj.id = makeCollisionObjectNameFromModelId(0);
 	mantis_perception::mantis_recognition rec_srv;
 	rec_srv.request.clusters = segmented_clusters_;
@@ -310,19 +355,18 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 	pose.header.frame_id = cm_.getWorldFrameId();
 	recognized_obj_pose_map_[std::string(obj.id)] = pose;
 
-	// adding collision obj to planning scene
+	// adding bounding sphere of object as collision model to planning scene
 	ROS_INFO_STREAM(NODE_NAME<<": Adding Object bounding sphere to planning scene with frame id "
-			<<cm_.getWorldFrameId()<<" and radius: "<<sphereRadius);
+			<<cm_.getWorldFrameId()<<" and radius: "<<BOUNDING_SPHERE_RADIUS);
 	obj.header.frame_id = cm_.getWorldFrameId();
 	obj.padding = 0;
 	obj.shapes = std::vector<arm_navigation_msgs::Shape>();
 	arm_navigation_msgs::Shape shape;
 	shape.type = arm_navigation_msgs::Shape::SPHERE;
-	//shape.dimensions.push_back(zone_selector_.getPlaceZone().MinObjectSpacing/2.0f); // radius;
-	shape.dimensions.push_back(sphereRadius);
+	shape.dimensions.push_back(BOUNDING_SPHERE_RADIUS);
 	obj.shapes.push_back(shape);
 	obj.poses.push_back(pose.pose);
-	obj.poses[0].position.z  = pose.pose.position.z - sphereRadius;
+	obj.poses[0].position.z  = pose.pose.position.z - BOUNDING_SPHERE_RADIUS;
 	addDetectedObjectToLocalPlanningScene(obj);
 
 	// storing model detail for path planning
@@ -366,8 +410,6 @@ bool AutomatedPickerRobotNavigator::performRecognition()
 		return false;
 	}
 
-#endif
-
 	return true;
 }
 
@@ -386,80 +428,84 @@ bool AutomatedPickerRobotNavigator::performGraspPlanning()
 	{
 	  return false;
 	}
+//
+//	// populating grasp plan request/response
+//	household_objects_database_msgs::DatabaseModelPose modelPose = recognized_models_[0].model_list[0];
+//	object_manipulation_msgs::GraspPlanning::Request request;
+//	object_manipulation_msgs::GraspPlanning::Response response;
+//	std::string modelId = makeCollisionObjectNameFromModelId(modelPose.model_id);
+//	modelPose.pose = recognized_obj_pose_map_[modelId];
+//	modelPose.pose.header.frame_id = recognized_model_description_.name; // should be updated during recognition stage
+//	modelPose.pose.header.stamp = ros::Time::now();
+//	request.arm_name = arm_group_name_;
+//	request.target.potential_models.push_back(modelPose);
+//	request.target.reference_frame_id = segmented_clusters_[0].header.frame_id;
+//	request.target.cluster = segmented_clusters_[0];
+//
+//	// creating candidate grasp to evaluate
+//	if(!candidate_pick_poses_.empty())
+//	{
+//		std::vector<object_manipulation_msgs::Grasp> evaluateGrasps;
+//		for(std::vector<geometry_msgs::PoseStamped>::iterator i = candidate_pick_poses_.begin();
+//				i != candidate_pick_poses_.end(); i++)
+//		{
+//			object_manipulation_msgs::Grasp graspEval;
+//			graspEval.grasp_pose = i->pose;
+//			evaluateGrasps.push_back(graspEval);
+//		}
+//		request.grasps_to_evaluate.assign(evaluateGrasps.begin(),evaluateGrasps.end());
+//	}
+//	else
+//	{
+//		ROS_ERROR_STREAM(NODE_NAME<<": No candidate pick poses were returned from recognition, aborting");
+//		return false;
+//	}
+//
+//	bool success = grasp_planning_client.call(request, response);
+//
+//	// ===================================== checking results ========================================
+//	if(!success)
+//	{
+//		ROS_WARN_STREAM(NODE_NAME<<": grasp planning call unsuccessful, exiting");
+//		return false;
+//	}
+//
+//	if(response.error_code.value != response.error_code.SUCCESS)
+//	{
+//		ROS_WARN_STREAM(NODE_NAME<<": grasp planning call returned error code, exiting " << response.error_code.value);
+//		return false;
+//	}
+//
+//	if(response.grasps.size() == 0)
+//	{
+//		ROS_WARN_STREAM(NODE_NAME<<": No grasps returned in response");
+//		return false;
+//	}
+//
+//	//TODO - actually deal with the different cases here, especially for the cluster planner
+//	if(request.target.reference_frame_id != recognized_model_description_.name ||
+//		  request.target.reference_frame_id != modelPose.pose.header.frame_id)
+//	{
+//	  ROS_WARN_STREAM(NODE_NAME<<": Cluster does not match recognition");
+//	}
 
-	// populating grasp plan request/response
-	household_objects_database_msgs::DatabaseModelPose modelPose = recognized_models_[0].model_list[0];
-	object_manipulation_msgs::GraspPlanning::Request request;
-	object_manipulation_msgs::GraspPlanning::Response response;
+	// gathering latest recognition results
+	household_objects_database_msgs::DatabaseModelPose &modelPose = recognized_models_[0].model_list[0];
 	std::string modelId = makeCollisionObjectNameFromModelId(modelPose.model_id);
-	modelPose.pose = recognized_obj_pose_map_[modelId];
-	modelPose.pose.header.frame_id = recognized_model_description_.name; // should be updated during recognition stage
-	modelPose.pose.header.stamp = ros::Time::now();
-	request.arm_name = arm_group_name_;
-	request.target.potential_models.push_back(modelPose);
-	request.target.reference_frame_id = segmented_clusters_[0].header.frame_id;
-	request.target.cluster = segmented_clusters_[0];
 
-	// creating candidate grasp to evaluate
-	if(!candidate_pick_poses_.empty())
-	{
-		std::vector<object_manipulation_msgs::Grasp> evaluateGrasps;
-		for(std::vector<geometry_msgs::PoseStamped>::iterator i = candidate_pick_poses_.begin();
-				i != candidate_pick_poses_.end(); i++)
-		{
-			object_manipulation_msgs::Grasp graspEval;
-			graspEval.grasp_pose = i->pose;
-			evaluateGrasps.push_back(graspEval);
-		}
-		request.grasps_to_evaluate.assign(evaluateGrasps.begin(),evaluateGrasps.end());
-	}
-	else
-	{
-		ROS_ERROR_STREAM(NODE_NAME<<": No candidate pick poses were returned from recognition, aborting");
-		return false;
-	}
-
-	bool success = grasp_planning_client.call(request, response);
-
-	// ===================================== checking results ========================================
-	if(!success)
-	{
-		ROS_WARN_STREAM(NODE_NAME<<": grasp planning call unsuccessful, exiting");
-		return false;
-	}
-
-	if(response.error_code.value != response.error_code.SUCCESS)
-	{
-		ROS_WARN_STREAM(NODE_NAME<<": grasp planning call returned error code, exiting " << response.error_code.value);
-		return false;
-	}
-
-	if(response.grasps.size() == 0)
-	{
-		ROS_WARN_STREAM(NODE_NAME<<": No grasps returned in response");
-		return false;
-	}
-
-	//TODO - actually deal with the different cases here, especially for the cluster planner
-	if(request.target.reference_frame_id != recognized_model_description_.name ||
-		  request.target.reference_frame_id != modelPose.pose.header.frame_id)
-	{
-	  ROS_WARN_STREAM(NODE_NAME<<": Cluster does not match recognition");
-	}
-
-	//  ===================================== storing results =====================================
-	/* Storing grasp candidates:
-	 * 	Grasp poses are poses of the wrist link in terms of the world,
-	 * 	we need to get them relative to the object
-	 */
-	grasp_candidates_.assign(response.grasps.begin(),response.grasps.end());
+	// generating grasp candidates
+	object_manipulation_msgs::Grasp firstGrasp;
+	firstGrasp.grasp_pose = recognized_obj_pose_map_[modelId].pose;
+	firstGrasp.desired_approach_distance = 0.1f;
+	firstGrasp.min_approach_distance = 0.1f;
+	manipulation_utils::generateCandidateGrasps(firstGrasp,tf::Vector3(0.0f,0.0f,1.0f),8,grasp_candidates_);
 
 	// instantiating needed transforms and poses
 	tf::StampedTransform wrist_in_tcp_tf = tf::StampedTransform();
 	tf::Transform object_in_world_tf; // will remove
 	tf::Transform object_in_world_inverse_tf;// will remove
 
-	// populating transforms
+	// filling transforms
 	tf::poseMsgToTF(modelPose.pose.pose, object_in_world_tf);
 	object_in_world_inverse_tf = object_in_world_tf.inverse();
 	_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wrist_in_tcp_tf);
@@ -500,15 +546,16 @@ bool AutomatedPickerRobotNavigator::performGraspPlanning()
 	//  ===================================== updating local planning scene =====================================
 	// updating gripper (not sure if this is necessary)
 	tf::Transform first_grasp_in_world_tf;
-	tf::poseMsgToTF(response.grasps[0].grasp_pose, first_grasp_in_world_tf);
+	tf::poseMsgToTF(firstGrasp.grasp_pose, first_grasp_in_world_tf);
+//	tf::poseMsgToTF(response.grasps[0].grasp_pose, first_grasp_in_world_tf);
 	planning_models::KinematicState state(*current_robot_state_);
 	state.updateKinematicStateWithLinkAt(gripper_link_name_, first_grasp_in_world_tf);
 
 
 	// ===================================== printing completion info message =====================================
-	ROS_INFO_STREAM(NODE_NAME<<": Grasp is " << response.grasps[0].grasp_pose.position.x << " "
-			  << response.grasps[0].grasp_pose.position.y << " "
-			  << response.grasps[0].grasp_pose.position.z);
+	ROS_INFO_STREAM(NODE_NAME<<": Grasp is " << firstGrasp.grasp_pose.position.x << " "
+			  << firstGrasp.grasp_pose.position.y << " "
+			  << firstGrasp.grasp_pose.position.z);
 
 	ROS_INFO_STREAM(NODE_NAME<<": Cloud header " << segmented_clusters_[0].header.frame_id);
 	ROS_INFO_STREAM(NODE_NAME<<": Recognition pose frame " << modelPose.pose.header.frame_id);
@@ -569,22 +616,11 @@ bool AutomatedPickerRobotNavigator::performSegmentation()
 	}
 
 	updateMarkerArrayMsg();
-
-#ifdef USE_SPHERE_SEGMENTATION
-	success =  performSphereSegmentation();
-	if(!success)
-	{
-		return false;
-	}
-
-#endif
 	return true;
-
 }
 
 bool AutomatedPickerRobotNavigator::moveArmToSide()
 {
-
     joint_configuration_.fetchParameters(JOINT_CONFIGURATIONS_NAMESPACE);
     return updateChangesToPlanningScene() && moveArm(arm_group_name_,joint_configuration_.SideAngles);
 }
@@ -594,20 +630,12 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 	// pushing local changes to planning scene
 	updateChangesToPlanningScene();
 
-	// grasp planning
-	bool success = performGraspPlanning();
-	if(!success)
-	{
-		//zone_selector_.removeLastObjectAdded();
-		ROS_ERROR_STREAM(NODE_NAME<<": Pick Move attempt canceled");
-		return false;
-	}
-
 	// will attempt to grasp object multiple times if current pick attempt fails
 	object_manipulation_msgs::Grasp firstGrasp =  grasp_candidates_[0];
 	double angleIncrement = 2*M_PI/((double)num_of_grasp_attempts_);
 	int graspIndex = 0; // index to last successful grasp;
 
+	bool success;
 	for(int i = 0; i <= num_of_grasp_attempts_; i++)
 	{
 		// creating pick move sequence
@@ -691,10 +719,7 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 		{
 			break;
 		}
-
 	}
-
-
 
 	// storing current grasp data for marker publishing
 	object_manipulation_msgs::Grasp tempGrasp;

@@ -473,6 +473,8 @@ public:
 	}
 
 	void goToNextPickZone(); //
+	void goToPickZone(int index);
+	bool isPickZoneActive(int index);
 	bool isInPickZone(const std::vector<sensor_msgs::PointCloud> &clusters,std::vector<int> &inZone);
 	bool isInPickZone(const sensor_msgs::PointCloud &cluster);
 
