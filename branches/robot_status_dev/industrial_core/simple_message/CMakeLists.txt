@@ -51,7 +51,7 @@ set(SRC_FILES src/byte_array.cpp
 					src/joint_traj_pt.cpp
 					src/joint_traj.cpp
 					src/robot_status.cpp
-
+					
 					src/messages/joint_message.cpp
 					src/messages/joint_traj_pt_message.cpp
 					src/messages/robot_status_message.cpp
@@ -82,9 +82,9 @@ rosbuild_add_gtest(utest ${UTEST_SRC_FILES})
 target_link_libraries(utest simple_message)
 
 # ALTERNATIVE LIBRARY (DIFFERENT ENDIAN)
-#rosbuild_add_library(simple_message_bswap ${SRC_FILES})
-#set_target_properties(simple_message_bswap PROPERTIES COMPILE_DEFINITIONS "BYTE_SWAPPING")
-#rosbuild_add_compile_flags(simple_message_bswap "-fPIC") # for use in shared-libs
+rosbuild_add_library(simple_message_bswap ${SRC_FILES})
+set_target_properties(simple_message_bswap PROPERTIES COMPILE_DEFINITIONS "BYTE_SWAPPING")
+rosbuild_add_compile_flags(simple_message_bswap "-fPIC") # for use in shared-libs
 
-#rosbuild_add_gtest(utest_byte_swapping ${UTEST_SRC_FILES})
-#target_link_libraries(utest_byte_swapping simple_message_bswap)
+rosbuild_add_gtest(utest_byte_swapping ${UTEST_SRC_FILES})
+target_link_libraries(utest_byte_swapping simple_message_bswap)

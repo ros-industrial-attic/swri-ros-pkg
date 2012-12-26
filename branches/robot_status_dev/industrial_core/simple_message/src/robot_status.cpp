@@ -32,6 +32,10 @@
 #include "simple_message/robot_status.h"
 #include "simple_message/shared_types.h"
 #include "simple_message/log_wrapper.h"
+// Files below used to translate between ROS messages enums and
+// enums defined in this file
+#include "industrial_msgs/RobotMode.h"
+#include "industrial_msgs/TriState.h"
 #endif
 
 #ifdef MOTOPLUS
@@ -47,6 +51,63 @@ namespace industrial
 namespace robot_status
 {
 
+namespace RobotModes
+{
+
+#ifdef ROS
+
+int toROSMsgEnum(RobotModes::RobotMode mode)
+{
+
+  switch (mode)
+  {
+    case RobotModes::AUTO:
+      return industrial_msgs::RobotMode::AUTO;
+      break;
+    case RobotModes::MANUAL:
+      return industrial_msgs::RobotMode::MANUAL;
+      break;
+    case RobotModes::UNKNOWN:
+      return industrial_msgs::RobotMode::UNKNOWN;
+  }
+  return industrial_msgs::RobotMode::UNKNOWN;
+
+}
+;
+
+#endif
+
+}
+
+namespace TriStates
+{
+
+#ifdef ROS
+
+int toROSMsgEnum(TriStates::TriState state)
+{
+
+  switch (state)
+  {
+    case TriStates::UNKNOWN:
+      return industrial_msgs::TriState::UNKNOWN;
+      break;
+    case TriStates::TRUE:
+      return industrial_msgs::TriState::TRUE;
+      break;
+    case TriStates::FALSE:
+      return industrial_msgs::TriState::FALSE;
+      break;
+  }
+  return industrial_msgs::TriState::UNKNOWN;
+
+}
+;
+
+#endif
+
+}
+
 RobotStatus::RobotStatus(void)
 {
   this->init();
@@ -58,17 +119,12 @@ RobotStatus::~RobotStatus(void)
 
 void RobotStatus::init()
 {
-  this->init(TriStates::UNKNOWN, TriStates::UNKNOWN, 0, TriStates::UNKNOWN,
-             TriStates::UNKNOWN, RobotModes::UNKNOWN, TriStates::UNKNOWN);
+  this->init(TriStates::UNKNOWN, TriStates::UNKNOWN, 0, TriStates::UNKNOWN, TriStates::UNKNOWN, RobotModes::UNKNOWN,
+             TriStates::UNKNOWN);
 }
 
-void RobotStatus::init(TriState drivesPowered,
-            TriState eStopped,
-            industrial::shared_types::shared_int errorCode,
-            TriState inError,
-            TriState inMotion,
-            RobotMode mode,
-            TriState motionPossible)
+void RobotStatus::init(TriState drivesPowered, TriState eStopped, industrial::shared_types::shared_int errorCode,
+                       TriState inError, TriState inMotion, RobotMode mode, TriState motionPossible)
 {
   this->setDrivesPowered(drivesPowered);
   this->setEStopped(eStopped);
@@ -103,13 +159,9 @@ bool RobotStatus::load(industrial::byte_array::ByteArray *buffer)
 
   LOG_COMM("Executing robot status load");
 
-  if (buffer->load(this->drives_powered_) &&
-      buffer->load(this->e_stopped_) &&
-      buffer->load(this->error_code_)&&
-      buffer->load(this->in_error_)&&
-      buffer->load(this->in_motion_) &&
-      buffer->load(this->mode_)&&
-      buffer->load(this->motion_possible_))
+  if (buffer->load(this->drives_powered_) && buffer->load(this->e_stopped_) && buffer->load(this->error_code_)
+      && buffer->load(this->in_error_) && buffer->load(this->in_motion_) && buffer->load(this->mode_)
+      && buffer->load(this->motion_possible_))
   {
 
     LOG_COMM("Robot status successfully loaded");
@@ -129,14 +181,9 @@ bool RobotStatus::unload(industrial::byte_array::ByteArray *buffer)
   bool rtn = false;
 
   LOG_COMM("Executing robot status unload");
-  if (buffer->unload(this->motion_possible_) &&
-      buffer->unload(this->mode_) &&
-      buffer->unload(this->in_motion_) &&
-      buffer->unload(this->in_error_) &&
-      buffer->unload(this->error_code_) &&
-      buffer->unload(this->e_stopped_) &&
-      buffer->unload(this->drives_powered_)
-      )
+  if (buffer->unload(this->motion_possible_) && buffer->unload(this->mode_) && buffer->unload(this->in_motion_)
+      && buffer->unload(this->in_error_) && buffer->unload(this->error_code_) && buffer->unload(this->e_stopped_)
+      && buffer->unload(this->drives_powered_))
   {
 
     rtn = true;

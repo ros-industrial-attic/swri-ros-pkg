@@ -57,7 +57,7 @@ namespace robot_status_message
  * \brief Class encapsulated robot status message generation methods
  * (either to or from a industrial::simple_message::SimpleMessage type.
  *
- * This message simply wraps the industrial::joint_traj_pt::RobotStatus data type.
+ * This message simply wraps the industrial::robot_status::RobotStatus data type.
  * The data portion of this typed message matches RobotStatus.
  *
  *
