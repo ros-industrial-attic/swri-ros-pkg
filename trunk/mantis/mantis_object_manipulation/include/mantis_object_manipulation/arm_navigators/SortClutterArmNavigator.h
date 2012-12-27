@@ -5,8 +5,8 @@
  *      Author: coky
  */
 
-#ifndef SINGULATECLUTTERARMNAVIGATOR_H_
-#define SINGULATECLUTTERARMNAVIGATOR_H_
+#ifndef SORTCLUTTERARMNAVIGATOR_H_
+#define SORTCLUTTERARMNAVIGATOR_H_
 
 #include <mantis_object_manipulation/arm_navigators/SpherePickingRobotNavigator.h>
 #include <mantis_object_manipulation/arm_navigators/AutomatedPickerRobotNavigator.h>
@@ -22,11 +22,11 @@ static const std::string SINGULATED_DROPOFF_NAMESPACE = "singulated_dropoff";
 static const std::string JOINT_HOME_POSITION_NAMESPACE = "joint_home_position";
 static const std::string HANDSHAKING_SERVICE_NAME = "arm_handshaking";
 
-class SingulateClutterArmNavigator: public AutomatedPickerRobotNavigator
+class SortClutterArmNavigator: public AutomatedPickerRobotNavigator
 {
 public:
-	SingulateClutterArmNavigator();
-	virtual ~SingulateClutterArmNavigator();
+	SortClutterArmNavigator();
+	virtual ~SortClutterArmNavigator();
 	virtual void run();
 
 protected:
@@ -43,6 +43,7 @@ protected:
 	bool performGraspPlanningForClutter();
 	bool performGraspPlanningForSingulation();
 	void clearResultsFromLastSrvCall();
+	bool moveArmThroughPickPlaceSequence();
 
 	// service callbacks
 	bool armHandshakingSrvCallback(mantis_object_manipulation::ArmHandshaking::Request& req,

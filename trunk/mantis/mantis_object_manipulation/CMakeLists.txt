@@ -48,24 +48,30 @@ rosbuild_gensrv()
 #rosbuild_add_library(RobotNavigator src/arm_navigators/RobotPickPlaceNavigator.cpp 
 #${FREETAIL_SRC}/utils/CustomPlaceTester.cpp ${FREETAIL_SRC}/segmentation/SphereSegmentation.cpp)
 
-rosbuild_add_library(RobotNavigator 
+rosbuild_add_library(${PROJECT_NAME} 
 	src/arm_navigators/RobotPickPlaceNavigator.cpp 
 	src/arm_navigators/SpherePickingRobotNavigator.cpp
 	src/zone_selection/PickPlaceZoneSelector.cpp
 	src/arm_navigators/AutomatedPickerRobotNavigator.cpp
-	src/arm_navigators/SingulateClutterArmNavigator.cpp)
+	src/arm_navigators/SortClutterArmNavigator.cpp)
 
 rosbuild_add_executable(mantis_pick_place_node src/nodes/pick_place_demo_node.cpp)
-target_link_libraries(mantis_pick_place_node RobotNavigator)
+target_link_libraries(mantis_pick_place_node ${PROJECT_NAME})
 
 rosbuild_add_executable(mantis_sphere_picking_node src/nodes/sphere_picking_demo_node.cpp)
-target_link_libraries(mantis_sphere_picking_node RobotNavigator)
+target_link_libraries(mantis_sphere_picking_node ${PROJECT_NAME})
 
 rosbuild_add_executable(test_zone_selector_node src/test/test_zone_selector_node.cpp)
-target_link_libraries(test_zone_selector_node RobotNavigator)
+target_link_libraries(test_zone_selector_node ${PROJECT_NAME})
 
 rosbuild_add_executable(automated_pick_place_node src/nodes/automated_pick_place_node.cpp)
-target_link_libraries(automated_pick_place_node RobotNavigator)
+target_link_libraries(automated_pick_place_node ${PROJECT_NAME})
+
+rosbuild_add_executable(dual_arm_supervisor_node src/nodes/dual_arm_supervisor_node.cpp)
+target_link_libraries(dual_arm_supervisor_node ${PROJECT_NAME})
+
+rosbuild_add_executable(sort_clutter_arm_node src/nodes/sort_clutter_arm_node.cpp)
+target_link_libraries(sort_clutter_arm_node ${PROJECT_NAME})
 
 #rosbuild_add_executable(sensor_data_redirect_node src/nodes/sensor_data_redirect.cpp)
 #rosbuild_add_executable(test_grasp_action_server src/test/test_grasp_action_server_node.cpp)
