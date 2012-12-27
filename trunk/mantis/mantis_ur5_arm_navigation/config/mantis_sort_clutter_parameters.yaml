@@ -1,0 +1,54 @@
+navigator:
+  arm_group: ur5_arm
+  gripper_group: ur5_gripper
+  wrist_link: ur5_arm_ee_link
+  gripper_link: ur5_arm_tcp_frame
+  planner_service_name: /ur5_arm/path_planning/plan_kinematic_path
+  trajectory_filter_service_name: /ur5_arm/trajectory_filter_server/filter_trajectory_with_constraints
+  segmentation_service_name: /ur5_arm/tabletop_segmentation
+  recognition_service_name: /ur5_arm/mantis_object_recognition
+  grasp_planning_service_name: /ur5_arm/plan_point_cluster_grasp
+  planning_scene_service_name: /ur5_arm/environment_server/set_planning_scene_diff
+  arm_inverse_kinematics_plugin: arm_kinematics_constraint_aware/KDLArmKinematicsPlugin
+  joint_state_topic: /ur5_arm/joint_states
+  joint_trajectory_service_name: /ur5_arm/joint_trajectory_action
+  grasp_action_service_name: /ur5_arm/grasp_execution_action
+  num_of_grasp_attempts: 4
+  offset_from_first_grasp: 0.01 #1cm
+  attached_object_bb_side: 0.1 #10cm
+cluttered_dropoff:
+  frame_id: workcell_frame
+  position:
+    x: -0.451
+    y: 0.4
+    z: 0.2
+  orientation:
+    axis:
+      x: 0
+      y: 0
+      z: 1
+    angle: 0
+  next_location:
+    generation_mode: 0
+    min_spacing: 0.05 # meters
+    max_spacing: 0.08 # meters
+    place_region_radius: 0.2 # meters
+singulated_dropoff:
+  frame_id: workcell_frame
+  position:
+    x: -0.451
+    y: 0.4
+    z: 0.2
+  orientation:
+    axis:
+      x: 0
+      y: 0
+      z: 1
+    angle: 0
+  next_location:
+    generation_mode: 0
+    min_spacing: 0.05 # meters
+    max_spacing: 0.08 # meters
+    place_region_radius: 0.2 # meters
+joint_home_position:
+   side_position: [-0.70, -1.07948096023743, 1.7135035147002855, -2.2049080765129627, -1.57158764211257, -1.6830470243995475]
