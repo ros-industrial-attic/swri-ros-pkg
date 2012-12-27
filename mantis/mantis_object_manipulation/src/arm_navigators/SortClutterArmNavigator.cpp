@@ -5,7 +5,7 @@
  *      Author: coky
  */
 
-#include <mantis_object_manipulation/arm_navigators/SingulateClutterArmNavigator.h>
+#include <mantis_object_manipulation/arm_navigators/SortClutterArmNavigator.h>
 #include <mantis_perception/mantis_recognition.h>
 
 typedef mantis_object_manipulation::ArmHandshaking::Response HandshakingResp;
@@ -13,7 +13,7 @@ typedef mantis_object_manipulation::ArmHandshaking::Response HandshakingResp;
 // global variables
 static const double BOUNDING_SPHERE_RADIUS = 0.01f;
 
-SingulateClutterArmNavigator::SingulateClutterArmNavigator()
+SortClutterArmNavigator::SortClutterArmNavigator()
 :AutomatedPickerRobotNavigator()
 {
 	JOINT_CONFIGURATIONS_NAMESPACE = NODE_NAME + "/" + JOINT_HOME_POSITION_NAMESPACE;
@@ -21,18 +21,18 @@ SingulateClutterArmNavigator::SingulateClutterArmNavigator()
 	singulated_dropoff_ns_= NODE_NAME + "/" + SINGULATED_DROPOFF_NAMESPACE;
 }
 
-SingulateClutterArmNavigator::~SingulateClutterArmNavigator() {
+SortClutterArmNavigator::~SortClutterArmNavigator() {
 	// TODO Auto-generated destructor stub
 }
 
-void SingulateClutterArmNavigator::fetchParameters(std::string nameSpace)
+void SortClutterArmNavigator::fetchParameters(std::string nameSpace)
 {
 	AutomatedPickerRobotNavigator::fetchParameters(nameSpace);
 	singulated_dropoff_location_.fetchParameters(singulated_dropoff_ns_);
 	clutter_dropoff_location_.fetchParameters(clutter_dropoff_ns_);
 }
 
-void SingulateClutterArmNavigator::clearResultsFromLastSrvCall()
+void SortClutterArmNavigator::clearResultsFromLastSrvCall()
 {
 	recognized_models_.clear();
 	recognized_obj_pose_map_.clear();
@@ -40,7 +40,7 @@ void SingulateClutterArmNavigator::clearResultsFromLastSrvCall()
 	grasp_candidates_.clear();
 }
 
-void SingulateClutterArmNavigator::run()
+void SortClutterArmNavigator::run()
 {
 	ros::NodeHandle nh;
 	ros::AsyncSpinner spinner(4);
@@ -60,15 +60,15 @@ void SingulateClutterArmNavigator::run()
 	}
 }
 
-void SingulateClutterArmNavigator::setup()
+void SortClutterArmNavigator::setup()
 {
 	ros::NodeHandle nh;
 	AutomatedPickerRobotNavigator::setup();
 	handshaking_server_ = nh.advertiseService(HANDSHAKING_SERVICE_NAME,
-			&SingulateClutterArmNavigator::armHandshakingSrvCallback,this);
+			&SortClutterArmNavigator::armHandshakingSrvCallback,this);
 }
 
-bool SingulateClutterArmNavigator::moveArmThroughPlaceSequence()
+bool SortClutterArmNavigator::moveArmThroughPlaceSequence()
 {
 	using namespace mantis_object_manipulation;
 	bool success = RobotNavigator::moveArmThroughPlaceSequence();
@@ -84,7 +84,7 @@ bool SingulateClutterArmNavigator::moveArmThroughPlaceSequence()
 	return success;
 }
 
-bool SingulateClutterArmNavigator::moveArmThroughPickSequence()
+bool SortClutterArmNavigator::moveArmThroughPickSequence()
 {
 	using namespace mantis_object_manipulation;
 
@@ -101,7 +101,7 @@ bool SingulateClutterArmNavigator::moveArmThroughPickSequence()
 	return success;
 }
 
-bool SingulateClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulation::ArmHandshaking::Request& req,
+bool SortClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulation::ArmHandshaking::Request& req,
 			mantis_object_manipulation::ArmHandshaking::Response& res)
 {
 	using namespace mantis_object_manipulation;
@@ -141,6 +141,8 @@ bool SingulateClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manip
 		}
 		ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage completed");
 
+		success = moveArmThroughPickPlaceSequence();
+
 		break;
 
 	case ArmHandshaking::Request::SINGULATE_SORTED:
@@ -173,6 +175,8 @@ bool SingulateClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manip
 			break;
 		}
 		ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage completed");
+
+		success = moveArmThroughPickPlaceSequence();
 
 		break;
 
@@ -207,6 +211,8 @@ bool SingulateClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manip
 		}
 		ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage completed");
 
+		success = moveArmThroughPickPlaceSequence();
+
 		break;
 
 	case ArmHandshaking::Request::CLUTTER:
@@ -240,6 +246,8 @@ bool SingulateClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manip
 		}
 		ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage completed");
 
+		success = moveArmThroughPickPlaceSequence();
+
 		break;
 
 	case ArmHandshaking::Request::MOVE_HOME:
@@ -250,52 +258,17 @@ bool SingulateClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manip
 			success = false;
 		}
 
-		res.completed = success;
-		res.error_code = handshaking_data_.response.error_code;
-		return true;
+		break;
 
 	case ArmHandshaking::Request::WAIT:
 
-		return true;
+		break;
 
 	default:
 
 		success = false;
 		handshaking_data_.response.error_code = HandshakingResp::UNKNOWN_COMMAND_REQUEST_ERROR;
 		break;
-	}
-
-	if(success)
-	{
-		// beginning movement
-		if(success && !moveArmThroughPickSequence())
-		{
-		  ROS_WARN_STREAM(NODE_NAME << ": Grasp Pickup stage failed");
-		  moveArmToSide();
-		  success = false;
-		}
-		else
-		{
-			ROS_INFO_STREAM(NODE_NAME << ": Grasp Pickup stage completed");
-		}
-
-		ROS_INFO_STREAM(NODE_NAME + ": Grasp Place stage started");
-		if(success && !moveArmThroughPlaceSequence())
-		{
-			ROS_WARN_STREAM(NODE_NAME << ": Grasp Place stage failed");
-			moveArmToSide();
-			success = false;
-		}
-		else
-		{
-			ROS_INFO_STREAM(NODE_NAME << ": Grasp Place stage completed");
-		}
-
-		if(success && !moveArmToSide())
-		{
-			ROS_WARN_STREAM(NODE_NAME << ": Side moved failed");
-			success = false;
-		}
 	}
 
 	res.completed = success;
@@ -305,7 +278,44 @@ bool SingulateClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manip
 	return true;
 }
 
-bool SingulateClutterArmNavigator::performSegmentation()
+bool SortClutterArmNavigator::moveArmThroughPickPlaceSequence()
+{
+	// beginning movement
+	ROS_INFO_STREAM(NODE_NAME + ": Grasp Pick stage started");
+	if(!moveArmThroughPickSequence())
+	{
+	  ROS_WARN_STREAM(NODE_NAME << ": Grasp Pick stage failed");
+	  moveArmToSide();
+	  return false;
+	}
+	else
+	{
+		ROS_INFO_STREAM(NODE_NAME << ": Grasp Pick stage completed");
+	}
+
+	ROS_INFO_STREAM(NODE_NAME + ": Grasp Place stage started");
+	if(!moveArmThroughPlaceSequence())
+	{
+		ROS_WARN_STREAM(NODE_NAME << ": Grasp Place stage failed");
+		moveArmToSide();
+		return false;
+	}
+	else
+	{
+		ROS_INFO_STREAM(NODE_NAME << ": Grasp Place stage completed");
+	}
+
+	if(!moveArmToSide())
+	{
+		ROS_WARN_STREAM(NODE_NAME << ": Side moved failed");
+		handshaking_data_.response.error_code = HandshakingResp::FINAL_MOVE_HOME_ERROR;
+		return false;
+	}
+
+	return true;
+}
+
+bool SortClutterArmNavigator::performSegmentation()
 {
 	using namespace mantis_object_manipulation;
 
@@ -371,7 +381,7 @@ bool SingulateClutterArmNavigator::performSegmentation()
 	return true;
 }
 
-bool SingulateClutterArmNavigator::performRecognition()
+bool SortClutterArmNavigator::performRecognition()
 {
 
 	// preparing recognition results
@@ -447,7 +457,7 @@ bool SingulateClutterArmNavigator::performRecognition()
 	return true;
 }
 
-bool SingulateClutterArmNavigator::performGraspPlanningForSorting()
+bool SortClutterArmNavigator::performGraspPlanningForSorting()
 {
 	using namespace mantis_object_manipulation;
 
@@ -473,7 +483,7 @@ bool SingulateClutterArmNavigator::performGraspPlanningForSorting()
 	return true;
 }
 
-bool SingulateClutterArmNavigator::performGraspPlanningForClutter()
+bool SortClutterArmNavigator::performGraspPlanningForClutter()
 {
 	using namespace mantis_object_manipulation;
 
@@ -492,7 +502,7 @@ bool SingulateClutterArmNavigator::performGraspPlanningForClutter()
 	return true;
 }
 
-bool SingulateClutterArmNavigator::performGraspPlanningForSingulation()
+bool SortClutterArmNavigator::performGraspPlanningForSingulation()
 {
 	using namespace mantis_object_manipulation;
 
