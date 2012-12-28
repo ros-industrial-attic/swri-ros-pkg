@@ -1,6 +1,5 @@
 <?xml version="1.0" ?>
 <launch>
-
 	<!-- input arguments -->
 	<arg name="use_chomp" default="true" />
 	<arg name="launch_bringup" default="true"/>
@@ -11,41 +10,29 @@
 	<arg name="sensor_usb_device" default="002"/>
 
 	<!-- fixed parameters -->
-	<arg name="arm_namespace" value="sia20d_arm"/>
-	<arg name="robot_description" value="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_sia20d_arm_workspace.xacro'"/>
+	<arg name="arm_namespace" value="ur5_arm"/>
+	<arg name="robot_description" value="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_ur5_arm_workspace.xacro'"/>
 	<arg name="sensor_name" value="$(arg arm_namespace)_kinect"/>
 
 	<!-- launch bringup -->
-	<include if="$(arg launch_bringup)" file="$(find mantis_config)/launch/mantis_sia20d_gripper_bringup.launch">
+	<include if="$(arg launch_bringup)" file="$(find mantis_config)/launch/mantis_ur5_gripper_bringup.launch">
 		<arg name="sim_only" value="$(arg sim_only)"/>
 	</include>
-
-
-<!-- SENSOR -->
-  <include file="$(find mantis_perception)/launch/mantis_sia20d_sensor.launch">
-		<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
-		<arg name="camera_name" value="$(arg sensor_name)"/>
-		<arg name="publish_tf" value="true" />
-  </include>
-
-
-  <!-- URDF Universal Robot Description File -->
-<!--  <include file="$(find longhorn)/launch/upload.launch" /> -->
- 
   <!-- ADD JOINT STATE PUBLISHER HERE WITH USE_GUI:=TRUE -->
-  <!-- Get TF -->
 <!--	<param name="robot_description"  command="$(arg robot_description)"/>
  <node pkg="robot_state_publisher" name="st_pub" type="state_publisher">
 	</node>-->
-<!-- Get TF -->
-<!-- launch bringup 
-<param name="robot_description"  command="$(arg robot_description)"/>
 
-	<include if="$(arg launch_bringup)" file="$(find mantis_config)/launch/mantis_sia20d_gripper_bringup.launch">
-		<arg name="sim_only" value="$(arg sim_only)"/>
-	</include>
--->
+<!-- SENSOR -->
+  <include  file="$(find mantis_perception)/launch/mantis_ur5_sensor.launch">
+		<arg name="arm_prefix" value="$(arg arm_namespace)_"/>
+		<arg name="camera_name" value="$(arg sensor_name)"/>
+		<arg name="publish_tf" value="false" />
+  </include>
+
+
 <group ns="$(arg arm_namespace)">
+
 <!-- SEGMENTATION -->
   <include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
 	<arg name="tabletop_segmentation_points_in" 
