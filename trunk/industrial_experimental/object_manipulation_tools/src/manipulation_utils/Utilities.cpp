@@ -10,6 +10,20 @@
 
 namespace manipulation_utils
 {
+/*
+ * generateGraspPoses
+ * Description:
+ * 		Generates additional poses by post multiplying a rotation matrix to the original pose.  The rotation matrix is
+ * 		produced by rotating about a axis by an angle increment.
+ *
+ * Input arguments:
+ * 		pose:			Original pose.
+ * 		rotationAxix:	Axis of rotation.
+ * 		numCandidates:	Number of poses to generate.  The angle increment will be calculated  as 2*pi/numCandidates.
+ *
+ * 	Output arguments:
+ * 		poses:			Array of generated poses
+ */
 	void generateGraspPoses(const geometry_msgs::Pose &pose,tf::Vector3 rotationAxis,int numCandidates,
 			std::vector<geometry_msgs::Pose> &poses)
 	{
@@ -20,12 +34,9 @@ namespace manipulation_utils
 		// converting initial pose to tf
 		tf::poseMsgToTF(pose,graspTf);
 
-		// obtaining approach vector
-		tf::Vector3 approachVector = rotationAxis;
-
 		for(int i = 0; i < numCandidates; i++)
 		{
-			candidateTf = graspTf*tf::Transform(tf::Quaternion(approachVector,i*angle),
+			candidateTf = graspTf*tf::Transform(tf::Quaternion(rotationAxis,i*angle),
 					tf::Vector3(0.0f,0.0f,0.0f));
 			geometry_msgs::Pose candidatePose = geometry_msgs::Pose();
 			tf::poseTFToMsg(candidateTf,candidatePose);
