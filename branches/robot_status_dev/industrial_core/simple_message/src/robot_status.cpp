@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -67,10 +67,10 @@ int toROSMsgEnum(RobotModes::RobotMode mode)
     case RobotModes::MANUAL:
       return industrial_msgs::RobotMode::MANUAL;
       break;
-    case RobotModes::UNKNOWN:
-      return industrial_msgs::RobotMode::UNKNOWN;
+    case RobotModes::TS_UNKNOWN:
+      return industrial_msgs::RobotMode::TS_UNKNOWN;
   }
-  return industrial_msgs::RobotMode::UNKNOWN;
+  return industrial_msgs::RobotMode::TS_UNKNOWN;
 
 }
 ;
@@ -89,8 +89,8 @@ int toROSMsgEnum(TriStates::TriState state)
 
   switch (state)
   {
-    case TriStates::UNKNOWN:
-      return industrial_msgs::TriState::UNKNOWN;
+    case TriStates::TS_UNKNOWN:
+      return industrial_msgs::TriState::TS_UNKNOWN;
       break;
     case TriStates::TRUE:
       return industrial_msgs::TriState::TRUE;
@@ -99,7 +99,7 @@ int toROSMsgEnum(TriStates::TriState state)
       return industrial_msgs::TriState::FALSE;
       break;
   }
-  return industrial_msgs::TriState::UNKNOWN;
+  return industrial_msgs::TriState::TS_UNKNOWN;
 
 }
 ;
@@ -119,8 +119,8 @@ RobotStatus::~RobotStatus(void)
 
 void RobotStatus::init()
 {
-  this->init(TriStates::UNKNOWN, TriStates::UNKNOWN, 0, TriStates::UNKNOWN, TriStates::UNKNOWN, RobotModes::UNKNOWN,
-             TriStates::UNKNOWN);
+  this->init(TriStates::TS_UNKNOWN, TriStates::TS_UNKNOWN, 0, TriStates::TS_UNKNOWN, TriStates::TS_UNKNOWN, RobotModes::UNKNOWN,
+             TriStates::TS_UNKNOWN);
 }
 
 void RobotStatus::init(TriState drivesPowered, TriState eStopped, industrial::shared_types::shared_int errorCode,

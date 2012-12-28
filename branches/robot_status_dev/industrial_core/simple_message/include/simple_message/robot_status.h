@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Southwest Research Institute
@@ -72,18 +72,21 @@ int toROSMsgEnum(RobotModes::RobotMode mode);
 typedef RobotModes::RobotMode RobotMode;
 
 /**
- * \brief Enumeration mirrors industrial_msgs/TriState definition
+ * \brief Enumeration mirrors industrial_msgs/TriState definition.
+ * NOTE: The TS prefix is needed because the ON and TRUE value collide
+ * with other defined types on some systems.
  *
  */
 namespace TriStates
 {
+
 enum TriState
 {
-  UNKNOWN = -1,
+  TS_UNKNOWN = -1,
   // These values must all be the same
-  TRUE = 1, ON = 1, ENABLED = 1, HIGH = 1,
+  TS_TRUE = 1,   TS_ON = 1,  TS_ENABLED = 1,  TS_HIGH = 1,
   // These values must all be the same
-  FALSE = 0, OFF = 0, DISABLED = 0, LOW = 0
+  TS_FALSE = 0,   TS_OFF = 0,  TS_DISABLED = 0,  TS_LOW = 0
 };
 
 #ifdef ROS
