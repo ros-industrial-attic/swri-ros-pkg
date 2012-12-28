@@ -11,6 +11,7 @@
 #include <object_manipulation_tools/robot_navigators/RobotNavigator.h>
 #include <perception_tools/segmentation/SphereSegmentation.h>
 #include <mantis_object_manipulation/zone_selection/PickPlaceZoneSelector.h>
+#include <mantis_perception/mantis_recognition.h>
 #include <object_manipulation_tools/manipulation_utils/Utilities.h>
 #include <boost/thread/mutex.hpp>
 
@@ -86,6 +87,8 @@ protected:
 	bool performSphereSegmentation();
 	virtual bool performRecognition();
 	virtual bool performGraspPlanning();
+	virtual bool performPickGraspPlanning();
+	virtual bool performPlaceGraspPlanning();
 
 	// this method also check if either place pose is within the kinematic reach of the robot arm
 	// and saves the place sequence move for later execution
@@ -123,7 +126,7 @@ protected:
 
 	// recognition results
 	arm_navigation_msgs::CollisionObject recognized_collision_object_;
-	int recognized_obj_id_;
+	mantis_perception::mantis_recognition::Response recognition_result_;
 
 	// candidate pick poses to evaluate
 	std::vector<geometry_msgs::PoseStamped> candidate_pick_poses_;

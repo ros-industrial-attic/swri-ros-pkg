@@ -75,6 +75,7 @@ bool SortClutterArmNavigator::moveArmThroughPlaceSequence()
 	if(success)
 	{
 		ROS_INFO_STREAM(NODE_NAME<<": Grasp place move succeeded");
+		updateMarkerArrayMsg();
 	}
 	else
 	{
@@ -381,100 +382,177 @@ bool SortClutterArmNavigator::performSegmentation()
 	return true;
 }
 
-bool SortClutterArmNavigator::performRecognition()
+//bool SortClutterArmNavigator::performRecognition()
+//{
+//
+//	// preparing recognition results
+//	arm_navigation_msgs::CollisionObject obj;
+//	obj.id = makeCollisionObjectNameFromModelId(0);
+//	mantis_perception::mantis_recognition rec_srv;
+//	rec_srv.request.clusters = segmented_clusters_;
+//	rec_srv.request.table = segmentation_results_.table;
+//
+//	// recognition call
+//	if (!recognition_client_.call(rec_srv))
+//	{
+//	  ROS_ERROR_STREAM(NODE_NAME<<": Call to mantis recognition service failed");
+//	  return false;
+//	}
+//	else
+//	{
+//		ROS_WARN_STREAM(NODE_NAME<<": Found object with id: "<<rec_srv.response.model_id);
+//	}
+//
+//	//Storing recognition results
+//
+//	// parsing pose results
+//	tf::Transform t = tf::Transform::getIdentity();
+//	nrg_object_recognition::pose &tempPose =  rec_srv.response.pose;
+//	t.setOrigin(tf::Vector3(tempPose.x,tempPose.y,tempPose.z));
+//	t.setRotation(tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),tempPose.rotation));
+//
+//	ROS_INFO_STREAM(NODE_NAME<<": Recognized object position in world coordinates is: [ "<<
+//			t.getOrigin().x()<<", "<<t.getOrigin().y()<<" "<<t.getOrigin().z()<<" ]");
+//
+//	// storing pose
+//	geometry_msgs::PoseStamped pose;
+//	tf::poseTFToMsg(t,pose.pose);
+//	pose.header.frame_id = cm_.getWorldFrameId();
+//	recognized_obj_pose_map_[std::string(obj.id)] = pose;
+//
+//	// adding bounding sphere of object as collision model to planning scene
+//	ROS_INFO_STREAM(NODE_NAME<<": Adding Object bounding sphere to planning scene with frame id "
+//			<<cm_.getWorldFrameId()<<" and radius: "<<BOUNDING_SPHERE_RADIUS);
+//	obj.header.frame_id = cm_.getWorldFrameId();
+//	obj.padding = 0;
+//	obj.shapes = std::vector<arm_navigation_msgs::Shape>();
+//	arm_navigation_msgs::Shape shape;
+//	shape.type = arm_navigation_msgs::Shape::SPHERE;
+//	shape.dimensions.push_back(BOUNDING_SPHERE_RADIUS);
+//	obj.shapes.push_back(shape);
+//	obj.poses.push_back(pose.pose);
+//	obj.poses[0].position.z  = pose.pose.position.z - BOUNDING_SPHERE_RADIUS;
+//	addDetectedObjectToLocalPlanningScene(obj);
+//
+//	// storing model detail for path planning
+//	household_objects_database_msgs::DatabaseModelPoseList models;
+//	household_objects_database_msgs::DatabaseModelPose model;
+//	model.model_id = 0;
+//	model.pose = pose;
+//	model.confidence = 1.0f;
+//	model.detector_name = "cfh_recognition";
+//	models.model_list.push_back(model);
+//	recognized_models_.clear();
+//	recognized_models_.push_back(models);
+//	recognition_result_ = rec_srv.response;
+//
+//	// storing grasp candidate poses
+//	candidate_pick_poses_.clear();
+//	if(!rec_srv.response.pick_poses.empty())
+//	{
+//		ROS_INFO_STREAM(NODE_NAME<<": Recognition service returned "<<rec_srv.response.pick_poses.size()<<" poses");
+//		candidate_pick_poses_.assign(rec_srv.response.pick_poses.begin(),rec_srv.response.pick_poses.end());
+//	}
+//	else
+//	{
+//		ROS_ERROR_STREAM(NODE_NAME<<": Recognition service returned 0 pick poses");
+//	}
+//	// Finished storing recognition results
+//
+//	return true;
+//}
+
+bool SortClutterArmNavigator::performPlaceGraspPlanning()
 {
+	using namespace mantis_object_manipulation;
 
-	// preparing recognition results
-	arm_navigation_msgs::CollisionObject obj;
-	obj.id = makeCollisionObjectNameFromModelId(0);
-	mantis_perception::mantis_recognition rec_srv;
-	rec_srv.request.clusters = segmented_clusters_;
-	rec_srv.request.table = segmentation_results_.table;
+	// Finding location in place zone for recognized object
+	ROS_WARN_STREAM(NODE_NAME<<": finding place location for bb box of side length "<<attached_obj_bb_side_);
+	tf::Vector3 objSize = tf::Vector3(attached_obj_bb_side_,attached_obj_bb_side_,attached_obj_bb_side_);
+	PickPlaceZoneSelector::ObjectDetails objDetails(tf::Transform::getIdentity(),objSize,
+			recognition_result_.model_id,recognition_result_.label);
+	zone_selector_.setNextObjectDetails(objDetails);
 
-	// recognition call
-	if (!recognition_client_.call(rec_srv))
+	// start by checking for reachable place locations
+	candidate_place_poses_.clear();
+	if(!zone_selector_.generateNextLocationCandidates(candidate_place_poses_))
 	{
-	  ROS_ERROR_STREAM(NODE_NAME<<": Call to mantis recognition service failed");
-	  return false;
+		ROS_WARN_STREAM(NODE_NAME<<": Couldn't find available location for object, swapping zones.");
+		updateMarkerArrayMsg();
+		return false;
+	}
+
+	//	updating grasp place goal data
+	grasp_place_goal_.arm_name = arm_group_name_;
+	grasp_place_goal_.approach.direction.header.frame_id = cm_.getWorldFrameId();
+	grasp_place_goal_.collision_object_name = "attached_"+current_grasped_object_name_[arm_group_name_];
+
+	// finding valid grasp place sequence
+	bool found_valid = false;
+	std::vector<object_manipulation_msgs::Grasp> valid_grasps; // will keep only valid grasp pick sequence which grasp yields a valid place sequence;
+	std::vector<object_manipulator::GraspExecutionInfo> valid_pick_sequence;
+	std::vector<object_manipulator::PlaceExecutionInfo> valid_place_sequence;
+
+	// finding pose of wrist relative to object
+	tf::StampedTransform wrist_in_tcp_tf, wrist_in_obj_tf;// wrist pose relative to gripper
+	_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wrist_in_tcp_tf);
+	for(std::size_t i = 0; i < grasp_candidates_.size(); i++)
+	{
+		tf::poseMsgToTF(grasp_candidates_[i].grasp_pose,wrist_in_obj_tf);
+		tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),grasp_place_goal_.grasp.grasp_pose);
+		if(createPlaceMoveSequence(grasp_place_goal_,candidate_place_poses_,valid_place_sequence))
+		{
+			if(!found_valid)
+			{
+				// storing first valid
+				grasp_place_sequence_.assign(valid_place_sequence.begin(),valid_place_sequence.end());
+			}
+
+			found_valid = true;
+			valid_grasps.push_back(grasp_candidates_[i]);
+			valid_pick_sequence.push_back(grasp_pick_sequence_[i]);
+		}
+	}
+
+	if(!found_valid)
+	{
+		ROS_ERROR_STREAM(NODE_NAME<<": Failed to create valid grasp place sequence");
+		return false;
 	}
 	else
 	{
-		ROS_WARN_STREAM(NODE_NAME<<": Found object with id: "<<rec_srv.response.model_id);
+		// storing valid pick sequences
+		grasp_candidates_.assign(valid_grasps.begin(),valid_grasps.end());
+		grasp_pick_sequence_.assign(valid_pick_sequence.begin(),valid_pick_sequence.end());
 	}
 
-/*
- * Storing recognition results
- */
-	// parsing pose results
-	tf::Transform t = tf::Transform::getIdentity();
-	nrg_object_recognition::pose &tempPose =  rec_srv.response.pose;
-	t.setOrigin(tf::Vector3(tempPose.x,tempPose.y,tempPose.z));
-	t.setRotation(tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),tempPose.rotation));
+	return found_valid;
 
-	ROS_INFO_STREAM(NODE_NAME<<": Recognized object position in world coordinates is: [ "<<
-			t.getOrigin().x()<<", "<<t.getOrigin().y()<<" "<<t.getOrigin().z()<<" ]");
-
-	// storing pose
-	geometry_msgs::PoseStamped pose;
-	tf::poseTFToMsg(t,pose.pose);
-	pose.header.frame_id = cm_.getWorldFrameId();
-	recognized_obj_pose_map_[std::string(obj.id)] = pose;
-
-	// adding bounding sphere of object as collision model to planning scene
-	ROS_INFO_STREAM(NODE_NAME<<": Adding Object bounding sphere to planning scene with frame id "
-			<<cm_.getWorldFrameId()<<" and radius: "<<BOUNDING_SPHERE_RADIUS);
-	obj.header.frame_id = cm_.getWorldFrameId();
-	obj.padding = 0;
-	obj.shapes = std::vector<arm_navigation_msgs::Shape>();
-	arm_navigation_msgs::Shape shape;
-	shape.type = arm_navigation_msgs::Shape::SPHERE;
-	shape.dimensions.push_back(BOUNDING_SPHERE_RADIUS);
-	obj.shapes.push_back(shape);
-	obj.poses.push_back(pose.pose);
-	obj.poses[0].position.z  = pose.pose.position.z - BOUNDING_SPHERE_RADIUS;
-	addDetectedObjectToLocalPlanningScene(obj);
-
-	// storing model detail for path planning
-	household_objects_database_msgs::DatabaseModelPoseList models;
-	household_objects_database_msgs::DatabaseModelPose model;
-	model.model_id = 0;
-	model.pose = pose;
-	model.confidence = 1.0f;
-	model.detector_name = "cfh_recognition";
-	models.model_list.push_back(model);
-	recognized_models_.clear();
-	recognized_models_.push_back(models);
-	// Finished storing recognition results
-
-	// ==================================================================================
-	// passed recognized object details to zone selector
-	updateMarkerArrayMsg();
-	tf::Vector3 objSize = tf::Vector3(attached_obj_bb_side_,attached_obj_bb_side_,attached_obj_bb_side_);
-	PickPlaceZoneSelector::ObjectDetails objDetails(tf::Transform::getIdentity(),objSize,
-			rec_srv.response.model_id,rec_srv.response.label);
-	zone_selector_.setNextObjectDetails(objDetails);
-
-	return true;
+	// checking if available place location is reachable
+//	ROS_INFO_STREAM(NODE_NAME<<": Evaluating reachability for found place location.");
+//	if(findIkSolutionForPlacePoses())
+//	{
+//		ROS_INFO_STREAM(NODE_NAME<<": Place location is reachable, continue");
+//	}
+//	else
+//	{
+//		ROS_ERROR_STREAM(NODE_NAME<<": Place location is out of reach, canceling");
+//		return false;
+//	}
 }
 
 bool SortClutterArmNavigator::performGraspPlanningForSorting()
 {
 	using namespace mantis_object_manipulation;
 
-	// start by checking for reachable place locations
-	candidate_place_poses_.clear();
-
-	// generating locations in active place zones
-	ROS_WARN_STREAM(NODE_NAME<<": using box with size "<<attached_obj_bb_side_);
-	if(!zone_selector_.generateNextLocationCandidates(candidate_place_poses_))
+	if(!performPlaceGraspPlanning())
 	{
-		ROS_WARN_STREAM(NODE_NAME<<": Couldn't find available location for object");
 		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
 		return false;
 	}
 
 	// call grasp planning method that uses recognition results
-	if(!AutomatedPickerRobotNavigator::performGraspPlanning())
+	if(!AutomatedPickerRobotNavigator::performPickGraspPlanning())
 	{
 		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
 		return false;
@@ -494,7 +572,7 @@ bool SortClutterArmNavigator::performGraspPlanningForClutter()
 	clutter_dropoff_location_.generateNextLocationCandidates(candidate_place_poses_);
 
 	// call grasp planning method that uses recognition results
-	if(!AutomatedPickerRobotNavigator::performGraspPlanning())
+	if(!AutomatedPickerRobotNavigator::performPickGraspPlanning())
 	{
 		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
 		return false;
@@ -552,7 +630,7 @@ bool SortClutterArmNavigator::performGraspPlanningForSingulation()
 	else
 	{
 		// recognition data available then it must be moving objects from sorted zone
-		success = AutomatedPickerRobotNavigator::performGraspPlanning();
+		success = AutomatedPickerRobotNavigator::performPickGraspPlanning();
 	}
 
 	// call grasp planning method that uses recognition results
