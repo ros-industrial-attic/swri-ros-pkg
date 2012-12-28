@@ -225,7 +225,7 @@
 				</geometry-->
       <origin rpy="0 0 0" xyz="0 0 -0.048"/>
       <geometry>
-        <mesh filename="package://mantis_config/config/meshes/vacuum_gripper.STL"/>
+        <mesh filename="package://mantis_config/config/meshes/vacuum_gripper_vis.STL"/>
       </geometry>
       <material name="silver">
         <color rgba="0.8 0.8 0.8 1"/>
