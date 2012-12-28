@@ -44,7 +44,8 @@ namespace robot_state_interface
 RobotStateInterface::RobotStateInterface()
 {
   this->connection_ = NULL;
-  this->add_handler(&default_handler_);
+  this->add_handler(&default_joint_handler_);
+  this->add_handler(&default_robot_status_handler_);
 }
 
 bool RobotStateInterface::init()
@@ -86,9 +87,13 @@ bool RobotStateInterface::init(SmplMsgConnection* connection, std::vector<std::s
     return false;
 
   // initialize default handlers
-  if (!default_handler_.init(connection_, joint_names))
+  if (!default_joint_handler_.init(connection_, joint_names))
     return false;
-  this->add_handler(&default_handler_);
+  this->add_handler(&default_joint_handler_);
+
+  if (!default_robot_status_handler_.init(connection_))
+      return false;
+  this->add_handler(&default_robot_status_handler_);
 
   return true;
 }

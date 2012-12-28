@@ -40,8 +40,9 @@ int main(int argc, char** argv)
 
   // launch the default Robot State Interface connection/handlers
   RobotStateInterface rsi;
-  rsi.init();
-  rsi.run();
-
+  if (rsi.init())
+  {
+    rsi.run();
+  }
   return 0;
 }
