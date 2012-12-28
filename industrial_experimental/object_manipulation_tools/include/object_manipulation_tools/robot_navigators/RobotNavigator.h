@@ -190,12 +190,13 @@ protected:
 	/* move sequence creation methods
 	 * These methods generate all the necessary move steps corresponding to each manipulation sequence
 	 */
-	virtual void createPickMoveSequence(const object_manipulation_msgs::PickupGoal &pickupGoal,
-			const std::vector<object_manipulation_msgs::Grasp> &grasps,
-			std::vector<object_manipulator::GraspExecutionInfo> &graspSequence);
-	virtual void createPlaceMoveSequence(const object_manipulation_msgs::PlaceGoal &placeGoal,
-			const std::vector<geometry_msgs::PoseStamped> &placePoses,
-			std::vector<object_manipulator::PlaceExecutionInfo> &placeSequence);
+	virtual bool createPickMoveSequence(const object_manipulation_msgs::PickupGoal &pickupGoal,
+			const std::vector<object_manipulation_msgs::Grasp> &grasps_candidates,
+			std::vector<object_manipulator::GraspExecutionInfo> &grasp_sequence,
+			std::vector<object_manipulation_msgs::Grasp> &valid_grasps);
+	virtual bool createPlaceMoveSequence(const object_manipulation_msgs::PlaceGoal &placeGoal,
+			const std::vector<geometry_msgs::PoseStamped> &place_poses,
+			std::vector<object_manipulator::PlaceExecutionInfo> &place_sequence);
 
 protected:
 
@@ -265,6 +266,10 @@ protected:
 	object_manipulation_msgs::PickupGoal grasp_pickup_goal_;
 	object_manipulation_msgs::PlaceGoal grasp_place_goal_;
 	std::vector<object_manipulation_msgs::Grasp> grasp_candidates_;
+
+	// pick/place move execution data
+	std::vector<object_manipulator::GraspExecutionInfo> grasp_pick_sequence_;
+	std::vector<object_manipulator::PlaceExecutionInfo> grasp_place_sequence_;
 
 	//
 	geometry_msgs::PoseStamped current_place_location_;
