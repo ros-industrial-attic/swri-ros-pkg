@@ -188,7 +188,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0.036 -0.1"/>
       <geometry>
-        <mesh filename="package://mantis_config/config/meshes/vacuum_gripper.STL"/>
+        <mesh filename="package://mantis_config/config/meshes/vacuum_gripper_vis.STL"/>
       </geometry>
       <material name="silver">
         <color rgba="0.8 0.8 0.8 1"/>
@@ -197,7 +197,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0.036 -0.1"/>
       <geometry>
-        <mesh filename="package://mantis_config/config/meshes/vacuum_gripper.stl"/>
+        <mesh filename="package://mantis_config/config/meshes/vacuum_gripper_col.stl"/>
       </geometry>
       <material name="another_blue2">
         <color rgba="0.38 0.54 0.83 1"/>
