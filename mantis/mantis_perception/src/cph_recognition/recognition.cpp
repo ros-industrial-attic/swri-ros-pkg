@@ -39,15 +39,15 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
             mantis_perception::mantis_recognition::Response &main_response)
 {  
   //Offset points from centroid of part to object training frame and thus center/grasp point
-  float pvct_1_x_offset = 0.0044;		//0.0045
+  float pvct_1_x_offset = 0.0034;		//0.0045
   float pvct_1_y_offset = -0.0019;		//-0.0019
-  float pvct_1_z_offset = 0.010;		//0.032-(0.025)=0.007
+  float pvct_1_z_offset = 0.012;		//0.032-(0.025)=0.007
   float plug_1_x_offset = -0.0036;		//0.000811
-  float plug_1_y_offset = 0.0021;		//kinect_1=-0.010399 asus_1=-0.00199
+  float plug_1_y_offset = 0.001;		//0.00199
   float plug_1_z_offset = 0.028;		//kinect_1=0.03052 asus_1=0.0163
   float enc_1_x_offset = 0.00563;		//kinect_1=0.0085645 asus_1=0.00269
   float enc_1_y_offset = -0.0044;		//kinect_1=-0.0099451 asus_1=0.0010989
-  float enc_1_z_offset = 0.05;			//kinect_1=0.03923 asus_1=0.03701
+  float enc_1_z_offset = 0.045;			//kinect_1=0.03923 asus_1=0.03701
   float pvc_elbow_1_x_offset = 0.005878;//kinect_1=0.004949 asus_1=0.005878, avg=0.00541
   float pvc_elbow_1_y_offset = -0.00108;//kinect_1=-0.006247 asus_1=-0.00108, avg=-0.00366
   float pvc_elbow_1_z_offset = 0.02261;	//kinect_1=0.0182536 asus_1=0.02261, avg=0.02043
@@ -183,7 +183,10 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   found=label.find_last_of("/");
   //Depending on label and angle, assign marker mesh, model_id, position for mesh and for part frame
   ROS_WARN_STREAM("Object labeled as "<< label.substr(found+1));
-  if(label.substr(found+1)=="enclosure" || label.substr(found+1)=="enclosure_a_2"|| label.substr(found+1)=="enclosure_a_1")
+  if(label.substr(found+1)=="enclosure" ||
+		  label.substr(found+1)=="enclosure_a_2"||
+		  label.substr(found+1)=="enclosure_a_1" ||
+		  label.substr(found+1)=="enclosure_1")
   {
     main_response.model_id=1;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
@@ -206,7 +209,13 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 	mesh_marker.pose.position.y=rec_srv.response.pose.y-(small_plug_y_offset);
 	mesh_marker.pose.position.z=rec_srv.response.pose.z-(small_plug_z_offset);
   }
-  else if (label.substr(found+1)=="pvct" || label.substr(found+1)=="pvct_a_4" || label.substr(found+1)=="pvct_a_1"|| label.substr(found+1)=="pvct_a_2"|| label.substr(found+1)=="pvct_a_3")
+  else if (label.substr(found+1)=="pvct" ||
+		  label.substr(found+1)=="pvct_a_4" ||
+		  label.substr(found+1)=="pvct_a_1" ||
+		  label.substr(found+1)=="pvct_a_2" ||
+		  label.substr(found+1)=="pvct_a_3" ||
+		  label.substr(found+1)=="pvct_1" ||
+		  label.substr(found+1)=="pcvt_2" )
   {
     main_response.model_id=3;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
@@ -218,7 +227,12 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (pvct_1_z_offset);
 
   }
-  else if (label.substr(found+1)=="plug_1" || label.substr(found+1)=="plugf" || label.substr(found+1)=="plug_a_1" || label.substr(found+1)=="plug_a_2"|| label.substr(found+1)=="plug_a_3")
+  else if (label.substr(found+1)=="plug" ||
+		  label.substr(found+1)=="plug_1" ||
+		  label.substr(found+1)=="plugf" ||
+		  label.substr(found+1)=="plug_a_1" ||
+		  label.substr(found+1)=="plug_a_2"||
+		  label.substr(found+1)=="plug_a_3")
   {
     main_response.model_id=4;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.STL";
