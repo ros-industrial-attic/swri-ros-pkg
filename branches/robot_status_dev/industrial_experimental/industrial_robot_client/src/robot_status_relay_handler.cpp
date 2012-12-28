@@ -75,6 +75,8 @@ bool RobotStatusRelayHandler::internalCB(RobotStatusMessage & in)
   status.in_motion.val = TriStates::toROSMsgEnum(in.status_.getInMotion());
   status.mode.val = RobotModes::toROSMsgEnum(in.status_.getMode());
   status.motion_possible.val = TriStates::toROSMsgEnum(in.status_.getMotionPossible());
+  
+  this->pub_robot_status_.publish(status);
 
   // Reply back to the controller if the sender requested it.
   if (CommTypes::SERVICE_REQUEST == in.getMessageType())

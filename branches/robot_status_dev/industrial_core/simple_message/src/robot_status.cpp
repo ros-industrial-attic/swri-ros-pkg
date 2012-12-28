@@ -67,10 +67,10 @@ int toROSMsgEnum(RobotModes::RobotMode mode)
     case RobotModes::MANUAL:
       return industrial_msgs::RobotMode::MANUAL;
       break;
-    case RobotModes::TS_UNKNOWN:
-      return industrial_msgs::RobotMode::TS_UNKNOWN;
+    case RobotModes::UNKNOWN:
+      return industrial_msgs::RobotMode::UNKNOWN;
   }
-  return industrial_msgs::RobotMode::TS_UNKNOWN;
+  return industrial_msgs::RobotMode::UNKNOWN;
 
 }
 ;
@@ -90,16 +90,16 @@ int toROSMsgEnum(TriStates::TriState state)
   switch (state)
   {
     case TriStates::TS_UNKNOWN:
-      return industrial_msgs::TriState::TS_UNKNOWN;
+      return industrial_msgs::TriState::UNKNOWN;
       break;
-    case TriStates::TRUE:
+    case TriStates::TS_TRUE:
       return industrial_msgs::TriState::TRUE;
       break;
-    case TriStates::FALSE:
+    case TriStates::TS_FALSE:
       return industrial_msgs::TriState::FALSE;
       break;
   }
-  return industrial_msgs::TriState::TS_UNKNOWN;
+  return industrial_msgs::TriState::UNKNOWN;
 
 }
 ;
@@ -119,8 +119,8 @@ RobotStatus::~RobotStatus(void)
 
 void RobotStatus::init()
 {
-  this->init(TriStates::TS_UNKNOWN, TriStates::TS_UNKNOWN, 0, TriStates::TS_UNKNOWN, TriStates::TS_UNKNOWN, RobotModes::UNKNOWN,
-             TriStates::TS_UNKNOWN);
+  this->init(TriStates::TS_UNKNOWN, TriStates::TS_UNKNOWN, 0, TriStates::TS_UNKNOWN,
+             TriStates::TS_UNKNOWN, RobotModes::UNKNOWN, TriStates::TS_UNKNOWN);
 }
 
 void RobotStatus::init(TriState drivesPowered, TriState eStopped, industrial::shared_types::shared_int errorCode,
