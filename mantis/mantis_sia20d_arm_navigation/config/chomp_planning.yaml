@@ -12,10 +12,10 @@ collision_links:
   sia20d_arm_gripper_body
   sia20d_arm_coupler
   table_base1
-  back_wall1
   front_wall1
   left_wall1
   right_wall1
+#  back_wall1
   #sia20d_arm_kinect_keepout
 
 joint_costs:
