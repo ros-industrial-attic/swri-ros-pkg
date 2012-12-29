@@ -55,11 +55,17 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   float small_plug_y_offset = 0.00;
   float small_plug_z_offset = 0.038;	//55
   //Set vertical offset from part frame/center to pick frame/top of part
-  float plug_pick_point_z = 0.048;
-  float enc_pick_point_z = 0.051;
-  float pvct_pick_point_z = 0.025;
-  float pvc_elbow_pick_point_z = 0.030;
-  float small_plug_pick_point_z = 0.045;
+  double _plug_pick_point_z;
+  double _enc_pick_point_z;
+  double _pvct_pick_point_z;
+  double _pvc_elbow_pick_point_z;
+  double _small_plug_pick_point_z;
+  ros::param::param("/plug_pick_point_z", _plug_pick_point_z, 0.048);
+  ros::param::param("/enc_pick_point_z", _enc_pick_point_z, 0.051);
+  ros::param::param("/pvct_pick_point_z", _pvct_pick_point_z, 0.025);
+  ros::param::param("/pvc_elbow_pick_point_z", _pvc_elbow_pick_point_z, 0.030);
+  ros::param::param("/small_plug_pick_point_z", _small_plug_pick_point_z, 0.045);
+
   bool use_region_growing = false;
 
   visualization_msgs::Marker make_marker(geometry_msgs::PoseStamped pick_pose, tf::Quaternion part_orientation);
@@ -192,7 +198,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
     pick_pose.pose.position.x = rec_srv.response.pose.x - (enc_1_x_offset);//+enc_pick_point_x;//enc_pick.x();
     pick_pose.pose.position.y = rec_srv.response.pose.y - (enc_1_y_offset);//enc_pick.y();
-    pick_pose.pose.position.z = rec_srv.response.pose.z - (enc_1_z_offset)+enc_pick_point_z;
+    pick_pose.pose.position.z = rec_srv.response.pose.z - (enc_1_z_offset)+_enc_pick_point_z;
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (enc_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (enc_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (enc_1_z_offset);
@@ -204,7 +210,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/small_plug.STL";
     pick_pose.pose.position.x = rec_srv.response.pose.x-(small_plug_x_offset);
 	pick_pose.pose.position.y = rec_srv.response.pose.y-(small_plug_y_offset);
-	pick_pose.pose.position.z = rec_srv.response.pose.z-(small_plug_z_offset) + small_plug_pick_point_z;
+	pick_pose.pose.position.z = rec_srv.response.pose.z-(small_plug_z_offset) + _small_plug_pick_point_z;
 	mesh_marker.pose.position.x=rec_srv.response.pose.x-(small_plug_x_offset);
 	mesh_marker.pose.position.y=rec_srv.response.pose.y-(small_plug_y_offset);
 	mesh_marker.pose.position.z=rec_srv.response.pose.z-(small_plug_z_offset);
@@ -221,7 +227,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
     pick_pose.pose.position.x = rec_srv.response.pose.x - (pvct_1_x_offset);
     pick_pose.pose.position.y = rec_srv.response.pose.y - (pvct_1_y_offset);
-    pick_pose.pose.position.z = rec_srv.response.pose.z - (pvct_1_z_offset)+pvct_pick_point_z/2;
+    pick_pose.pose.position.z = rec_srv.response.pose.z - (pvct_1_z_offset)+_pvct_pick_point_z/2;
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (pvct_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (pvct_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (pvct_1_z_offset);
@@ -238,7 +244,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.STL";
     pick_pose.pose.position.x = rec_srv.response.pose.x - (plug_1_x_offset);
     pick_pose.pose.position.y = rec_srv.response.pose.y - (plug_1_y_offset);
-    pick_pose.pose.position.z = rec_srv.response.pose.z - (plug_1_z_offset)+plug_pick_point_z;
+    pick_pose.pose.position.z = rec_srv.response.pose.z - (plug_1_z_offset)+_plug_pick_point_z;
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (plug_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (plug_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (plug_1_z_offset);
@@ -250,7 +256,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_elbow.STL";
     pick_pose.pose.position.x = rec_srv.response.pose.x - (pvc_elbow_1_x_offset);
     pick_pose.pose.position.y = rec_srv.response.pose.y - (pvc_elbow_1_y_offset);
-    pick_pose.pose.position.z = rec_srv.response.pose.z - (pvc_elbow_1_z_offset)+pvc_elbow_pick_point_z;
+    pick_pose.pose.position.z = rec_srv.response.pose.z - (pvc_elbow_1_z_offset)+_pvc_elbow_pick_point_z;
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (pvc_elbow_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (pvc_elbow_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (pvc_elbow_1_z_offset);
