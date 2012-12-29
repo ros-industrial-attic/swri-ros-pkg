@@ -29,14 +29,14 @@ namespace manipulation_utils
 	{
 		tf::Transform graspTf = tf::Transform::getIdentity();
 		tf::Transform candidateTf;
-		tfScalar angle = tfScalar(2*M_PI/(double(numCandidates)));
+		tfScalar angle = tfScalar(2 * M_PI/(double(numCandidates)));
 
 		// converting initial pose to tf
 		tf::poseMsgToTF(pose,graspTf);
 
 		for(int i = 0; i < numCandidates; i++)
 		{
-			candidateTf = graspTf*tf::Transform(tf::Quaternion(rotationAxis,i*angle),
+			candidateTf = graspTf*tf::Transform(tf::Quaternion(rotationAxis,i*angle - M_PI),
 					tf::Vector3(0.0f,0.0f,0.0f));
 			geometry_msgs::Pose candidatePose = geometry_msgs::Pose();
 			tf::poseTFToMsg(candidateTf,candidatePose);

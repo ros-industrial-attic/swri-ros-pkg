@@ -121,6 +121,8 @@ protected:
 	 */
 	virtual bool performSegmentation();
 	virtual bool performRecognition();
+	virtual bool performPickGraspPlanning();
+	virtual bool performPlaceGraspPlanning();
 	virtual bool performGraspPlanning();
 	virtual bool performTrajectoryFiltering(const std::string& group_name,trajectory_msgs::JointTrajectory& jt);
 
