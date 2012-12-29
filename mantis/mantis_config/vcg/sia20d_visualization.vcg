@@ -25,8 +25,6 @@ Marker.Queue\ Size=100
 Marker2.Enabled=1
 Marker2.Marker\ Topic=/sia20d_arm/tabletop_segmentation_markers
 Marker2.Queue\ Size=100
-Marker2.tabletop_node=1
-Marker3.=1
 Marker3.Enabled=1
 Marker3.Marker\ Topic=/sia20d_arm/matching_mesh_marker
 Marker3.Queue\ Size=100
@@ -36,11 +34,6 @@ MarkerArray.Queue\ Size=100
 MarkerArray2.Enabled=1
 MarkerArray2.Marker\ Array\ Topic=/sia20d_arm/object_array
 MarkerArray2.Queue\ Size=100
-MarkerArray2.active_zones=1
-MarkerArray2.obstacles=1
-MarkerArray2.pick_zone=1
-MarkerArray2.pick_zone_name=1
-MarkerArray2.zone_names=1
 PointCloud2..AxisColorAutocompute\ Value\ Bounds=1
 PointCloud2..AxisColorAxis=2
 PointCloud2..AxisColorMax\ Value=10
@@ -64,7 +57,7 @@ PointCloud2.Alpha=1
 PointCloud2.Billboard\ Size=0.01
 PointCloud2.Color\ Transformer=RGB8
 PointCloud2.Decay\ Time=0
-PointCloud2.Enabled=0
+PointCloud2.Enabled=1
 PointCloud2.Position\ Transformer=XYZ
 PointCloud2.Queue\ Size=10
 PointCloud2.Selectable=1
@@ -198,15 +191,6 @@ Name=MarkerArray2
 [Display8]
 ClassName=rviz::MarkerDisplay
 Name=Marker3
-[MarkerArray2.place_zones]
-[MarkerArray2.place_zones/place_zone1_a]
-objects_in_zone=1
-[MarkerArray2.place_zones/place_zone1_b]
-objects_in_zone=1
-[MarkerArray2.place_zones/place_zone1_c]
-objects_in_zone=1
-[MarkerArray2.place_zones/place_zone2_a]
-objects_in_zone=1
 [TF.Frames.]
 back_wall1.Enabled=0
 front_wall1.Enabled=0

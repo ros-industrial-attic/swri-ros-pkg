@@ -1,7 +1,7 @@
 Background\ ColorB=1
 Background\ ColorG=0.364706
 Background\ ColorR=0
-Camera\ Config=0.414801 5.17557 5.50759 -0.797276 0.300763 0.481568
+Camera\ Config=0.569802 5.19556 4.55402 -0.359049 0.273948 -0.307622
 Camera\ Type=rviz::OrbitViewController
 Fixed\ Frame=/workcell_frame
 Grid.Alpha=0.5
@@ -31,6 +31,10 @@ Marker3.Queue\ Size=100
 Marker4.Enabled=1
 Marker4.Marker\ Topic=/ur5_arm/collision_proximity_body_spheres
 Marker4.Queue\ Size=100
+Marker5.=1
+Marker5.Enabled=1
+Marker5.Marker\ Topic=/sia20d_arm/matching_mesh_marker
+Marker5.Queue\ Size=100
 MarkerArray.Enabled=0
 MarkerArray.Marker\ Array\ Topic=/ur5_arm/planning_scene_markers_array
 MarkerArray.Queue\ Size=100
@@ -81,8 +85,37 @@ PointCloud2.Queue\ Size=10
 PointCloud2.Selectable=1
 PointCloud2.Style=0
 PointCloud2.Topic=/ur5_arm_kinect/depth_registered/points
+PointCloud22..AxisColorAutocompute\ Value\ Bounds=1
+PointCloud22..AxisColorAxis=2
+PointCloud22..AxisColorMax\ Value=10
+PointCloud22..AxisColorMin\ Value=-10
+PointCloud22..AxisColorUse\ Fixed\ Frame=1
+PointCloud22..FlatColorColorB=1
+PointCloud22..FlatColorColorG=1
+PointCloud22..FlatColorColorR=1
+PointCloud22..IntensityAutocompute\ Intensity\ Bounds=1
+PointCloud22..IntensityChannel\ Name=rgb
+PointCloud22..IntensityMax\ ColorB=1
+PointCloud22..IntensityMax\ ColorG=1
+PointCloud22..IntensityMax\ ColorR=1
+PointCloud22..IntensityMax\ Intensity=4096
+PointCloud22..IntensityMin\ ColorB=0
+PointCloud22..IntensityMin\ ColorG=0
+PointCloud22..IntensityMin\ ColorR=0
+PointCloud22..IntensityMin\ Intensity=0
+PointCloud22..IntensityUse\ full\ RGB\ spectrum=0
+PointCloud22.Alpha=1
+PointCloud22.Billboard\ Size=0.01
+PointCloud22.Color\ Transformer=RGB8
+PointCloud22.Decay\ Time=0
+PointCloud22.Enabled=1
+PointCloud22.Position\ Transformer=XYZ
+PointCloud22.Queue\ Size=10
+PointCloud22.Selectable=1
+PointCloud22.Style=1
+PointCloud22.Topic=/sia20d_arm_kinect/depth_registered/points
 Property\ Grid\ Splitter=743,78
-Property\ Grid\ State=expanded=.Global Options,Grid.Enabled,PointCloud2.Enabled,RobotModel.Enabled,Marker3.Enabled,MarkerArray2.Enabled,Marker4.Enabled,MarkerArray3.Enabled,RobotModel2.Enabled,MarkerArray4.Enabled,MarkerArray4.Namespaces;splitterratio=0.5
+Property\ Grid\ State=expanded=.Global Options,Grid.Enabled,PointCloud2.Enabled,RobotModel.Enabled,Marker3.Enabled,MarkerArray2.Enabled,Marker4.Enabled,MarkerArray3.Enabled,RobotModel2.Enabled,MarkerArray4.Enabled,MarkerArray4.Namespaces,PointCloud22.Enabled,Marker5.Enabled,Marker5.Namespaces;splitterratio=0.5
 QMainWindow=000000ff00000000fd0000000300000000000001ee00000387fc0200000001fb000000100044006900730070006c006100790073010000001d00000387000000ee00ffffff000000010000014a00000387fc0200000003fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000001d000001290000006700fffffffb0000000a00560069006500770073000000001d000001c1000000bb00fffffffb0000001200530065006c0065006300740069006f006e000000001d000003870000006700ffffff00000003000005000000003efc0100000001fb0000000800540069006d0065010000000000000500000002bf00ffffff0000030c0000038700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
 Robot\:\ RobotModel\ Link\ back_wall2Alpha=1
 Robot\:\ RobotModel\ Link\ back_wall2Enabled=1
@@ -299,6 +332,12 @@ Name=RobotModel2
 [Display13]
 ClassName=rviz::MarkerArrayDisplay
 Name=MarkerArray4
+[Display14]
+ClassName=rviz::PointCloud2Display
+Name=PointCloud22
+[Display15]
+ClassName=rviz::MarkerDisplay
+Name=Marker5
 [Display2]
 ClassName=rviz::RobotModelDisplay
 Name=RobotModel
@@ -323,6 +362,9 @@ Name=Marker3
 [Display9]
 ClassName=rviz::MarkerArrayDisplay
 Name=MarkerArray2
+[MarkerArray4.place_zones]
+[MarkerArray4.place_zones/place_zone1_b]
+objects_in_zone=1
 [TF2.Frames.]
 back_wall1.Enabled=0
 back_wall2.Enabled=0
