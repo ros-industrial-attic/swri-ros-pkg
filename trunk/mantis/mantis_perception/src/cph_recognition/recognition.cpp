@@ -47,7 +47,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   float plug_1_z_offset = 0.028;		//kinect_1=0.03052 asus_1=0.0163
   float enc_1_x_offset = 0.00563;		//kinect_1=0.0085645 asus_1=0.00269
   float enc_1_y_offset = -0.0044;		//kinect_1=-0.0099451 asus_1=0.0010989
-  float enc_1_z_offset = 0.045;			//kinect_1=0.03923 asus_1=0.03701
+  float enc_1_z_offset = 0.049;			//kinect_1=0.03923 asus_1=0.03701
   float pvc_elbow_1_x_offset = 0.005878;//kinect_1=0.004949 asus_1=0.005878, avg=0.00541
   float pvc_elbow_1_y_offset = -0.00108;//kinect_1=-0.006247 asus_1=-0.00108, avg=-0.00366
   float pvc_elbow_1_z_offset = 0.02261;	//kinect_1=0.0182536 asus_1=0.02261, avg=0.02043
@@ -55,16 +55,18 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   float small_plug_y_offset = 0.00;
   float small_plug_z_offset = 0.038;	//55
   //Set vertical offset from part frame/center to pick frame/top of part
+  std::string paramNamespace = "";
+  paramNamespace = "/" + ros::this_node::getName();
   double _plug_pick_point_z;
   double _enc_pick_point_z;
   double _pvct_pick_point_z;
   double _pvc_elbow_pick_point_z;
   double _small_plug_pick_point_z;
-  ros::param::param("/plug_pick_point_z", _plug_pick_point_z, 0.048);
-  ros::param::param("/enc_pick_point_z", _enc_pick_point_z, 0.051);
-  ros::param::param("/pvct_pick_point_z", _pvct_pick_point_z, 0.025);
-  ros::param::param("/pvc_elbow_pick_point_z", _pvc_elbow_pick_point_z, 0.030);
-  ros::param::param("/small_plug_pick_point_z", _small_plug_pick_point_z, 0.045);
+  ros::param::param(paramNamespace + "/plug_pick_point_z", _plug_pick_point_z, 0.048);
+  ros::param::param(paramNamespace + "/enc_pick_point_z", _enc_pick_point_z, 0.051);
+  ros::param::param(paramNamespace + "/pvct_pick_point_z", _pvct_pick_point_z, 0.025);
+  ros::param::param(paramNamespace + "/pvc_elbow_pick_point_z", _pvc_elbow_pick_point_z, 0.030);
+  ros::param::param(paramNamespace + "/small_plug_pick_point_z", _small_plug_pick_point_z, 0.045);
 
   bool use_region_growing = false;
 
