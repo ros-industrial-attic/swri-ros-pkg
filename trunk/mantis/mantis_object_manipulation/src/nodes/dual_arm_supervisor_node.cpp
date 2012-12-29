@@ -7,14 +7,20 @@
 
 #include <ros/ros.h>
 #include <mantis_object_manipulation/ArmHandshaking.h>
+#include <limits>
 
 const std::string ARM1_HANDSHAKING_SERVICE_NAME = "arm1_handshaking_service";
 const std::string ARM2_HANDSHAKING_SERVICE_NAME = "arm2_handshaking_service";
-const int MAX_SERVICE_CALL_ATTEMPTS = 10;
+const int MAX_SERVICE_CALL_ATTEMPTS = 8;
 
 typedef mantis_object_manipulation::ArmHandshaking ArmServiceType;
 typedef mantis_object_manipulation::ArmHandshaking::Response ArmResponse;
 typedef mantis_object_manipulation::ArmHandshaking::Request ArmRequest;
+
+// ros parameters
+static const std::string PARAM_MAX_CYCLE_COUNT="max_cycle_count";
+static const std::string PARAM_INTERRUPT_CYCLE="interrupt_cycle";
+static const std::string PARAM_CONTINUE_ON_CYCLE_FAIL="continue_on_cycle_fail";
 
 class DualArmSupervisor
 {
@@ -38,7 +44,10 @@ public:
 	};
 
 public:
-	DualArmSupervisor()
+	DualArmSupervisor():
+		interrupt_cycle_(false),
+		continue_on_cycle_fail_(false),
+		max_cycle_count_(std::numeric_limits<int>::infinity())
 	{
 
 	}
@@ -70,8 +79,8 @@ public:
 
 
 		while(ros::ok() &&
-				cycleThroughTaskSequence(clutter_to_sort_seq) &&
-				cycleThroughTaskSequence(sort_to_clutter_seq))
+				(cycleThroughTaskSequence(clutter_to_sort_seq) || continue_on_cycle_fail_)&&
+				(cycleThroughTaskSequence(sort_to_clutter_seq)|| continue_on_cycle_fail_))
 		{
 			ROS_INFO_STREAM(node_name_<<": Clutter to Sorted to Clutter cycle finished");
 		}
@@ -86,7 +95,20 @@ protected:
 	ros::ServiceClient arm1_handshaking_client_;
 	ros::ServiceClient arm2_handshaking_client_;
 
+	// ros parameters
+	int max_cycle_count_;
+	bool interrupt_cycle_;
+	bool continue_on_cycle_fail_;
+
 protected:
+
+	bool fetchParameters()
+	{
+		ros::NodeHandle nh("~");
+		return nh.getParam(PARAM_MAX_CYCLE_COUNT,max_cycle_count_) &&
+				nh.getParam(PARAM_INTERRUPT_CYCLE,interrupt_cycle_) &&
+				nh.getParam(PARAM_CONTINUE_ON_CYCLE_FAIL,continue_on_cycle_fail_);
+	}
 
 	bool checkServiceClientConnections()
 	{
@@ -98,6 +120,16 @@ protected:
 		ros::NodeHandle nh;
 		node_name_ = ros::this_node::getName();
 
+		// getting parameters
+		if(fetchParameters())
+		{
+			ROS_INFO_STREAM(ros::this_node::getName()<<": Found parameters");
+		}
+		else
+		{
+			ROS_ERROR_STREAM(ros::this_node::getName()<<": Did not find parameters, proceeding anyway");
+		}
+
 		// setting up clients
 		if(ros::service::waitForService(ARM1_HANDSHAKING_SERVICE_NAME,-1) &&
 				ros::service::waitForService(ARM2_HANDSHAKING_SERVICE_NAME,-1))
@@ -105,7 +137,7 @@ protected:
 			arm1_handshaking_client_ = nh.serviceClient<mantis_object_manipulation::ArmHandshaking>(
 				ARM1_HANDSHAKING_SERVICE_NAME,true);
 			arm2_handshaking_client_ = nh.serviceClient<mantis_object_manipulation::ArmHandshaking>(
-					ARM1_HANDSHAKING_SERVICE_NAME,true);
+					ARM2_HANDSHAKING_SERVICE_NAME,true);
 			ROS_INFO_STREAM(node_name_<<": Successfully connected to arm handshaking services");
 		}
 		else
@@ -185,8 +217,19 @@ protected:
 	{
 		bool early_termination = false; // indicates that all objects have been handled
 		int current_index = 0;
+		int cycle_count = 0;
 		while(!early_termination)
 		{
+			fetchParameters();
+			if(++cycle_count > (max_cycle_count_ < 0 ? std::numeric_limits<int>::infinity() : max_cycle_count_)
+					|| interrupt_cycle_ )
+			{
+				ros::NodeHandle nh("~");
+				interrupt_cycle_ = false;
+				nh.setParam(PARAM_INTERRUPT_CYCLE,interrupt_cycle_);
+				break;
+			}
+
 			TaskDetails &task = task_seq[current_index];
 			ROS_INFO_STREAM(node_name_<<": "<< task.name_<<" requested");
 			if(checkServiceClientConnections() && sendAndMonitorTask(task.arm_client_,early_termination,task.command_))
