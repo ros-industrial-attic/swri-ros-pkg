@@ -266,6 +266,11 @@ bool SortClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulati
 
 		break;
 
+	case ArmHandshaking::Request::TERMINATE:
+
+		ros::shutdown();
+		return true;
+
 	default:
 
 		success = false;
