@@ -771,7 +771,7 @@ bool RobotNavigator::getMeshFromDatabasePose(const household_objects_database_ms
   return true;
 }
 
-bool RobotNavigator::performGraspPlanning()
+bool RobotNavigator::performPickGraspPlanning()
 {
 	//  ===================================== saving current time stamp =====================================
 	ros::WallTime start_time = ros::WallTime::now();
@@ -868,6 +868,7 @@ bool RobotNavigator::performGraspPlanning()
 	grasp_pickup_goal_.target.potential_models.push_back(modelPose);
 
 	// generating grasp pick sequence
+	updateChangesToPlanningScene();
 	grasp_pick_sequence_.clear();
 	std::vector<object_manipulation_msgs::Grasp> valid_grasps;
 	if(!createPickMoveSequence(grasp_pickup_goal_,grasp_candidates_,grasp_pick_sequence_,valid_grasps))
@@ -876,9 +877,11 @@ bool RobotNavigator::performGraspPlanning()
 		return false;
 	}
 	grasp_candidates_.assign(valid_grasps.begin(),valid_grasps.end());
+	return true;
+}
 
-
-	//  ==================================  grasp planning for place move ================================
+bool RobotNavigator::performPlaceGraspPlanning()
+{
 	//	updating grasp place goal data
 	grasp_place_goal_.arm_name = arm_group_name_;
 	grasp_place_goal_.approach.direction.header.frame_id = cm_.getWorldFrameId();
@@ -893,8 +896,10 @@ bool RobotNavigator::performGraspPlanning()
 	}
 
 	// finding valid grasp place sequence
+	updateChangesToPlanningScene();
 	bool found_valid = false;
-	valid_grasps.clear(); // will keep only valid grasp pick sequence which grasp yields a valid place sequence;
+	geometry_msgs::Pose valid_grasp_place_pose; // will keep only valid grasp pick sequence which grasp yields a valid place sequence;
+	std::vector<object_manipulation_msgs::Grasp> valid_grasps;
 	std::vector<object_manipulator::GraspExecutionInfo> valid_pick_sequence;
 	std::vector<object_manipulator::PlaceExecutionInfo> valid_place_sequence;
 
@@ -911,11 +916,13 @@ bool RobotNavigator::performGraspPlanning()
 			{
 				// storing first valid
 				grasp_place_sequence_.assign(valid_place_sequence.begin(),valid_place_sequence.end());
+				valid_grasp_place_pose = grasp_place_goal_.grasp.grasp_pose;
 			}
 
 			found_valid = true;
 			valid_grasps.push_back(grasp_candidates_[i]);
 			valid_pick_sequence.push_back(grasp_pick_sequence_[i]);
+
 		}
 	}
 
@@ -929,22 +936,201 @@ bool RobotNavigator::performGraspPlanning()
 		// storing valid pick sequences
 		grasp_candidates_.assign(valid_grasps.begin(),valid_grasps.end());
 		grasp_pick_sequence_.assign(valid_pick_sequence.begin(),valid_pick_sequence.end());
+		grasp_place_goal_.grasp.grasp_pose = valid_grasp_place_pose;
 	}
 
 
 	//  ===================================== updating local planning scene =====================================
 	// updating gripper (not sure if this is necessary)
 	tf::Transform first_grasp_in_world_tf;
-	tf::poseMsgToTF(response.grasps[0].grasp_pose, first_grasp_in_world_tf);
+	tf::poseMsgToTF(grasp_candidates_[0].grasp_pose, first_grasp_in_world_tf);
 	planning_models::KinematicState state(*current_robot_state_);
 	state.updateKinematicStateWithLinkAt(gripper_link_name_, first_grasp_in_world_tf);
 
-	// ===================================== printing completion info message =====================================
-	ROS_INFO_STREAM(NODE_NAME<<": Grasp is " << response.grasps[0].grasp_pose.position.x << " "
-			  << response.grasps[0].grasp_pose.position.y << " "
-			  << response.grasps[0].grasp_pose.position.z);
-
 	return true;
+}
+
+bool RobotNavigator::performGraspPlanning()
+{
+
+	return performPickGraspPlanning() && performPlaceGraspPlanning();
+//	//  ===================================== saving current time stamp =====================================
+//	ros::WallTime start_time = ros::WallTime::now();
+//
+//	//  ===================================== clearing results from last call =====================================
+//	grasp_pickup_goal_.target.potential_models.clear();
+//	grasp_candidates_.clear();
+//
+//	//  ===================================== calling service =====================================
+//	// checking available recognized models
+//	if((recognized_models_.size() == 0) || (recognized_models_[0].model_list.size() == 0))
+//	{
+//	  return false;
+//	}
+//
+//	// populating grasp plan request/response
+//	household_objects_database_msgs::DatabaseModelPose modelPose = recognized_models_[0].model_list[0];
+//	object_manipulation_msgs::GraspPlanning::Request request;
+//	object_manipulation_msgs::GraspPlanning::Response response;
+//	std::string modelId = makeCollisionObjectNameFromModelId(modelPose.model_id);
+//
+//	//modelPose.pose = geometry_msgs::PoseStamped();
+//	//modelPose.pose.pose.orientation.w = 1.0;
+//	modelPose.pose = recognized_obj_pose_map_[modelId];
+//	modelPose.pose.header.frame_id = recognized_model_description_.name; // should be updated during recognition stage
+//	modelPose.pose.header.stamp = ros::Time::now();
+//	request.arm_name = arm_group_name_;
+//	request.target.potential_models.push_back(modelPose);
+//	request.target.reference_frame_id = segmented_clusters_[0].header.frame_id;
+//	request.target.cluster = segmented_clusters_[0];
+//
+//	bool success = grasp_planning_client.call(request, response);
+//
+//	// ===================================== checking results ========================================
+//	if(!success)
+//	{
+//		ROS_WARN_STREAM(NODE_NAME<<": grasp planning call unsuccessful, exiting");
+//		return false;
+//	}
+//
+//	if(response.error_code.value != response.error_code.SUCCESS)
+//	{
+//		ROS_WARN_STREAM(NODE_NAME<<": grasp planning call returned error code, exiting " << response.error_code.value);
+//		return false;
+//	}
+//
+//	if(response.grasps.size() == 0)
+//	{
+//		ROS_WARN_STREAM(NODE_NAME<<": No grasps returned in response");
+//		return false;
+//	}
+//
+//	//TODO - actually deal with the different cases here, especially for the cluster planner
+//	if(request.target.reference_frame_id != recognized_model_description_.name ||
+//		  request.target.reference_frame_id != modelPose.pose.header.frame_id)
+//	{
+//	  ROS_WARN_STREAM("Cluster does not match recognition");
+//	}
+//
+//	//  ===================================== storing results =====================================
+//	/* Storing grasp candidates:
+//	 * 	Grasp poses return by the service define the location of the tcp in terms of the world.
+//	 * 	However, planning is done with the assumption that the grasp indicate the location
+//	 * 	of the wrist relative to the object.
+//	 */
+//	grasp_candidates_.assign(response.grasps.begin(),response.grasps.end());
+//
+//	//  =====================================  grasp planning for pick move ==================================
+//	// instantiating needed transforms and poses
+//	tf::Transform object_in_world_tf;
+//	tf::StampedTransform wristInGripperTcp = tf::StampedTransform();
+//	tf::Transform object_in_world_inverse_tf;
+//
+//	// populating transforms
+//	tf::poseMsgToTF(modelPose.pose.pose, object_in_world_tf);
+//	object_in_world_inverse_tf = object_in_world_tf.inverse();
+//	_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wristInGripperTcp);
+//
+//	// applying transformation to grasp pose so that the arm wrist relative to the object is obtained
+//	for(unsigned int i = 0; i < grasp_candidates_.size(); i++)
+//	{
+//		tf::Transform grasp_in_world_tf;
+//		tf::poseMsgToTF(grasp_candidates_[i].grasp_pose, grasp_in_world_tf);
+//		tf::poseTFToMsg(object_in_world_inverse_tf*(grasp_in_world_tf*wristInGripperTcp),
+//			  grasp_candidates_[i].grasp_pose);
+//	}
+//
+//	// updating grasp pickup goal data
+//	grasp_pickup_goal_.arm_name = arm_group_name_;
+//	grasp_pickup_goal_.collision_object_name = modelId;
+//	grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
+//	grasp_pickup_goal_.target.reference_frame_id = modelId;
+//	grasp_pickup_goal_.target.cluster = segmented_clusters_[0];
+//	grasp_pickup_goal_.target.potential_models.push_back(modelPose);
+//
+//	// generating grasp pick sequence
+//	updateChangesToPlanningScene();
+//	grasp_pick_sequence_.clear();
+//	std::vector<object_manipulation_msgs::Grasp> valid_grasps;
+//	if(!createPickMoveSequence(grasp_pickup_goal_,grasp_candidates_,grasp_pick_sequence_,valid_grasps))
+//	{
+//		ROS_ERROR_STREAM(NODE_NAME<<": Failed to create valid grasp pick sequence");
+//		return false;
+//	}
+//	grasp_candidates_.assign(valid_grasps.begin(),valid_grasps.end());
+//
+//
+//	//  ==================================  grasp planning for place move ================================
+//	//	updating grasp place goal data
+//	grasp_place_goal_.arm_name = arm_group_name_;
+//	grasp_place_goal_.approach.direction.header.frame_id = cm_.getWorldFrameId();
+//	grasp_place_goal_.collision_object_name = "attached_"+current_grasped_object_name_[arm_group_name_];
+//
+//	// creating candidate grasp place poses
+//	std::vector<geometry_msgs::PoseStamped> placePoses;
+//	if(!createCandidateGoalPoses(placePoses))
+//	{
+//		ROS_ERROR_STREAM(NODE_NAME<<": Could not create valid place poses");
+//		return false;
+//	}
+//
+//	// finding valid grasp place sequence
+//	updateChangesToPlanningScene();
+//	bool found_valid = false;
+//	valid_grasps.clear(); // will keep only valid grasp pick sequence which grasp yields a valid place sequence;
+//	geometry_msgs::Pose valid_grasp_place_pose;
+//	std::vector<object_manipulator::GraspExecutionInfo> valid_pick_sequence;
+//	std::vector<object_manipulator::PlaceExecutionInfo> valid_place_sequence;
+//
+//	// finding pose of wrist relative to object
+//	tf::StampedTransform wrist_in_tcp_tf, wrist_in_obj_tf;// wrist pose relative to gripper
+//	_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wrist_in_tcp_tf);
+//	for(std::size_t i = 0; i < grasp_candidates_.size(); i++)
+//	{
+//		tf::poseMsgToTF(grasp_candidates_[i].grasp_pose,wrist_in_obj_tf);
+//		tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),grasp_place_goal_.grasp.grasp_pose);
+//		if(createPlaceMoveSequence(grasp_place_goal_,placePoses,valid_place_sequence))
+//		{
+//			if(!found_valid)
+//			{
+//				// storing first valid
+//				grasp_place_sequence_.assign(valid_place_sequence.begin(),valid_place_sequence.end());
+//				valid_grasp_place_pose = grasp_place_goal_.grasp.grasp_pose;
+//			}
+//
+//			found_valid = true;
+//			valid_grasps.push_back(grasp_candidates_[i]);
+//			valid_pick_sequence.push_back(grasp_pick_sequence_[i]);
+//			grasp_place_goal_.grasp.grasp_pose = valid_grasp_place_pose;
+//		}
+//	}
+//
+//	if(!found_valid)
+//	{
+//		ROS_ERROR_STREAM(NODE_NAME<<": Failed to create valid grasp place sequence");
+//		return false;
+//	}
+//	else
+//	{
+//		// storing valid pick sequences
+//		grasp_candidates_.assign(valid_grasps.begin(),valid_grasps.end());
+//		grasp_pick_sequence_.assign(valid_pick_sequence.begin(),valid_pick_sequence.end());
+//	}
+//
+//
+//	//  ===================================== updating local planning scene =====================================
+//	// updating gripper (not sure if this is necessary)
+//	tf::Transform first_grasp_in_world_tf;
+//	tf::poseMsgToTF(response.grasps[0].grasp_pose, first_grasp_in_world_tf);
+//	planning_models::KinematicState state(*current_robot_state_);
+//	state.updateKinematicStateWithLinkAt(gripper_link_name_, first_grasp_in_world_tf);
+//
+//	// ===================================== printing completion info message =====================================
+//	ROS_INFO_STREAM(NODE_NAME<<": Grasp is " << response.grasps[0].grasp_pose.position.x << " "
+//			  << response.grasps[0].grasp_pose.position.y << " "
+//			  << response.grasps[0].grasp_pose.position.z);
+//
+//	return true;
 }
 
 bool RobotNavigator::createPickMoveSequence(
