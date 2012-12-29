@@ -190,10 +190,11 @@ protected:
 		pose.header.frame_id = GoalTransform.frame_id_;
 
 		// rotate about z axis and apply to original goal pose in order to create candidates;
+		double increment = (2 * M_PI)/((double)numCandidates);
 		for(int i = 0; i < numCandidates; i++)
 		{
-			double ratio = ((double)i)/((double)numCandidates);
-			double angle = 2*M_PI*ratio;
+			//double ratio = ((double)i)/((double)numCandidates);
+			double angle = increment * i - M_PI ;
 			tf::Quaternion q = tf::Quaternion(axis,angle);
 			tf::Vector3 p = tf::Vector3(0,0,0);
 			tf::Transform candidateTransform = startTrans*tf::Transform(q,p);

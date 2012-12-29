@@ -254,7 +254,7 @@ bool  PickPlaceZoneSelector::generateNextLocationCandidates(std::vector<geometry
 		PlaceZone& placeZone = *active_place_zones_[i];
 		if(placeZone.isIdInZone(next_obj_details_.Id))
 		{
-			ROS_WARN_STREAM("ZoneSelector: located id in zone "<<placeZone.ZoneName);
+			ROS_WARN_STREAM("ZoneSelector: located id "<<next_obj_details_.Id <<" in zone "<<placeZone.ZoneName);
 
 			// creating array with available place zones not including the current one
 			nearbyZones.assign(active_place_zones_.begin(),active_place_zones_.end());
@@ -275,6 +275,11 @@ bool  PickPlaceZoneSelector::generateNextLocationCandidates(std::vector<geometry
 			{
 				// location found, exit search
 				locationFound = true;
+
+				// passed all intersection test
+				geometry_msgs::Point p = placePoses[0].pose.position;
+				ROS_INFO_STREAM("ZoneSelector : Found available location at [ "<<p.x<<", "<<p.y<<", "<<p.z<<"]");
+
 				break;
 			}
 		}
@@ -579,7 +584,8 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInRandomizedMode(std
 		std::vector<PlaceZone* > &otherZones)
 {
 	// previos pose
-	tf::Transform &lastTf = objects_in_zone_.back().Trans;
+	std::vector<ObjectDetails> object_array(objects_in_zone_);
+	tf::Transform &lastTf = object_array.back().Trans;
 
 	// returned bool
 	bool foundNewPlaceLocation = false;
@@ -650,6 +656,8 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInRandomizedMode(std
 			// checking if located inside place region
 			if(!ZoneBounds::contains(*this,nextObjectBounds))
 			{
+				object_array.pop_back();
+				lastTf = object_array.back().Trans;
 				continue;
 			}
 
@@ -692,7 +700,8 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInRandomizedMode(std
 
 		if(!foundNewPlaceLocation)
 		{
-			ROS_WARN_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Could not find available position after "<<iter<<" iterations");
+			ROS_ERROR_STREAM("ZoneSelector/"<<ZoneName<<": Did not find location after "
+					<<maxIterations<<" iterations, exiting");
 			return false;
 		}
 	}
@@ -779,13 +788,11 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInZigZagXMode(std::v
 	}
 	if(overlapFound)
 	{
-		ROS_ERROR_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Did not find location after "<<maxIterations<<" iterations, exiting");
+		ROS_ERROR_STREAM("ZoneSelector/"<<ZoneName<<": Did not find location after "
+				<<maxIterations<<" iterations, exiting");
 	}
 	else
 	{
-		// passed all intersection test
-		ROS_INFO_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Found available position for Id: "<<next_object_details_.Id);
-
 		// adjusting place point to object height
 		nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
 
@@ -874,13 +881,11 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInZigZagYMode(std::v
 	}
 	if(overlapFound)
 	{
-		ROS_ERROR_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Did not find location after "<<maxIterations<<" iterations, exiting");
+		ROS_ERROR_STREAM("ZoneSelector/"<<ZoneName<<": Did not find location after "
+				<<maxIterations<<" iterations, exiting");
 	}
 	else
 	{
-		// passed all intersection test
-		ROS_INFO_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Found available position for Id: "<<next_object_details_.Id);
-
 		// adjusting place point to object height
 		nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
 
@@ -971,13 +976,11 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridXWise(std::vec
 	}
 	if(overlapFound)
 	{
-		ROS_ERROR_STREAM(ZoneName<<": Did not find location after "<<maxIterations<<" iterations, exiting");
+		ROS_ERROR_STREAM("ZoneSelector/"<<ZoneName<<": Did not find location after "
+				<<maxIterations<<" iterations, exiting");
 	}
 	else
 	{
-		// passed all intersection test
-		ROS_INFO_STREAM(ZoneName<<": Found available position for Id: "<<next_object_details_.Id);
-
 		// adjusting place point to object height
 		nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
 
@@ -1068,13 +1071,11 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInGridYWise(std::vec
 	}
 	if(overlapFound)
 	{
-		ROS_ERROR_STREAM(ZoneName<<": Did not find location after "<<maxIterations<<" iterations, exiting");
+		ROS_ERROR_STREAM("ZoneSelector/"<<ZoneName<<": Did not find location after "
+				<<maxIterations<<" iterations, exiting");
 	}
 	else
 	{
-		// passed all intersection test
-		ROS_INFO_STREAM(ZoneName<<": Found available position for Id: "<<next_object_details_.Id);
-
 		// adjusting place point to object height
 		nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
 
@@ -1195,13 +1196,11 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInCircle(std::vector
 	}
 	if(overlapFound)
 	{
-		ROS_ERROR_STREAM(ZoneName<<": Did not find location after "<<maxIterations<<" iterations, exiting");
+		ROS_ERROR_STREAM("ZoneSelector/"<<ZoneName<<": Did not find location after "
+				<<maxIterations<<" iterations, exiting");
 	}
 	else
 	{
-		// passed all intersection test
-		ROS_INFO_STREAM(ZoneName<<": Found available position for Id: "<<next_object_details_.Id);
-
 		// adjusting place point to object height
 		nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
 

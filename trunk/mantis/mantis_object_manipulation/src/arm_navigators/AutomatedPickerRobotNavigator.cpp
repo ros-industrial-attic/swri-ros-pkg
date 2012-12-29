@@ -476,8 +476,10 @@ bool AutomatedPickerRobotNavigator::performPickGraspPlanning()
 	grasp_pickup_goal_.target.potential_models.push_back(modelPose);
 
 	// generating grasp pick sequence
+	updateChangesToPlanningScene();
 	grasp_pick_sequence_.clear();
 	std::vector<object_manipulation_msgs::Grasp> valid_grasps;
+	ROS_INFO_STREAM(NODE_NAME<<": Testing "<<grasp_candidates_.size()<<" grasp candidates");
 	if(!createPickMoveSequence(grasp_pickup_goal_,grasp_candidates_,grasp_pick_sequence_,valid_grasps))
 	{
 		ROS_ERROR_STREAM(NODE_NAME<<": Failed to create valid grasp pick sequence");
@@ -492,12 +494,13 @@ bool AutomatedPickerRobotNavigator::performPickGraspPlanning()
 	state.updateKinematicStateWithLinkAt(gripper_link_name_, first_grasp_in_world_tf);
 
 	// printing completion info message
-	ROS_INFO_STREAM(NODE_NAME<<": Grasp is " << firstGrasp.grasp_pose.position.x << " "
+	ROS_INFO_STREAM(NODE_NAME<<": Grasp Position in "<< cm_.getWorldFrameId()
+			<<" is: "<<firstGrasp.grasp_pose.position.x << " "
 			  << firstGrasp.grasp_pose.position.y << " "
 			  << firstGrasp.grasp_pose.position.z);
 
-	ROS_INFO_STREAM(NODE_NAME<<": Cloud header " << segmented_clusters_[0].header.frame_id);
-	ROS_INFO_STREAM(NODE_NAME<<": Recognition pose frame " << modelPose.pose.header.frame_id);
+//	ROS_INFO_STREAM(NODE_NAME<<": Cloud header " << segmented_clusters_[0].header.frame_id);
+//	ROS_INFO_STREAM(NODE_NAME<<": Recognition pose frame " << modelPose.pose.header.frame_id);
 
 	return true;
 }
@@ -530,13 +533,14 @@ bool AutomatedPickerRobotNavigator::performPlaceGraspPlanning()
 
 	// finding valid grasp place sequence
 	bool found_valid = false;
+	geometry_msgs::Pose valid_grasp_place_pose;
 	std::vector<object_manipulation_msgs::Grasp> valid_grasps; // will keep only valid grasp pick sequence which grasp yields a valid place sequence;
 	std::vector<object_manipulator::GraspExecutionInfo> valid_pick_sequence;
 	std::vector<object_manipulator::PlaceExecutionInfo> valid_place_sequence;
 
 	// finding pose of wrist relative to object
+	updateChangesToPlanningScene();
 	tf::StampedTransform wrist_in_tcp_tf = tf::StampedTransform(), wrist_in_obj_tf = tf::StampedTransform();
-	//tf::StampedTransform  wrist_in_obj_tf = tf::Transform::getIdentity();// wrist pose relative to gripper
 	_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wrist_in_tcp_tf);
 	for(std::size_t i = 0; i < grasp_candidates_.size(); i++)
 	{
@@ -548,6 +552,7 @@ bool AutomatedPickerRobotNavigator::performPlaceGraspPlanning()
 			{
 				// storing first valid
 				grasp_place_sequence_.assign(valid_place_sequence.begin(),valid_place_sequence.end());
+				valid_grasp_place_pose = grasp_place_goal_.grasp.grasp_pose;
 			}
 
 			found_valid = true;
@@ -563,24 +568,14 @@ bool AutomatedPickerRobotNavigator::performPlaceGraspPlanning()
 	}
 	else
 	{
-		// storing valid pick sequences
+		// storing valid pick/place data
 		grasp_candidates_.assign(valid_grasps.begin(),valid_grasps.end());
 		grasp_pick_sequence_.assign(valid_pick_sequence.begin(),valid_pick_sequence.end());
+		grasp_place_goal_.grasp.grasp_pose = valid_grasp_place_pose;
+
 	}
 
 	return found_valid;
-
-	// checking if available place location is reachable
-//	ROS_INFO_STREAM(NODE_NAME<<": Evaluating reachability for found place location.");
-//	if(findIkSolutionForPlacePoses())
-//	{
-//		ROS_INFO_STREAM(NODE_NAME<<": Place location is reachable, continue");
-//	}
-//	else
-//	{
-//		ROS_ERROR_STREAM(NODE_NAME<<": Place location is out of reach, canceling");
-//		return false;
-//	}
 }
 
 bool AutomatedPickerRobotNavigator::performGraspPlanning()

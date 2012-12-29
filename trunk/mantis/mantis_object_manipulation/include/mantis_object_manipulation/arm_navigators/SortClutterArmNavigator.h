@@ -34,10 +34,10 @@ protected:
 	virtual void setup();
 	virtual void fetchParameters(std::string nameSpace="");
 	virtual bool performSegmentation();
-	//virtual bool performRecognition();
 	virtual bool moveArmThroughPickSequence();
 	virtual bool moveArmThroughPlaceSequence();
 	virtual bool performPlaceGraspPlanning(); // place pose grasp planning that uses recognition data
+	virtual bool performPlaceGraspPlanning(GoalLocation &goal);
 
 	// subclass methods
 	bool performGraspPlanningForSorting();
