@@ -103,7 +103,7 @@
 		<!-- recognition -->
 		<remap from="/cph_recognition" to ="/$(arg arm_namespace)/cph_recognition"/>
 		<node  pkg="mantis_perception" name="cph_recognition" type="cph_recognition" 
-			output="screen" args="$(find mantis_perception)/data">
+			output="screen" args="$(find mantis_perception)/data/sia20d_data">
 		</node>
 
 		<remap from="/mantis_object_recognition" to ="/$(arg arm_namespace)/mantis_object_recognition"/>
