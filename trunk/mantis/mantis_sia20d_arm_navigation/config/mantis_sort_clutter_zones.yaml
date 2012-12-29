@@ -1,22 +1,24 @@
 pick_zones:
  - zone_name: singulated_zone
-   x_min: 0.6
-   x_max: 1.2
-   y_min: -0.88
-   y_max: -0.201
+   x_min: -0.325
+   x_max: 0.325
+   y_min: 0.25
+   y_max: 0.72
    frame_id: workcell_frame
+#___________________________________#
  - zone_name: sorted_zone
-   x_min: 0.6
-   x_max: 1.2
-   y_min: -0.20
-   y_max: 0.7
+   x_min: 0.4
+   x_max: 1.4
+   y_min: -0.7
+   y_max: 0.6
    frame_id: workcell_frame
 place_zones:
- - zone_name: place_zone1_a
+#___________________________________#
+ - zone_name: sorted_zone_1
    x_min: 0.6
-   x_max: 0.85
-   y_min: -0.20
-   y_max: 0.35
+   x_max: 1.1
+   y_min: 0.20
+   y_max: 0.5
    frame_id: workcell_frame
    pose_candidates: 8
    orientation_axis:
@@ -25,15 +27,16 @@ place_zones:
     z: 1.0
    release_distance: -0.02
    next_location:
-    min_spacing: 0.16
-    max_spacing: 0.20
+    min_spacing: 0.105
+    max_spacing: 0.12
     generation_mode: 2
-   ids_allowed: [0,2]
- - zone_name: place_zone1_b
+   ids_allowed: [0]
+#___________________________________#
+ - zone_name: sorted_zone_2
    x_min: 0.851
-   x_max: 1.2
-   y_min: -0.20
-   y_max: 0.7
+   x_max: 1.1
+   y_min: -0.4
+   y_max: 0.21
    frame_id: workcell_frame
    pose_candidates: 8
    orientation_axis:
@@ -42,15 +45,16 @@ place_zones:
     z: 1.0
    release_distance: -0.02
    next_location:
-    min_spacing: 0.16
-    max_spacing: 0.20
+    min_spacing: 0.105
+    max_spacing: 0.12
     generation_mode: 2
-   ids_allowed: [1,3,5]
- - zone_name: place_zone1_c
+   ids_allowed: [1]
+#___________________________________#
+ - zone_name: sorted_zone_3
    x_min: 0.6
    x_max: 0.85
-   y_min: 0.351
-   y_max: 0.7
+   y_min: -0.4
+   y_max: 0.21
    frame_id: workcell_frame
    pose_candidates: 8
    orientation_axis:
@@ -59,15 +63,16 @@ place_zones:
     z: 1.0
    release_distance: -0.02
    next_location:
-    min_spacing: 0.16
-    max_spacing: 0.20
-    generation_mode: 0
-   ids_allowed: [4]
- - zone_name: place_zone2_a
+    min_spacing: 0.105
+    max_spacing: 0.12
+    generation_mode: 2
+   ids_allowed: [2]
+#___________________________________#
+ - zone_name: sorted_zone_4
    x_min: 0.6
-   x_max: 0.85
-   y_min: -0.88
-   y_max: -0.201
+   x_max: 1.1
+   y_min: -0.7
+   y_max: -0.401
    frame_id: workcell_frame
    pose_candidates: 8
    orientation_axis:
@@ -76,24 +81,7 @@ place_zones:
     z: 1.0
    release_distance: -0.02
    next_location:
-    min_spacing: 0.16
-    max_spacing: 0.20
-    generation_mode: 0
-   ids_allowed: [1,3,5]
- - zone_name: place_zone2_b
-   x_min: 0.851
-   x_max: 1.2
-   y_min: -0.88
-   y_max: -0.201
-   frame_id: workcell_frame
-   pose_candidates: 8
-   orientation_axis:
-    x: 0.0
-    y: 0.0
-    z: 1.0
-   release_distance: -0.02
-   next_location:
-    min_spacing: 0.16
-    max_spacing: 0.20
-    generation_mode: 0
-   ids_allowed: [0,2,4]
+    min_spacing: 0.105
+    max_spacing: 0.12
+    generation_mode: 2
+   ids_allowed: [3, 4, 5] 
