@@ -38,9 +38,9 @@ singulated_dropoff:
 #  frame_id: sia20d_arm_base_link
   frame_id: workcell_frame
   position:
-    x: -0.10
-    y: 0.4
-    z: 0.2
+    x: -0.20
+    y: 0.65
+    z: 0.14
   orientation:
     axis:
       x: 0
