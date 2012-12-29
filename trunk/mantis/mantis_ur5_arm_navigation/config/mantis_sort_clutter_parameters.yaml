@@ -21,7 +21,7 @@ cluttered_dropoff:
   position:
     x: -0.8
     y: 0.01
-    z: 0.22
+    z: 0.16
   orientation:
     axis:
       x: 0
@@ -33,9 +33,9 @@ cluttered_dropoff:
 singulated_dropoff:
   frame_id: workcell_frame
   position:
-    x: 0.10
-    y: 0.4
-    z: 0.1
+    x: 0.25
+    y: 0.65
+    z: 0.10
   orientation:
     axis:
       x: 0
