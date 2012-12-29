@@ -14,41 +14,36 @@ navigator:
   joint_trajectory_service_name: /ur5_arm/joint_trajectory_action
   grasp_action_service_name: /ur5_arm/grasp_execution_action
   num_of_grasp_attempts: 4
-  offset_from_first_grasp: 0.01 #1cm
+  offset_from_first_grasp: 0.02 #1cm
   attached_object_bb_side: 0.1 #10cm
 cluttered_dropoff:
   frame_id: workcell_frame
   position:
-    x: -0.451
-    y: 0.4
-    z: 0.2
+    x: -0.8
+    y: 0.01
+    z: 0.22
   orientation:
     axis:
       x: 0
       y: 0
       z: 1
-    angle: 0
+    angle: 0.7
   next_location:
     generation_mode: 0
-    min_spacing: 0.05 # meters
-    max_spacing: 0.08 # meters
-    place_region_radius: 0.2 # meters
 singulated_dropoff:
   frame_id: workcell_frame
   position:
-    x: -0.451
+    x: 0.10
     y: 0.4
-    z: 0.2
+    z: 0.1
   orientation:
     axis:
       x: 0
       y: 0
       z: 1
-    angle: 0
+    angle: 0.7
   next_location:
     generation_mode: 0
-    min_spacing: 0.05 # meters
-    max_spacing: 0.08 # meters
-    place_region_radius: 0.2 # meters
 joint_home_position:
-   side_position: [-0.70, -1.07948096023743, 1.7135035147002855, -2.2049080765129627, -1.57158764211257, -1.6830470243995475]
+  side_position: [1.6, -1.07948096023743, 1.7135035147002855, -2.2049080765129627, -1.57158764211257, -0.48]
+
