@@ -14,7 +14,7 @@ navigator:
   joint_trajectory_service_name: /sia20d_arm/joint_trajectory_action
   grasp_action_service_name: /sia20d_arm/grasp_execution_action
   num_of_grasp_attempts: 6
-  offset_from_first_grasp: 0.02 #1cm
+  new_grasp_attempt_offset: 0.02 #1cm
   attached_object_bb_side: 0.1 #10cm
 segmentation:
   world_frame_id: workcell_frame
