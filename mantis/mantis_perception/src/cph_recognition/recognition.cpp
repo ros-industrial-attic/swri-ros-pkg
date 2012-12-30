@@ -39,15 +39,6 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
             mantis_perception::mantis_recognition::Response &main_response)
 {  
   //Offset points from centroid of part to object training frame and thus center/grasp point
-  float pvct_1_x_offset = 0.0034;		//0.0045
-  float pvct_1_y_offset = -0.0019;		//-0.0019
-  float pvct_1_z_offset = 0.012;		//0.032-(0.025)=0.007
-  float plug_1_x_offset = -0.0036;		//0.000811
-  float plug_1_y_offset = 0.001;		//0.00199
-  float plug_1_z_offset = 0.028;		//kinect_1=0.03052 asus_1=0.0163
-  float enc_1_x_offset = 0.00563;		//kinect_1=0.0085645 asus_1=0.00269
-  float enc_1_y_offset = -0.0044;		//kinect_1=-0.0099451 asus_1=0.0010989
-  float enc_1_z_offset = 0.049;			//kinect_1=0.03923 asus_1=0.03701
   float pvc_elbow_1_x_offset = 0.005878;//kinect_1=0.004949 asus_1=0.005878, avg=0.00541
   float pvc_elbow_1_y_offset = -0.00108;//kinect_1=-0.006247 asus_1=-0.00108, avg=-0.00366
   float pvc_elbow_1_z_offset = 0.02261;	//kinect_1=0.0182536 asus_1=0.02261, avg=0.02043
@@ -62,11 +53,29 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   double _pvct_pick_point_z;
   double _pvc_elbow_pick_point_z;
   double _small_plug_pick_point_z;
+  double _pvct_1_x_offset;
+  double _pvct_1_y_offset;
+  double _pvct_1_z_offset;
+  double _enc_1_x_offset;
+  double _enc_1_y_offset;
+  double _enc_1_z_offset;
+  double _plug_1_x_offset;
+  double _plug_1_y_offset;
+  double _plug_1_z_offset;
   ros::param::param(paramNamespace + "/plug_pick_point_z", _plug_pick_point_z, 0.048);
   ros::param::param(paramNamespace + "/enc_pick_point_z", _enc_pick_point_z, 0.051);
   ros::param::param(paramNamespace + "/pvct_pick_point_z", _pvct_pick_point_z, 0.025);
   ros::param::param(paramNamespace + "/pvc_elbow_pick_point_z", _pvc_elbow_pick_point_z, 0.030);
   ros::param::param(paramNamespace + "/small_plug_pick_point_z", _small_plug_pick_point_z, 0.045);
+  ros::param::param(paramNamespace + "/plug_offset_x", _plug_1_x_offset,-0.0036);
+  ros::param::param(paramNamespace + "/plug_offset_y", _plug_1_y_offset, 0.002);
+  ros::param::param(paramNamespace + "/plug_offset_z", _plug_1_z_offset, 0.028);
+  ros::param::param(paramNamespace + "/enclosure_offset_x", _enc_1_x_offset, 0.00563);
+  ros::param::param(paramNamespace + "/enclosure_offset_y", _enc_1_y_offset, -0.0044);
+  ros::param::param(paramNamespace + "/enclosure_offset_z", _enc_1_z_offset, 0.049);
+  ros::param::param(paramNamespace + "/pvct_offset_x", _pvct_1_x_offset, 0.0034);
+  ros::param::param(paramNamespace + "/pvct_offset_y", _pvct_1_y_offset, -0.0019);
+  ros::param::param(paramNamespace + "/pvct_offset_z", _pvct_1_z_offset, 0.012);
 
   bool use_region_growing = false;
 
@@ -76,7 +85,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 
   ROS_INFO("Starting mantis recognition");
   ROS_INFO("Number of clusters received in request = %d", (int)main_request.clusters.size());
-
+/*
   std::vector<sensor_msgs::PointCloud> received_cluster;
   std::vector<sensor_msgs::PointCloud2> r_clusters;
   sensor_msgs::PointCloud2 r_cluster;
@@ -98,18 +107,18 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   for (int k=0; k<seg_clouds.size(); k++)
   {
 	meanz=0.0;
-/*FIND ABS MAX Z IN EACH CLUSTER AND TAKE CLUSTER WITH HIGHEST POINT INSTEAD OF MEANZ*/
-/*	maxz=0.0;
-	for(int i=0;i<seg_clouds.at(k).points.size();i++)
-		{
-			maxz=seg_clouds.at(k).points.at(i).z;
-			if(maxz > max_z)
-			{
-				max_z= maxz;
-				highest_cluster=seg_clouds.at(k);
-				//ROS_INFO_STREAM("Highest cluster has index of "<<k);
-			}
-		}*/
+//FIND ABS MAX Z IN EACH CLUSTER AND TAKE CLUSTER WITH HIGHEST POINT INSTEAD OF MEANZ
+	//maxz=0.0;
+	//for(int i=0;i<seg_clouds.at(k).points.size();i++)
+	//	{
+	//		maxz=seg_clouds.at(k).points.at(i).z;
+	//		if(maxz > max_z)
+	//		{
+	//			max_z= maxz;
+	//			highest_cluster=seg_clouds.at(k);
+	//			//ROS_INFO_STREAM("Highest cluster has index of "<<k);
+	//		}
+	//	}
 	sum=0.0;
 	for(int i=0;i<seg_clouds.at(k).points.size();i++)//temp_pc.points.size()
 		{
@@ -120,19 +129,19 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 	ROS_INFO_STREAM("Average of z points of  "<<k <<" cloud: "<< meanz);
 	if(meanz > max_meanz)
 	{
-		max_meanz = meanz;
+		max_meanz = meanz;n
 		highest_cluster=seg_clouds.at(k);
 		ROS_INFO_STREAM("Highest cluster has index of "<<k);
 	}
 
-  }
+  }*/
 
   //convert segmentation results from array of PointCloud to single PointCloud2
-  /*sensor_msgs::PointCloud received_clusters;
-  received_clusters=main_request.clusters.at(0);*/
+  sensor_msgs::PointCloud received_clusters;
+  received_clusters=main_request.clusters.at(0);
   sensor_msgs::PointCloud2 cluster;
-  pcl::toROSMsg(highest_cluster, cluster);
-  //sensor_msgs::convertPointCloudToPointCloud2(received_clusters, cluster);
+  /*pcl::toROSMsg(highest_cluster, cluster);*/
+  sensor_msgs::convertPointCloudToPointCloud2(received_clusters, cluster);
   cluster.header.frame_id=main_request.table.pose.header.frame_id;
   cluster.header.stamp=main_request.table.pose.header.stamp;
 
@@ -198,12 +207,12 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   {
     main_response.model_id=1;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
-    pick_pose.pose.position.x = rec_srv.response.pose.x - (enc_1_x_offset);//+enc_pick_point_x;//enc_pick.x();
-    pick_pose.pose.position.y = rec_srv.response.pose.y - (enc_1_y_offset);//enc_pick.y();
-    pick_pose.pose.position.z = rec_srv.response.pose.z - (enc_1_z_offset)+_enc_pick_point_z;
-    mesh_marker.pose.position.x=rec_srv.response.pose.x - (enc_1_x_offset);
-    mesh_marker.pose.position.y=rec_srv.response.pose.y - (enc_1_y_offset);
-    mesh_marker.pose.position.z=rec_srv.response.pose.z - (enc_1_z_offset);
+    pick_pose.pose.position.x = rec_srv.response.pose.x - (_enc_1_x_offset);//+enc_pick_point_x;//enc_pick.x();
+    pick_pose.pose.position.y = rec_srv.response.pose.y - (_enc_1_y_offset);//enc_pick.y();
+    pick_pose.pose.position.z = rec_srv.response.pose.z - (_enc_1_z_offset)+_enc_pick_point_z;
+    mesh_marker.pose.position.x=rec_srv.response.pose.x - (_enc_1_x_offset);
+    mesh_marker.pose.position.y=rec_srv.response.pose.y - (_enc_1_y_offset);
+    mesh_marker.pose.position.z=rec_srv.response.pose.z - (_enc_1_z_offset);
 
   }
   else if (label.substr(found+1)=="small_plug" || label.substr(found+1)=="small_plug_a_1" || label.substr(found+1)=="small_plug_a_2" || label.substr(found+1)=="small_plug_a_3")
@@ -227,12 +236,12 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   {
     main_response.model_id=3;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
-    pick_pose.pose.position.x = rec_srv.response.pose.x - (pvct_1_x_offset);
-    pick_pose.pose.position.y = rec_srv.response.pose.y - (pvct_1_y_offset);
-    pick_pose.pose.position.z = rec_srv.response.pose.z - (pvct_1_z_offset)+_pvct_pick_point_z/2;
-    mesh_marker.pose.position.x=rec_srv.response.pose.x - (pvct_1_x_offset);
-    mesh_marker.pose.position.y=rec_srv.response.pose.y - (pvct_1_y_offset);
-    mesh_marker.pose.position.z=rec_srv.response.pose.z - (pvct_1_z_offset);
+    pick_pose.pose.position.x = rec_srv.response.pose.x - (_pvct_1_x_offset);
+    pick_pose.pose.position.y = rec_srv.response.pose.y - (_pvct_1_y_offset);
+    pick_pose.pose.position.z = rec_srv.response.pose.z - (_pvct_1_z_offset)+_pvct_pick_point_z/2;
+    mesh_marker.pose.position.x=rec_srv.response.pose.x - (_pvct_1_x_offset);
+    mesh_marker.pose.position.y=rec_srv.response.pose.y - (_pvct_1_y_offset);
+    mesh_marker.pose.position.z=rec_srv.response.pose.z - (_pvct_1_z_offset);
 
   }
   else if (label.substr(found+1)=="plug" ||
@@ -244,12 +253,12 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   {
     main_response.model_id=4;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.STL";
-    pick_pose.pose.position.x = rec_srv.response.pose.x - (plug_1_x_offset);
-    pick_pose.pose.position.y = rec_srv.response.pose.y - (plug_1_y_offset);
-    pick_pose.pose.position.z = rec_srv.response.pose.z - (plug_1_z_offset)+_plug_pick_point_z;
-    mesh_marker.pose.position.x=rec_srv.response.pose.x - (plug_1_x_offset);
-    mesh_marker.pose.position.y=rec_srv.response.pose.y - (plug_1_y_offset);
-    mesh_marker.pose.position.z=rec_srv.response.pose.z - (plug_1_z_offset);
+    pick_pose.pose.position.x = rec_srv.response.pose.x - (_plug_1_x_offset);
+    pick_pose.pose.position.y = rec_srv.response.pose.y - (_plug_1_y_offset);
+    pick_pose.pose.position.z = rec_srv.response.pose.z - (_plug_1_z_offset)+_plug_pick_point_z;
+    mesh_marker.pose.position.x=rec_srv.response.pose.x - (_plug_1_x_offset);
+    mesh_marker.pose.position.y=rec_srv.response.pose.y - (_plug_1_y_offset);
+    mesh_marker.pose.position.z=rec_srv.response.pose.z - (_plug_1_z_offset);
 
   }
   else if (label.substr(found+1)=="pvc_elbow_1" || label.substr(found+1)=="pvcelbow" || label.substr(found+1)=="pvc_elbow_a_1")
