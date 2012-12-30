@@ -72,7 +72,7 @@
 		</node>
 
 		<!-- grasp planner -->
-		<include  file="$(find mantis_grasp_planning)/launch/vacuum_gripper_grasp_planner_server.launch"/>
+		<include  file="$(find mantis_grasp_planning)/launch/vacuum_gripper_cluttered_grasp_planner_server.launch"/>
 
 		<!-- segmentation -->
 		<include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
@@ -110,7 +110,7 @@
 		<node  pkg="mantis_perception" name="mantis_object_recognition" 
 			type="mantis_object_recognition" output="screen">
 			<param name="plug_pick_point_z" value="0.048"/>
-			<param name="enc_pick_point_z" value="0.040"/>
+			<param name="enc_pick_point_z" value="0.045"/>
 			<param name="pvct_pick_point_z" value="0.025"/>
 			<param name="pvc_elbow_pick_point_z" value="0.030"/>
 			<param name="small_plug_pick_point_z" value="0.045"/>
