@@ -1,7 +1,7 @@
 Background\ ColorB=1
 Background\ ColorG=0.364706
 Background\ ColorR=0
-Camera\ Config=0.569802 5.19556 4.55402 -0.359049 0.273948 -0.307622
+Camera\ Config=0.614802 5.85056 4.55402 -0.359049 0.273948 -0.307622
 Camera\ Type=rviz::OrbitViewController
 Fixed\ Frame=/workcell_frame
 Grid.Alpha=0.5
@@ -31,31 +31,24 @@ Marker3.Queue\ Size=100
 Marker4.Enabled=1
 Marker4.Marker\ Topic=/ur5_arm/collision_proximity_body_spheres
 Marker4.Queue\ Size=100
-Marker5.=1
 Marker5.Enabled=1
 Marker5.Marker\ Topic=/sia20d_arm/matching_mesh_marker
 Marker5.Queue\ Size=100
+Marker6.Enabled=1
+Marker6.Marker\ Topic=/ur5_arm/matching_mesh_marker
+Marker6.Queue\ Size=100
 MarkerArray.Enabled=0
 MarkerArray.Marker\ Array\ Topic=/ur5_arm/planning_scene_markers_array
 MarkerArray.Queue\ Size=100
 MarkerArray2.Enabled=1
 MarkerArray2.Marker\ Array\ Topic=/ur5_arm/object_array
 MarkerArray2.Queue\ Size=100
-MarkerArray2.active_zones=1
-MarkerArray2.pick_zone=1
-MarkerArray2.pick_zone_name=1
-MarkerArray2.zone_names=1
 MarkerArray3.Enabled=1
 MarkerArray3.Marker\ Array\ Topic=/ur5_arm/collision_proximity_body_spheres_array
 MarkerArray3.Queue\ Size=100
 MarkerArray4.Enabled=1
 MarkerArray4.Marker\ Array\ Topic=/sia20d_arm/object_array
 MarkerArray4.Queue\ Size=100
-MarkerArray4.active_zones=1
-MarkerArray4.obstacles=1
-MarkerArray4.pick_zone=1
-MarkerArray4.pick_zone_name=1
-MarkerArray4.zone_names=1
 PointCloud2..AxisColorAutocompute\ Value\ Bounds=1
 PointCloud2..AxisColorAxis=2
 PointCloud2..AxisColorMax\ Value=10
@@ -112,15 +105,11 @@ PointCloud22.Enabled=1
 PointCloud22.Position\ Transformer=XYZ
 PointCloud22.Queue\ Size=10
 PointCloud22.Selectable=1
-PointCloud22.Style=1
+PointCloud22.Style=0
 PointCloud22.Topic=/sia20d_arm_kinect/depth_registered/points
 Property\ Grid\ Splitter=743,78
-Property\ Grid\ State=expanded=.Global Options,Grid.Enabled,PointCloud2.Enabled,RobotModel.Enabled,Marker3.Enabled,MarkerArray2.Enabled,Marker4.Enabled,MarkerArray3.Enabled,RobotModel2.Enabled,MarkerArray4.Enabled,MarkerArray4.Namespaces,PointCloud22.Enabled,Marker5.Enabled,Marker5.Namespaces;splitterratio=0.5
+Property\ Grid\ State=expanded=.Global Options,Grid.Enabled,PointCloud2.Enabled,RobotModel.Enabled,Marker3.Enabled,MarkerArray2.Enabled,Marker4.Enabled,MarkerArray3.Enabled,RobotModel2.Enabled,MarkerArray4.Enabled,PointCloud22.Enabled,Marker5.Enabled,Marker6.Enabled;splitterratio=0.5
 QMainWindow=000000ff00000000fd0000000300000000000001ee00000387fc0200000001fb000000100044006900730070006c006100790073010000001d00000387000000ee00ffffff000000010000014a00000387fc0200000003fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000001d000001290000006700fffffffb0000000a00560069006500770073000000001d000001c1000000bb00fffffffb0000001200530065006c0065006300740069006f006e000000001d000003870000006700ffffff00000003000005000000003efc0100000001fb0000000800540069006d0065010000000000000500000002bf00ffffff0000030c0000038700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
-Robot\:\ RobotModel\ Link\ back_wall2Alpha=1
-Robot\:\ RobotModel\ Link\ back_wall2Enabled=1
-Robot\:\ RobotModel\ Link\ back_wall2Show\ Axes=0
-Robot\:\ RobotModel\ Link\ back_wall2Show\ Trail=0
 Robot\:\ RobotModel\ Link\ cover_part1Alpha=1
 Robot\:\ RobotModel\ Link\ cover_part1Enabled=1
 Robot\:\ RobotModel\ Link\ cover_part1Show\ Axes=0
@@ -201,10 +190,6 @@ Robot\:\ RobotModel\ Link\ ur5_standAlpha=1
 Robot\:\ RobotModel\ Link\ ur5_standEnabled=1
 Robot\:\ RobotModel\ Link\ ur5_standShow\ Axes=0
 Robot\:\ RobotModel\ Link\ ur5_standShow\ Trail=0
-Robot\:\ RobotModel2\ Link\ back_wall1Alpha=1
-Robot\:\ RobotModel2\ Link\ back_wall1Enabled=1
-Robot\:\ RobotModel2\ Link\ back_wall1Show\ Axes=0
-Robot\:\ RobotModel2\ Link\ back_wall1Show\ Trail=0
 Robot\:\ RobotModel2\ Link\ front_wall1Alpha=1
 Robot\:\ RobotModel2\ Link\ front_wall1Enabled=1
 Robot\:\ RobotModel2\ Link\ front_wall1Show\ Axes=0
@@ -338,6 +323,9 @@ Name=PointCloud22
 [Display15]
 ClassName=rviz::MarkerDisplay
 Name=Marker5
+[Display16]
+ClassName=rviz::MarkerDisplay
+Name=Marker6
 [Display2]
 ClassName=rviz::RobotModelDisplay
 Name=RobotModel
@@ -362,12 +350,7 @@ Name=Marker3
 [Display9]
 ClassName=rviz::MarkerArrayDisplay
 Name=MarkerArray2
-[MarkerArray4.place_zones]
-[MarkerArray4.place_zones/place_zone1_b]
-objects_in_zone=1
 [TF2.Frames.]
-back_wall1.Enabled=0
-back_wall2.Enabled=0
 cover_part1.Enabled=0
 cover_part2.Enabled=0
 front_wall1.Enabled=0
@@ -421,4 +404,4 @@ workcell_frame.Enabled=1
 Height=1000
 Width=1280
 X=-67
-Y=-58
+Y=-29
