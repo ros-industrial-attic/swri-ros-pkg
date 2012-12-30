@@ -75,7 +75,8 @@ public:
 		clutter_to_sort_seq.push_back(TaskDetails("Sort",sorting_arm_client_,ArmRequest::SORT));
 
 		sort_to_clutter_seq.push_back(TaskDetails("Singulate Sorted",sorting_arm_client_,ArmRequest::SINGULATE_SORTED));
-		sort_to_clutter_seq.push_back(TaskDetails("Clutter",clutter_arm_client_,ArmRequest::CLUTTER));
+		//sort_to_clutter_seq.push_back(TaskDetails("Clutter",clutter_arm_client_,ArmRequest::CLUTTER));
+		sort_to_clutter_seq.push_back(TaskDetails("Clutter",clutter_arm_client_,ArmRequest::SORT));
 
 
 		while(ros::ok() &&
