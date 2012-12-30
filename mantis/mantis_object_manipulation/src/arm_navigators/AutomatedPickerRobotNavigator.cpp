@@ -148,7 +148,7 @@ void AutomatedPickerRobotNavigator::setup()
 		grasp_pickup_goal_.arm_name = arm_group_name_;
 		grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
 		grasp_pickup_goal_.lift.direction.vector.z = 1.0;
-		grasp_pickup_goal_.lift.desired_distance = .1;
+		grasp_pickup_goal_.lift.desired_distance = .16;
 		grasp_pickup_goal_.allow_gripper_support_collision = true;
 		grasp_pickup_goal_.collision_support_surface_name = "table";
 
@@ -719,11 +719,12 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 			for(std::size_t j = 0; j < grasp_candidates_.size(); j++)
 			{
 				object_manipulation_msgs::Grasp &g = grasp_candidates_[j];
-				g.desired_approach_distance = 0.02f;
+				g.desired_approach_distance = 0.05f;
 			}
 
 			// creating new pick sequence
 			std::vector<object_manipulation_msgs::Grasp> valid_grasps; // dummy array
+			grasp_pick_sequence_.clear();
 			createPickMoveSequence(grasp_pickup_goal_,grasp_candidates_,grasp_pick_sequence_,valid_grasps);
 
 		}
