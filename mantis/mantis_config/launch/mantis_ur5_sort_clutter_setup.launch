@@ -110,11 +110,8 @@
 		<remap from="/mantis_object_recognition" to ="/$(arg arm_namespace)/mantis_object_recognition"/>
 		<node  pkg="mantis_perception" name="mantis_object_recognition" 
 			type="mantis_object_recognition" output="screen">
-			<param name="plug_pick_point_z" value="0.048"/>
-			<param name="enc_pick_point_z" value="0.045"/>
-			<param name="pvct_pick_point_z" value="0.025"/>
-			<param name="pvc_elbow_pick_point_z" value="0.030"/>
-			<param name="small_plug_pick_point_z" value="0.045"/>
+			<rosparam  command="load" 
+			file="$(find mantis_perception)/config/perception_offsets.yaml"/>
 		</node>
 
 	</group>
