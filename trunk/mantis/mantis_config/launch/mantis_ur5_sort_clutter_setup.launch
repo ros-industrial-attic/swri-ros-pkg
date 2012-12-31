@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <launch>
 	<!-- input arguments -->
-	<arg name="use_chomp" default="true" />
+	<arg name="use_chomp" default="false" />
 	<arg name="launch_bringup" default="true"/>
 	<arg name="sim_only" default="true"/>
 
@@ -73,6 +73,7 @@
 
 		<!-- grasp planner -->
 		<include  file="$(find mantis_grasp_planning)/launch/vacuum_gripper_cluttered_grasp_planner_server.launch"/>
+		<!--include  file="$(find mantis_grasp_planning)/launch/vacuum_gripper_grasp_planner_server.launch"/-->
 
 		<!-- segmentation -->
 		<include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
