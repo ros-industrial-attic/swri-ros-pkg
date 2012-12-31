@@ -25,6 +25,13 @@ namespace manipulation_utils
 
 	void createBoundingSphereCollisionModel(const sensor_msgs::PointCloud cluster,double radius,
 			arm_navigation_msgs::CollisionObject &obj);
+
+	// post multiplies a rotation to actual_pose such that the z vector points in the direction of that in
+	// rectification_pose.  No translation is produced.
+	void rectifyPoseZDirection(const geometry_msgs::Pose &actual_pose,
+			const geometry_msgs::Pose &rectification_pose,geometry_msgs::Pose &rectified_pose);
+	void rectifyPoseZDirection(const geometry_msgs::Pose &actual_pose,
+			const tf::Transform &rectification_tf,geometry_msgs::Pose &rectified_pose);
 }
 
 #endif

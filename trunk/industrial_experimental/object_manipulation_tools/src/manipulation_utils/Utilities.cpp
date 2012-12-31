@@ -90,4 +90,49 @@ namespace manipulation_utils
 		obj.shapes.push_back(shape);
 		obj.poses.push_back(pose);
 	}
+
+	void rectifyPoseZDirection(const geometry_msgs::Pose &actual_pose,
+			const geometry_msgs::Pose &rectification_pose,geometry_msgs::Pose &rectified_pose)
+	{
+		tf::Transform rectification_tf;
+		tf::poseMsgToTF(rectification_pose,rectification_tf);
+		rectifyPoseZDirection(actual_pose,rectification_tf,rectified_pose);
+	}
+
+	void rectifyPoseZDirection(const geometry_msgs::Pose &actual_pose,
+			const tf::Transform &rectification_tf,geometry_msgs::Pose &rectified_pose)
+	{
+		tf::Transform actual_tf, rectified_tf;
+		tf::poseMsgToTF(actual_pose,actual_tf);
+		rectified_tf = actual_tf;
+
+		// finding angle and axis of rotation between vectors
+		tf::Vector3 z_desired, z_actual;
+		z_desired = rectification_tf.getBasis().getColumn(2);
+		z_actual = actual_tf.getBasis().getColumn(2);
+
+		double angle = std::abs(z_actual.angle(z_desired));
+		tf::Vector3 axis = z_desired.cross(z_actual);
+
+		ROS_WARN_STREAM("Utilities: z_des: ["<<z_desired.x()<<", "<<z_desired.y()<<", "<<z_desired.z()<<" ]");
+		ROS_WARN_STREAM("Utilities: z_act: ["<<z_actual.x()<<", "<<z_actual.y()<<", "<<z_actual.z()<<" ]");
+
+		ROS_WARN_STREAM("Utilities: rectifying pose has angle: "<<angle<<",and axis: "
+				<<"[ "<<axis.x()<<", "<<axis.y()<<", "<<axis.z()<<" ]");
+
+		if(angle < 0.001f)
+		{
+			// not a significant orientation difference
+			rectified_pose = actual_pose;
+			return;
+		}
+
+		rectified_tf.setRotation(tf::Quaternion(axis,-angle)*actual_tf.getRotation());
+
+		tf::Vector3 z_rect = rectified_tf.getBasis().getColumn(2);
+		ROS_WARN_STREAM("Utilities: z_rec: ["<<z_rect.x()<<", "<<z_rect.y()<<", "<<z_rect.z()<<" ]");
+
+		//rectified_tf.setRotation(actual_tf.getRotation() * tf::Quaternion(axis,-angle));
+		tf::poseTFToMsg(rectified_tf,rectified_pose);
+	}
 }

@@ -105,6 +105,9 @@ public:
 	static std::string MARKER_ATTACHED_OBJECT;
 	static std::string VISUALIZATION_TOPIC;
 
+	// others
+	static const tf::Transform PLACE_RECTIFICATION_TF; // used to orient the tcp's z vector in the normal direction for all place moves
+
 protected:
 	// setup
 	virtual void setup();
@@ -199,6 +202,7 @@ protected:
 	virtual bool createPlaceMoveSequence(const object_manipulation_msgs::PlaceGoal &placeGoal,
 			const std::vector<geometry_msgs::PoseStamped> &place_poses,
 			std::vector<object_manipulator::PlaceExecutionInfo> &place_sequence);
+
 
 protected:
 

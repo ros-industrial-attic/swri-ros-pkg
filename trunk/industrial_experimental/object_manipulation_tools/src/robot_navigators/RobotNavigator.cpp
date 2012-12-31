@@ -7,6 +7,7 @@
 
 #include <object_manipulation_tools/robot_navigators/RobotNavigator.h>
 #include <boost/foreach.hpp>
+#include <object_manipulation_tools/manipulation_utils/Utilities.h>
 
 /* continue modifications in move arm
  *
@@ -16,6 +17,9 @@ std::string RobotNavigator::NAVIGATOR_NAMESPACE = "navigator";
 std::string RobotNavigator::MARKER_ARM_LINK = "arm_links";
 std::string RobotNavigator::MARKER_ATTACHED_OBJECT = "attached_object";
 std::string RobotNavigator::VISUALIZATION_TOPIC = "visualization_markers";
+
+const tf::Transform RobotNavigator::PLACE_RECTIFICATION_TF = tf::Transform(
+		tf::Quaternion(tf::Vector3(1.0f,0.0f,0.0f),M_PI),tf::Vector3(0.0f,0.0f,0.0f));
 
 // global variables
 const double GRAP_ACTION_TIMEOUT = 4.0f;
@@ -882,6 +886,8 @@ bool RobotNavigator::performPickGraspPlanning()
 
 bool RobotNavigator::performPlaceGraspPlanning()
 {
+	using namespace manipulation_utils;
+
 	//	updating grasp place goal data
 	grasp_place_goal_.arm_name = arm_group_name_;
 	grasp_place_goal_.approach.direction.header.frame_id = cm_.getWorldFrameId();
@@ -908,8 +914,11 @@ bool RobotNavigator::performPlaceGraspPlanning()
 	_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wrist_in_tcp_tf);
 	for(std::size_t i = 0; i < grasp_candidates_.size(); i++)
 	{
+		// storing tcp to object pose in grasp place goal
 		tf::poseMsgToTF(grasp_candidates_[i].grasp_pose,wrist_in_obj_tf);
 		tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),grasp_place_goal_.grasp.grasp_pose);
+		manipulation_utils::rectifyPoseZDirection(grasp_place_goal_.grasp.grasp_pose,
+				PLACE_RECTIFICATION_TF,grasp_place_goal_.grasp.grasp_pose);
 		if(createPlaceMoveSequence(grasp_place_goal_,placePoses,valid_place_sequence))
 		{
 			if(!found_valid)
@@ -1195,6 +1204,8 @@ bool RobotNavigator::createPlaceMoveSequence(const object_manipulation_msgs::Pla
 
 bool RobotNavigator::moveArmThroughPickSequence()
 {
+
+	using namespace manipulation_utils;
 	// pushing local changes to planning scene
 	updateChangesToPlanningScene();
 
@@ -1224,6 +1235,8 @@ bool RobotNavigator::moveArmThroughPickSequence()
 
 			tf::poseMsgToTF(grasp_candidates_[counter].grasp_pose,wrist_in_obj_tf);
 			tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),grasp_place_goal_.grasp.grasp_pose);
+			manipulation_utils::rectifyPoseZDirection(grasp_place_goal_.grasp.grasp_pose,
+							PLACE_RECTIFICATION_TF,grasp_place_goal_.grasp.grasp_pose);
 
 			// recomputing candidate grasp place poses
 			std::vector<geometry_msgs::PoseStamped> placePoses;
