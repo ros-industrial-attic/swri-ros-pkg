@@ -7,15 +7,15 @@ pick_zones:
    frame_id: workcell_frame
 #___________________________________#
  - zone_name: clutter_zone
-   x_min: -1.0
-   x_max: -0.5
+   x_min: -1.1
+   x_max: -0.6
    y_min: -0.60
    y_max: 0.60
    frame_id: workcell_frame
 place_zones:
- - zone_name: place_clutter_zone
-   x_min: -1.0
-   x_max: -0.5
+ - zone_name: clutter_place_zone
+   x_min: -1.1
+   x_max: -0.6
    y_min: -0.60
    y_max: 0.60
    frame_id: workcell_frame
