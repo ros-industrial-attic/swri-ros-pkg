@@ -20,8 +20,8 @@ collision_links:
   #ur5_arm_kinect_keepout
 
 joint_costs:
-  ur5_arm_shoulder_pan_joint: 1.0
-  ur5_arm_shoulder_lift_joint: 1.0
+  ur5_arm_shoulder_pan_joint: 0.2
+  ur5_arm_shoulder_lift_joint: 0.4
   ur5_arm_elbow_joint: 1.0
   ur5_arm_wrist_1_joint: 1.0
   ur5_arm_wrist_2_joint: 1.0

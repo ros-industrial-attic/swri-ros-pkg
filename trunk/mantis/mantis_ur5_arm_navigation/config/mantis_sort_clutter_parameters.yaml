@@ -10,11 +10,12 @@ navigator:
   grasp_planning_service_name: /ur5_arm/plan_point_cluster_grasp
   planning_scene_service_name: /ur5_arm/environment_server/set_planning_scene_diff
   arm_inverse_kinematics_plugin: arm_kinematics_constraint_aware/KDLArmKinematicsPlugin
+#  arm_inverse_kinematics_plugin: ur5_ur5_manipulator_kinematics/IKFastKinematicsPlugin
   joint_state_topic: /ur5_arm/joint_states
   joint_trajectory_service_name: /ur5_arm/joint_trajectory_action
   grasp_action_service_name: /ur5_arm/grasp_execution_action
   num_of_grasp_attempts: 4
-  offset_from_first_grasp: 0.02 #1cm
+  new_grasp_attempt_offset: 0.025 #1cm
   attached_object_bb_side: 0.1 #10cm
 cluttered_dropoff:
   frame_id: workcell_frame
