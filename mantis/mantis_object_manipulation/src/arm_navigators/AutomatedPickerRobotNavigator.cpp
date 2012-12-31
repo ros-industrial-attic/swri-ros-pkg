@@ -534,6 +534,7 @@ bool AutomatedPickerRobotNavigator::performPlaceGraspPlanning()
 	// finding valid grasp place sequence
 	bool found_valid = false;
 	geometry_msgs::Pose valid_grasp_place_pose;
+	geometry_msgs::Pose tcp_in_objct_pose;
 	std::vector<object_manipulation_msgs::Grasp> valid_grasps; // will keep only valid grasp pick sequence which grasp yields a valid place sequence;
 	std::vector<object_manipulator::GraspExecutionInfo> valid_pick_sequence;
 	std::vector<object_manipulator::PlaceExecutionInfo> valid_place_sequence;
@@ -544,8 +545,12 @@ bool AutomatedPickerRobotNavigator::performPlaceGraspPlanning()
 	_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wrist_in_tcp_tf);
 	for(std::size_t i = 0; i < grasp_candidates_.size(); i++)
 	{
+		// storing tcp to object pose in grasp place goal
 		tf::poseMsgToTF(grasp_candidates_[i].grasp_pose,wrist_in_obj_tf);
-		tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),grasp_place_goal_.grasp.grasp_pose);
+		tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),tcp_in_objct_pose);
+		manipulation_utils::rectifyPoseZDirection(tcp_in_objct_pose,
+				PLACE_RECTIFICATION_TF,grasp_place_goal_.grasp.grasp_pose);
+
 		if(createPlaceMoveSequence(grasp_place_goal_,candidate_place_poses_,valid_place_sequence))
 		{
 			if(!found_valid)
