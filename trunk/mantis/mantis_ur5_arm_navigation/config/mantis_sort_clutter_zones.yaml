@@ -26,8 +26,8 @@ place_zones:
     z: 1.0
    release_distance: 0.001
    next_location:
-    min_spacing: 0.16
-    max_spacing: 0.20
+    min_spacing: 0.14
+    max_spacing: 0.18
     generation_mode: 0
    ids_allowed: [0, 1, 2, 3, 4, 5]
 
