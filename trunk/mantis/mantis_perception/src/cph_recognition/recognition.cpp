@@ -35,6 +35,23 @@ ros::Publisher rec_pub;
 ros::Publisher vis_pub;
 ros::Publisher noise_pub;
 
+
+double _plug_pick_point_z;
+double _enc_pick_point_z;
+double _pvct_pick_point_z;
+double _pvc_elbow_pick_point_z;
+double _small_plug_pick_point_z;
+double _pvct_1_x_offset;
+double _pvct_1_y_offset;
+double _pvct_1_z_offset;
+double _enc_1_x_offset;
+double _enc_1_y_offset;
+double _enc_1_z_offset;
+double _plug_1_x_offset;
+double _plug_1_y_offset;
+double _plug_1_z_offset;
+
+
 bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
             mantis_perception::mantis_recognition::Response &main_response)
 {  
@@ -46,7 +63,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   float small_plug_y_offset = 0.00;
   float small_plug_z_offset = 0.038;	//55
   //Set vertical offset from part frame/center to pick frame/top of part
-  std::string paramNamespace = "";
+/*  std::string paramNamespace = "";
   paramNamespace = "/" + ros::this_node::getName();
   double _plug_pick_point_z;
   double _enc_pick_point_z;
@@ -76,7 +93,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   ros::param::param(paramNamespace + "/pvct_offset_x", _pvct_1_x_offset, 0.0034);
   ros::param::param(paramNamespace + "/pvct_offset_y", _pvct_1_y_offset, -0.0019);
   ros::param::param(paramNamespace + "/pvct_offset_z", _pvct_1_z_offset, 0.012);
-
+*/
   bool use_region_growing = false;
 
   visualization_msgs::Marker make_marker(geometry_msgs::PoseStamped pick_pose, tf::Quaternion part_orientation);
@@ -213,7 +230,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (_enc_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (_enc_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (_enc_1_z_offset);
-
+    ROS_INFO_STREAM("Pick pose z position: "<<pick_pose.pose.position.z);
   }
   else if (label.substr(found+1)=="small_plug" || label.substr(found+1)=="small_plug_a_1" || label.substr(found+1)=="small_plug_a_2" || label.substr(found+1)=="small_plug_a_3")
   {
@@ -242,7 +259,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (_pvct_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (_pvct_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (_pvct_1_z_offset);
-
+    ROS_INFO_STREAM("Pick pose z position: "<<pick_pose.pose.position.z);
   }
   else if (label.substr(found+1)=="plug" ||
 		  label.substr(found+1)=="plug_1" ||
@@ -259,7 +276,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (_plug_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (_plug_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (_plug_1_z_offset);
-
+    ROS_INFO_STREAM("Pick pose z position: "<<pick_pose.pose.position.z);
   }
   else if (label.substr(found+1)=="pvc_elbow_1" || label.substr(found+1)=="pvcelbow" || label.substr(found+1)=="pvc_elbow_a_1")
   {
@@ -371,6 +388,27 @@ int main(int argc, char **argv)
   noise_pub=n.advertise<sensor_msgs::PointCloud2>("/noisy_points",1);
   
   ROS_INFO("mantis object detection/recognition node ready!");
+
+  std::string paramNamespace = "";
+  paramNamespace = "/" + ros::this_node::getName();
+  ROS_INFO_STREAM("Reading parameters");
+  ros::param::param(paramNamespace + "/plug_pick_point_z", _plug_pick_point_z, 0.048);
+  ros::param::param(paramNamespace + "/enc_pick_point_z", _enc_pick_point_z, 0.051);
+  ros::param::param(paramNamespace + "/pvct_pick_point_z", _pvct_pick_point_z, 0.025);
+  ros::param::param(paramNamespace + "/pvc_elbow_pick_point_z", _pvc_elbow_pick_point_z, 0.030);
+  ros::param::param(paramNamespace + "/small_plug_pick_point_z", _small_plug_pick_point_z, 0.045);
+  ros::param::param(paramNamespace + "/plug_offset_x", _plug_1_x_offset,-0.0036);
+  ros::param::param(paramNamespace + "/plug_offset_y", _plug_1_y_offset, 0.002);
+  ros::param::param(paramNamespace + "/plug_offset_z", _plug_1_z_offset, 0.028);
+  ros::param::param(paramNamespace + "/enclosure_offset_x", _enc_1_x_offset, 0.00563);
+  ros::param::param(paramNamespace + "/enclosure_offset_y", _enc_1_y_offset, -0.0044);
+  ros::param::param(paramNamespace + "/enclosure_offset_z", _enc_1_z_offset, 0.049);
+  ros::param::param(paramNamespace + "/pvct_offset_x", _pvct_1_x_offset, 0.0034);
+  ros::param::param(paramNamespace + "/pvct_offset_y", _pvct_1_y_offset, -0.0019);
+  ros::param::param(paramNamespace + "/pvct_offset_z", _pvct_1_z_offset, 0.012);
+  ROS_INFO_STREAM("Enclosure pick offset: "<<_enc_pick_point_z);
+  ROS_INFO_STREAM("PVC t pick offset: "<<_pvct_pick_point_z);
+  ROS_INFO_STREAM("Plug pick offset: "<<_plug_pick_point_z);
   
   ros::spin(); 
 }
