@@ -97,7 +97,7 @@
 		    	<arg name="table_padding" value="0.02"/>
 
 			<!-- mantis segmentation only arguments -->
-			<arg name="max_cluster_size" default="10000" />
+			<arg name="max_cluster_size" default="36000" />
 			<arg name="plane_dist_thresh" default="0.015" />
 		</include>
 

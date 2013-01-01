@@ -72,7 +72,8 @@
 		</node>
 
 		<!-- grasp planner -->
-		<include  file="$(find mantis_grasp_planning)/launch/vacuum_gripper_grasp_planner_server.launch"/>
+		<include  file="$(find mantis_grasp_planning)/launch/vacuum_gripper_cluttered_grasp_planner_server.launch"/>
+		<!--include  file="$(find mantis_grasp_planning)/launch/vacuum_gripper_grasp_planner_server.launch"/-->
 
 		<!-- segmentation -->
 		<include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
