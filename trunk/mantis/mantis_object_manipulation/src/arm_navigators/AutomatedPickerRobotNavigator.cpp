@@ -27,7 +27,8 @@ AutomatedPickerRobotNavigator::AutomatedPickerRobotNavigator()
 :RobotNavigator(),
  num_of_grasp_attempts_(4),
  offset_from_first_grasp_(0.01f), //1 cm
- attached_obj_bb_side_(0.1f)
+ attached_obj_bb_side_(0.1f),
+ recovery_retreat_distance_(0.05f)
 {
 	// TODO Auto-generated constructor stub
 	GOAL_NAMESPACE = NODE_NAME + "/" + GOAL_NAMESPACE;
@@ -179,6 +180,8 @@ void AutomatedPickerRobotNavigator::fetchParameters(std::string nameSpace)
 			num_of_grasp_attempts_);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_NEW_GRASP_OFFSET,offset_from_first_grasp_,
 			offset_from_first_grasp_);
+	ros::param::param(nameSpace + "/" + PARAM_NAME_NEW_GRASP_RETREAT_DISTANCE,recovery_retreat_distance_,
+			recovery_retreat_distance_);
 }
 
 void AutomatedPickerRobotNavigator::run()
@@ -690,13 +693,13 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 			if(i == num_of_grasp_attempts_ )
 			{
 				// currently on last iteration, all options have been attempted, exiting
-				ROS_ERROR_STREAM(NODE_NAME<<"No more pick attempts remain, aborting pick");
+				ROS_ERROR_STREAM(NODE_NAME<<": No more pick attempts remain, aborting pick");
 				zone_selector_.removeLastObjectAdded();
 				return false;
 			}
 			else
 			{
-				ROS_WARN_STREAM(NODE_NAME<<"Generating new object pose with offset: "<<offset_from_first_grasp_
+				ROS_WARN_STREAM(NODE_NAME<<": Generating new object pose with offset: "<<offset_from_first_grasp_
 						<<" and angle: "<<angleIncrement * i << " from original");
 			}
 
@@ -724,7 +727,7 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 			for(std::size_t j = 0; j < grasp_candidates_.size(); j++)
 			{
 				object_manipulation_msgs::Grasp &g = grasp_candidates_[j];
-				g.desired_approach_distance = 0.05f;
+				g.desired_approach_distance = recovery_retreat_distance_;
 			}
 
 			// creating new pick sequence

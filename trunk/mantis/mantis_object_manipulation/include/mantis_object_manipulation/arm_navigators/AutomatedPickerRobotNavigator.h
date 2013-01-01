@@ -16,6 +16,7 @@
 #include <boost/thread/mutex.hpp>
 
 static const std::string PARAM_NAME_NUM_GRASP_ATTEMTPTS = "num_of_grasp_attempts";
+static const std::string PARAM_NAME_NEW_GRASP_RETREAT_DISTANCE = "new_grasp_attempt_retreat_distance";
 static const std::string PARAM_NAME_NEW_GRASP_OFFSET = "new_grasp_attempt_offset";
 static const std::string PARAM_NAME_ATTACHED_OBJECT_BB_SIDE = "attached_object_bb_side";
 
@@ -116,6 +117,7 @@ protected:
 	JointConfiguration joint_configuration_;
 	int num_of_grasp_attempts_; // number of additional pick attempts
 	double offset_from_first_grasp_;// distance from original pick grasp to used in new pick attempt
+	double recovery_retreat_distance_;
 	double attached_obj_bb_side_;
 
 	// segmentation
