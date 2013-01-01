@@ -804,8 +804,9 @@ bool RobotNavigator::performPickGraspPlanning()
 	modelPose.pose.header.stamp = ros::Time::now();
 	request.arm_name = arm_group_name_;
 	request.target.potential_models.push_back(modelPose);
-	request.target.reference_frame_id = segmented_clusters_[0].header.frame_id;
+	//request.target.reference_frame_id = segmented_clusters_[0].header.frame_id;
 	request.target.cluster = segmented_clusters_[0];
+	request.target.reference_frame_id = segmentation_results_.table.pose.header.frame_id;
 
 	bool success = grasp_planning_client.call(request, response);
 
@@ -826,6 +827,10 @@ bool RobotNavigator::performPickGraspPlanning()
 	{
 		ROS_WARN_STREAM(NODE_NAME<<": No grasps returned in response");
 		return false;
+	}
+	else
+	{
+		ROS_INFO_STREAM(NODE_NAME<<": Grasp Planner Srcv returned "<<response.grasps.size()<<" grasp candidates");
 	}
 
 	//TODO - actually deal with the different cases here, especially for the cluster planner
