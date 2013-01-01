@@ -583,22 +583,22 @@ bool PickPlaceZoneSelector::PlaceZone::checkOverlaps(ZoneBounds &nextObjBounds,s
 bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInRandomizedMode(std::vector<geometry_msgs::PoseStamped> &placePoses,
 		std::vector<PlaceZone* > &otherZones)
 {
-	// previos pose
 	std::vector<ObjectDetails> object_array(objects_in_zone_);
-	tf::Transform &lastTf = object_array.back().Trans;
-
-	// returned bool
+	ObjectDetails seed_search_object_ = ObjectDetails();
+	tf::Transform lastTf;
+	tf::Transform nextTf;
+	ZoneBounds nextObjectBounds;
+	tf::Vector3 placeZoneCenter;
 	bool foundNewPlaceLocation = false;
 
 	// place zone details
-	tf::Vector3 placeZoneCenter = getCenter();
+	placeZoneCenter = getCenter();
 
 	// next object details
-	ZoneBounds nextObjectBounds = ZoneBounds(next_object_details_.Size,next_object_details_.Trans.getOrigin());
+	nextObjectBounds = ZoneBounds(next_object_details_.Size,next_object_details_.Trans.getOrigin());
 
-	// next pose
-	tf::Transform nextTf;
-	if(objects_in_zone_.size() == 0)
+	// initializing candidate location
+	if(object_array.size() == 0)
 	{
 		tf::Quaternion rot = tf::Quaternion(Axis,0.0f);
 		// the z component equals the height of the object plus the requested release distance
@@ -606,104 +606,140 @@ bool PickPlaceZoneSelector::PlaceZone::generateNextPlacePoseInRandomizedMode(std
 		tf::Vector3 pos = tf::Vector3(placeZoneCenter.x(),
 				placeZoneCenter.y(),this->next_object_details_.Size.z() + ReleaseDistanceFromTable);
 		nextTf = tf::Transform(rot,pos);
-		foundNewPlaceLocation = true;
-		std::cout<< typeid(*this).name() <<": First object with id: "<< this->next_object_details_.Id
-				<<", using center of place zone at x: "<<pos.x()<<", y: "<<pos.y()<<", z: "<<pos.z()<<"\n";
+
+		// updating next object bounds to new candidate location
+		nextObjectBounds = ZoneBounds(next_object_details_.Size,nextTf.getOrigin());
+
+		// checking if located inside place region
+		if(!ZoneBounds::contains(*this,nextObjectBounds))
+		{
+			ROS_INFO_STREAM("ZoneSelector/"<< ZoneName <<": First object with id: "<<
+					this->next_object_details_.Id<<" too large for zone, exiting");
+			return false;
+		}
+
+		// checking for intersections with obstacles
+		ROS_INFO_STREAM("ZoneSelector/"<< ZoneName <<": Checking collision with other zones and obstacles");
+		if( checkOverlaps(nextObjectBounds,otherZones))
+		{
+			// in collision with at least one obstacle, using last obstacle as seed
+			ROS_WARN_STREAM("ZoneSelector/"<< ZoneName <<": Collision found, using last object as seed");
+
+			seed_search_object_ = ObjectDetails(tf::Transform(tf::Quaternion::getIdentity()
+			,otherZones.back()->getCenter()),otherZones.back()->getSize());
+			lastTf = nextTf;
+
+			ROS_WARN_STREAM("ZoneSelector/"<< ZoneName <<": New seed object set");
+		}
+		else
+		{
+			foundNewPlaceLocation = true;
+			ROS_INFO_STREAM("ZoneSelector/"<< ZoneName <<": First object with id: "<< this->next_object_details_.Id
+					<<", using center of place zone at x: "<<pos.x()<<", y: "<<pos.y()<<", z: "<<pos.z());
+		}
 	}
 	else
 	{
-		nextTf = tf::Transform(objects_in_zone_.back().Trans);
+		seed_search_object_ = object_array.back();
+		lastTf = seed_search_object_.Trans;
 
-		// last object details
-		ZoneBounds lastObjectBounds(objects_in_zone_.back().Size,objects_in_zone_.back().Trans.getOrigin());
-		// sum of the bounding radius of the next and last objects
-		double radialDistance = nextObjectBounds.getBoundingRadius() + lastObjectBounds.getBoundingRadius();
+	}
 
-		// new location variables
-		int distanceSegments = 20; // number of possible values between min and max object spacing
-		int angleSegments = 8; // number of possible values between 0 and 2pi
-		int randVal;
-		double distance; // number between Max and Min Object spacing parameters.  Should be larger than radial distance (meters)
-		double angle,angleMin = 0,angleMax = 2*M_PI; // radians
-		double ratio;
+	// initializing new  location search variables
+	ZoneBounds lastObjectBounds = ZoneBounds(seed_search_object_.Size,seed_search_object_.Trans.getOrigin());
+	double radialDistance = nextObjectBounds.getBoundingRadius() + lastObjectBounds.getBoundingRadius();
+	int distanceSegments = 20; // number of possible values between min and max object spacing
+	int angleSegments = 8; // number of possible values between 0 and 2pi
+	int randVal;
+	double distance; // number between Max and Min Object spacing parameters.  Should be larger than radial distance (meters)
+	double angle,angleMin = 0,angleMax = 2*M_PI; // radians
+	double ratio;
 
-		// creating new location relative to the last object
-		int maxIterations = 200;
-		int iter = 0;
-		while(iter < maxIterations)
+	// creating new location relative to the last object
+	int maxIterations = 200;
+	int iter = 0;
+
+	ROS_WARN_STREAM("ZoneSelector/"<< ZoneName <<": Starting search");
+	while(!foundNewPlaceLocation && (iter++ < maxIterations))
+	{
+
+		// computing distance
+		randVal = rand()%distanceSegments + 1;
+		ratio = (double)randVal/(double)distanceSegments;
+		distance = MinObjectSpacing + ratio*(MaxObjectSpacing - MinObjectSpacing);
+		distance = (distance > radialDistance ? distance : radialDistance);// choosing largest between distance and radial distance
+		tf::Vector3 trans = tf::Vector3(distance,0.0f,0.0f);
+
+		// computing angle
+		randVal = rand()%angleSegments + 1;
+		ratio = (double)randVal/(double)angleSegments;
+		angle = angleMin + ratio*(angleMax - angleMin);
+		tf::Quaternion quat = tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),angle);
+
+		// computing next pose by rotating and translating from last pose
+		nextTf = lastTf * tf::Transform(quat,tf::Vector3(0.0f,0.0f,0.0f))*tf::Transform(tf::Quaternion::getIdentity(),trans);
+
+		// updating next object bounds to new candidate location
+		nextObjectBounds = ZoneBounds(next_object_details_.Size,nextTf.getOrigin());
+
+		// checking if located inside place region
+		if(!ZoneBounds::contains(*this,nextObjectBounds))
 		{
-			iter++;
-
-			// computing distance
-			randVal = rand()%distanceSegments + 1;
-			ratio = (double)randVal/(double)distanceSegments;
-			distance = MinObjectSpacing + ratio*(MaxObjectSpacing - MinObjectSpacing);
-			distance = (distance > radialDistance ? distance : radialDistance);// choosing largest between distance and radial distance
-			tf::Vector3 trans = tf::Vector3(distance,0.0f,0.0f);
-
-			// computing angle
-			randVal = rand()%angleSegments + 1;
-			ratio = (double)randVal/(double)angleSegments;
-			angle = angleMin + ratio*(angleMax - angleMin);
-			tf::Quaternion quat = tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),angle);
-
-			// computing next pose by rotating and translating from last pose
-			nextTf = lastTf * tf::Transform(quat,tf::Vector3(0.0f,0.0f,0.0f))*tf::Transform(tf::Quaternion::getIdentity(),trans);
-
-			// updating next object bounds to new candidate location
-			nextObjectBounds = ZoneBounds(next_object_details_.Size,nextTf.getOrigin());
-
-			// checking if located inside place region
-			if(!ZoneBounds::contains(*this,nextObjectBounds))
+			if(object_array.size()>1)
 			{
+				// updating variables if using another object as seed
+				ROS_WARN_STREAM("ZoneSelector/"<< ZoneName <<": Updating seed object");
 				object_array.pop_back();
-				lastTf = object_array.back().Trans;
-				continue;
+				seed_search_object_ = object_array.back();
+				lastTf = seed_search_object_.Trans;
+				lastObjectBounds = ZoneBounds(seed_search_object_.Size,seed_search_object_.Trans.getOrigin());
+				radialDistance = nextObjectBounds.getBoundingRadius() + lastObjectBounds.getBoundingRadius();
+				ROS_WARN_STREAM("ZoneSelector/"<< ZoneName <<": Seed object updated");
 			}
-
-			// checking for overlaps against objects already in place region
-			bool overlapFound = false;
-
-			typedef std::vector<ObjectDetails>::iterator IterType;
-			for(IterType it = objects_in_zone_.begin();it != objects_in_zone_.end(); it++)
-			{
-				ZoneBounds objInZoneBounds(it->Size,it->Trans.getOrigin());
-				if(ZoneBounds::intersect(nextObjectBounds,objInZoneBounds))
-				{
-					overlapFound = true;
-					break;
-				}
-			}
-
-			if(overlapFound)
-			{
-				continue; // try again
-			}
-
-			// checking for overlaps against object in other zones
-			overlapFound = checkOverlaps(nextObjectBounds,otherZones);
-
-			if(overlapFound)
-			{
-				continue; // try again
-			}
-
-			double distFromCenter = (getCenter() - nextTf.getOrigin()).length();
-			ROS_INFO_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Found available position at a distance of "<< distFromCenter
-					<<" from the center after "<<iter<<" iterations");
-
-			// adjusting place point to object height
-			nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
-			foundNewPlaceLocation = true;
-			break;
+			continue;
 		}
 
-		if(!foundNewPlaceLocation)
+		// checking for overlaps against objects already in place region
+		bool overlapFound = false;
+		typedef std::vector<ObjectDetails>::iterator IterType;
+		for(IterType it = objects_in_zone_.begin();it != objects_in_zone_.end(); it++)
 		{
-			ROS_ERROR_STREAM("ZoneSelector/"<<ZoneName<<": Did not find location after "
-					<<maxIterations<<" iterations, exiting");
-			return false;
+			ZoneBounds objInZoneBounds(it->Size,it->Trans.getOrigin());
+			if(ZoneBounds::intersect(nextObjectBounds,objInZoneBounds))
+			{
+				overlapFound = true;
+				break;
+			}
 		}
+
+		if(overlapFound)
+		{
+			continue; // try again
+		}
+
+		// checking for overlaps against object in other zones
+		overlapFound = checkOverlaps(nextObjectBounds,otherZones);
+
+		if(overlapFound)
+		{
+			continue; // try again
+		}
+
+		double distFromCenter = (getCenter() - nextTf.getOrigin()).length();
+		ROS_INFO_STREAM(ros::this_node::getName()<<"/ZoneSelection"<<": Found available position at a distance of "<< distFromCenter
+				<<" from the center after "<<iter<<" iterations");
+
+		// adjusting place point to object height
+		nextTf.getOrigin().setZ(next_object_details_.Size.z() + ReleaseDistanceFromTable);
+		foundNewPlaceLocation = true;
+		break;
+	}
+
+	if(!foundNewPlaceLocation)
+	{
+		ROS_ERROR_STREAM("ZoneSelector/"<<ZoneName<<": Did not find location after "
+				<<maxIterations<<" iterations, exiting");
+		return false;
 	}
 
 	// generating candidate poses from next location found

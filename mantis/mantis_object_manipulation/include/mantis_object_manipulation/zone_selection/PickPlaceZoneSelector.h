@@ -181,7 +181,15 @@ public:
 
 	struct ObjectDetails
 	{
-		ObjectDetails(){}
+		ObjectDetails()
+		:Trans(tf::Transform::getIdentity()),
+		 Size(tf::Vector3(0.0f,0.0f,0.0f)),
+		 Id(0),
+		 Tag("")
+		{
+
+		}
+
 		ObjectDetails(const tf::Transform &trans, const tf::Vector3 &size, int id = 0,std::string tag = "")
 		:Trans(trans),
 		 Size(size),

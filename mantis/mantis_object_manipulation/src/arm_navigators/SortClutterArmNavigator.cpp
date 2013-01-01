@@ -93,11 +93,11 @@ bool SortClutterArmNavigator::moveArmThroughPickSequence()
 	bool success = AutomatedPickerRobotNavigator::moveArmThroughPickSequence();
 	if(success)
 	{
-		ROS_INFO_STREAM(NODE_NAME<<": Grasp place move succeeded");
+		ROS_INFO_STREAM(NODE_NAME<<": Grasp pick move succeeded");
 	}
 	else
 	{
-		ROS_ERROR_STREAM(NODE_NAME<<"Grasp place move failed, aborting");
+		ROS_ERROR_STREAM(NODE_NAME<<": Grasp pick move failed, aborting");
 		handshaking_data_.response.error_code = ArmHandshaking::Response::PICK_ERROR;
 	}
 	return success;
@@ -538,7 +538,8 @@ bool SortClutterArmNavigator::performGraspPlanningForSorting()
 	using namespace mantis_object_manipulation;
 
 	// call grasp planning method that uses recognition results
-	if(!AutomatedPickerRobotNavigator::performPickGraspPlanning())
+//	if(!AutomatedPickerRobotNavigator::performPickGraspPlanning())
+	if(!RobotNavigator::performPickGraspPlanning())
 	{
 		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
 		return false;
@@ -558,7 +559,8 @@ bool SortClutterArmNavigator::performGraspPlanningForClutter()
 	using namespace mantis_object_manipulation;
 
 	// call grasp planning method that uses recognition results
-	if(!AutomatedPickerRobotNavigator::performPickGraspPlanning())
+//	if(!AutomatedPickerRobotNavigator::performPickGraspPlanning())
+	if(!RobotNavigator::performPickGraspPlanning())
 	{
 		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
 		return false;
@@ -601,14 +603,16 @@ bool SortClutterArmNavigator::performGraspPlanningForSingulation()
 		recognized_obj_pose_map_[std::string(obj.id)] = model.pose;
 
 		// now call base grasp planning method
-		success = RobotNavigator::performPickGraspPlanning();
+		//success = RobotNavigator::performPickGraspPlanning();
 
 	}
 	else
 	{
 		// recognition data available then it must be moving objects from sorted zone
-		success = AutomatedPickerRobotNavigator::performPickGraspPlanning();
+		//success = AutomatedPickerRobotNavigator::performPickGraspPlanning();
 	}
+
+	success = RobotNavigator::performPickGraspPlanning();
 
 	// call grasp place planning in clutter zone
 	if(success)
