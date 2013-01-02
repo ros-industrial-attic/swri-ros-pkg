@@ -65,8 +65,10 @@ void SortClutterArmNavigator::setup()
 {
 	ros::NodeHandle nh;
 	AutomatedPickerRobotNavigator::setup();
+//	handshaking_server_ = nh.advertiseService(HANDSHAKING_SERVICE_NAME,
+//			&SortClutterArmNavigator::armHandshakingSrvCallback,this);
 	handshaking_server_ = nh.advertiseService(HANDSHAKING_SERVICE_NAME,
-			&SortClutterArmNavigator::armHandshakingSrvCallback,this);
+			&SortClutterArmNavigator::armHandshakingTaskHandler,this);
 }
 
 bool SortClutterArmNavigator::moveArmThroughPlaceSequence()
@@ -101,6 +103,164 @@ bool SortClutterArmNavigator::moveArmThroughPickSequence()
 		handshaking_data_.response.error_code = ArmHandshaking::Response::PICK_ERROR;
 	}
 	return success;
+}
+
+bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulation::ArmHandshaking::Request& req,
+		mantis_object_manipulation::ArmHandshaking::Response& res)
+{
+	using namespace mantis_object_manipulation;
+	bool success = true;
+	handshaking_data_.request = req;
+
+	// initializing response
+	res.completed = true;
+	res.error_code = HandshakingResp::OK;
+
+	std::vector<uint32_t> &task_codes = req.tasks_codes;
+	std::vector<uint32_t>::iterator i;
+	for(i = task_codes.begin(); success && i != task_codes.end(); i++)
+	{
+		uint32_t &task_code = *i;
+		switch(task_code)
+		{
+		case ArmHandshaking::Request::TASK_CLEAR_RESULTS:
+			clearResultsFromLastSrvCall();
+			break;
+
+		case ArmHandshaking::Request::TASK_MOVE_HOME:
+			success = moveArmToSide();
+			if(!success)
+			{
+				handshaking_data_.response.error_code = ArmHandshaking::Response::MOVE_COMPLETION_ERROR;
+			}
+			break;
+
+		case ArmHandshaking::Request::TASK_PERCEPTION_FOR_SINGULATION:
+
+			zone_selector_.goToPickZone(CLUTTERED_PICK_ZONE_INDEX);
+			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
+			success = performSegmentation();
+			if(!success)
+			{
+				handshaking_data_.response.error_code = ArmHandshaking::Response::PERCEPTION_ERROR;
+				ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
+				break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << " Segmentation stage completed");
+			break;
+
+		case ArmHandshaking::Request::TASK_PERCEPTION_FOR_SORTING:
+
+			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
+			if(!performSegmentation())
+			{
+				ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
+				handshaking_data_.response.error_code = ArmHandshaking::Response::PERCEPTION_ERROR;
+				success = false;
+				break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << " Segmentation stage completed");
+
+			ROS_INFO_STREAM(NODE_NAME << ": Recognition stage started");
+			if(!performRecognition())
+			{
+				ROS_WARN_STREAM(NODE_NAME << ": Recognition stage failed");
+				handshaking_data_.response.error_code = ArmHandshaking::Response::PERCEPTION_ERROR;
+				success = false;
+				break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << ": Recognition stage completed");
+			break;
+
+		case ArmHandshaking::Request::TASK_PERCEPTION_FOR_CLUTTERING:
+
+			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
+			if(!performSegmentation())
+			{
+				ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
+				handshaking_data_.response.error_code = ArmHandshaking::Response::PERCEPTION_ERROR;
+				success = false;
+				break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << " Segmentation stage completed");
+			break;
+
+		case ArmHandshaking::Request::TASK_GRASP_PLANNING_FOR_CLUTTER:
+
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage started");
+			if(!performGraspPlanningForClutter())
+			{
+				ROS_ERROR_STREAM(NODE_NAME<<": Grasp Planning stage failed");
+				handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
+				success = false;
+				break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage completed");
+			break;
+
+		case ArmHandshaking::Request::TASK_GRASP_PLANNING_FOR_SINGULATION:
+
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage started");
+			if(!performGraspPlanningForSingulation())
+			{
+				ROS_ERROR_STREAM(NODE_NAME<<": Grasp Planning stage failed");
+				handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
+				success = false;
+				break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage completed");
+
+		case ArmHandshaking::Request::TASK_GRASP_PLANNING_FOR_SORT:
+
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage started");
+			if(!performGraspPlanningForSorting())
+			{
+				ROS_ERROR_STREAM(NODE_NAME<<": Grasp Planning stage failed");
+				handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
+				success = false;
+				break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage completed");
+			break;
+
+		case ArmHandshaking::Request::TASK_MOVE_TO_PICK:
+			// beginning movement
+			ROS_INFO_STREAM(NODE_NAME + ": Grasp Pick stage started");
+			success = moveArmThroughPickSequence();
+			if(!success)
+			{
+			  ROS_WARN_STREAM(NODE_NAME << ": Grasp Pick stage failed");
+			  handshaking_data_.response.error_code = ArmHandshaking::Response::MOVE_COMPLETION_ERROR;
+			  moveArmToSide();
+			  //return false;
+			  break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Pick stage completed");
+			break;
+
+		case ArmHandshaking::Request::TASK_MOVE_TO_PLACE:
+			ROS_INFO_STREAM(NODE_NAME + ": Grasp Place stage started");
+			success = moveArmThroughPlaceSequence();
+			if(!success)
+			{
+				ROS_WARN_STREAM(NODE_NAME << ": Grasp Place stage failed");
+				handshaking_data_.response.error_code = ArmHandshaking::Response::MOVE_COMPLETION_ERROR;
+				moveArmToSide();
+				//return false;
+				break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << ": Grasp Place stage completed");
+			break;
+		}
+	}
+
+	handshaking_data_.response.completed = success;
+	res.completed = success;
+	res.error_code = handshaking_data_.response.error_code;
+
+	return true;
 }
 
 bool SortClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulation::ArmHandshaking::Request& req,
@@ -605,11 +765,6 @@ bool SortClutterArmNavigator::performGraspPlanningForSingulation()
 		// now call base grasp planning method
 		//success = RobotNavigator::performPickGraspPlanning();
 
-	}
-	else
-	{
-		// recognition data available then it must be moving objects from sorted zone
-		//success = AutomatedPickerRobotNavigator::performPickGraspPlanning();
 	}
 
 	success = RobotNavigator::performPickGraspPlanning();

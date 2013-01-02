@@ -73,5 +73,8 @@ target_link_libraries(dual_arm_supervisor_node ${PROJECT_NAME})
 rosbuild_add_executable(sort_clutter_arm_node src/nodes/sort_clutter_arm_node.cpp)
 target_link_libraries(sort_clutter_arm_node ${PROJECT_NAME})
 
+rosbuild_add_executable(concurrent_arm_move_supervisor_node src/nodes/arm_move_supervisor_node.cpp)
+target_link_libraries(concurrent_arm_move_supervisor_node ${PROJECT_NAME})
+
 #rosbuild_add_executable(sensor_data_redirect_node src/nodes/sensor_data_redirect.cpp)
 #rosbuild_add_executable(test_grasp_action_server src/test/test_grasp_action_server_node.cpp)

@@ -50,6 +50,11 @@ protected:
 	bool armHandshakingSrvCallback(mantis_object_manipulation::ArmHandshaking::Request& req,
 			mantis_object_manipulation::ArmHandshaking::Response& res);
 
+	bool armHandshakingTaskHandler(mantis_object_manipulation::ArmHandshaking::Request& req,
+			mantis_object_manipulation::ArmHandshaking::Response& res);
+
+
+
 protected: // members
 	mantis_object_manipulation::ArmHandshaking handshaking_data_;
 	ros::ServiceServer handshaking_server_;
