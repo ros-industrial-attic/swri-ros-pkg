@@ -40,7 +40,7 @@
 
 	<!-- instantiating sensor definitions -->
 	<xacro:sensor_definitions prefix="${arm_prefix}" parent_link="ur5_stand" 
-		x_val="-.867" y_val="0.165" z_val="1.083" pitch="1.175" yaw="0.0" roll="-0.008" /> 
+		x_val="-.8815" y_val="0.167" z_val="1.073" pitch="1.175" yaw="0.0" roll="-0.008" /> 
 	<!--xacro:sensor_definitions prefix="${arm_prefix}" parent_link="${arm_prefix}base_link" 
 		x_val="1.08" y_val="-0.72" z_val="${0.82 - robot_stand_height}" pitch="0.5235" yaw="2.536"/-->
 	<!-- end of sensor definitions -->
