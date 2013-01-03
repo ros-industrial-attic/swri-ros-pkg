@@ -1,4 +1,4 @@
-collision_clearance: 0.05
+collision_clearance: 0.01
 
 collision_links:
   back_wall2
@@ -21,11 +21,11 @@ collision_links:
 
 joint_costs:
   ur5_arm_shoulder_pan_joint: 0.2
-  ur5_arm_shoulder_lift_joint: 0.4
-  ur5_arm_elbow_joint: 1.0
-  ur5_arm_wrist_1_joint: 1.0
-  ur5_arm_wrist_2_joint: 1.0
-  ur5_arm_wrist_3_joint: 1.0
+  ur5_arm_shoulder_lift_joint: 1.0
+  ur5_arm_elbow_joint: 4.0
+  ur5_arm_wrist_1_joint: 2.0
+  ur5_arm_wrist_2_joint: 2.0
+  ur5_arm_wrist_3_joint: 2.0
 
 
 joint_velocity_limits:

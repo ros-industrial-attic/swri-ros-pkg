@@ -6,4 +6,4 @@ filter_chain:
   -
     name: iterative_parabolic_smoother
     type: IterativeParabolicSmootherFilterJointTrajectoryWithConstraints
-    params: {max_iterations: 1000, max_time_change_per_it: 0.001}
+    params: {max_iterations: 1000, max_time_change_per_it: 0.01}

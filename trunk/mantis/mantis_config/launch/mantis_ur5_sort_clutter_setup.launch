@@ -4,6 +4,7 @@
 	<arg name="use_chomp" default="false" />
 	<arg name="launch_bringup" default="true"/>
 	<arg name="sim_only" default="true"/>
+	<arg name="use_clutter_grasp_planner" default="false"/>
 
 	<arg name="sensor_usb_manual_setup" default="false"/>
 	<arg name="sensor_usb_bus" default="002"/>
@@ -72,8 +73,10 @@
 		</node>
 
 		<!-- grasp planner -->
-		<include  file="$(find mantis_grasp_planning)/launch/vacuum_gripper_cluttered_grasp_planner_server.launch"/>
-		<!--include  file="$(find mantis_grasp_planning)/launch/vacuum_gripper_grasp_planner_server.launch"/-->
+		<include  if="$(arg use_clutter_grasp_planner)"
+			 file="$(find mantis_grasp_planning)/launch/vacuum_gripper_cluttered_grasp_planner_server.launch"/>
+		<include  unless="$(arg use_clutter_grasp_planner)"
+			file="$(find mantis_grasp_planning)/launch/vacuum_gripper_grasp_planner_server.launch"/>
 
 		<!-- segmentation in main work zone-->
 		<include file="$(find mantis_perception)/launch/mantis_segmentation.launch">
