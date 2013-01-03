@@ -501,6 +501,7 @@ public:
 	{
 		obstacle_objects_.clear();
 	}
+	void resetAllPlaceZones();
 
 
 
