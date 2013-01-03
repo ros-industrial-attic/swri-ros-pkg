@@ -114,6 +114,15 @@ void PickPlaceZoneSelector::goToNextPickZone()
 	}
 }
 
+void PickPlaceZoneSelector::resetAllPlaceZones()
+{
+	for(unsigned int i = 0; i < place_zones_.size(); i++)
+	{
+		PlaceZone &placeZone = place_zones_[i];
+		placeZone.resetZone();
+	}
+}
+
 bool PickPlaceZoneSelector::isInPickZone(const std::vector<sensor_msgs::PointCloud> &clusters,std::vector<int> &inZone)
 {
 	inZone.clear();

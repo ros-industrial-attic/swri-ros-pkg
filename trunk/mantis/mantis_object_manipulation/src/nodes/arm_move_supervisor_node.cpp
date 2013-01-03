@@ -14,7 +14,7 @@
 
 const std::string ARM1_HANDSHAKING_SERVICE_NAME = "arm1_handshaking_service";
 const std::string ARM2_HANDSHAKING_SERVICE_NAME = "arm2_handshaking_service";
-const int MAX_SERVICE_CALL_ATTEMPTS = 8;
+const int MAX_SERVICE_CALL_ATTEMPTS = 2;
 
 typedef mantis_object_manipulation::ArmHandshaking ArmServiceType;
 typedef mantis_object_manipulation::ArmHandshaking::Response ArmResponse;
@@ -126,7 +126,10 @@ public:
 			req.tasks_codes = tasks_codes_;
 			while((srv_call_counter++ < attempts_) && !succeeded)
 			{
+				ROS_INFO_STREAM(ros::this_node::getName()<<": Task '"<<name_<<"' attempt "<<srv_call_counter);
 				succeeded = arm_client_.call(req,res) && (bool)res.completed;
+				ROS_INFO_STREAM(ros::this_node::getName()<<": Task '"<<name_<<"' state "
+						<<(succeeded ?" succeeded":" failed"));
 			}
 			error_code_ = res.error_code;
 
@@ -199,16 +202,37 @@ public:
 		{
 			bool completed = true;
 			TaskSequence::iterator i;
+
 			for(i = task_seq.begin(); i != task_seq.end(); i++)
 			{
+				ROS_INFO_STREAM(ros::this_node::getName()<<": Requesting Multithreaded Task(s)");
+				printTaskSequence(*i);
 				if(!runTaskSet(*i))
 				{
+					ROS_ERROR_STREAM(ros::this_node::getName()<<": Multithreaded Task(s) Returned Error");
 					termination_error_found =  terminationErrorReceived(*i);
 					completed = false;
 					break;
 				}
+				ROS_INFO_STREAM(ros::this_node::getName()<<": Completed Multithreaded Task(s)");
 			}
+
 			return completed;
+		}
+
+		void printTaskSequence(ConcurrentTaskSet &set)
+		{
+			std::stringstream ss;
+			ss<<"\n\tMultithreaded Tasks:\n";
+			ConcurrentTaskSet::iterator j;
+			int counter =1;
+			for(j = set.begin(); j != set.end(); j++)
+			{
+				ss<<"\t\t- "<<"arm "<<counter<<": "<<j->name_<<"\n";
+				counter++;
+			}
+
+			ROS_INFO_STREAM(ros::this_node::getName()<<ss.str());
 		}
 
 		/*
@@ -224,12 +248,16 @@ public:
 				TaskSequence::iterator i;
 				for(i = task_seq.begin(); i != task_seq.end(); i++)
 				{
+					ROS_INFO_STREAM(ros::this_node::getName()<<": Requesting Multithreaded Task(s)");
+					printTaskSequence(*i);
 					if(!runTaskSet(*i))
 					{
 						proceed_to_next_cycle = false;
 						termination_error =  terminationErrorReceived(*i);
+						ROS_ERROR_STREAM(ros::this_node::getName()<<": Multithreaded Task(s) Returned Error");
 						break;
 					}
+					ROS_INFO_STREAM(ros::this_node::getName()<<": Completed Multithreaded Task(s)");
 				}
 			}
 
@@ -298,8 +326,12 @@ public:
 		TaskSetExecutor task_executor;
 
 		// clearing singulation zone
-		if((!task_executor.runTaskSequence(arm1_clear_singulated_zone_seq,stop_running) || !stop_running) &&
-				(!task_executor.runTaskSequence(arm2_clear_singulated_zone_seq,stop_running) || !stop_running))
+		if(!task_executor.runTaskSequence(arm1_clear_singulated_zone_seq,stop_running) && stop_running)
+		{
+			return;
+		}
+
+		if(!task_executor.runTaskSequence(arm2_clear_singulated_zone_seq,stop_running) && stop_running)
 		{
 			return;
 		}
@@ -307,38 +339,62 @@ public:
 		while(ros::ok() && checkServiceClientConnections())
 		{
 			// start by moving arms home
+			ROS_INFO_STREAM(": ------------------ Request Move home ------------------ ");
 			if(!task_executor.runTaskSequence(move_home_seq,stop_running))
 			{
+				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
 				break;
 			}
 
 			// first moves for sort sequence
-			if(!task_executor.runTaskSequence(sort_start_seq,stop_running) || !stop_running)
+			ROS_INFO_STREAM(": ------------------ Request Sort start sequence ------------------ ");
+//			if( !task_executor.runTaskSequence(sort_start_seq,stop_running) || stop_running || !first_run)
+//			{
+//				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+//				break;
+//			}
+			task_executor.runTaskSequence(sort_start_seq,stop_running);
+			if(stop_running)
 			{
+				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
 				break;
 			}
 
 			// cycle until sorting is finished
+			ROS_INFO_STREAM(": ------------------ Request Sort Cycle sequence ------------------ ");
 			if(!task_executor.cycleTaskSequence(sort_cycle_seq))
 			{
+				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
 				break;
 			}
 
 			// moving arms home (just in case)
+			ROS_INFO_STREAM(": ------------------ Request Move Home ------------------ ");
 			if(!task_executor.runTaskSequence(move_home_seq,stop_running))
 			{
+				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
 				break;
 			}
 
 			// first moves for clutter sequence
-			if(!task_executor.runTaskSequence(clutter_start_seq,stop_running) || !stop_running)
+			ROS_INFO_STREAM(": ------------------ Request Clutter Start Sequence ------------------ ");
+//			if(!task_executor.runTaskSequence(clutter_start_seq,stop_running) || stop_running)
+//			{
+//				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+//				break;
+//			}
+			task_executor.runTaskSequence(clutter_start_seq,stop_running);
+			if(stop_running)
 			{
+				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
 				break;
 			}
 
 			// cycle until clutter is finished
+			ROS_INFO_STREAM(": ------------------  Request Clutter Cycle Sequence ------------------ ");
 			if(!task_executor.cycleTaskSequence(clutter_cycle_seq))
 			{
+				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
 				break;
 			}
 		}
@@ -486,7 +542,7 @@ protected:
 				task_codes,
 				1,// 1 attempt allowed
 				ArmResponse::FINAL_MOVE_HOME_ERROR);// termination error code
-		task_definitions_.insert(std::make_pair(ArmRequest::TASK_MOVE_TO_PICK,t));
+		task_definitions_.insert(std::make_pair(ArmRequest::TASK_MOVE_HOME,t));
 
 		// move to pick
 		TaskDetails move_recovery_task = t;
@@ -625,8 +681,11 @@ protected:
 		// clear data
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-		task1.arm_client_ = clutter_client;
+		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+		task1.arm_client_ = sort_client;
+		task2.arm_client_ = clutter_client;
 		set.push_back(task1);
+		set.push_back(task2);
 		sort_start_seq.push_back(set);
 
 		// perception in clutter zone
@@ -731,11 +790,14 @@ protected:
 		// clear data
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
 		task1.arm_client_ = sort_client;
+		task2.arm_client_ = clutter_client;
 		set.push_back(task1);
+		set.push_back(task2);
 		clutter_start_seq.push_back(set);
 
-		// perception in clutter zone
+		// perception in sorted zone
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
 		task1.arm_client_ = sort_client;
@@ -824,8 +886,13 @@ int main(int argc,char** argv)
 	ros::init(argc,argv,"concurrent_arm_move_supervisor_node");
 	ros::NodeHandle nh;
 
+	ros::AsyncSpinner spinner(2);
+	spinner.start();
+
 	ConcurrentArmMoveSupervisor arm_supervisor;
 	arm_supervisor.run();
+
+	spinner.stop();
 
 	return 0;
 }

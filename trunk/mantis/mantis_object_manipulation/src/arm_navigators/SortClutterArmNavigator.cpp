@@ -14,7 +14,8 @@ typedef mantis_object_manipulation::ArmHandshaking::Response HandshakingResp;
 static const double BOUNDING_SPHERE_RADIUS = 0.01f;
 
 SortClutterArmNavigator::SortClutterArmNavigator()
-:AutomatedPickerRobotNavigator()
+:AutomatedPickerRobotNavigator(),
+ singulation_segmentation_srv_("singulation_segmentation")
 {
 	JOINT_CONFIGURATIONS_NAMESPACE = NODE_NAME + "/" + JOINT_HOME_POSITION_NAMESPACE;
 	clutter_dropoff_ns_ = NODE_NAME + "/" + CLUTTER_DROPOFF_NAMESPACE;
@@ -30,6 +31,8 @@ void SortClutterArmNavigator::fetchParameters(std::string nameSpace)
 	AutomatedPickerRobotNavigator::fetchParameters(nameSpace);
 	singulated_dropoff_location_.fetchParameters(singulated_dropoff_ns_);
 	clutter_dropoff_location_.fetchParameters(clutter_dropoff_ns_);
+	ros::param::param(nameSpace + "/" + PARAM_SINGULATION_SEGMENTATION_SRV,singulation_segmentation_srv_,
+			singulation_segmentation_srv_);
 }
 
 void SortClutterArmNavigator::clearResultsFromLastSrvCall()
@@ -39,6 +42,7 @@ void SortClutterArmNavigator::clearResultsFromLastSrvCall()
 	grasp_pickup_goal_.target.potential_models.clear();
 	grasp_candidates_.clear();
 	handshaking_data_.response.error_code = HandshakingResp::OK;
+	zone_selector_.resetAllPlaceZones();
 }
 
 void SortClutterArmNavigator::run()
@@ -69,6 +73,10 @@ void SortClutterArmNavigator::setup()
 //			&SortClutterArmNavigator::armHandshakingSrvCallback,this);
 	handshaking_server_ = nh.advertiseService(HANDSHAKING_SERVICE_NAME,
 			&SortClutterArmNavigator::armHandshakingTaskHandler,this);
+
+	singulation_segmentation_client_ = nh.serviceClient<tabletop_object_detector::TabletopSegmentation>(
+			singulation_segmentation_srv_,true);
+
 }
 
 bool SortClutterArmNavigator::moveArmThroughPlaceSequence()
@@ -211,6 +219,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 				break;
 			}
 			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage completed");
+			break;
 
 		case ArmHandshaking::Request::TASK_GRASP_PLANNING_FOR_SORT:
 
@@ -487,19 +496,43 @@ bool SortClutterArmNavigator::performSegmentation()
 	using namespace mantis_object_manipulation;
 
 	// performing segmentation
+	segmented_clusters_.clear();
 	if(!RobotNavigator::performSegmentation())
 	{
 		if(segmentation_results_.result != segmentation_results_.SUCCESS)
 		{
 			handshaking_data_.response.error_code = ArmHandshaking::Response::PERCEPTION_ERROR;
-			return false;
+			ROS_WARN_STREAM(NODE_NAME<<": Segmentation in main work zone returned with an error");
+			//return false;
 		}
 
 		if(segmented_clusters_.empty())
 		{
-			handshaking_data_.response.error_code = ArmHandshaking::Response::NO_CLUSTERS_FOUND;
-			return false;
+			ROS_WARN_STREAM(NODE_NAME<<": Segmentation in main work zone returned 0 clusters");
 		}
+	}
+
+	// calling singulation segmentation srv
+	TabletopSegmentation::Request req;
+	TabletopSegmentation::Response res;
+	if((singulation_segmentation_client_ != NULL) && singulation_segmentation_client_.call(req,res) &&
+			!res.clusters.empty())
+	{
+		ROS_INFO_STREAM(NODE_NAME<<": Segmentation in singulated zone returned "<<
+				res.clusters.size()<<" clusters");
+		handshaking_data_.response.error_code = ArmHandshaking::Response::OK;
+		segmented_clusters_.insert(segmented_clusters_.end(),res.clusters.begin(),res.clusters.end());
+	}
+	else
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": Segmentation in singulated zone returned 0 clusters");
+	}
+
+	if(segmented_clusters_.empty())
+	{
+		ROS_ERROR_STREAM(NODE_NAME<<": Segmentation from both services returned 0 clusters");
+		handshaking_data_.response.error_code = ArmHandshaking::Response::PERCEPTION_ERROR;
+		return false;
 	}
 
 	// clearing obstacle clusters from zone

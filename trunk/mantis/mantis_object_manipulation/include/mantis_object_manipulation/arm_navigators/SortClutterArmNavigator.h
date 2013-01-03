@@ -22,6 +22,9 @@ static const std::string SINGULATED_DROPOFF_NAMESPACE = "singulated_dropoff";
 static const std::string JOINT_HOME_POSITION_NAMESPACE = "joint_home_position";
 static const std::string HANDSHAKING_SERVICE_NAME = "arm_handshaking";
 
+// param names
+static const std::string PARAM_SINGULATION_SEGMENTATION_SRV= "singulation_segmentation_service_name";
+
 class SortClutterArmNavigator: public AutomatedPickerRobotNavigator
 {
 public:
@@ -55,15 +58,22 @@ protected:
 
 
 
-protected: // members
+protected:
+	// members
 	mantis_object_manipulation::ArmHandshaking handshaking_data_;
 	ros::ServiceServer handshaking_server_;
 
+	// ros connections
+	ros::ServiceClient singulation_segmentation_client_;
+
+	// ros parameters
 	std::string clutter_dropoff_ns_;
 	std::string singulated_dropoff_ns_;
 
 	GoalLocation clutter_dropoff_location_;
 	GoalLocation singulated_dropoff_location_;
+
+	std::string singulation_segmentation_srv_;
 };
 
 #endif /* SINGULATECLUTTERARMNAVIGATOR_H_ */
