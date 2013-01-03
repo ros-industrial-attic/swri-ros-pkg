@@ -308,16 +308,16 @@ public:
 		ros::ServiceClient &sorting_arm_client = arm2_handshaking_client_;
 
 		// creating concurrent task sequences
-		TaskSequence clutter_start_seq, clutter_cycle_seq;
-		TaskSequence sort_start_seq, sort_cycle_seq;
+		TaskSequence clutter_start_seq, clutter_cycle_seq, clutter_end_seq;
+		TaskSequence sort_start_seq, sort_cycle_seq, sort_end_seq;
 		TaskSequence arm1_clear_singulated_zone_seq;
 		TaskSequence arm2_clear_singulated_zone_seq;
 		TaskSequence move_home_seq;
 
 		generateMoveHomeSequence(clutter_arm_client,sorting_arm_client,move_home_seq);
-		generateSortSequences(clutter_arm_client,sorting_arm_client,sort_cycle_seq,sort_start_seq);
+		generateSortSequences(clutter_arm_client,sorting_arm_client,sort_cycle_seq,sort_start_seq,sort_end_seq);
 		//generateClutterSequences(clutter_arm_client,sorting_arm_client,clutter_cycle_seq,clutter_start_seq);
-		generateSortSequences(sorting_arm_client,clutter_arm_client,clutter_cycle_seq,clutter_start_seq);
+		generateSortSequences(sorting_arm_client,clutter_arm_client,clutter_cycle_seq,clutter_start_seq,clutter_end_seq);
 		generateClearSingulationZoneSequence(clutter_arm_client,arm1_clear_singulated_zone_seq);
 		generateClearSingulationZoneSequence(sorting_arm_client,arm2_clear_singulated_zone_seq);
 
@@ -326,13 +326,17 @@ public:
 		TaskSetExecutor task_executor;
 
 		// clearing singulation zone
+		ROS_INFO_STREAM(": ------------------ Request Clutter Arm Clear Singulation ------------------ ");
 		if(!task_executor.runTaskSequence(arm1_clear_singulated_zone_seq,stop_running) && stop_running)
 		{
+			ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
 			return;
 		}
 
+		ROS_INFO_STREAM(": ------------------ Request Sorting Arm Clear Singulation ------------------ ");
 		if(!task_executor.runTaskSequence(arm2_clear_singulated_zone_seq,stop_running) && stop_running)
 		{
+			ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
 			return;
 		}
 
@@ -346,26 +350,31 @@ public:
 				break;
 			}
 
-			// first moves for sort sequence
 			ROS_INFO_STREAM(": ------------------ Request Sort start sequence ------------------ ");
-//			if( !task_executor.runTaskSequence(sort_start_seq,stop_running) || stop_running || !first_run)
-//			{
-//				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
-//				break;
-//			}
-			task_executor.runTaskSequence(sort_start_seq,stop_running);
-			if(stop_running)
+			if(task_executor.runTaskSequence(sort_start_seq,stop_running))
 			{
-				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
-				break;
-			}
+				// cycle until sorting is finished
+				ROS_INFO_STREAM(": ------------------ Request Sort Cycle sequence ------------------ ");
+				if(!task_executor.cycleTaskSequence(sort_cycle_seq))
+				{
+					ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+					break;
+				}
 
-			// cycle until sorting is finished
-			ROS_INFO_STREAM(": ------------------ Request Sort Cycle sequence ------------------ ");
-			if(!task_executor.cycleTaskSequence(sort_cycle_seq))
+				ROS_INFO_STREAM(": ------------------ Request Sort End sequence ------------------ ");
+				if(!task_executor.runTaskSequence(sort_end_seq,stop_running))
+				{
+					ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+					break;
+				}
+			}
+			else
 			{
-				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
-				break;
+				if(stop_running)
+				{
+					ROS_ERROR_STREAM(node_name_<<": Termination error received, exiting");
+					break;
+				}
 			}
 
 			// moving arms home (just in case)
@@ -376,26 +385,31 @@ public:
 				break;
 			}
 
-			// first moves for clutter sequence
-			ROS_INFO_STREAM(": ------------------ Request Clutter Start Sequence ------------------ ");
-//			if(!task_executor.runTaskSequence(clutter_start_seq,stop_running) || stop_running)
-//			{
-//				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
-//				break;
-//			}
-			task_executor.runTaskSequence(clutter_start_seq,stop_running);
-			if(stop_running)
+			ROS_INFO_STREAM(": ------------------ Request Clutter start sequence ------------------ ");
+			if(task_executor.runTaskSequence(clutter_start_seq,stop_running))
 			{
-				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
-				break;
-			}
+				// cycle until clutter is finished
+				ROS_INFO_STREAM(": ------------------  Request Clutter Cycle Sequence ------------------ ");
+				if(!task_executor.cycleTaskSequence(clutter_cycle_seq))
+				{
+					ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+					break;
+				}
 
-			// cycle until clutter is finished
-			ROS_INFO_STREAM(": ------------------  Request Clutter Cycle Sequence ------------------ ");
-			if(!task_executor.cycleTaskSequence(clutter_cycle_seq))
+				ROS_INFO_STREAM(": ------------------  Request Clutter End Sequence ------------------ ");
+				if(!task_executor.runTaskSequence(clutter_end_seq,stop_running))
+				{
+					ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+					break;
+				}
+			}
+			else
 			{
-				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
-				break;
+				if(stop_running)
+				{
+					ROS_ERROR_STREAM(node_name_<<": Termination error received, exiting");
+					break;
+				}
 			}
 		}
 	}
@@ -599,12 +613,8 @@ protected:
 	}
 
 	void generateSortSequences(ros::ServiceClient &clutter_client,ros::ServiceClient &sort_client,
-			TaskSequence &sort_cycle_seq,TaskSequence &sort_start_seq)
+			TaskSequence &sort_cycle_seq,TaskSequence &sort_start_seq,TaskSequence &sort_end_seq)
 	{
-//
-//		ros::ServiceClient &clutter_client = arm1_handshaking_client_;
-//		ros::ServiceClient &sort_client = arm2_handshaking_client_;
-
 		// defining task sets
 		ConcurrentTaskSet set;
 		TaskDetails task1, task2;
@@ -708,10 +718,43 @@ protected:
 		task1.arm_client_ = clutter_client;
 		set.push_back(task1);
 		sort_start_seq.push_back(set);
+
+		/*
+		 * --------------------------------- Sort End Sequence definition -------------------------
+		 * Moves last object from singulated to sorted and returns home
+		 */
+
+		// clear data
+		set.clear();
+		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+		task1.arm_client_ = sort_client;
+		set.push_back(task1);
+		sort_end_seq.push_back(set);
+
+		// perception in singulated zone
+		set.clear();
+		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
+		task1.arm_client_ = sort_client;
+		set.push_back(task1);
+		sort_end_seq.push_back(set);
+
+		// grasp planning from singulated to sorted zone
+		set.clear();
+		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_SORT];
+		task1.arm_client_ = sort_client;
+		set.push_back(task1);
+		sort_end_seq.push_back(set);
+
+		// move to pick place then home
+		set.clear();
+		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE_THEN_HOME];
+		task1.arm_client_ = sort_client;
+		set.push_back(task1);
+		sort_end_seq.push_back(set);
 	}
 
 	void generateClutterSequences(ros::ServiceClient &clutter_client,ros::ServiceClient &sort_client,
-			TaskSequence &clutter_cycle_seq,TaskSequence &clutter_start_seq)
+			TaskSequence &clutter_cycle_seq,TaskSequence &clutter_start_seq,TaskSequence &clutter_end_seq)
 	{
 
 		// defining task sets
@@ -817,6 +860,39 @@ protected:
 		task1.arm_client_ = sort_client;
 		set.push_back(task1);
 		clutter_start_seq.push_back(set);
+
+		/*
+		 * --------------------------------- Clutter Start Sequence definition -------------------------
+		 * Moves last object from singulated to clutter and returns home
+		 */
+
+		// clear data
+		set.clear();
+		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+		task1.arm_client_ = clutter_client;
+		set.push_back(task1);
+		clutter_end_seq.push_back(set);
+
+		// perception in singulated zone
+		set.clear();
+		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_CLUTTERING];
+		task1.arm_client_ = clutter_client;
+		set.push_back(task1);
+		clutter_end_seq.push_back(set);
+
+		// grasp planning from singulated to clutter zone
+		set.clear();
+		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_CLUTTER];
+		task1.arm_client_ = clutter_client;
+		set.push_back(task1);
+		clutter_end_seq.push_back(set);
+
+		// move to pick place then home
+		set.clear();
+		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE_THEN_HOME];
+		task1.arm_client_ = clutter_client;
+		set.push_back(task1);
+		clutter_end_seq.push_back(set);
 	}
 
 	void generateClearSingulationZoneSequence(ros::ServiceClient &client, TaskSequence &seq)
