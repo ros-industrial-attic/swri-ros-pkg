@@ -99,7 +99,7 @@ void RobotNavigator::setup()
 				model_database_service_, true);
 
 		// path and grasp plannig
-		grasp_planning_client = nh.serviceClient<object_manipulation_msgs::GraspPlanning>(grasp_planning_service_, true);
+		grasp_planning_client = nh.serviceClient<object_manipulation_msgs::GraspPlanning>(grasp_planning_service_, false);
 		planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>(path_planner_service_);
 
 		// arm trajectory filter service
