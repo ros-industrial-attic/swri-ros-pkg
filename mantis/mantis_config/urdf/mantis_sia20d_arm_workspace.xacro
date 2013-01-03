@@ -27,7 +27,7 @@
 	<!-- end of sensor definitions -->
 
 	<!-- instantiating arm and gripper -->	
-	<xacro:vacuum_gripper_definition prefix="${arm_prefix}" gripper_adjustment="0.035"/>
+	<xacro:vacuum_gripper_definition prefix="${arm_prefix}" gripper_adjustment="-0.001"/>
 	<xacro:sia20d_mesh prefix="${arm_prefix}"/>
 
 	<!-- arm-workcell joint definitions -->

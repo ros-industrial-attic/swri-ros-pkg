@@ -14,7 +14,7 @@
 
 const std::string ARM1_HANDSHAKING_SERVICE_NAME = "arm1_handshaking_service";
 const std::string ARM2_HANDSHAKING_SERVICE_NAME = "arm2_handshaking_service";
-const int MAX_SERVICE_CALL_ATTEMPTS = 2;
+const int MAX_SERVICE_CALL_ATTEMPTS = 4;
 
 typedef mantis_object_manipulation::ArmHandshaking ArmServiceType;
 typedef mantis_object_manipulation::ArmHandshaking::Response ArmResponse;
@@ -623,24 +623,24 @@ protected:
 		 * clutter arm client starts at home position and there's one object in the singulation area
 		*/
 		// clear data
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-		task1.arm_client_ = clutter_client;
-		task2.arm_client_ = sort_client;
-		set.push_back(task1);
-		set.push_back(task2);
-		sort_cycle_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+//		task1.arm_client_ = clutter_client;
+//		task2.arm_client_ = sort_client;
+//		set.push_back(task1);
+//		set.push_back(task2);
+//		sort_cycle_seq.push_back(set);
 
 		// perception in clutter and singulated zones
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
-		task2 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
-		task1.arm_client_ = clutter_client;
-		task2.arm_client_ = sort_client;
-		set.push_back(task1);
-		set.push_back(task2);
-		sort_cycle_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
+//		task2 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
+//		task1.arm_client_ = clutter_client;
+//		task2.arm_client_ = sort_client;
+//		set.push_back(task1);
+//		set.push_back(task2);
+//		sort_cycle_seq.push_back(set);
 
 		// grasp planning in clutter and singulation
 		set.clear();
@@ -689,23 +689,23 @@ protected:
 		 */
 
 		// clear data
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-		task1.arm_client_ = sort_client;
-		task2.arm_client_ = clutter_client;
-		set.push_back(task1);
-		set.push_back(task2);
-		sort_start_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+//		task1.arm_client_ = sort_client;
+//		task2.arm_client_ = clutter_client;
+//		set.push_back(task1);
+//		set.push_back(task2);
+//		sort_start_seq.push_back(set);
 
 		// perception in clutter zone
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
-		task1.arm_client_ = clutter_client;
-		set.push_back(task1);
-		sort_start_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
+//		task1.arm_client_ = clutter_client;
+//		set.push_back(task1);
+//		sort_start_seq.push_back(set);
 
-		// grasp planning from clutter to singulated zone
+		// perception and grasp planning from clutter to singulated zone
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_SINGULATION];
 		task1.arm_client_ = clutter_client;
@@ -725,18 +725,18 @@ protected:
 		 */
 
 		// clear data
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-		task1.arm_client_ = sort_client;
-		set.push_back(task1);
-		sort_end_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+//		task1.arm_client_ = sort_client;
+//		set.push_back(task1);
+//		sort_end_seq.push_back(set);
 
 		// perception in singulated zone
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
-		task1.arm_client_ = sort_client;
-		set.push_back(task1);
-		sort_end_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
+//		task1.arm_client_ = sort_client;
+//		set.push_back(task1);
+//		sort_end_seq.push_back(set);
 
 		// grasp planning from singulated to sorted zone
 		set.clear();
@@ -765,26 +765,26 @@ protected:
 		 * sort arm client starts at home position and there's one object in the singulation area
 		*/
 		// clear data
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-		task1.arm_client_ = clutter_client;
-		task2.arm_client_ = sort_client;
-		set.push_back(task1);
-		set.push_back(task2);
-		clutter_cycle_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+//		task1.arm_client_ = clutter_client;
+//		task2.arm_client_ = sort_client;
+//		set.push_back(task1);
+//		set.push_back(task2);
+//		clutter_cycle_seq.push_back(set);
 
 		// perception in sorted and singulated zones
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_CLUTTERING];// segmentation in singulation zone
-		task2 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];// segmentation in sorted zone
-		task1.arm_client_ = clutter_client;
-		task2.arm_client_ = sort_client;
-		set.push_back(task1);
-		set.push_back(task2);
-		clutter_cycle_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_CLUTTERING];// segmentation in singulation zone
+//		task2 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];// segmentation in sorted zone
+//		task1.arm_client_ = clutter_client;
+//		task2.arm_client_ = sort_client;
+//		set.push_back(task1);
+//		set.push_back(task2);
+//		clutter_cycle_seq.push_back(set);
 
-		// grasp planning in sorted and singulation
+		// perception and grasp planning in sorted and singulation
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_CLUTTER];
 		task2 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_SINGULATION];
@@ -831,23 +831,23 @@ protected:
 		 */
 
 		// clear data
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-		task1.arm_client_ = sort_client;
-		task2.arm_client_ = clutter_client;
-		set.push_back(task1);
-		set.push_back(task2);
-		clutter_start_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+//		task1.arm_client_ = sort_client;
+//		task2.arm_client_ = clutter_client;
+//		set.push_back(task1);
+//		set.push_back(task2);
+//		clutter_start_seq.push_back(set);
 
 		// perception in sorted zone
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
-		task1.arm_client_ = sort_client;
-		set.push_back(task1);
-		clutter_start_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
+//		task1.arm_client_ = sort_client;
+//		set.push_back(task1);
+//		clutter_start_seq.push_back(set);
 
-		// grasp planning from clutter to singulated zone
+		// perception and grasp planning from clutter to singulated zone
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_SINGULATION];
 		task1.arm_client_ = sort_client;
@@ -867,20 +867,20 @@ protected:
 		 */
 
 		// clear data
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-		task1.arm_client_ = clutter_client;
-		set.push_back(task1);
-		clutter_end_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
+//		task1.arm_client_ = clutter_client;
+//		set.push_back(task1);
+//		clutter_end_seq.push_back(set);
 
 		// perception in singulated zone
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_CLUTTERING];
-		task1.arm_client_ = clutter_client;
-		set.push_back(task1);
-		clutter_end_seq.push_back(set);
+//		set.clear();
+//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_CLUTTERING];
+//		task1.arm_client_ = clutter_client;
+//		set.push_back(task1);
+//		clutter_end_seq.push_back(set);
 
-		// grasp planning from singulated to clutter zone
+		// perception and grasp planning from singulated to clutter zone
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_CLUTTER];
 		task1.arm_client_ = clutter_client;
@@ -916,13 +916,13 @@ protected:
 		seq.push_back(set);
 
 		// perception
-		set.clear();
-		task = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
-		task.arm_client_ = client;
-		set.push_back(task);
-		seq.push_back(set);
+//		set.clear();
+//		task = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
+//		task.arm_client_ = client;
+//		set.push_back(task);
+//		seq.push_back(set);
 
-		// grasp planning
+		// perception and grasp planning
 		set.clear();
 		task = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_SORT];
 		task.arm_client_ = client;

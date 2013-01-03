@@ -197,6 +197,20 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 
 		case ArmHandshaking::Request::TASK_GRASP_PLANNING_FOR_CLUTTER:
 
+			clearResultsFromLastSrvCall();
+
+			// perception
+			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
+			if(!performSegmentation())
+			{
+				ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
+				handshaking_data_.response.error_code = ArmHandshaking::Response::PERCEPTION_ERROR;
+				success = false;
+				break;
+			}
+
+			// planning
 			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage started");
 			if(!performGraspPlanningForClutter())
 			{
@@ -210,6 +224,21 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 
 		case ArmHandshaking::Request::TASK_GRASP_PLANNING_FOR_SINGULATION:
 
+			clearResultsFromLastSrvCall();
+
+			// perception
+			zone_selector_.goToPickZone(CLUTTERED_PICK_ZONE_INDEX);
+			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
+			success = performSegmentation();
+			if(!success)
+			{
+				handshaking_data_.response.error_code = ArmHandshaking::Response::PERCEPTION_ERROR;
+				ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
+				break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << " Segmentation stage completed");
+
+			// planning
 			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage started");
 			if(!performGraspPlanningForSingulation())
 			{
@@ -218,11 +247,37 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 				success = false;
 				break;
 			}
+
 			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage completed");
 			break;
 
 		case ArmHandshaking::Request::TASK_GRASP_PLANNING_FOR_SORT:
 
+			clearResultsFromLastSrvCall();
+
+			// perception
+			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
+			if(!performSegmentation())
+			{
+				ROS_WARN_STREAM(NODE_NAME<<": Segmentation stage failed");
+				handshaking_data_.response.error_code = ArmHandshaking::Response::PERCEPTION_ERROR;
+				success = false;
+				break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << " Segmentation stage completed");
+
+			ROS_INFO_STREAM(NODE_NAME << ": Recognition stage started");
+			if(!performRecognition())
+			{
+				ROS_WARN_STREAM(NODE_NAME << ": Recognition stage failed");
+				handshaking_data_.response.error_code = ArmHandshaking::Response::PERCEPTION_ERROR;
+				success = false;
+				break;
+			}
+			ROS_INFO_STREAM(NODE_NAME << ": Recognition stage completed");
+
+			// planning
 			ROS_INFO_STREAM(NODE_NAME << ": Grasp Planning stage started");
 			if(!performGraspPlanningForSorting())
 			{
