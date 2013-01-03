@@ -23,15 +23,15 @@
 		<!-- ____________________________ Real robot nodes and drivers____________________________  -->
 		<group unless="$(arg sim_only)">
 
-			<node pkg="dx100" type="robot_state" name="robot_state" args="$(arg controller_ip)" output="log"/>
-			<node pkg="dx100" type="motion_interface" name="motion_interface" args="$(arg controller_ip)" output="log"/>
-			<node pkg="dx100" type="joint_trajectory_action" name="joint_trajectory_action" output="log"/>
+			<node pkg="dx100" type="robot_state" name="robot_state" args="$(arg controller_ip)"/>
+			<node pkg="dx100" type="motion_interface" name="motion_interface" args="$(arg controller_ip)"/>
+			<node pkg="dx100" type="joint_trajectory_action" name="joint_trajectory_action"/>
 
 			<!-- gripper interface -->
 			<param name="suction_on_output_channel" value="1"/>
 			<param name="suction_check_output_channel" value="0"/>
 			<param name="use_sensor_feedback" value="true"/>
-			<node name="gripper" pkg="mantis_io" type="suction_gripper" output="screen"/>
+			<node name="gripper" pkg="mantis_io" type="suction_gripper"/>
 			<!--node pkg="object_manipulation_tools" 
 				type="grasp_action_service" name="gripper_interface" output="screen"/-->
 		</group>

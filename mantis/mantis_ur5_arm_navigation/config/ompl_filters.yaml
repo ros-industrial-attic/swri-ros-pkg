@@ -6,7 +6,7 @@ filter_chain:
   -
     name: cubic_spline_short_cutter_smoother
     type: CubicSplineShortCutterFilterJointTrajectoryWithConstraints
-    params: {discretization: 0.02}
+    params: {discretization: 0.04}
   -
     name: iterative_parabolic_smoother
     type: IterativeParabolicSmootherFilterJointTrajectoryWithConstraints
