@@ -309,6 +309,24 @@ public:
 				{
 					return false;
 				}
+
+				// parsing allowed objects array
+				structMember = "objs_allowed";
+				XmlRpc::XmlRpcValue ObjectArray = val[structMember];
+				if((ObjectArray.getType() == XmlRpc::XmlRpcValue::TypeArray) &&
+						(ObjectArray[0].getType() == XmlRpc::XmlRpcValue::TypeString))
+				{
+					for(unsigned int i = 0; i < ObjectArray.size(); i++)
+					{
+						std::string obj = static_cast<std::string>(ObjectArray[i]);
+						Objs.push_back(obj);
+					}
+
+				}
+				else
+				{
+					return false;
+				}
 			}
 
 			resetZone();
@@ -362,9 +380,9 @@ public:
 			ZoneBounds::getTextMarker(marker);
 			std::stringstream ss;
 			ss<<"\n[ ";
-			for(std::size_t i = 0; i < Ids.size(); i++)
+			for(std::size_t i = 0; i < Objs.size(); i++)
 			{
-				ss<<Ids[i]<<" ";
+				ss<<Objs[i]<<" ";
 			}
 			ss<<"]";
 			marker.text = marker.text + ss.str();
@@ -386,6 +404,7 @@ public:
 		double MaxObjectSpacing; // maximum distance between two objects inside goal region as measured from their local origin
 		int NextLocationGenMode; // one of the supported enumeration values that determines how to generate the next location
 		std::vector<int> Ids; // Array of object id's allowed in this zone
+		std::vector<std::string> Objs;
 
 	protected:
 
