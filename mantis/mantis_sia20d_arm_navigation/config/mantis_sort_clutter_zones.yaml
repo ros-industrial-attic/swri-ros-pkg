@@ -31,6 +31,7 @@ place_zones:
     max_spacing: 0.18
     generation_mode: 2
    ids_allowed: [1]
+   objs_allowed: [enclosure]
 #___________________________________#
  - zone_name: sorted_zone_2
    x_min: 0.841
@@ -49,6 +50,7 @@ place_zones:
     max_spacing: 0.18
     generation_mode: 2
    ids_allowed: [3]
+   objs_allowed: [pvc_t]
 #___________________________________#
  - zone_name: sorted_zone_3
    x_min: 0.6
@@ -67,6 +69,7 @@ place_zones:
     max_spacing: 0.18
     generation_mode: 2
    ids_allowed: [2]
+   objs_allowed: [end_cap]
 #___________________________________#
  - zone_name: sorted_zone_4
    x_min: 0.6
@@ -85,3 +88,4 @@ place_zones:
     max_spacing: 0.18
     generation_mode: 1
    ids_allowed: [0, 4, 5] 
+   objs_allowed: [plug]
