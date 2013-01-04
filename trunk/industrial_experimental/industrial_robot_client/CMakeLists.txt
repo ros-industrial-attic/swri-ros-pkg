@@ -59,10 +59,10 @@ rosbuild_add_executable(robot_state
   src/generic_robot_state_node.cpp)
 target_link_libraries(robot_state industrial_robot_client)
 
-#rosbuild_add_executable(motion_streaming_interface
-#  src/generic_joint_streamer_node.cpp)
-#target_link_libraries(motion_streaming_interface industrial_robot_client)
-#rosbuild_link_boost(motion_streaming_interface thread)
+rosbuild_add_executable(motion_streaming_interface
+  src/generic_joint_streamer_node.cpp)
+target_link_libraries(motion_streaming_interface industrial_robot_client)
+rosbuild_link_boost(motion_streaming_interface thread)
 
 rosbuild_add_executable(motion_download_interface
   src/generic_joint_downloader_node.cpp)
