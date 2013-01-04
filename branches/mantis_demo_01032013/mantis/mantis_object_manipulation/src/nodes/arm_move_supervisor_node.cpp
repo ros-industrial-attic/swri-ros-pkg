@@ -316,8 +316,8 @@ public:
 
 		generateMoveHomeSequence(clutter_arm_client,sorting_arm_client,move_home_seq);
 		generateSortSequences(clutter_arm_client,sorting_arm_client,sort_cycle_seq,sort_start_seq,sort_end_seq);
-		//generateClutterSequences(clutter_arm_client,sorting_arm_client,clutter_cycle_seq,clutter_start_seq);
-		generateSortSequences(sorting_arm_client,clutter_arm_client,clutter_cycle_seq,clutter_start_seq,clutter_end_seq);
+		generateClutterSequences(clutter_arm_client,sorting_arm_client,clutter_cycle_seq,clutter_start_seq,clutter_end_seq);
+		//generateSortSequences(sorting_arm_client,clutter_arm_client,clutter_cycle_seq,clutter_start_seq,clutter_end_seq);
 		generateClearSingulationZoneSequence(clutter_arm_client,arm1_clear_singulated_zone_seq);
 		generateClearSingulationZoneSequence(sorting_arm_client,arm2_clear_singulated_zone_seq);
 

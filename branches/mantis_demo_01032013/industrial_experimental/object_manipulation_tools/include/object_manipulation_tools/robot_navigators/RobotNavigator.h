@@ -65,6 +65,9 @@ namespace RobotNavigatorParameters
 	static const std::string DEFAULT_PLANNING_SCENE_SERVICE = "/environment_server/set_planning_scene_diff";
 	static const std::string DEFAULT_IK_PLUGING = "SIA20D_Mesh_manipulator_kinematics/IKFastKinematicsPlugin";
 	static const std::string DEFAULT_JOINT_STATES_TOPIC = "/joint_states";
+	static const double DF_PICK_APPROACH_DISTANCE = 0.1f;
+	static const double DF_PLACE_APPROACH_DISTANCE = 0.1f;
+	static const double DF_PLACE_RETREAT_DISTANCE = 0.1f;
 
 	// ros param names
 	static const std::string PARAM_NAME_ARM_GROUP = "arm_group";
@@ -83,6 +86,10 @@ namespace RobotNavigatorParameters
 	static const std::string PARAM_NAME_PLANNING_SCENE_SERVICE = "planning_scene_service_name";
 	static const std::string PARAM_NAME_IK_PLUGING = "arm_inverse_kinematics_plugin";
 	static const std::string PARAM_NAME_JOINT_STATES_TOPIC = "joint_state_topic";
+	static const std::string PARAM_PICK_APPROACH_DISTANCE = "/pick_approach_distance";
+	static const std::string PARAM_PLACE_APPROACH_DISTANCE = "/place_approach_distance";
+	static const std::string PARAM_PLACE_RETREAT_DISTANCE = "/place_retreat_distance";
+
 }
 
 
@@ -328,6 +335,11 @@ protected:
 
 	// plugins
 	std::string ik_plugin_name_;
+
+	// pick/place
+	double pick_approach_distance_;
+	double place_approach_distance_;
+	double place_retreat_distance_;
 
 	// ################################## end of ros parameters ##################################
 };
