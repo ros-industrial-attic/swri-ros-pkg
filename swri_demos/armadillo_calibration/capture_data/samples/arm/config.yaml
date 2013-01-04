@@ -1,0 +1,4 @@
+group: "Arm"
+prompt: "Please put the checkerboard in the hand."
+finish: "Skipping arm samples"
+repeat: False
