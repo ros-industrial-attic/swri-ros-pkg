@@ -10,6 +10,7 @@
 	<arg name="x_filter_max" default="4.0"/>
 	<arg name="y_filter_min" default="-4.0"/>
 	<arg name="y_filter_max" default="4.0"/>
+	<arg name="max_approach_angle" default="0.523598"/>
 	<node name="vacuum_gripper_grasp_planner" pkg="cluttered_grasp_planner" type="cluttered_grasp_planner_server" output="screen">
 		<rosparam command="load" file="$(find mantis_grasp_planning)/config/overhead_grasp_planner_parameters.yaml"/>
 		<param name="publish_results" value="$(arg publish_results)"/>
@@ -17,5 +18,7 @@
 		<param name="x_filter_max" value="$(arg x_filter_max)"/>
 		<param name="y_filter_min" value="$(arg y_filter_min)"/>
 		<param name="y_filter_max" value="$(arg y_filter_max)"/>
+		<param name="max_approach_angle" value="$(arg max_approach_angle)" />
+
 	</node> 
 </launch>
