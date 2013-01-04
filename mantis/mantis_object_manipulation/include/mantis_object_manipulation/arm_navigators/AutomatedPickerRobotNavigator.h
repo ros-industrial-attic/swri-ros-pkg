@@ -15,9 +15,10 @@
 #include <object_manipulation_tools/manipulation_utils/Utilities.h>
 #include <boost/thread/mutex.hpp>
 
-static const std::string PARAM_NAME_NUM_GRASP_ATTEMTPTS = "num_of_grasp_attempts";
-static const std::string PARAM_NAME_NEW_GRASP_RETREAT_DISTANCE = "new_grasp_attempt_retreat_distance";
-static const std::string PARAM_NAME_NEW_GRASP_OFFSET = "new_grasp_attempt_offset";
+// ros params
+static const std::string PARAM_PICK_RETRY_ATTEMPTS = "pick_retry_attempts";
+static const std::string PARAM_PICK_RETRY_RETREAT_DISTANCE = "pick_retry_retreat_distance";
+static const std::string PARAM_PICK_RETRY_OFFSET = "pick_retry_offset";
 static const std::string PARAM_NAME_ATTACHED_OBJECT_BB_SIDE = "attached_object_bb_side";
 
 class AutomatedPickerRobotNavigator: public RobotNavigator
@@ -115,9 +116,6 @@ protected:
 	// ros parameters
 	PickPlaceZoneSelector zone_selector_;
 	JointConfiguration joint_configuration_;
-	int num_of_grasp_attempts_; // number of additional pick attempts
-	double offset_from_first_grasp_;// distance from original pick grasp to used in new pick attempt
-	double recovery_retreat_distance_;
 	double attached_obj_bb_side_;
 
 	// segmentation
@@ -137,7 +135,6 @@ protected:
 	std::vector<geometry_msgs::PoseStamped> candidate_place_poses_;
 	std::vector<object_manipulator::PlaceExecutionInfo> place_sequence_;
 
-
 	// publishers
 	ros::Publisher marker_array_pub_;
 
@@ -146,6 +143,11 @@ protected:
 
 	// threading
 	boost::mutex marker_array_mutex_;
+
+	// pick retry
+	int pick_retry_attempts_; // number of additional pick attempts
+	double pick_retry_offset_;// distance from original pick grasp to used in new pick attempt
+	double pick_retry_retreat_distance_;
 
 };
 

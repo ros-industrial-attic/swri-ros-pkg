@@ -15,7 +15,10 @@ static const double BOUNDING_SPHERE_RADIUS = 0.01f;
 
 SortClutterArmNavigator::SortClutterArmNavigator()
 :AutomatedPickerRobotNavigator(),
- singulation_segmentation_srv_("singulation_segmentation")
+ singulation_segmentation_srv_(DF_SINGULATION_SEGMENTATION_SRV),
+ singulation_zone_index_(DF_SINGULATED_ZONE_INDEX),
+ cluttered_zone_index_(DF_CLUTTERED_ZONE_INDEX),
+ sorted_zone_index_(DF_SORTED_ZONE_INDEX)
 {
 	JOINT_CONFIGURATIONS_NAMESPACE = NODE_NAME + "/" + JOINT_HOME_POSITION_NAMESPACE;
 	clutter_dropoff_ns_ = NODE_NAME + "/" + CLUTTER_DROPOFF_NAMESPACE;
@@ -33,6 +36,12 @@ void SortClutterArmNavigator::fetchParameters(std::string nameSpace)
 	clutter_dropoff_location_.fetchParameters(clutter_dropoff_ns_);
 	ros::param::param(nameSpace + "/" + PARAM_SINGULATION_SEGMENTATION_SRV,singulation_segmentation_srv_,
 			singulation_segmentation_srv_);
+	ros::param::param(nameSpace + "/" + PARAM_SINGULATION_ZONE_INDEX,singulation_zone_index_,
+			singulation_zone_index_);
+	ros::param::param(nameSpace + "/" + PARAM_CLUTTERED_ZONE_INDEX,cluttered_zone_index_,
+			cluttered_zone_index_);
+	ros::param::param(nameSpace + "/" + PARAM_SORTED_ZONE_INDEX,sorted_zone_index_,
+			sorted_zone_index_);
 }
 
 void SortClutterArmNavigator::clearResultsFromLastSrvCall()
@@ -145,7 +154,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 
 		case ArmHandshaking::Request::TASK_PERCEPTION_FOR_SINGULATION:
 
-			zone_selector_.goToPickZone(CLUTTERED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(cluttered_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			success = performSegmentation();
 			if(!success)
@@ -159,7 +168,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 
 		case ArmHandshaking::Request::TASK_PERCEPTION_FOR_SORTING:
 
-			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(singulation_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			if(!performSegmentation())
 			{
@@ -183,7 +192,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 
 		case ArmHandshaking::Request::TASK_PERCEPTION_FOR_CLUTTERING:
 
-			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(singulation_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			if(!performSegmentation())
 			{
@@ -200,7 +209,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 			clearResultsFromLastSrvCall();
 
 			// perception
-			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(singulation_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			if(!performSegmentation())
 			{
@@ -227,7 +236,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 			clearResultsFromLastSrvCall();
 
 			// perception
-			zone_selector_.goToPickZone(CLUTTERED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(cluttered_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			success = performSegmentation();
 			if(!success)
@@ -256,7 +265,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 			clearResultsFromLastSrvCall();
 
 			// perception
-			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(singulation_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			if(!performSegmentation())
 			{
@@ -347,7 +356,7 @@ bool SortClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulati
 	{
 	case ArmHandshaking::Request::SINGULATE_CLUTTER:
 
-		zone_selector_.goToPickZone(CLUTTERED_PICK_ZONE_INDEX);
+		zone_selector_.goToPickZone(cluttered_zone_index_);
 
 		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 		if(!performSegmentation())
@@ -373,7 +382,7 @@ bool SortClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulati
 
 	case ArmHandshaking::Request::SINGULATE_SORTED:
 
-		zone_selector_.goToPickZone(SORTED_PICK_ZONE_INDEX);
+		zone_selector_.goToPickZone(sorted_zone_index_);
 
 		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 		if(!performSegmentation())
@@ -408,7 +417,7 @@ bool SortClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulati
 
 	case ArmHandshaking::Request::SORT:
 
-		zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+		zone_selector_.goToPickZone(singulation_zone_index_);
 
 		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 		if(!performSegmentation())
@@ -443,7 +452,7 @@ bool SortClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulati
 
 	case ArmHandshaking::Request::CLUTTER:
 
-		zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+		zone_selector_.goToPickZone(singulation_zone_index_);
 
 		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 		if(!performSegmentation())
