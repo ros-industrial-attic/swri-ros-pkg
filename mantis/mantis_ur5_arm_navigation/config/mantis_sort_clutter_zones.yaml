@@ -30,4 +30,5 @@ place_zones:
     max_spacing: 0.20
     generation_mode: 0
    ids_allowed: [0, 1, 2, 3, 4, 5]
+   objs_allowed: [all]
 
