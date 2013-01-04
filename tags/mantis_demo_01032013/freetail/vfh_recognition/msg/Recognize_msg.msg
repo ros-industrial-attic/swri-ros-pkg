@@ -1,0 +1,2 @@
+string objectLabel
+sensor_msgs/PointCloud2 objectModel
