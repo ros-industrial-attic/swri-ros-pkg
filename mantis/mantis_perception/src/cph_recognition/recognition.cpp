@@ -50,6 +50,7 @@ double _enc_1_z_offset;
 double _plug_1_x_offset;
 double _plug_1_y_offset;
 double _plug_1_z_offset;
+double _height_distinction;
 
 
 bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
@@ -219,6 +220,8 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   visualization_msgs::Marker mesh_marker;
   mesh_marker = make_marker(pick_pose, part_orientation);
 
+  ROS_INFO_STREAM("Cluster size: "<<cluster.data.size());
+  ROS_INFO_STREAM("Cluster pose z: "<<rec_srv.response.pose.z);
   //Determine label and position and mesh resource based on that label
   std::size_t found;
   std::string label = main_response.label;
@@ -261,9 +264,11 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 		  label.substr(found+1)=="pcvt_2" )
 
   {
-	  if (rec_srv.response.pose.z > 0.045)
+	  if (rec_srv.response.pose.z > _height_distinction && cluster.data.size() > 1400)
 	  {
 		main_response.model_id=1;
+		main_response.label ="enclosure";
+		rec_srv.response.label="enclosure";
 		mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
 		pick_pose.pose.position.x = rec_srv.response.pose.x - (_enc_1_x_offset);//+enc_pick_point_x;//enc_pick.x();
 		pick_pose.pose.position.y = rec_srv.response.pose.y - (_enc_1_y_offset);//enc_pick.y();
@@ -426,6 +431,7 @@ int main(int argc, char **argv)
   ros::param::param(paramNamespace + "/pvct_offset_x", _pvct_1_x_offset, 0.0034);
   ros::param::param(paramNamespace + "/pvct_offset_y", _pvct_1_y_offset, -0.0019);
   ros::param::param(paramNamespace + "/pvct_offset_z", _pvct_1_z_offset, 0.012);
+  ros::param::param(paramNamespace + "/centroid_height", _height_distinction, 0.055);
   ROS_INFO_STREAM("Enclosure pick offset: "<<_enc_pick_point_z);
   ROS_INFO_STREAM("PVC t pick offset: "<<_pvct_pick_point_z);
   ROS_INFO_STREAM("Plug pick offset: "<<_plug_pick_point_z);
