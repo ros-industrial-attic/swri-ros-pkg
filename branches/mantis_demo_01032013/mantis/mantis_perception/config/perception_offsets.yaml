@@ -10,3 +10,4 @@ enclosure_offset_z: 0.049
 pvct_offset_x: 0.0034
 pvct_offset_y: -0.0019
 pvct_offset_z: 0.012
+centroid_height: 0.055
