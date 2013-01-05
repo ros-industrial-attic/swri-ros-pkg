@@ -166,69 +166,27 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   //Brian's recognition service
   nrg_object_recognition::recognition rec_srv;
 
-//////////////////////////Logic for % confidence in recognition result
-  //Need to save recognition results into array (or not...)
-  //std::vector<std::string> response_labels;
-
-  //Then need to find percentage of label per set/array
-  int percent_conf_pvct=0, percent_conf_plug=0, percent_conf_encl=0;
-
   rec_srv.request.cluster = cluster;
   rec_srv.request.threshold = 1500;
-  //calling flann recognition service 10 times
-  //and increasing percent confidence based on label
-  for (int a=0; a<10; a++)
-  {
+
+
     //Call recognition service
     if (!cph_client.call(rec_srv))
     {
       ROS_ERROR("Call to cph recognition service failed");
     }
-    //response_labels.push_back(rec_srv.response.label);
+
     ROS_INFO_STREAM("Object labeled as "<< rec_srv.response.label);
 
-    std::size_t found;
-    std::string label = rec_srv.response.label;
-    found=label.find_last_of("/");
     //Depending on label and angle, assign marker mesh, model_id, position for mesh and for part frame
-    ROS_INFO_STREAM("Object labeled as "<< label.substr(found+1));
 
-    if(label.substr(found+1)=="enclosure")
-    {
-      percent_conf_encl+=10;
-    }
-    else if(label.substr(found+1)=="plug")
-    {
-      percent_conf_plug+=10;
-    }
-    else if(label.substr(found+1)=="pvct" || label.substr(found+1)=="pvct_1")
-    {
-      percent_conf_pvct+=10;
-    }
-  }
+
   ROS_INFO("CPH recognition complete");
   float theta = rec_srv.response.pose.rotation*3.14159/180;//radians
 
 ////////////////////Assign response values/////////////////////////
 
-  if (percent_conf_pvct > percent_conf_encl && percent_conf_pvct > percent_conf_plug)
-  {
-    main_response.label="pvct";
-  }
-  else if (percent_conf_plug > percent_conf_encl && percent_conf_plug > percent_conf_pvct)
-  {
-    main_response.label="plug";
-  }
-  else if (percent_conf_encl > percent_conf_plug && percent_conf_encl > percent_conf_pvct)
-  {
-    main_response.label="enclosure";
-  }
-  else
-  {
-    main_response.label="NA";
-    ROS_ERROR_STREAM("Recognition produced no consistent result");
-  }
-  //main_response.label = rec_srv.response.label;
+  main_response.label = rec_srv.response.label;
   main_response.pose = rec_srv.response.pose;
 
   ROS_INFO_STREAM("Recgonized pose: \n x: " << rec_srv.response.pose.x << "\n y: "<<rec_srv.response.pose.y <<
@@ -262,16 +220,16 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   mesh_marker = make_marker(pick_pose, part_orientation);
 
   //Determine label and position and mesh resource based on that label
-  /*std::size_t found;
+  std::size_t found;
   std::string label = main_response.label;
   found=label.find_last_of("/");
   //Depending on label and angle, assign marker mesh, model_id, position for mesh and for part frame
-  ROS_WARN_STREAM("Object labeled as "<< label.substr(found+1));*/
-  /*if(label.substr(found+1)=="enclosure" ||
+  ROS_WARN_STREAM("Object labeled as "<< label.substr(found+1));
+  if(label.substr(found+1)=="enclosure" ||
 		  label.substr(found+1)=="enclosure_a_2"||
 		  label.substr(found+1)=="enclosure_a_1" ||
-		  label.substr(found+1)=="enclosure_1")*/
-  if(main_response.label=="enclosure")
+		  label.substr(found+1)=="enclosure_1")
+
   {
     main_response.model_id=1;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
@@ -282,7 +240,6 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (_enc_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (_enc_1_z_offset);
     ROS_INFO_STREAM("Pick pose z position: "<<pick_pose.pose.position.z);
-    ROS_WARN_STREAM("Recognition returned enclosure with "<< percent_conf_encl<<" percent confidence");
   }
   /*else if (label.substr(found+1)=="small_plug" || label.substr(found+1)=="small_plug_a_1" || label.substr(found+1)=="small_plug_a_2" || label.substr(found+1)=="small_plug_a_3")
   {
@@ -295,33 +252,46 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 	mesh_marker.pose.position.y=rec_srv.response.pose.y-(small_plug_y_offset);
 	mesh_marker.pose.position.z=rec_srv.response.pose.z-(small_plug_z_offset);
   }*/
-  /*else if (label.substr(found+1)=="pvct" ||
+  else if (label.substr(found+1)=="pvct" ||
 		  label.substr(found+1)=="pvct_a_4" ||
 		  label.substr(found+1)=="pvct_a_1" ||
 		  label.substr(found+1)=="pvct_a_2" ||
 		  label.substr(found+1)=="pvct_a_3" ||
 		  label.substr(found+1)=="pvct_1" ||
-		  label.substr(found+1)=="pcvt_2" )*/
-  else if (main_response.label=="pvct")
+		  label.substr(found+1)=="pcvt_2" )
+
   {
-    main_response.model_id=3;
-    mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
-    pick_pose.pose.position.x = rec_srv.response.pose.x - (_pvct_1_x_offset);
-    pick_pose.pose.position.y = rec_srv.response.pose.y - (_pvct_1_y_offset);
-    pick_pose.pose.position.z = rec_srv.response.pose.z - (_pvct_1_z_offset)+_pvct_pick_point_z/2;
-    mesh_marker.pose.position.x=rec_srv.response.pose.x - (_pvct_1_x_offset);
-    mesh_marker.pose.position.y=rec_srv.response.pose.y - (_pvct_1_y_offset);
-    mesh_marker.pose.position.z=rec_srv.response.pose.z - (_pvct_1_z_offset);
-    ROS_INFO_STREAM("Pick pose z position: "<<pick_pose.pose.position.z);
-    ROS_WARN_STREAM("Recognition returned pvc tee with "<< percent_conf_pvct<<" percent confidence");
+	  if (rec_srv.response.pose.z > 0.045)
+	  {
+		main_response.model_id=1;
+		mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
+		pick_pose.pose.position.x = rec_srv.response.pose.x - (_enc_1_x_offset);//+enc_pick_point_x;//enc_pick.x();
+		pick_pose.pose.position.y = rec_srv.response.pose.y - (_enc_1_y_offset);//enc_pick.y();
+		pick_pose.pose.position.z = rec_srv.response.pose.z - (_enc_1_z_offset)+_enc_pick_point_z;
+		mesh_marker.pose.position.x=rec_srv.response.pose.x - (_enc_1_x_offset);
+		mesh_marker.pose.position.y=rec_srv.response.pose.y - (_enc_1_y_offset);
+		mesh_marker.pose.position.z=rec_srv.response.pose.z - (_enc_1_z_offset);
+	  }
+	  else
+	  {
+		main_response.model_id=3;
+		mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
+		pick_pose.pose.position.x = rec_srv.response.pose.x - (_pvct_1_x_offset);
+		pick_pose.pose.position.y = rec_srv.response.pose.y - (_pvct_1_y_offset);
+		pick_pose.pose.position.z = rec_srv.response.pose.z - (_pvct_1_z_offset)+_pvct_pick_point_z/2;
+		mesh_marker.pose.position.x=rec_srv.response.pose.x - (_pvct_1_x_offset);
+		mesh_marker.pose.position.y=rec_srv.response.pose.y - (_pvct_1_y_offset);
+		mesh_marker.pose.position.z=rec_srv.response.pose.z - (_pvct_1_z_offset);
+		ROS_INFO_STREAM("Pick pose z position: "<<pick_pose.pose.position.z);
+	  }
   }
-  /*else if (label.substr(found+1)=="plug" ||
+  else if (label.substr(found+1)=="plug" ||
 		  label.substr(found+1)=="plug_1" ||
 		  label.substr(found+1)=="plugf" ||
 		  label.substr(found+1)=="plug_a_1" ||
 		  label.substr(found+1)=="plug_a_2"||
-		  label.substr(found+1)=="plug_a_3")*/
-  else if (main_response.label=="plug")
+		  label.substr(found+1)=="plug_a_3")
+
   {
     main_response.model_id=4;
     mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/white_plug.STL";
@@ -332,7 +302,6 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (_plug_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (_plug_1_z_offset);
     ROS_INFO_STREAM("Pick pose z position: "<<pick_pose.pose.position.z);
-    ROS_WARN_STREAM("Recognition returned plug with "<< percent_conf_plug<<" percent confidence");
   }
   /*else if (label.substr(found+1)=="pvc_elbow_1" || label.substr(found+1)=="pvcelbow" || label.substr(found+1)=="pvc_elbow_a_1")
   {
@@ -346,11 +315,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (pvc_elbow_1_z_offset);
 
   }*/
-  else if (main_response.label=="NA")
-  {
-	main_response.model_id=0;
-	ROS_ERROR_STREAM("Object not identified with high enough confidence");
-  }
+
   else
   {
         main_response.model_id=0;
