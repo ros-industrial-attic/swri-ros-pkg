@@ -1,31 +1,20 @@
-# oST version 5.0 parameters
-
-
-[image]
-
-width
-640
-
-height
-480
-
-[narrow_stereo/left]
-
-camera matrix
-583.393538 0.000000 319.336892
-0.000000 582.975072 234.981509
-0.000000 0.000000 1.000000
-
-distortion
--0.014618 0.014907 -0.001643 -0.000897 0.000000
-
-rectification
-1.000000 0.000000 0.000000
-0.000000 1.000000 0.000000
-0.000000 0.000000 1.000000
-
-projection
-581.164978 0.000000 318.278764 0.000000
-0.000000 580.684387 233.913322 0.000000
-0.000000 0.000000 1.000000 0.000000
-
+image_width: 640
+image_height: 480
+camera_name: narrow_stereo/left
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [583.393538, 0, 319.336892, 0, 582.975072, 234.981509, 0, 0, 1]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.014618, 0.014907, -0.001643, -0.000897, 0]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [581.164978, 0, 318.278764, 0, 0, 580.684387, 233.913322, 0, 0, 0, 1, 0]
