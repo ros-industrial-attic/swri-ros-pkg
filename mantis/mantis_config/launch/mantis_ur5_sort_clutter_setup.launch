@@ -87,7 +87,7 @@
 			<arg name="up_direction" value="1.0"/>
 			<arg name="z_filter_min" value="-0.1"/>
 			<arg name="z_filter_max" value="0.5"/>
-			<arg name="y_filter_min" value="-0.88"/>
+			<arg name="y_filter_min" value="-0.36"/>
 			<arg name="y_filter_max" value="0.88"/>
 			<arg name="x_filter_min" value="-1.2"/>
 			<arg name="x_filter_max" value="-0.05"/>

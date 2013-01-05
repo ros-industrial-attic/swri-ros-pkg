@@ -7,18 +7,18 @@ pick_zones:
    frame_id: workcell_frame
 #___________________________________#
  - zone_name: sorted_zone
-   x_min: 0.5
-   x_max: 1.0
+   x_min: 0.50
+   x_max: 1.2
    y_min: -0.7
-   y_max: 0.6
+   y_max: 0.80
    frame_id: workcell_frame
 place_zones:
 #___________________________________#
  - zone_name: sorted_zone_1
    x_min: 0.6
    x_max: 1.0
-   y_min: 0.20
-   y_max: 0.5
+   y_min: 0.301
+   y_max: 0.70
    frame_id: workcell_frame
    pose_candidates: 8
    orientation_axis:
@@ -34,10 +34,10 @@ place_zones:
    objs_allowed: [enclosure]
 #___________________________________#
  - zone_name: sorted_zone_2
-   x_min: 0.841
+   x_min: 0.6
    x_max: 1.0
-   y_min: -0.4
-   y_max: 0.21
+   y_min: -0.10
+   y_max: 0.30
    frame_id: workcell_frame
    pose_candidates: 8
    orientation_axis:
@@ -54,28 +54,9 @@ place_zones:
 #___________________________________#
  - zone_name: sorted_zone_3
    x_min: 0.6
-   x_max: 0.84
-   y_min: -0.4
-   y_max: 0.21
-   frame_id: workcell_frame
-   pose_candidates: 8
-   orientation_axis:
-    x: 0.0
-    y: 0.0
-    z: 1.0
-   release_distance: -0.02
-   next_location:
-    min_spacing: 0.14
-    max_spacing: 0.18
-    generation_mode: 2
-   ids_allowed: [2]
-   objs_allowed: [end_cap]
-#___________________________________#
- - zone_name: sorted_zone_4
-   x_min: 0.6
    x_max: 1.0
-   y_min: -0.7
-   y_max: -0.401
+   y_min: -0.48
+   y_max: -0.101
    frame_id: workcell_frame
    pose_candidates: 8
    orientation_axis:
