@@ -16,7 +16,7 @@
 
 	<!-- instantiating arm and gripper -->	
 	<xacro:ur5_robot prefix="${arm_prefix}"/>
-	<xacro:vacuum_gripper_definition prefix="${arm_prefix}" gripper_adjustment="0.0"/>
+	<xacro:vacuum_gripper_definition prefix="${arm_prefix}" gripper_adjustment="0.01"/>
 
 	<!-- instantiating workcell definitions -->
 	<xacro:workcell_zone2_components/>
