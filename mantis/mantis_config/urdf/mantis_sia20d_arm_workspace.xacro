@@ -23,11 +23,11 @@
 		x_val="1.20" y_val="0" z_val="0.4" pitch="0.5235" yaw="3.147"/
 		rpy="0.06+0.06 1.19 3.19+0.06" xyz="1.15-.16 -0.01 1.42+.16"-->
 	<xacro:sensor_definitions prefix="${arm_prefix}" parent_link="${arm_prefix}base_link" 
-		x_val="0.992" y_val="-0.002" z_val="1.172" roll="0.0" pitch="1.958" yaw="0"/>
+		x_val="0.955" y_val="-0.002" z_val="1.174" roll="0.04" pitch="1.959" yaw="0"/>
 	<!-- end of sensor definitions -->
 
 	<!-- instantiating arm and gripper -->	
-	<xacro:vacuum_gripper_definition prefix="${arm_prefix}" gripper_adjustment="-0.001"/>
+	<xacro:vacuum_gripper_definition prefix="${arm_prefix}" gripper_adjustment="0.01"/>
 	<xacro:sia20d_mesh prefix="${arm_prefix}"/>
 
 	<!-- arm-workcell joint definitions -->

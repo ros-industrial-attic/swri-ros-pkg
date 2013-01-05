@@ -298,7 +298,7 @@ public:
 				if((idArray.getType() == XmlRpc::XmlRpcValue::TypeArray) &&
 						(idArray[0].getType() == XmlRpc::XmlRpcValue::TypeInt))
 				{
-					for(unsigned int i = 0; i < idArray.size(); i++)
+					for(std::size_t i = 0; i < idArray.size(); i++)
 					{
 						int id = static_cast<int>(idArray[i]);
 						Ids.push_back(id);
@@ -310,22 +310,18 @@ public:
 					return false;
 				}
 
-				// parsing allowed objects array
+				// parsing objects names array if found
 				structMember = "objs_allowed";
 				XmlRpc::XmlRpcValue ObjectArray = val[structMember];
 				if((ObjectArray.getType() == XmlRpc::XmlRpcValue::TypeArray) &&
 						(ObjectArray[0].getType() == XmlRpc::XmlRpcValue::TypeString))
 				{
-					for(unsigned int i = 0; i < ObjectArray.size(); i++)
+					for(std::size_t i = 0; i < ObjectArray.size(); i++)
 					{
 						std::string obj = static_cast<std::string>(ObjectArray[i]);
 						Objs.push_back(obj);
 					}
 
-				}
-				else
-				{
-					return false;
 				}
 			}
 
@@ -380,9 +376,19 @@ public:
 			ZoneBounds::getTextMarker(marker);
 			std::stringstream ss;
 			ss<<"\n[ ";
-			for(std::size_t i = 0; i < Objs.size(); i++)
+			if(Objs.empty())
 			{
-				ss<<Objs[i]<<" ";
+				for(std::size_t i = 0; i < Ids.size(); i++)
+				{
+					ss<<Ids[i]<<" ";
+				}
+			}
+			else
+			{
+				for(std::size_t i = 0; i < Objs.size(); i++)
+				{
+					ss<<Objs[i]<<" ";
+				}
 			}
 			ss<<"]";
 			marker.text = marker.text + ss.str();

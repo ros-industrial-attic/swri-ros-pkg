@@ -814,23 +814,48 @@ bool SortClutterArmNavigator::performGraspPlanningForSorting()
 bool SortClutterArmNavigator::performGraspPlanningForClutter()
 {
 	using namespace mantis_object_manipulation;
-
-	// call grasp planning method that uses recognition results
-//	if(!AutomatedPickerRobotNavigator::performPickGraspPlanning())
-	if(!RobotNavigator::performPickGraspPlanning())
+	bool success = false;
+	// checking if there are recognition results
+	if(recognized_models_.empty())
 	{
-		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
-		return false;
+		// no recognition data then it must be moving objects from clutter zone, creating dummy recognized model
+		arm_navigation_msgs::CollisionObject obj;
+		manipulation_utils::createBoundingSphereCollisionModel(segmented_clusters_[0],BOUNDING_SPHERE_RADIUS,obj);
+		obj.id = makeCollisionObjectNameFromModelId(0);
+		obj.header.frame_id = cm_.getWorldFrameId();
+		obj.padding = 0;
+		addDetectedObjectToLocalPlanningScene(obj);
+
+		household_objects_database_msgs::DatabaseModelPoseList models;
+		household_objects_database_msgs::DatabaseModelPose model;
+		model.model_id = 0;
+		model.confidence = 1.0f;
+		model.detector_name = "dummy_model";
+		model.pose.pose = obj.poses[0];
+		models.model_list.push_back(model);
+		recognized_models_.push_back(models);
+		recognized_obj_pose_map_[std::string(obj.id)] = model.pose;
+
+		// now call base grasp planning method
+		//success = RobotNavigator::performPickGraspPlanning();
+
 	}
 
+	success = RobotNavigator::performPickGraspPlanning();
 	// call grasp place planning in clutter zone
-	if(!performPlaceGraspPlanning(clutter_dropoff_location_))
+	if(success)
 	{
-		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
-		return false;
+		success = performPlaceGraspPlanning(clutter_dropoff_location_);
 	}
 
-	return true;
+	if(!success)
+	{
+		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
+	}
+
+	return success;
+
+
 }
 
 bool SortClutterArmNavigator::performGraspPlanningForSingulation()
