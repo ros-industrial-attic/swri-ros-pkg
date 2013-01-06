@@ -221,9 +221,9 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   visualization_msgs::Marker mesh_marker;
   mesh_marker = make_marker(pick_pose, part_orientation);
 
-  ROS_INFO_STREAM("Cluster size: "<<received_clusters.points.size());
-  ROS_INFO_STREAM("Cluster pose z: "<<rec_srv.response.pose.z);
   double centroid_height=main_request.table.pose.pose.position.z-rec_srv.response.pose.z;
+  ROS_INFO_STREAM("Cluster size: "<<received_clusters.points.size());
+  ROS_INFO_STREAM("Cluster height diff from table: "<<centroid_height);
   //Determine label and position and mesh resource based on that label
   std::size_t found;
   std::string label = main_response.label;
