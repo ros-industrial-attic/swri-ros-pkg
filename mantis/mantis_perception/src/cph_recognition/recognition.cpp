@@ -51,6 +51,7 @@ double _plug_1_x_offset;
 double _plug_1_y_offset;
 double _plug_1_z_offset;
 double _height_distinction;
+int _size_distinction;
 
 
 bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
@@ -220,8 +221,9 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   visualization_msgs::Marker mesh_marker;
   mesh_marker = make_marker(pick_pose, part_orientation);
 
-  ROS_INFO_STREAM("Cluster size: "<<cluster.data.size());
+  ROS_INFO_STREAM("Cluster size: "<<received_clusters.points.size());
   ROS_INFO_STREAM("Cluster pose z: "<<rec_srv.response.pose.z);
+  double centroid_height=main_request.table.pose.pose.position.z-rec_srv.response.pose.z;
   //Determine label and position and mesh resource based on that label
   std::size_t found;
   std::string label = main_response.label;
@@ -264,7 +266,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 		  label.substr(found+1)=="pcvt_2" )
 
   {
-	  if (rec_srv.response.pose.z > _height_distinction && cluster.data.size() > 1400)
+	  if (centroid_height > _height_distinction && received_clusters.points.size() > _size_distinction)
 	  {
 		main_response.model_id=1;
 		main_response.label ="enclosure";
@@ -432,6 +434,7 @@ int main(int argc, char **argv)
   ros::param::param(paramNamespace + "/pvct_offset_y", _pvct_1_y_offset, -0.0019);
   ros::param::param(paramNamespace + "/pvct_offset_z", _pvct_1_z_offset, 0.012);
   ros::param::param(paramNamespace + "/centroid_height", _height_distinction, 0.055);
+  ros::param::param(paramNamespace + "/cloud_size_diff", _size_distinction, 1450);
   ROS_INFO_STREAM("Enclosure pick offset: "<<_enc_pick_point_z);
   ROS_INFO_STREAM("PVC t pick offset: "<<_pvct_pick_point_z);
   ROS_INFO_STREAM("Plug pick offset: "<<_plug_pick_point_z);
