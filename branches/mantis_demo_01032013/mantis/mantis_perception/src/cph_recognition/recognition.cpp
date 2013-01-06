@@ -221,9 +221,10 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
   visualization_msgs::Marker mesh_marker;
   mesh_marker = make_marker(pick_pose, part_orientation);
 
-  double centroid_height=main_request.table.pose.pose.position.z-rec_srv.response.pose.z;
+  double centroid_height=rec_srv.response.pose.z-main_request.table.pose.pose.position.z;
   ROS_INFO_STREAM("Cluster size: "<<received_clusters.points.size());
   ROS_INFO_STREAM("Cluster height diff from table: "<<centroid_height);
+
   //Determine label and position and mesh resource based on that label
   std::size_t found;
   std::string label = main_response.label;
@@ -236,15 +237,41 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 		  label.substr(found+1)=="enclosure_1")
 
   {
-    main_response.model_id=1;
-    mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
-    pick_pose.pose.position.x = rec_srv.response.pose.x - (_enc_1_x_offset);//+enc_pick_point_x;//enc_pick.x();
-    pick_pose.pose.position.y = rec_srv.response.pose.y - (_enc_1_y_offset);//enc_pick.y();
-    pick_pose.pose.position.z = rec_srv.response.pose.z - (_enc_1_z_offset)+_enc_pick_point_z;
-    mesh_marker.pose.position.x=rec_srv.response.pose.x - (_enc_1_x_offset);
-    mesh_marker.pose.position.y=rec_srv.response.pose.y - (_enc_1_y_offset);
-    mesh_marker.pose.position.z=rec_srv.response.pose.z - (_enc_1_z_offset);
-    ROS_INFO_STREAM("Pick pose z position: "<<pick_pose.pose.position.z);
+	  if ((centroid_height > _height_distinction && received_clusters.points.size() > _size_distinction) || centroid_height > 0.06)
+	  	  {
+	  		main_response.model_id=1;
+	  		main_response.label ="enclosure";
+	  		rec_srv.response.label="enclosure";
+	  		mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
+	  		pick_pose.pose.position.x = rec_srv.response.pose.x - (_enc_1_x_offset);//+enc_pick_point_x;//enc_pick.x();
+	  		pick_pose.pose.position.y = rec_srv.response.pose.y - (_enc_1_y_offset);//enc_pick.y();
+	  		pick_pose.pose.position.z = rec_srv.response.pose.z - (_enc_1_z_offset)+_enc_pick_point_z;
+	  		mesh_marker.pose.position.x=rec_srv.response.pose.x - (_enc_1_x_offset);
+	  		mesh_marker.pose.position.y=rec_srv.response.pose.y - (_enc_1_y_offset);
+	  		mesh_marker.pose.position.z=rec_srv.response.pose.z - (_enc_1_z_offset);
+
+	  	  }
+	  	  else
+	  	  {
+	  		main_response.model_id=3;
+	  		rec_srv.response.label="pvct";
+	  		main_response.label ="pvct";
+	  		mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
+	  		pick_pose.pose.position.x = rec_srv.response.pose.x - (_pvct_1_x_offset);
+	  		pick_pose.pose.position.y = rec_srv.response.pose.y - (_pvct_1_y_offset);
+	  		pick_pose.pose.position.z = rec_srv.response.pose.z - (_pvct_1_z_offset)+_pvct_pick_point_z/2;
+	  		mesh_marker.pose.position.x=rec_srv.response.pose.x - (_pvct_1_x_offset);
+	  		mesh_marker.pose.position.y=rec_srv.response.pose.y - (_pvct_1_y_offset);
+	  		mesh_marker.pose.position.z=rec_srv.response.pose.z - (_pvct_1_z_offset);
+	  	  }
+		/*mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/elec_enclosure.STL";
+		pick_pose.pose.position.x = rec_srv.response.pose.x - (_enc_1_x_offset);//+enc_pick_point_x;//enc_pick.x();
+		pick_pose.pose.position.y = rec_srv.response.pose.y - (_enc_1_y_offset);//enc_pick.y();
+		pick_pose.pose.position.z = rec_srv.response.pose.z - (_enc_1_z_offset)+_enc_pick_point_z;
+		mesh_marker.pose.position.x=rec_srv.response.pose.x - (_enc_1_x_offset);
+		mesh_marker.pose.position.y=rec_srv.response.pose.y - (_enc_1_y_offset);
+		mesh_marker.pose.position.z=rec_srv.response.pose.z - (_enc_1_z_offset);*/
+
   }
   /*else if (label.substr(found+1)=="small_plug" || label.substr(found+1)=="small_plug_a_1" || label.substr(found+1)=="small_plug_a_2" || label.substr(found+1)=="small_plug_a_3")
   {
@@ -266,7 +293,7 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 		  label.substr(found+1)=="pcvt_2" )
 
   {
-	  if (centroid_height > _height_distinction && received_clusters.points.size() > _size_distinction)
+	  if ((centroid_height > _height_distinction && received_clusters.points.size() > _size_distinction) || centroid_height > 0.06)
 	  {
 		main_response.model_id=1;
 		main_response.label ="enclosure";
@@ -278,10 +305,13 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 		mesh_marker.pose.position.x=rec_srv.response.pose.x - (_enc_1_x_offset);
 		mesh_marker.pose.position.y=rec_srv.response.pose.y - (_enc_1_y_offset);
 		mesh_marker.pose.position.z=rec_srv.response.pose.z - (_enc_1_z_offset);
+
 	  }
 	  else
 	  {
 		main_response.model_id=3;
+		rec_srv.response.label="pvct";
+		main_response.label ="pvct";
 		mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
 		pick_pose.pose.position.x = rec_srv.response.pose.x - (_pvct_1_x_offset);
 		pick_pose.pose.position.y = rec_srv.response.pose.y - (_pvct_1_y_offset);
@@ -289,8 +319,16 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
 		mesh_marker.pose.position.x=rec_srv.response.pose.x - (_pvct_1_x_offset);
 		mesh_marker.pose.position.y=rec_srv.response.pose.y - (_pvct_1_y_offset);
 		mesh_marker.pose.position.z=rec_srv.response.pose.z - (_pvct_1_z_offset);
-		ROS_INFO_STREAM("Pick pose z position: "<<pick_pose.pose.position.z);
 	  }
+		/*main_response.model_id=3;
+		mesh_marker.mesh_resource = "package://mantis_perception/data/meshes/demo_parts/pvc_t.STL";
+		pick_pose.pose.position.x = rec_srv.response.pose.x - (_pvct_1_x_offset);
+		pick_pose.pose.position.y = rec_srv.response.pose.y - (_pvct_1_y_offset);
+		pick_pose.pose.position.z = rec_srv.response.pose.z - (_pvct_1_z_offset)+_pvct_pick_point_z/2;
+		mesh_marker.pose.position.x=rec_srv.response.pose.x - (_pvct_1_x_offset);
+		mesh_marker.pose.position.y=rec_srv.response.pose.y - (_pvct_1_y_offset);
+		mesh_marker.pose.position.z=rec_srv.response.pose.z - (_pvct_1_z_offset);
+		ROS_INFO_STREAM("Pick pose z position: "<<pick_pose.pose.position.z);*/
   }
   else if (label.substr(found+1)=="plug" ||
 		  label.substr(found+1)=="plug_1" ||
@@ -308,7 +346,6 @@ bool rec_cb(mantis_perception::mantis_recognition::Request &main_request,
     mesh_marker.pose.position.x=rec_srv.response.pose.x - (_plug_1_x_offset);
     mesh_marker.pose.position.y=rec_srv.response.pose.y - (_plug_1_y_offset);
     mesh_marker.pose.position.z=rec_srv.response.pose.z - (_plug_1_z_offset);
-    ROS_INFO_STREAM("Pick pose z position: "<<pick_pose.pose.position.z);
   }
   /*else if (label.substr(found+1)=="pvc_elbow_1" || label.substr(found+1)=="pvcelbow" || label.substr(found+1)=="pvc_elbow_a_1")
   {
@@ -435,9 +472,8 @@ int main(int argc, char **argv)
   ros::param::param(paramNamespace + "/pvct_offset_z", _pvct_1_z_offset, 0.012);
   ros::param::param(paramNamespace + "/centroid_height", _height_distinction, 0.055);
   ros::param::param(paramNamespace + "/cloud_size_diff", _size_distinction, 1450);
-  ROS_INFO_STREAM("Enclosure pick offset: "<<_enc_pick_point_z);
-  ROS_INFO_STREAM("PVC t pick offset: "<<_pvct_pick_point_z);
-  ROS_INFO_STREAM("Plug pick offset: "<<_plug_pick_point_z);
+  ROS_INFO_STREAM("Height distinction param: "<<_height_distinction);
+  ROS_INFO_STREAM("Size distinction param: "<<_size_distinction);
   
   ros::spin(); 
 }
