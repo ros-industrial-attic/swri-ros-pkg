@@ -422,7 +422,7 @@ void PickPlaceZoneSelector::getAllActiveZonesTextMarkers(visualization_msgs::Mar
 		marker.header.frame_id = placeZone.FrameId;
 		marker.header.stamp = ros::Time(0);
 		marker.pose = placeZone.getZoneCenterPose();
-		marker.pose.position.z = PLACE_ZONE_HEIGHT*0.5f;
+		marker.pose.position.z = PLACE_ZONE_HEIGHT;
 		marker.id= i;
 		marker.ns = markerNs;
 
@@ -462,7 +462,7 @@ void PickPlaceZoneSelector::getAllObjectsMarkers(visualization_msgs::MarkerArray
 		obstacleMarker.pose = obstacle.getZoneCenterPose();
 		obstacleMarker.color = marker_colors_[marker_colors_.size() - 2];
 		obstacleMarker.color.a = 0.8f;
-		obstacleMarker.pose.position.z = obstacleMarker.pose.position.z + obstacleMarker.scale.z;
+		obstacleMarker.pose.position.z = obstacleMarker.scale.z;//obstacleMarker.pose.position.z +
 		markers.markers.push_back(obstacleMarker);
 	}
 }
