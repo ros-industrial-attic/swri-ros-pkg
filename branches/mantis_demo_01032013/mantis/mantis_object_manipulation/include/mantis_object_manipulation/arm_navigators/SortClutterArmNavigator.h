@@ -44,6 +44,7 @@ protected:
 	virtual bool performSegmentation();
 	virtual bool moveArmThroughPickSequence();
 	virtual bool moveArmThroughPlaceSequence();
+	virtual bool performPickGraspPlanning(); // grasp planning on cluster data
 	virtual bool performPlaceGraspPlanning(); // place pose grasp planning that uses recognition data
 	virtual bool performPlaceGraspPlanning(GoalLocation &goal);
 
@@ -64,7 +65,7 @@ protected:
 
 
 protected:
-	// members
+	// service members
 	mantis_object_manipulation::ArmHandshaking handshaking_data_;
 	ros::ServiceServer handshaking_server_;
 
@@ -82,6 +83,7 @@ protected:
 	int singulation_zone_index_;
 	int cluttered_zone_index_;
 	int sorted_zone_index_;
+
 };
 
 #endif /* SINGULATECLUTTERARMNAVIGATOR_H_ */
