@@ -165,6 +165,9 @@ public:
 				generateNextLocationShuffleMode(placePoses);
 				break;
 			}
+
+			geometry_msgs::Point p = placePoses[0].pose.position;
+			ROS_INFO_STREAM(ros::this_node::getName()<<"Next Place Location at :[ "<<p.x<<", "<<p.y<<", "<<p.z<<"]");
 	}
 
 	std::string FrameId;
