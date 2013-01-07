@@ -1,7 +1,7 @@
 pick_zones:
  - zone_name: singulated_zone
    x_min: -0.50
-   x_max: 0.50
+   x_max: 0.01
    y_min: 0.25
    y_max: 0.80
    frame_id: workcell_frame
