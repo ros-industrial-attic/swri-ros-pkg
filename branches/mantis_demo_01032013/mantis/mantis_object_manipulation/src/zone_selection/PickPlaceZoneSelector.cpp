@@ -358,7 +358,7 @@ void PickPlaceZoneSelector::getPickZoneTextMarker(visualization_msgs::Marker &ma
 	tf::Quaternion q = tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),0.0f);
 	tf::Transform zoneTf = tf::Transform(q,center);
 	tf::poseTFToMsg(zoneTf,marker.pose);
-	marker.pose.position.z = PICK_ZONE_HEIGHT*0.5f;
+	marker.pose.position.z = PICK_ZONE_HEIGHT;
 
 	// filling additional fields
 	marker.ns = "pick_zone_name";
