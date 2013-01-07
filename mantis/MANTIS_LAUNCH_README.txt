@@ -13,4 +13,5 @@ roslaunch mantis_object_manipulation launch_concurrent_arm_move_supervisor.launc
 
 Actual Launch  (in this order, seperate terminals):
 
-TBD
+Same as simulation, except:
+roslaunch mantis_config mantis_dual_arm_setup.launch sim_only:=false
