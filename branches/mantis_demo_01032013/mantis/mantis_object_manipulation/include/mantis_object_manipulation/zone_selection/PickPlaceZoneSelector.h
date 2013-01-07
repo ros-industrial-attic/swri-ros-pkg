@@ -26,7 +26,7 @@ const std::string TABLETOP_SEGMT_YMIN_NAME = "y_filter_min";
 const std::string TABLETOP_SEGMT_YMAX_NAME = "y_filter_max";
 
 // global variables
-const double PLACE_ZONE_HEIGHT = 1.0f;
+const double PLACE_ZONE_HEIGHT = 0.7f;
 const double PICK_ZONE_HEIGHT = 0.7f;
 const double PICK_ZONE_MARKER_TEXT_SIZE = 0.08f;
 const double PLACE_ZONE_MARKER_TEXT_SIZE = 0.08f;
