@@ -17,13 +17,13 @@ navigator:
   joint_trajectory_service_name: /ur5_arm/joint_trajectory_action
   grasp_action_service_name: /ur5_arm/grasp_execution_action
  ######################### grasp pick and place parameters ########################
-  pick_approach_distance: 0.10
-  place_approach_distance: 0.05
-  place_retreat_distance: 0.05
+  pick_approach_distance: 0.12
+  place_approach_distance: 0.12
+  place_retreat_distance: 0.12
 # ######################### grasp pick retry parameters ##########################
   pick_retry_attempts: 8
   pick_retry_offset: 0.03 # cm
-  pick_retry_retreat_distance: 0.05
+  pick_retry_retreat_distance: 0.04
 # ########################### place zone parameter ###############################
   attached_object_bb_side: 0.1 # 10cm
   singulation_zone_index: 0
@@ -41,20 +41,22 @@ cluttered_dropoff:
       y: 0
       z: 1
     angle: 0.7
+  goal_candidates: 1
   next_location:
     generation_mode: 0
 singulated_dropoff:
   frame_id: workcell_frame
   position:
-    x: 0.15
-    y: 0.55
-    z: 0.08
+    x: 0.20
+    y: 0.65
+    z: 0.12
   orientation:
     axis:
       x: 0
       y: 0
       z: 1
-    angle: 0.7
+    angle: 0.1
+  goal_candidates: 8
   next_location:
     generation_mode: 0
 joint_home_position:

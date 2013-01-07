@@ -1,6 +1,6 @@
 pick_zones:
  - zone_name: singulated_zone
-   x_min: -0.350
+   x_min: -0.10
    x_max: 0.350
    y_min: 0.25
    y_max: 0.80
@@ -25,10 +25,10 @@ place_zones:
     x: 0.0
     y: 0.0
     z: 1.0
-   release_distance: -0.02
+   release_distance: -0.01
    next_location:
-    min_spacing: 0.14
-    max_spacing: 0.18
+    min_spacing: 0.16
+    max_spacing: 0.20
     generation_mode: 2
    ids_allowed: [1]
    objs_allowed: [enclosure]
@@ -44,10 +44,10 @@ place_zones:
     x: 0.0
     y: 0.0
     z: 1.0
-   release_distance: -0.02
+   release_distance: -0.01
    next_location:
-    min_spacing: 0.14
-    max_spacing: 0.18
+    min_spacing: 0.16
+    max_spacing: 0.20
     generation_mode: 2
    ids_allowed: [3]
    objs_allowed: [pvc_t]
@@ -63,10 +63,10 @@ place_zones:
     x: 0.0
     y: 0.0
     z: 1.0
-   release_distance: -0.02
+   release_distance: -0.01
    next_location:
-    min_spacing: 0.14
-    max_spacing: 0.18
+    min_spacing: 0.16
+    max_spacing: 0.20
     generation_mode: 1
    ids_allowed: [0, 4, 5] 
    objs_allowed: [plug]
