@@ -295,7 +295,7 @@ bool RobotNavigator::moveArm(const std::string& group_name,const std::vector<dou
   arm_navigation_msgs::GetMotionPlan::Request plan_req;
   arm_navigation_msgs::GetMotionPlan::Response plan_res;
 
-  plan_req.motion_plan_request.allowed_planning_time = ros::Duration(5.0);
+  plan_req.motion_plan_request.allowed_planning_time = ros::Duration(20.0f);
   plan_req.motion_plan_request.group_name = group_name;
 
   planning_environment::convertKinematicStateToRobotState(*current_robot_state_,
@@ -311,8 +311,8 @@ bool RobotNavigator::moveArm(const std::string& group_name,const std::vector<dou
   {
     joint_constraints[i].joint_name = joint_names[i];
     joint_constraints[i].position = joint_positions[i];
-    joint_constraints[i].tolerance_above = .01;
-    joint_constraints[i].tolerance_below = .01;
+    joint_constraints[i].tolerance_above = 0.2f;
+    joint_constraints[i].tolerance_below = 0.2f;
   }
 
   if(!planning_service_client_.call(plan_req, plan_res))
@@ -323,7 +323,7 @@ bool RobotNavigator::moveArm(const std::string& group_name,const std::vector<dou
 
   if(plan_res.error_code.val != plan_res.error_code.SUCCESS)
   {
-    ROS_WARN_STREAM(NODE_NAME<<": Planner failed");
+    ROS_WARN_STREAM(NODE_NAME<<": Planner failed, error code:"<<plan_res.error_code.val);
     return false;
   }
 
@@ -1296,7 +1296,8 @@ bool RobotNavigator::moveArmThroughPlaceSequence()
 	// checking grasp
 	if(!object_in_hand_map_[arm_group_name_])
 	{
-		return false;
+		ROS_WARN_STREAM(NODE_NAME<<": No object in hand reported, continuing");
+		//return false;
 	}
 
 //	updating grasp place data
