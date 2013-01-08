@@ -20,12 +20,11 @@ navigator:
   place_approach_distance: 0.1
   place_retreat_distance: 0.1
 ########################## grasp pick retry parameters ##########################
-  pick_retry_attempts: 8
+  pick_retry_attempts: 6
   pick_retry_offset: 0.03 # cm
   pick_retry_retreat_distance: 0.05
   attached_object_bb_side: 0.1 # 10cm
 ############################ place zone parameter ###############################
-  attached_object_bb_side: 0.1 # 10cm
   singulation_zone_index: 0
   cluttered_zone_index: 1
   sorted_zone_index: 1

@@ -679,7 +679,7 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 			success = attemptGraspSequence(arm_group_name_,graspMoves,false);
 			if(!success)
 			{
-				ROS_INFO_STREAM(NODE_NAME<<": Grasp pick move failed");
+				ROS_WARN_STREAM(NODE_NAME<<": Grasp pick move failed");
 			}
 			else
 			{
@@ -725,16 +725,23 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 			household_objects_database_msgs::DatabaseModelPose &model =	grasp_pickup_goal_.target.potential_models[0];
 			model.pose.pose = newObjPose;
 
+			ROS_WARN_STREAM(NODE_NAME<<": Retrying for object pose at ["
+					<<model.pose.pose.position.x<<", "<<model.pose.pose.position.y
+					<<", "<<model.pose.pose.position.z<<" ]");
+
 			// updating approach distance
 			for(std::size_t j = 0; j < grasp_candidates_.size(); j++)
 			{
 				object_manipulation_msgs::Grasp &g = grasp_candidates_[j];
 				g.desired_approach_distance = pick_retry_retreat_distance_;
 			}
+			grasp_pickup_goal_.lift.desired_distance = pick_retry_retreat_distance_;
+			grasp_pickup_goal_.lift.min_distance = pick_retry_retreat_distance_;
 
 			// creating new pick sequence
 			std::vector<object_manipulation_msgs::Grasp> valid_grasps; // dummy array
 			grasp_pick_sequence_.clear();
+			updateChangesToPlanningScene();
 			createPickMoveSequence(grasp_pickup_goal_,grasp_candidates_,grasp_pick_sequence_,valid_grasps);
 
 		}
