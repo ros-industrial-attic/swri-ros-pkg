@@ -76,7 +76,7 @@ public:
       goal_constraints_[joint_names_[i]] = g;
       trajectory_constraints_[joint_names_[i]] = t;
     }
-    pn.param("constraints/stopped_velocity_tolerance", stopped_velocity_tolerance_, 0.01);
+    pn.param("constraints/stopped_velocity_tolerance", stopped_velocity_tolerance_, 0.001);
 
 
     pub_controller_command_ =
