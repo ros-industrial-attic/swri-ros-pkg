@@ -27,8 +27,8 @@ place_zones:
     z: 1.0
    release_distance: -0.01
    next_location:
-    min_spacing: 0.20
-    max_spacing: 0.22
+    min_spacing: 0.16
+    max_spacing: 0.20
     generation_mode: 2
    ids_allowed: [0, 4, 5]
    objs_allowed: [CAPS]
@@ -46,8 +46,8 @@ place_zones:
     z: 1.0
    release_distance: -0.01
    next_location:
-    min_spacing: 0.20
-    max_spacing: 0.22
+    min_spacing: 0.16
+    max_spacing: 0.20
     generation_mode: 2
    ids_allowed: [3]
    objs_allowed: [TEES]
