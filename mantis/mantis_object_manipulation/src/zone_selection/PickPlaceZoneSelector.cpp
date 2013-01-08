@@ -20,6 +20,8 @@
 
 typedef pcl::PointCloud<pcl::PointXYZ> PclCloud;
 
+const static double BB_PADDING = 0.01f;
+
 PickPlaceZoneSelector::PickPlaceZoneSelector()
 :pick_zone_index_(0),
  pick_zones_(),
@@ -234,18 +236,21 @@ void PickPlaceZoneSelector::addObstacleCluster(sensor_msgs::PointCloud &cluster)
 	pcl::PointXYZ clusterCentroid;
 	clusterCentroid.x = centroid[0];
 	clusterCentroid.y = centroid[1];
+	clusterCentroid.z = centroid[2];
 
 	// finding size (overestimating by using largest size)
 	pcl::PointXYZ min, max, size;
 	pcl::getMinMax3D(cloud,min,max);
-	size.x = std::abs(max.x - min.x);
-	size.y = std::abs(max.y - min.y);
-	size.z = std::abs(max.z - min.z);
+	size.x = std::abs(max.x - min.x) + BB_PADDING;
+	size.y = std::abs(max.y - min.y) + BB_PADDING;
+	size.z = std::abs(max.z - min.z) + BB_PADDING;
 
 	double maxSide = (size.x > size.y)? size.x : size.y;
 
 	std::stringstream ss; ss<< obstacle_objects_.size();
-	PlaceZone obstacleZone = PlaceZone(tf::Vector3(maxSide,maxSide,size.z),tf::Vector3(clusterCentroid.x,clusterCentroid.y,0.0f));
+	//PlaceZone obstacleZone = PlaceZone(tf::Vector3(maxSide,maxSide,size.z),tf::Vector3(clusterCentroid.x,clusterCentroid.y,0.0f));
+	PlaceZone obstacleZone = PlaceZone(tf::Vector3(size.x,size.y,size.z),
+			tf::Vector3(clusterCentroid.x,clusterCentroid.y,0.0f));
 	obstacleZone.FrameId = pickZone.FrameId;
 	obstacleZone.ZoneName = "obstacle" + ss.str();
 	obstacle_objects_.push_back(obstacleZone);
