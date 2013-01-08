@@ -716,11 +716,14 @@ bool SortClutterArmNavigator::performPickGraspPlanning()
 	 */
 	grasp_candidates_.assign(response.grasps.begin(),response.grasps.end());
 
-	// updating sensedd model pose
-	geometry_msgs::Point object_position;
-	object_position = grasp_candidates_[0].grasp_pose.position;
+	// updating sensed model pose
+	tf::Transform obj_tf = tf::Transform::getIdentity();
+	tf::poseTFToMsg(obj_tf,recognized_obj_pose_map_[modelId].pose);
+	//geometry_msgs::Point object_position;
+	//object_position = grasp_candidates_[0].grasp_pose.position;
 	//object_position.z = object_position.z - BOUNDING_SPHERE_RADIUS;
-	recognized_obj_pose_map_[modelId].pose.position = object_position;
+	//recognized_obj_pose_map_[modelId].pose.position = object_position;
+	recognized_obj_pose_map_[modelId].pose.position = grasp_candidates_[0].grasp_pose.position;
 	modelPose.pose = recognized_obj_pose_map_[modelId];
 
 
@@ -748,6 +751,8 @@ bool SortClutterArmNavigator::performPickGraspPlanning()
 	grasp_pickup_goal_.arm_name = arm_group_name_;
 	grasp_pickup_goal_.collision_object_name = modelId;
 	grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
+	grasp_pickup_goal_.lift.desired_distance = pick_approach_distance_;
+	grasp_pickup_goal_.lift.min_distance = pick_approach_distance_;
 	grasp_pickup_goal_.target.reference_frame_id = modelId;
 	grasp_pickup_goal_.target.cluster = segmented_clusters_[0];
 	grasp_pickup_goal_.target.potential_models.push_back(modelPose);
@@ -977,9 +982,9 @@ bool SortClutterArmNavigator::performGraspPlanningForClutter()
 		recognized_models_.push_back(models);
 		recognized_obj_pose_map_[std::string(obj.id)] = model.pose;
 
+
 		// now call base grasp planning method
 		//success = RobotNavigator::performPickGraspPlanning();
-
 	}
 
 	// iterating over all clusters

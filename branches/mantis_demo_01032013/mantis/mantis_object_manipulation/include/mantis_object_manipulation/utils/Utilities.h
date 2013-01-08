@@ -197,7 +197,8 @@ protected:
 		for(int i = 0; i < numCandidates; i++)
 		{
 			//double ratio = ((double)i)/((double)numCandidates);
-			double angle = increment * i - M_PI ;
+			double angle = increment * i;
+			angle = (angle > M_PI) ? angle - 2.0f *M_PI: angle;
 			tf::Quaternion q = tf::Quaternion(axis,angle);
 			tf::Vector3 p = tf::Vector3(0,0,0);
 			tf::Transform candidateTransform = startTrans*tf::Transform(q,p);
