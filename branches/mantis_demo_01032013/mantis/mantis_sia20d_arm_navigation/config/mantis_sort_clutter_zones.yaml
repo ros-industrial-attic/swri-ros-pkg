@@ -16,7 +16,7 @@ place_zones:
 #___________________________________#
  - zone_name: sort_zone_1
    x_min: 0.6
-   x_max: 1.0
+   x_max: 1.2
    y_min: 0.301
    y_max: 0.70
    frame_id: workcell_frame
@@ -35,7 +35,7 @@ place_zones:
 #___________________________________#
  - zone_name: sort_zone_2
    x_min: 0.6
-   x_max: 1.0
+   x_max: 1.2
    y_min: -0.10
    y_max: 0.30
    frame_id: workcell_frame
@@ -54,7 +54,7 @@ place_zones:
 #___________________________________#
  - zone_name: sort_zone_3
    x_min: 0.6
-   x_max: 1.0
+   x_max: 1.2
    y_min: -0.48
    y_max: -0.101
    frame_id: workcell_frame
@@ -65,7 +65,7 @@ place_zones:
     z: 1.0
    release_distance: -0.01
    next_location:
-    min_spacing: 0.20
+    min_spacing: 0.18
     max_spacing: 0.22
     generation_mode: 1
    ids_allowed: [1] 

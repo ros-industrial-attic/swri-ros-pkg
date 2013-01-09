@@ -645,6 +645,17 @@ protected:
 		t.addRecoveryTask(false,move_recovery_task);// move home recovery task added
 		task_definitions_.insert(std::make_pair(ArmRequest::TASK_MOVE_TO_PICK_PLACE_THEN_HOME,t));
 
+		// move to pick place
+		task_codes = list_of((uint32_t)ArmRequest::TASK_MOVE_TO_PICK)
+				((uint32_t)ArmRequest::TASK_MOVE_TO_PLACE);
+		t = TaskDetails("Move To Pick then Place",
+				empty_client,
+				task_codes,
+				1,// 1 attempt allowed
+				ArmResponse::MOVE_COMPLETION_ERROR);// termination error code
+		t.addRecoveryTask(false,move_recovery_task);// move home recovery task added
+		task_definitions_.insert(std::make_pair(ArmRequest::TASK_MOVE_TO_PICK_PLACE,t));
+
 		// clear results
 		task_codes = list_of((uint32_t)ArmRequest::TASK_CLEAR_RESULTS);
 		t = TaskDetails("Clear Results",
@@ -665,25 +676,6 @@ protected:
 		/* --------------------------------- Sort Cyclical Sequence definition -------------------------
 		 * clutter arm client starts at home position and there's one object in the singulation area
 		*/
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = clutter_client;
-//		task2.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		sort_cycle_seq.push_back(set);
-
-		// perception in clutter and singulated zones
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
-//		task2 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
-//		task1.arm_client_ = clutter_client;
-//		task2.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		sort_cycle_seq.push_back(set);
 
 		// grasp planning in clutter and singulation
 		set.clear();
@@ -698,18 +690,11 @@ protected:
 		// move to pick in clutter and singulation zone
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK];// should be at home and moving to clutter pick zone
-		task2 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK];// should be at home and moving to singulation zone
+		task2 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE];// should be at home and moving to singulation zone
 		task1.arm_client_ = clutter_client;
 		task2.arm_client_ = sort_client;
 		set.push_back(task1);
 		set.push_back(task2);
-		sort_cycle_seq.push_back(set);
-
-		// move to place (sort client moves part from singulation to sorted zone)
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PLACE];// moves from singulation to sorted zone
-		task1.arm_client_ = sort_client;
-		set.push_back(task1);
 		sort_cycle_seq.push_back(set);
 
 		// move to place (clutter to singulation) and move home
@@ -718,8 +703,8 @@ protected:
 		task2 = task_definitions_[ArmRequest::TASK_MOVE_HOME];// should be at sorted and moving to home
 		task1.arm_client_ = clutter_client;
 		task2.arm_client_ = sort_client;
-		set.push_back(task1);
 		set.push_back(task2);
+		set.push_back(task1);
 		sort_cycle_seq.push_back(set);
 
 		/*
@@ -730,23 +715,6 @@ protected:
 		 * --------------------------------- Sort Start Sequence definition -------------------------
 		 * Moves first object from clutter to singulated and returns home
 		 */
-
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = sort_client;
-//		task2.arm_client_ = clutter_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		sort_start_seq.push_back(set);
-
-		// perception in clutter zone
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
-//		task1.arm_client_ = clutter_client;
-//		set.push_back(task1);
-//		sort_start_seq.push_back(set);
 
 		// perception and grasp planning from clutter to singulated zone
 		set.clear();
@@ -766,20 +734,6 @@ protected:
 		 * --------------------------------- Sort End Sequence definition -------------------------
 		 * Moves last object from singulated to sorted and returns home
 		 */
-
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		sort_end_seq.push_back(set);
-
-		// perception in singulated zone
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
-//		task1.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		sort_end_seq.push_back(set);
 
 		// grasp planning from singulated to sorted zone
 		set.clear();
@@ -807,25 +761,6 @@ protected:
 		/* --------------------------------- Clutter Cyclical Sequence definition -------------------------
 		 * sort arm client starts at home position and there's one object in the singulation area
 		*/
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = clutter_client;
-//		task2.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		clutter_cycle_seq.push_back(set);
-
-		// perception in sorted and singulated zones
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_CLUTTERING];// segmentation in singulation zone
-//		task2 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];// segmentation in sorted zone
-//		task1.arm_client_ = clutter_client;
-//		task2.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		clutter_cycle_seq.push_back(set);
 
 		// perception and grasp planning in sorted and singulation
 		set.clear();
@@ -839,7 +774,7 @@ protected:
 
 		// move to pick in clutter and singulation zone
 		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK];// should be at home and moving to singulated pick zone
+		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE];// should be at home and moving to singulated pick zone
 		task2 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK];// should be at home and moving to sorted zone
 		task1.arm_client_ = clutter_client;
 		task2.arm_client_ = sort_client;
@@ -847,12 +782,6 @@ protected:
 		set.push_back(task2);
 		clutter_cycle_seq.push_back(set);
 
-		// move to place (sort client moves part from singulation to sorted zone)
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PLACE];// moves from singulation to clutter zone
-		task1.arm_client_ = clutter_client;
-		set.push_back(task1);
-		clutter_cycle_seq.push_back(set);
 
 		// move to place (clutter to singulation) and move home
 		set.clear();
@@ -860,8 +789,8 @@ protected:
 		task2 = task_definitions_[ArmRequest::TASK_MOVE_TO_PLACE_THEN_HOME];// should be at sorted and moving singulation then home
 		task1.arm_client_ = clutter_client;
 		task2.arm_client_ = sort_client;
-		set.push_back(task1);
 		set.push_back(task2);
+		set.push_back(task1);
 		clutter_cycle_seq.push_back(set);
 
 		/*
@@ -872,23 +801,6 @@ protected:
 		 * --------------------------------- Clutter Start Sequence definition -------------------------
 		 * Moves first object from sorted to singulated and returns home
 		 */
-
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = sort_client;
-//		task2.arm_client_ = clutter_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		clutter_start_seq.push_back(set);
-
-		// perception in sorted zone
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
-//		task1.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		clutter_start_seq.push_back(set);
 
 		// perception and grasp planning from clutter to singulated zone
 		set.clear();
@@ -908,20 +820,6 @@ protected:
 		 * --------------------------------- Clutter Start Sequence definition -------------------------
 		 * Moves last object from singulated to clutter and returns home
 		 */
-
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = clutter_client;
-//		set.push_back(task1);
-//		clutter_end_seq.push_back(set);
-
-		// perception in singulated zone
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_CLUTTERING];
-//		task1.arm_client_ = clutter_client;
-//		set.push_back(task1);
-//		clutter_end_seq.push_back(set);
 
 		// perception and grasp planning from singulated to clutter zone
 		set.clear();
@@ -957,13 +855,6 @@ protected:
 		task.arm_client_ = client;
 		set.push_back(task);
 		seq.push_back(set);
-
-		// perception
-//		set.clear();
-//		task = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
-//		task.arm_client_ = client;
-//		set.push_back(task);
-//		seq.push_back(set);
 
 		// perception and grasp planning
 		set.clear();
