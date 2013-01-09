@@ -21,7 +21,7 @@ navigator:
   place_approach_distance: 0.10
   place_retreat_distance: 0.10
 # ######################### grasp pick retry parameters ##########################
-  pick_retry_attempts: 4
+  pick_retry_attempts: 6
   pick_retry_offset: 0.03 # cm
   pick_retry_retreat_distance: 0.03
   attached_object_bb_side: 0.1 # 10cm
