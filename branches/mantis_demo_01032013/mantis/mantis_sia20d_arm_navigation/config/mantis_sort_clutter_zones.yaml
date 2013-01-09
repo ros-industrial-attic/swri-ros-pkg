@@ -67,6 +67,6 @@ place_zones:
    next_location:
     min_spacing: 0.18
     max_spacing: 0.22
-    generation_mode: 1
+    generation_mode: 2
    ids_allowed: [1] 
    objs_allowed: [BOXES]
