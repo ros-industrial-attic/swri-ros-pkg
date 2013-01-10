@@ -19,3 +19,6 @@ RViz
 	roslaunch mantis_config mantis_dual_arm_visualization.launch
 	roslaunch mantis_object_manipulation start_dual_arm_sorting.launch
 	roslaunch mantis_object_manipulation launch_concurrent_arm_move_supervisor.launch
+	telnet 192.168.32.3
+	    -user: Net_Maint_Mng
+	    -pass: 99999999
