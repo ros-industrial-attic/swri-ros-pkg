@@ -9,12 +9,11 @@
     <FileForProject>mp_default_main.h</FileForProject>
     <FileForProject>mpMain.cpp</FileForProject>
     <FileForProject>ParameterExtraction.h</FileForProject>
-    <FileForProject>robot_status.h</FileForProject>
     <FileForProject>shared_types.h</FileForProject>
     <FileForProject>simple_message.h</FileForProject>
     <FileForProject>simple_serialize.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>robot_status.h</LastFileOpened>
+  <LastFileOpened>mpMain.cpp</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>

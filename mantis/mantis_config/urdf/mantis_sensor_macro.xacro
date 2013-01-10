@@ -21,12 +21,12 @@
 			</collision>
 		</link>
 		<link name="${prefix}kinect_keepout">
-			<collision>
+			<!--collision>
 				<material name="${prefix}color_b"/>
 				<geometry>
 					<box size="0.2 0.32 ${z_val + 0.08}"/>
 				</geometry>
-			</collision>
+			</collision-->
 		</link>
 		<!-- end of sensor main components -->
 

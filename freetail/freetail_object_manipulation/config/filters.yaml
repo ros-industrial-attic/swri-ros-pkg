@@ -10,4 +10,4 @@ filter_chain:
   -
     name: n_point_filter
     type: NPointFilterJointTrajectoryWithConstraints
-    params: {n_points: 100}
+    params: {n_points: 4}

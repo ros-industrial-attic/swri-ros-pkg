@@ -12,9 +12,10 @@
 #include <boost/assign/list_of.hpp>
 #include <limits>
 
-const std::string ARM1_HANDSHAKING_SERVICE_NAME = "arm1_handshaking_service";
-const std::string ARM2_HANDSHAKING_SERVICE_NAME = "arm2_handshaking_service";
-const int MAX_SERVICE_CALL_ATTEMPTS = 4;
+// defaults
+const std::string DF_ARM1_HANDSHAKING_SERVICE_NAME = "arm1_handshaking_service";
+const std::string DF_ARM2_HANDSHAKING_SERVICE_NAME = "arm2_handshaking_service";
+const int DF_MAX_SERVICE_CALL_ATTEMPTS = 4;
 
 typedef mantis_object_manipulation::ArmHandshaking ArmServiceType;
 typedef mantis_object_manipulation::ArmHandshaking::Response ArmResponse;
@@ -24,6 +25,7 @@ typedef mantis_object_manipulation::ArmHandshaking::Request ArmRequest;
 static const std::string PARAM_MAX_CYCLE_COUNT="max_cycle_count";
 static const std::string PARAM_INTERRUPT_CYCLE="interrupt_cycle";
 static const std::string PARAM_CONTINUE_ON_CYCLE_FAIL="continue_on_cycle_fail";
+static const std::string PARAM_MAX_SERVICE_CALL_ATTEMPTS="max_service_call_attempts";
 
 class ConcurrentArmMoveSupervisor
 {
@@ -283,9 +285,10 @@ public:
 	ConcurrentArmMoveSupervisor():
 		interrupt_cycle_(false),
 		continue_on_cycle_fail_(false),
-		max_cycle_count_(std::numeric_limits<int>::infinity())
+		max_cycle_count_(std::numeric_limits<int>::infinity()),
+		max_service_call_attempts_(DF_MAX_SERVICE_CALL_ATTEMPTS)
 	{
-		initializeTaskDefinitions();
+		//initializeTaskDefinitions();
 	}
 
 	~ConcurrentArmMoveSupervisor()
@@ -316,8 +319,8 @@ public:
 
 		generateMoveHomeSequence(clutter_arm_client,sorting_arm_client,move_home_seq);
 		generateSortSequences(clutter_arm_client,sorting_arm_client,sort_cycle_seq,sort_start_seq,sort_end_seq);
-		//generateClutterSequences(clutter_arm_client,sorting_arm_client,clutter_cycle_seq,clutter_start_seq);
-		generateSortSequences(sorting_arm_client,clutter_arm_client,clutter_cycle_seq,clutter_start_seq,clutter_end_seq);
+		generateClutterSequences(clutter_arm_client,sorting_arm_client,clutter_cycle_seq,clutter_start_seq,clutter_end_seq);
+		//generateSortSequences(sorting_arm_client,clutter_arm_client,clutter_cycle_seq,clutter_start_seq,clutter_end_seq);
 		generateClearSingulationZoneSequence(clutter_arm_client,arm1_clear_singulated_zone_seq);
 		generateClearSingulationZoneSequence(sorting_arm_client,arm2_clear_singulated_zone_seq);
 
@@ -346,33 +349,48 @@ public:
 			ROS_INFO_STREAM(": ------------------ Request Move home ------------------ ");
 			if(!task_executor.runTaskSequence(move_home_seq,stop_running))
 			{
-				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+				ROS_ERROR_STREAM(node_name_<<": Request Returned Irrecoverable Error, Exiting");
 				break;
 			}
 
+			updateParameters();
 			ROS_INFO_STREAM(": ------------------ Request Sort start sequence ------------------ ");
 			if(task_executor.runTaskSequence(sort_start_seq,stop_running))
 			{
 				// cycle until sorting is finished
 				ROS_INFO_STREAM(": ------------------ Request Sort Cycle sequence ------------------ ");
-				if(!task_executor.cycleTaskSequence(sort_cycle_seq))
+				if(!task_executor.cycleTaskSequence(sort_cycle_seq) )
 				{
-					ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+					ROS_ERROR_STREAM(node_name_<<": Request Returned Irrecoverable Error, Exiting");
 					break;
+
 				}
 
 				ROS_INFO_STREAM(": ------------------ Request Sort End sequence ------------------ ");
-				if(!task_executor.runTaskSequence(sort_end_seq,stop_running))
+				if(!task_executor.runTaskSequence(sort_end_seq,stop_running) )
 				{
-					ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
-					break;
+					if(stop_running)
+					{
+						ROS_ERROR_STREAM(node_name_<<": Request Returned Irrecoverable Error, Exiting");
+						break;
+					}
+
+					if(continue_on_cycle_fail_)
+					{
+						ROS_WARN_STREAM(node_name_<<": Request not completed, ignoring error and continuing");
+					}
+					else
+					{
+						ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+						break;
+					}
 				}
 			}
 			else
 			{
 				if(stop_running)
 				{
-					ROS_ERROR_STREAM(node_name_<<": Termination error received, exiting");
+					ROS_ERROR_STREAM(node_name_<<": Request Returned Irrecoverable Error, Exiting");
 					break;
 				}
 			}
@@ -381,33 +399,47 @@ public:
 			ROS_INFO_STREAM(": ------------------ Request Move Home ------------------ ");
 			if(!task_executor.runTaskSequence(move_home_seq,stop_running))
 			{
-				ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+				ROS_ERROR_STREAM(node_name_<<": Request Returned Irrecoverable Error, Exiting");
 				break;
 			}
 
+			updateParameters();
 			ROS_INFO_STREAM(": ------------------ Request Clutter start sequence ------------------ ");
-			if(task_executor.runTaskSequence(clutter_start_seq,stop_running))
+			if(task_executor.runTaskSequence(clutter_start_seq,stop_running) )
 			{
 				// cycle until clutter is finished
 				ROS_INFO_STREAM(": ------------------  Request Clutter Cycle Sequence ------------------ ");
-				if(!task_executor.cycleTaskSequence(clutter_cycle_seq))
+				if(!task_executor.cycleTaskSequence(clutter_cycle_seq) )
 				{
-					ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+					ROS_ERROR_STREAM(node_name_<<": Request Returned Irrecoverable Error, Exiting");
 					break;
 				}
 
 				ROS_INFO_STREAM(": ------------------  Request Clutter End Sequence ------------------ ");
-				if(!task_executor.runTaskSequence(clutter_end_seq,stop_running))
+				if(!task_executor.runTaskSequence(clutter_end_seq,stop_running) )
 				{
-					ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
-					break;
+					if(stop_running)
+					{
+						ROS_ERROR_STREAM(node_name_<<": Request Returned Irrecoverable Error, Exiting");
+						break;
+					}
+
+					if(continue_on_cycle_fail_)
+					{
+						ROS_WARN_STREAM(node_name_<<": Request not completed, ignoring error and continue");
+					}
+					else
+					{
+						ROS_ERROR_STREAM(node_name_<<": Request not completed, exiting");
+						break;
+					}
 				}
 			}
 			else
 			{
 				if(stop_running)
 				{
-					ROS_ERROR_STREAM(node_name_<<": Termination error received, exiting");
+					ROS_ERROR_STREAM(node_name_<<": Request Returned Irrecoverable Error, Exiting");
 					break;
 				}
 			}
@@ -431,6 +463,7 @@ protected:
 
 	// ros parameters
 	int max_cycle_count_;
+	int max_service_call_attempts_;
 	bool interrupt_cycle_;
 	bool continue_on_cycle_fail_;
 
@@ -443,8 +476,18 @@ protected:
 		ros::NodeHandle nh("~");
 		return nh.getParam(PARAM_MAX_CYCLE_COUNT,max_cycle_count_) &&
 				nh.getParam(PARAM_INTERRUPT_CYCLE,interrupt_cycle_) &&
+				nh.getParam(PARAM_CONTINUE_ON_CYCLE_FAIL,continue_on_cycle_fail_) &&
+				nh.getParam(PARAM_MAX_SERVICE_CALL_ATTEMPTS,max_service_call_attempts_);
+	}
+
+	bool updateParameters()
+	{
+		ros::NodeHandle nh("~");
+		return nh.getParam(PARAM_MAX_CYCLE_COUNT,max_cycle_count_) &&
+				nh.getParam(PARAM_INTERRUPT_CYCLE,interrupt_cycle_) &&
 				nh.getParam(PARAM_CONTINUE_ON_CYCLE_FAIL,continue_on_cycle_fail_);
 	}
+
 
 	bool checkServiceClientConnections()
 	{
@@ -456,8 +499,6 @@ protected:
 		ros::NodeHandle nh;
 		node_name_ = ros::this_node::getName();
 
-		initializeTaskDefinitions();
-
 		// getting parameters
 		if(fetchParameters())
 		{
@@ -468,14 +509,16 @@ protected:
 			ROS_ERROR_STREAM(ros::this_node::getName()<<": Did not find parameters, proceeding anyway");
 		}
 
+		initializeTaskDefinitions();
+
 		// setting up clients
-		if(ros::service::waitForService(ARM1_HANDSHAKING_SERVICE_NAME,-1) &&
-				ros::service::waitForService(ARM2_HANDSHAKING_SERVICE_NAME,-1))
+		if(ros::service::waitForService(DF_ARM1_HANDSHAKING_SERVICE_NAME,-1) &&
+				ros::service::waitForService(DF_ARM2_HANDSHAKING_SERVICE_NAME,-1))
 		{
 			arm1_handshaking_client_ = nh.serviceClient<mantis_object_manipulation::ArmHandshaking>(
-				ARM1_HANDSHAKING_SERVICE_NAME,true);
+				DF_ARM1_HANDSHAKING_SERVICE_NAME,true);
 			arm2_handshaking_client_ = nh.serviceClient<mantis_object_manipulation::ArmHandshaking>(
-					ARM2_HANDSHAKING_SERVICE_NAME,true);
+					DF_ARM2_HANDSHAKING_SERVICE_NAME,true);
 			ROS_INFO_STREAM(node_name_<<": Successfully connected to arm handshaking services");
 		}
 		else
@@ -496,7 +539,7 @@ protected:
 			return;
 		}
 
-		uint32_t attempts = MAX_SERVICE_CALL_ATTEMPTS;
+		uint32_t attempts = max_service_call_attempts_;
 		TaskDetails t;
 		std::vector<uint32_t> task_codes;
 		ros::ServiceClient empty_client;
@@ -602,6 +645,17 @@ protected:
 		t.addRecoveryTask(false,move_recovery_task);// move home recovery task added
 		task_definitions_.insert(std::make_pair(ArmRequest::TASK_MOVE_TO_PICK_PLACE_THEN_HOME,t));
 
+		// move to pick place
+		task_codes = list_of((uint32_t)ArmRequest::TASK_MOVE_TO_PICK)
+				((uint32_t)ArmRequest::TASK_MOVE_TO_PLACE);
+		t = TaskDetails("Move To Pick then Place",
+				empty_client,
+				task_codes,
+				1,// 1 attempt allowed
+				ArmResponse::MOVE_COMPLETION_ERROR);// termination error code
+		t.addRecoveryTask(false,move_recovery_task);// move home recovery task added
+		task_definitions_.insert(std::make_pair(ArmRequest::TASK_MOVE_TO_PICK_PLACE,t));
+
 		// clear results
 		task_codes = list_of((uint32_t)ArmRequest::TASK_CLEAR_RESULTS);
 		t = TaskDetails("Clear Results",
@@ -622,25 +676,6 @@ protected:
 		/* --------------------------------- Sort Cyclical Sequence definition -------------------------
 		 * clutter arm client starts at home position and there's one object in the singulation area
 		*/
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = clutter_client;
-//		task2.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		sort_cycle_seq.push_back(set);
-
-		// perception in clutter and singulated zones
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
-//		task2 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
-//		task1.arm_client_ = clutter_client;
-//		task2.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		sort_cycle_seq.push_back(set);
 
 		// grasp planning in clutter and singulation
 		set.clear();
@@ -655,18 +690,11 @@ protected:
 		// move to pick in clutter and singulation zone
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK];// should be at home and moving to clutter pick zone
-		task2 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK];// should be at home and moving to singulation zone
+		task2 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE];// should be at home and moving to singulation zone
 		task1.arm_client_ = clutter_client;
 		task2.arm_client_ = sort_client;
 		set.push_back(task1);
 		set.push_back(task2);
-		sort_cycle_seq.push_back(set);
-
-		// move to place (sort client moves part from singulation to sorted zone)
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PLACE];// moves from singulation to sorted zone
-		task1.arm_client_ = sort_client;
-		set.push_back(task1);
 		sort_cycle_seq.push_back(set);
 
 		// move to place (clutter to singulation) and move home
@@ -675,8 +703,8 @@ protected:
 		task2 = task_definitions_[ArmRequest::TASK_MOVE_HOME];// should be at sorted and moving to home
 		task1.arm_client_ = clutter_client;
 		task2.arm_client_ = sort_client;
-		set.push_back(task1);
 		set.push_back(task2);
+		set.push_back(task1);
 		sort_cycle_seq.push_back(set);
 
 		/*
@@ -687,23 +715,6 @@ protected:
 		 * --------------------------------- Sort Start Sequence definition -------------------------
 		 * Moves first object from clutter to singulated and returns home
 		 */
-
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = sort_client;
-//		task2.arm_client_ = clutter_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		sort_start_seq.push_back(set);
-
-		// perception in clutter zone
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
-//		task1.arm_client_ = clutter_client;
-//		set.push_back(task1);
-//		sort_start_seq.push_back(set);
 
 		// perception and grasp planning from clutter to singulated zone
 		set.clear();
@@ -723,20 +734,6 @@ protected:
 		 * --------------------------------- Sort End Sequence definition -------------------------
 		 * Moves last object from singulated to sorted and returns home
 		 */
-
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		sort_end_seq.push_back(set);
-
-		// perception in singulated zone
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
-//		task1.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		sort_end_seq.push_back(set);
 
 		// grasp planning from singulated to sorted zone
 		set.clear();
@@ -764,25 +761,6 @@ protected:
 		/* --------------------------------- Clutter Cyclical Sequence definition -------------------------
 		 * sort arm client starts at home position and there's one object in the singulation area
 		*/
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = clutter_client;
-//		task2.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		clutter_cycle_seq.push_back(set);
-
-		// perception in sorted and singulated zones
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_CLUTTERING];// segmentation in singulation zone
-//		task2 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];// segmentation in sorted zone
-//		task1.arm_client_ = clutter_client;
-//		task2.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		clutter_cycle_seq.push_back(set);
 
 		// perception and grasp planning in sorted and singulation
 		set.clear();
@@ -796,7 +774,7 @@ protected:
 
 		// move to pick in clutter and singulation zone
 		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK];// should be at home and moving to singulated pick zone
+		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE];// should be at home and moving to singulated pick zone
 		task2 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK];// should be at home and moving to sorted zone
 		task1.arm_client_ = clutter_client;
 		task2.arm_client_ = sort_client;
@@ -804,12 +782,6 @@ protected:
 		set.push_back(task2);
 		clutter_cycle_seq.push_back(set);
 
-		// move to place (sort client moves part from singulation to sorted zone)
-		set.clear();
-		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PLACE];// moves from singulation to clutter zone
-		task1.arm_client_ = clutter_client;
-		set.push_back(task1);
-		clutter_cycle_seq.push_back(set);
 
 		// move to place (clutter to singulation) and move home
 		set.clear();
@@ -817,8 +789,8 @@ protected:
 		task2 = task_definitions_[ArmRequest::TASK_MOVE_TO_PLACE_THEN_HOME];// should be at sorted and moving singulation then home
 		task1.arm_client_ = clutter_client;
 		task2.arm_client_ = sort_client;
-		set.push_back(task1);
 		set.push_back(task2);
+		set.push_back(task1);
 		clutter_cycle_seq.push_back(set);
 
 		/*
@@ -829,23 +801,6 @@ protected:
 		 * --------------------------------- Clutter Start Sequence definition -------------------------
 		 * Moves first object from sorted to singulated and returns home
 		 */
-
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task2 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = sort_client;
-//		task2.arm_client_ = clutter_client;
-//		set.push_back(task1);
-//		set.push_back(task2);
-//		clutter_start_seq.push_back(set);
-
-		// perception in sorted zone
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SINGULATION];
-//		task1.arm_client_ = sort_client;
-//		set.push_back(task1);
-//		clutter_start_seq.push_back(set);
 
 		// perception and grasp planning from clutter to singulated zone
 		set.clear();
@@ -865,20 +820,6 @@ protected:
 		 * --------------------------------- Clutter Start Sequence definition -------------------------
 		 * Moves last object from singulated to clutter and returns home
 		 */
-
-		// clear data
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_CLEAR_RESULTS];
-//		task1.arm_client_ = clutter_client;
-//		set.push_back(task1);
-//		clutter_end_seq.push_back(set);
-
-		// perception in singulated zone
-//		set.clear();
-//		task1 = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_CLUTTERING];
-//		task1.arm_client_ = clutter_client;
-//		set.push_back(task1);
-//		clutter_end_seq.push_back(set);
 
 		// perception and grasp planning from singulated to clutter zone
 		set.clear();
@@ -914,13 +855,6 @@ protected:
 		task.arm_client_ = client;
 		set.push_back(task);
 		seq.push_back(set);
-
-		// perception
-//		set.clear();
-//		task = task_definitions_[ArmRequest::TASK_PERCEPTION_FOR_SORTING];
-//		task.arm_client_ = client;
-//		set.push_back(task);
-//		seq.push_back(set);
 
 		// perception and grasp planning
 		set.clear();

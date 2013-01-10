@@ -25,10 +25,10 @@ static const double BOUNDING_SPHERE_RADIUS = 0.01f;
 
 AutomatedPickerRobotNavigator::AutomatedPickerRobotNavigator()
 :RobotNavigator(),
- num_of_grasp_attempts_(4),
- offset_from_first_grasp_(0.01f), //1 cm
+ pick_retry_attempts_(4),
+ pick_retry_offset_(0.01f), //1 cm
  attached_obj_bb_side_(0.1f),
- recovery_retreat_distance_(0.05f)
+ pick_retry_retreat_distance_(0.05f)
 {
 	// TODO Auto-generated constructor stub
 	GOAL_NAMESPACE = NODE_NAME + "/" + GOAL_NAMESPACE;
@@ -149,16 +149,18 @@ void AutomatedPickerRobotNavigator::setup()
 		grasp_pickup_goal_.arm_name = arm_group_name_;
 		grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
 		grasp_pickup_goal_.lift.direction.vector.z = 1.0;
-		grasp_pickup_goal_.lift.desired_distance = .16;
+		grasp_pickup_goal_.lift.desired_distance = pick_approach_distance_;
+		grasp_pickup_goal_.lift.min_distance = pick_approach_distance_;
+		grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
 		grasp_pickup_goal_.allow_gripper_support_collision = true;
 		grasp_pickup_goal_.collision_support_surface_name = "table";
 
 		// populate grasp place goal
 		grasp_place_goal_.arm_name = arm_group_name_;
-		grasp_place_goal_.desired_retreat_distance = .1;
-		grasp_place_goal_.min_retreat_distance = .1;
-		grasp_place_goal_.approach.desired_distance = .1;
-		grasp_place_goal_.approach.min_distance = .1;
+		grasp_place_goal_.desired_retreat_distance = place_retreat_distance_;
+		grasp_place_goal_.min_retreat_distance = place_retreat_distance_;
+		grasp_place_goal_.approach.desired_distance = place_approach_distance_;
+		grasp_place_goal_.approach.min_distance = place_approach_distance_;
 		grasp_place_goal_.approach.direction.header.frame_id = cm_.getWorldFrameId();
 		grasp_place_goal_.approach.direction.vector.x = 0.0;
 		grasp_place_goal_.approach.direction.vector.y = 0.0;
@@ -176,12 +178,12 @@ void AutomatedPickerRobotNavigator::fetchParameters(std::string nameSpace)
 	RobotNavigator::fetchParameters(nameSpace);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_ATTACHED_OBJECT_BB_SIDE,attached_obj_bb_side_,
 			attached_obj_bb_side_);
-	ros::param::param(nameSpace + "/" + PARAM_NAME_NUM_GRASP_ATTEMTPTS,num_of_grasp_attempts_,
-			num_of_grasp_attempts_);
-	ros::param::param(nameSpace + "/" + PARAM_NAME_NEW_GRASP_OFFSET,offset_from_first_grasp_,
-			offset_from_first_grasp_);
-	ros::param::param(nameSpace + "/" + PARAM_NAME_NEW_GRASP_RETREAT_DISTANCE,recovery_retreat_distance_,
-			recovery_retreat_distance_);
+	ros::param::param(nameSpace + "/" + PARAM_PICK_RETRY_ATTEMPTS,pick_retry_attempts_,
+			pick_retry_attempts_);
+	ros::param::param(nameSpace + "/" + PARAM_PICK_RETRY_OFFSET,pick_retry_offset_,
+			pick_retry_offset_);
+	ros::param::param(nameSpace + "/" + PARAM_PICK_RETRY_RETREAT_DISTANCE,pick_retry_retreat_distance_,
+			pick_retry_retreat_distance_);
 }
 
 void AutomatedPickerRobotNavigator::run()
@@ -502,8 +504,6 @@ bool AutomatedPickerRobotNavigator::performPickGraspPlanning()
 			  << firstGrasp.grasp_pose.position.y << " "
 			  << firstGrasp.grasp_pose.position.z);
 
-//	ROS_INFO_STREAM(NODE_NAME<<": Cloud header " << segmented_clusters_[0].header.frame_id);
-//	ROS_INFO_STREAM(NODE_NAME<<": Recognition pose frame " << modelPose.pose.header.frame_id);
 
 	return true;
 }
@@ -660,12 +660,12 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 
 	// will attempt to grasp object multiple times if current pick attempt fails
 	object_manipulation_msgs::Grasp firstGrasp =  grasp_candidates_[0];
-	double angleIncrement = 2*M_PI/((double)num_of_grasp_attempts_);
+	double angleIncrement = 2*M_PI/((double)pick_retry_attempts_);
 	int graspIndex = 0; // index to last successful grasp;
 
 	bool success;
 	bool solution_found = false;
-	for(int i = 0; i <= num_of_grasp_attempts_; i++)
+	for(int i = 0; i <= pick_retry_attempts_; i++)
 	{
 
 		// try each successful grasp
@@ -677,7 +677,7 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 			success = attemptGraspSequence(arm_group_name_,graspMoves,false);
 			if(!success)
 			{
-				ROS_INFO_STREAM(NODE_NAME<<": Grasp pick move failed");
+				ROS_WARN_STREAM(NODE_NAME<<": Grasp pick move failed");
 			}
 			else
 			{
@@ -690,7 +690,7 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 
 		if(!success)
 		{
-			if(i == num_of_grasp_attempts_ )
+			if(i == pick_retry_attempts_ )
 			{
 				// currently on last iteration, all options have been attempted, exiting
 				ROS_ERROR_STREAM(NODE_NAME<<": No more pick attempts remain, aborting pick");
@@ -699,7 +699,7 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 			}
 			else
 			{
-				ROS_WARN_STREAM(NODE_NAME<<": Generating new object pose with offset: "<<offset_from_first_grasp_
+				ROS_WARN_STREAM(NODE_NAME<<": Generating new object pose with offset: "<<pick_retry_offset_
 						<<" and angle: "<<angleIncrement * i << " from original");
 			}
 
@@ -712,8 +712,8 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 
 			// offsetting first grasp a small amount in the x-y plane
 			tf::Vector3 offsetVect = newObjTf.getOrigin();
-			offsetVect.setX(offsetVect.getX() + offset_from_first_grasp_ * std::cos(angleIncrement * i));
-			offsetVect.setY(offsetVect.getY() + offset_from_first_grasp_ * std::sin(angleIncrement * i));
+			offsetVect.setX(offsetVect.getX() + pick_retry_offset_ * std::cos(angleIncrement * i));
+			offsetVect.setY(offsetVect.getY() + pick_retry_offset_ * std::sin(angleIncrement * i));
 			newObjTf.setOrigin(offsetVect);
 
 			// converting back into pose msg
@@ -723,16 +723,23 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 			household_objects_database_msgs::DatabaseModelPose &model =	grasp_pickup_goal_.target.potential_models[0];
 			model.pose.pose = newObjPose;
 
+			ROS_WARN_STREAM(NODE_NAME<<": Retrying for object pose at ["
+					<<model.pose.pose.position.x<<", "<<model.pose.pose.position.y
+					<<", "<<model.pose.pose.position.z<<" ]");
+
 			// updating approach distance
 			for(std::size_t j = 0; j < grasp_candidates_.size(); j++)
 			{
 				object_manipulation_msgs::Grasp &g = grasp_candidates_[j];
-				g.desired_approach_distance = recovery_retreat_distance_;
+				g.desired_approach_distance = pick_retry_retreat_distance_;
 			}
+			//grasp_pickup_goal_.lift.desired_distance = pick_retry_retreat_distance_;
+			//grasp_pickup_goal_.lift.min_distance = pick_retry_retreat_distance_;
 
 			// creating new pick sequence
 			std::vector<object_manipulation_msgs::Grasp> valid_grasps; // dummy array
 			grasp_pick_sequence_.clear();
+			updateChangesToPlanningScene();
 			createPickMoveSequence(grasp_pickup_goal_,grasp_candidates_,grasp_pick_sequence_,valid_grasps);
 
 		}

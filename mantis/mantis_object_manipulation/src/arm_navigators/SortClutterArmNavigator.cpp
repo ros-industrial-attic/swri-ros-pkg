@@ -15,7 +15,10 @@ static const double BOUNDING_SPHERE_RADIUS = 0.01f;
 
 SortClutterArmNavigator::SortClutterArmNavigator()
 :AutomatedPickerRobotNavigator(),
- singulation_segmentation_srv_("singulation_segmentation")
+ singulation_segmentation_srv_(DF_SINGULATION_SEGMENTATION_SRV),
+ singulation_zone_index_(DF_SINGULATED_ZONE_INDEX),
+ cluttered_zone_index_(DF_CLUTTERED_ZONE_INDEX),
+ sorted_zone_index_(DF_SORTED_ZONE_INDEX)
 {
 	JOINT_CONFIGURATIONS_NAMESPACE = NODE_NAME + "/" + JOINT_HOME_POSITION_NAMESPACE;
 	clutter_dropoff_ns_ = NODE_NAME + "/" + CLUTTER_DROPOFF_NAMESPACE;
@@ -33,6 +36,12 @@ void SortClutterArmNavigator::fetchParameters(std::string nameSpace)
 	clutter_dropoff_location_.fetchParameters(clutter_dropoff_ns_);
 	ros::param::param(nameSpace + "/" + PARAM_SINGULATION_SEGMENTATION_SRV,singulation_segmentation_srv_,
 			singulation_segmentation_srv_);
+	ros::param::param(nameSpace + "/" + PARAM_SINGULATION_ZONE_INDEX,singulation_zone_index_,
+			singulation_zone_index_);
+	ros::param::param(nameSpace + "/" + PARAM_CLUTTERED_ZONE_INDEX,cluttered_zone_index_,
+			cluttered_zone_index_);
+	ros::param::param(nameSpace + "/" + PARAM_SORTED_ZONE_INDEX,sorted_zone_index_,
+			sorted_zone_index_);
 }
 
 void SortClutterArmNavigator::clearResultsFromLastSrvCall()
@@ -145,7 +154,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 
 		case ArmHandshaking::Request::TASK_PERCEPTION_FOR_SINGULATION:
 
-			zone_selector_.goToPickZone(CLUTTERED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(cluttered_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			success = performSegmentation();
 			if(!success)
@@ -159,7 +168,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 
 		case ArmHandshaking::Request::TASK_PERCEPTION_FOR_SORTING:
 
-			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(singulation_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			if(!performSegmentation())
 			{
@@ -183,7 +192,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 
 		case ArmHandshaking::Request::TASK_PERCEPTION_FOR_CLUTTERING:
 
-			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(singulation_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			if(!performSegmentation())
 			{
@@ -200,7 +209,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 			clearResultsFromLastSrvCall();
 
 			// perception
-			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(singulation_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			if(!performSegmentation())
 			{
@@ -227,7 +236,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 			clearResultsFromLastSrvCall();
 
 			// perception
-			zone_selector_.goToPickZone(CLUTTERED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(cluttered_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			success = performSegmentation();
 			if(!success)
@@ -256,7 +265,7 @@ bool SortClutterArmNavigator::armHandshakingTaskHandler(mantis_object_manipulati
 			clearResultsFromLastSrvCall();
 
 			// perception
-			zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+			zone_selector_.goToPickZone(singulation_zone_index_);
 			ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 			if(!performSegmentation())
 			{
@@ -347,7 +356,7 @@ bool SortClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulati
 	{
 	case ArmHandshaking::Request::SINGULATE_CLUTTER:
 
-		zone_selector_.goToPickZone(CLUTTERED_PICK_ZONE_INDEX);
+		zone_selector_.goToPickZone(cluttered_zone_index_);
 
 		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 		if(!performSegmentation())
@@ -373,7 +382,7 @@ bool SortClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulati
 
 	case ArmHandshaking::Request::SINGULATE_SORTED:
 
-		zone_selector_.goToPickZone(SORTED_PICK_ZONE_INDEX);
+		zone_selector_.goToPickZone(sorted_zone_index_);
 
 		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 		if(!performSegmentation())
@@ -408,7 +417,7 @@ bool SortClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulati
 
 	case ArmHandshaking::Request::SORT:
 
-		zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+		zone_selector_.goToPickZone(singulation_zone_index_);
 
 		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 		if(!performSegmentation())
@@ -443,7 +452,7 @@ bool SortClutterArmNavigator::armHandshakingSrvCallback(mantis_object_manipulati
 
 	case ArmHandshaking::Request::CLUTTER:
 
-		zone_selector_.goToPickZone(SINGULATED_PICK_ZONE_INDEX);
+		zone_selector_.goToPickZone(singulation_zone_index_);
 
 		ROS_INFO_STREAM(NODE_NAME + ": Segmentation stage started");
 		if(!performSegmentation())
@@ -636,6 +645,131 @@ bool SortClutterArmNavigator::performSegmentation()
 	return true;
 }
 
+bool SortClutterArmNavigator::performPickGraspPlanning()
+{
+	//  ===================================== saving current time stamp =====================================
+	ros::WallTime start_time = ros::WallTime::now();
+
+	//  ===================================== clearing results from last call =====================================
+	grasp_pickup_goal_.target.potential_models.clear();
+	grasp_candidates_.clear();
+
+	//  ===================================== calling service =====================================
+	// checking available recognized models
+	if((recognized_models_.size() == 0) || (recognized_models_[0].model_list.size() == 0))
+	{
+	  return false;
+	}
+
+	// populating grasp plan request/response
+	household_objects_database_msgs::DatabaseModelPose modelPose = recognized_models_[0].model_list[0];
+	object_manipulation_msgs::GraspPlanning::Request request;
+	object_manipulation_msgs::GraspPlanning::Response response;
+	std::string modelId = makeCollisionObjectNameFromModelId(modelPose.model_id);
+
+	// model pose object that contains the model data
+	modelPose.pose = recognized_obj_pose_map_[modelId];
+	modelPose.pose.header.frame_id = recognized_model_description_.name; // should be updated during recognition stage
+	modelPose.pose.header.stamp = ros::Time::now();
+	request.arm_name = arm_group_name_;
+	request.target.potential_models.push_back(modelPose);
+	request.target.cluster = segmented_clusters_[0];
+	request.target.reference_frame_id = segmentation_results_.table.pose.header.frame_id;
+
+	bool success = grasp_planning_client.call(request, response);
+
+	// ===================================== checking results ========================================
+	if(!success)
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": grasp planning call unsuccessful, exiting");
+		return false;
+	}
+
+	if(response.error_code.value != response.error_code.SUCCESS)
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": grasp planning call returned error code, exiting " << response.error_code.value);
+		return false;
+	}
+
+	if(response.grasps.size() == 0)
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": No grasps returned in response");
+		return false;
+	}
+	else
+	{
+		ROS_INFO_STREAM(NODE_NAME<<": Grasp Planner Srcv returned "<<response.grasps.size()<<" grasp candidates");
+	}
+
+	//TODO - actually deal with the different cases here, especially for the cluster planner
+	if(request.target.reference_frame_id != recognized_model_description_.name ||
+		  request.target.reference_frame_id != modelPose.pose.header.frame_id)
+	{
+	  ROS_WARN_STREAM("Cluster does not match recognition");
+	}
+
+	//  ===================================== storing results =====================================
+	/* Storing grasp candidates:
+	 * 	Grasp poses return by the service define the location of the tcp in terms of the world.
+	 * 	However, planning is done with the assumption that the grasp indicate the location
+	 * 	of the wrist relative to the object.
+	 */
+	grasp_candidates_.assign(response.grasps.begin(),response.grasps.end());
+
+	// updating sensed model pose
+	tf::Transform obj_tf = tf::Transform::getIdentity();
+	tf::poseTFToMsg(obj_tf,recognized_obj_pose_map_[modelId].pose);
+	//geometry_msgs::Point object_position;
+	//object_position = grasp_candidates_[0].grasp_pose.position;
+	//object_position.z = object_position.z - BOUNDING_SPHERE_RADIUS;
+	//recognized_obj_pose_map_[modelId].pose.position = object_position;
+	recognized_obj_pose_map_[modelId].pose.position = grasp_candidates_[0].grasp_pose.position;
+	modelPose.pose = recognized_obj_pose_map_[modelId];
+
+
+	//  =====================================  grasp planning for pick move ==================================
+	// instantiating needed transforms and poses
+	tf::Transform object_in_world_tf;
+	tf::StampedTransform wristInGripperTcp = tf::StampedTransform();
+	tf::Transform object_in_world_inverse_tf;
+
+	// populating transforms
+	tf::poseMsgToTF(modelPose.pose.pose, object_in_world_tf);
+	object_in_world_inverse_tf = object_in_world_tf.inverse();
+	_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wristInGripperTcp);
+
+	// applying transformation to grasp pose so that the arm wrist relative to the object is obtained
+	for(unsigned int i = 0; i < grasp_candidates_.size(); i++)
+	{
+		tf::Transform grasp_in_world_tf;
+		tf::poseMsgToTF(grasp_candidates_[i].grasp_pose, grasp_in_world_tf);
+		tf::poseTFToMsg(object_in_world_inverse_tf*(grasp_in_world_tf*wristInGripperTcp),
+			  grasp_candidates_[i].grasp_pose);
+	}
+
+	// updating grasp pickup goal data
+	grasp_pickup_goal_.arm_name = arm_group_name_;
+	grasp_pickup_goal_.collision_object_name = modelId;
+	grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
+	grasp_pickup_goal_.lift.desired_distance = pick_approach_distance_;
+	grasp_pickup_goal_.lift.min_distance = pick_approach_distance_;
+	grasp_pickup_goal_.target.reference_frame_id = modelId;
+	grasp_pickup_goal_.target.cluster = segmented_clusters_[0];
+	grasp_pickup_goal_.target.potential_models.push_back(modelPose);
+
+	// generating grasp pick sequence
+	updateChangesToPlanningScene();
+	grasp_pick_sequence_.clear();
+	std::vector<object_manipulation_msgs::Grasp> valid_grasps;
+	if(!createPickMoveSequence(grasp_pickup_goal_,grasp_candidates_,grasp_pick_sequence_,valid_grasps))
+	{
+		ROS_ERROR_STREAM(NODE_NAME<<": Failed to create valid grasp pick sequence");
+		return false;
+	}
+	grasp_candidates_.assign(valid_grasps.begin(),valid_grasps.end());
+	return true;
+}
+
 bool SortClutterArmNavigator::performPlaceGraspPlanning()
 {
 	using namespace mantis_object_manipulation;
@@ -785,43 +919,107 @@ bool SortClutterArmNavigator::performGraspPlanningForSorting()
 {
 	using namespace mantis_object_manipulation;
 
-	// call grasp planning method that uses recognition results
-//	if(!AutomatedPickerRobotNavigator::performPickGraspPlanning())
-	if(!RobotNavigator::performPickGraspPlanning())
+	// iterating over all clusters
+	bool success = false;
+	std::vector<sensor_msgs::PointCloud> cluster_buffer(segmented_clusters_);
+	for(std::size_t i = 0; i < cluster_buffer.size(); i++)
 	{
-		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
-		return false;
+		segmented_clusters_.clear();
+		segmented_clusters_.push_back(cluster_buffer[i]);
+		if(!performPickGraspPlanning())
+		{
+			ROS_WARN_STREAM(NODE_NAME<<": Path Planning with cluster ["<<i<<"] returned an invalid plan, trying next");
+			continue;
+		}
+
+		if(!performPlaceGraspPlanning())
+		{
+			ROS_WARN_STREAM(NODE_NAME<<": Path Planning with cluster ["<<i<<"] returned an invalid plan, trying next");
+			continue;
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME<<": Path Plan found for cluster ["<<i<<"]");
+			success = true;
+			break;
+		}
+
 	}
 
-	if(!performPlaceGraspPlanning())
+	if(!success)
 	{
+		ROS_WARN_STREAM(NODE_NAME<<": Path Planning cound not be found for any cluster");
 		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
-		return false;
 	}
 
-	return true;
+	return success;
 }
 
 bool SortClutterArmNavigator::performGraspPlanningForClutter()
 {
 	using namespace mantis_object_manipulation;
+	bool success = false;
+	std::vector<sensor_msgs::PointCloud> cluster_buffer(segmented_clusters_);
 
-	// call grasp planning method that uses recognition results
-//	if(!AutomatedPickerRobotNavigator::performPickGraspPlanning())
-	if(!RobotNavigator::performPickGraspPlanning())
+	// checking if there are recognition results
+	if(recognized_models_.empty())
 	{
-		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
-		return false;
+		// no recognition data then it must be moving objects from clutter zone, creating dummy recognized model
+		arm_navigation_msgs::CollisionObject obj;
+		manipulation_utils::createBoundingSphereCollisionModel(segmented_clusters_[0],BOUNDING_SPHERE_RADIUS,obj);
+		obj.id = makeCollisionObjectNameFromModelId(0);
+		obj.header.frame_id = cm_.getWorldFrameId();
+		obj.padding = 0;
+		addDetectedObjectToLocalPlanningScene(obj);
+
+		household_objects_database_msgs::DatabaseModelPoseList models;
+		household_objects_database_msgs::DatabaseModelPose model;
+		model.model_id = 0;
+		model.confidence = 1.0f;
+		model.detector_name = "dummy_model";
+		model.pose.pose = obj.poses[0];
+		models.model_list.push_back(model);
+		recognized_models_.push_back(models);
+		recognized_obj_pose_map_[std::string(obj.id)] = model.pose;
+
+
+		// now call base grasp planning method
+		//success = RobotNavigator::performPickGraspPlanning();
 	}
 
-	// call grasp place planning in clutter zone
-	if(!performPlaceGraspPlanning(clutter_dropoff_location_))
+	// iterating over all clusters
+	for(std::size_t i = 0; i < cluster_buffer.size(); i++)
 	{
-		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
-		return false;
+		segmented_clusters_.clear();
+		segmented_clusters_.push_back(cluster_buffer[i]);
+
+		// call grasp place planning in clutter zone
+		if(!performPickGraspPlanning())
+		{
+			ROS_WARN_STREAM(NODE_NAME<<": Path Planning with cluster ["<<i<<"] returned an invalid plan, trying next");
+			continue;
+		}
+
+		if(!performPlaceGraspPlanning(clutter_dropoff_location_))
+		{
+			ROS_WARN_STREAM(NODE_NAME<<": Path Planning with cluster ["<<i<<"] returned an invalid plan, trying next");
+			continue;
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME<<": Path Plan found for cluster ["<<i<<"]");
+			success = true;
+			break;
+		}
 	}
 
-	return true;
+	if(!success)
+	{
+		ROS_WARN_STREAM(NODE_NAME<<": Path Planning cound not be found for any cluster");
+		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
+	}
+
+	return success;
 }
 
 bool SortClutterArmNavigator::performGraspPlanningForSingulation()
@@ -829,9 +1027,12 @@ bool SortClutterArmNavigator::performGraspPlanningForSingulation()
 	using namespace mantis_object_manipulation;
 
 	bool success = false;
+	std::vector<sensor_msgs::PointCloud> cluster_buffer(segmented_clusters_);
+
 	// checking if there are recognition results
 	if(recognized_models_.empty())
 	{
+
 		// no recognition data then it must be moving objects from clutter zone, creating dummy recognized model
 		arm_navigation_msgs::CollisionObject obj;
 		manipulation_utils::createBoundingSphereCollisionModel(segmented_clusters_[0],BOUNDING_SPHERE_RADIUS,obj);
@@ -855,17 +1056,35 @@ bool SortClutterArmNavigator::performGraspPlanningForSingulation()
 
 	}
 
-	success = RobotNavigator::performPickGraspPlanning();
-
-	// call grasp place planning in clutter zone
-	if(success)
+	// iterating over all clusters
+	for(std::size_t i = 0; i < cluster_buffer.size(); i++)
 	{
-		success = performPlaceGraspPlanning(singulated_dropoff_location_);
-	}
+		segmented_clusters_.clear();
+		segmented_clusters_.push_back(cluster_buffer[i]);
 
+		// call grasp place planning in clutter zone
+		if(!performPickGraspPlanning())
+		{
+			ROS_WARN_STREAM(NODE_NAME<<": Path Planning with cluster ["<<i<<"] returned an invalid plan, trying next");
+			continue;
+		}
+
+		if(!performPlaceGraspPlanning(singulated_dropoff_location_))
+		{
+			ROS_WARN_STREAM(NODE_NAME<<": Path Planning with cluster ["<<i<<"] returned an invalid plan, trying next");
+			continue;
+		}
+		else
+		{
+			ROS_INFO_STREAM(NODE_NAME<<": Path Plan found for cluster ["<<i<<"]");
+			success = true;
+			break;
+		}
+	}
 
 	if(!success)
 	{
+		ROS_WARN_STREAM(NODE_NAME<<": Path Planning cound not be found for any cluster");
 		handshaking_data_.response.error_code = ArmHandshaking::Response::GRASP_PLANNING_ERROR;
 	}
 

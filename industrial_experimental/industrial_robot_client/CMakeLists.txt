@@ -55,19 +55,18 @@ target_link_libraries(industrial_robot_client simple_message)
 rosbuild_add_library(industrial_robot_client_bswap ${SRC_FILES})
 target_link_libraries(industrial_robot_client_bswap simple_message_bswap)
 
-rosbuild_add_executable(robot_state
-  src/generic_robot_state_node.cpp)
-target_link_libraries(robot_state industrial_robot_client)
+#rosbuild_add_executable(robot_state
+#  src/generic_robot_state_node.cpp)
+#target_link_libraries(robot_state industrial_robot_client)
+#rosbuild_add_executable(motion_streaming_interface
+#  src/generic_joint_streamer_node.cpp)
+#target_link_libraries(motion_streaming_interface industrial_robot_client)
+#rosbuild_link_boost(motion_streaming_interface thread)
 
-rosbuild_add_executable(motion_streaming_interface
-  src/generic_joint_streamer_node.cpp)
-target_link_libraries(motion_streaming_interface industrial_robot_client)
-rosbuild_link_boost(motion_streaming_interface thread)
+#rosbuild_add_executable(motion_download_interface
+#  src/generic_joint_downloader_node.cpp)
+#target_link_libraries(motion_download_interface industrial_robot_client)
 
-rosbuild_add_executable(motion_download_interface
-  src/generic_joint_downloader_node.cpp)
-target_link_libraries(motion_download_interface industrial_robot_client)
-
-rosbuild_add_executable(joint_trajectory_action src/joint_trajectory_action.cpp)
-rosbuild_link_boost(joint_trajectory_action thread)
+#rosbuild_add_executable(joint_trajectory_action src/joint_trajectory_action.cpp)
+#rosbuild_link_boost(joint_trajectory_action thread)
 

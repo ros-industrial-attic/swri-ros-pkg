@@ -26,8 +26,8 @@ const std::string TABLETOP_SEGMT_YMIN_NAME = "y_filter_min";
 const std::string TABLETOP_SEGMT_YMAX_NAME = "y_filter_max";
 
 // global variables
-const double PLACE_ZONE_HEIGHT = 1.0f;
-const double PICK_ZONE_HEIGHT = 1.4f;
+const double PLACE_ZONE_HEIGHT = 0.7f;
+const double PICK_ZONE_HEIGHT = 0.7f;
 const double PICK_ZONE_MARKER_TEXT_SIZE = 0.08f;
 const double PLACE_ZONE_MARKER_TEXT_SIZE = 0.08f;
 
@@ -72,7 +72,7 @@ public:
 		tf::Vector3 getCenter() const
 		{
 			tf::Vector3 size = getSize();
-			return tf::Vector3(XMin + size.x()/2.0f,YMin + size.y()/2.0f,0.0f);
+			return tf::Vector3(XMin + size.x()/2.0f,YMin + size.y()/2.0f,PICK_ZONE_HEIGHT*0.5f-0.005);
 		}
 
 		void getMarker(visualization_msgs::Marker &marker) const
@@ -298,7 +298,7 @@ public:
 				if((idArray.getType() == XmlRpc::XmlRpcValue::TypeArray) &&
 						(idArray[0].getType() == XmlRpc::XmlRpcValue::TypeInt))
 				{
-					for(unsigned int i = 0; i < idArray.size(); i++)
+					for(std::size_t i = 0; i < idArray.size(); i++)
 					{
 						int id = static_cast<int>(idArray[i]);
 						Ids.push_back(id);
@@ -308,6 +308,20 @@ public:
 				else
 				{
 					return false;
+				}
+
+				// parsing objects names array if found
+				structMember = "objs_allowed";
+				XmlRpc::XmlRpcValue ObjectArray = val[structMember];
+				if((ObjectArray.getType() == XmlRpc::XmlRpcValue::TypeArray) &&
+						(ObjectArray[0].getType() == XmlRpc::XmlRpcValue::TypeString))
+				{
+					for(std::size_t i = 0; i < ObjectArray.size(); i++)
+					{
+						std::string obj = static_cast<std::string>(ObjectArray[i]);
+						Objs.push_back(obj);
+					}
+
 				}
 			}
 
@@ -362,9 +376,19 @@ public:
 			ZoneBounds::getTextMarker(marker);
 			std::stringstream ss;
 			ss<<"\n[ ";
-			for(std::size_t i = 0; i < Ids.size(); i++)
+			if(Objs.empty())
 			{
-				ss<<Ids[i]<<" ";
+				for(std::size_t i = 0; i < Ids.size(); i++)
+				{
+					ss<<Ids[i]<<" ";
+				}
+			}
+			else
+			{
+				for(std::size_t i = 0; i < Objs.size(); i++)
+				{
+					ss<<Objs[i]<<" ";
+				}
 			}
 			ss<<"]";
 			marker.text = marker.text + ss.str();
@@ -386,6 +410,7 @@ public:
 		double MaxObjectSpacing; // maximum distance between two objects inside goal region as measured from their local origin
 		int NextLocationGenMode; // one of the supported enumeration values that determines how to generate the next location
 		std::vector<int> Ids; // Array of object id's allowed in this zone
+		std::vector<std::string> Objs;
 
 	protected:
 
