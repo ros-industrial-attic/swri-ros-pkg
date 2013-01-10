@@ -735,8 +735,8 @@ bool AutomatedPickerRobotNavigator::moveArmThroughPickSequence()
 				object_manipulation_msgs::Grasp &g = grasp_candidates_[j];
 				g.desired_approach_distance = pick_retry_retreat_distance_;
 			}
-			grasp_pickup_goal_.lift.desired_distance = pick_retry_retreat_distance_;
-			grasp_pickup_goal_.lift.min_distance = pick_retry_retreat_distance_;
+			//grasp_pickup_goal_.lift.desired_distance = pick_retry_retreat_distance_;
+			//grasp_pickup_goal_.lift.min_distance = pick_retry_retreat_distance_;
 
 			// creating new pick sequence
 			std::vector<object_manipulation_msgs::Grasp> valid_grasps; // dummy array
