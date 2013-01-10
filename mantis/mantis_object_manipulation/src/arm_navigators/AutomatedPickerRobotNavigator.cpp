@@ -504,8 +504,6 @@ bool AutomatedPickerRobotNavigator::performPickGraspPlanning()
 			  << firstGrasp.grasp_pose.position.y << " "
 			  << firstGrasp.grasp_pose.position.z);
 
-//	ROS_INFO_STREAM(NODE_NAME<<": Cloud header " << segmented_clusters_[0].header.frame_id);
-//	ROS_INFO_STREAM(NODE_NAME<<": Recognition pose frame " << modelPose.pose.header.frame_id);
 
 	return true;
 }
