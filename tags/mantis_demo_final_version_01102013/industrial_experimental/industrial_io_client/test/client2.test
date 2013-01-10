@@ -1,0 +1,8 @@
+<launch>
+  <node name="pub" pkg="rostopic" type="rostopic"
+        args="pub barfoo std_msgs/Int16 10"/>
+  <node name="client" pkg="industrial_io_client" type="client.py"
+        args="$(find industrial_io_client)/test/test.yaml"/>
+  <test test-name="client" pkg="industrial_io_client" type="mock_server"
+        args="1234 10 20 30 100"/>
+</launch>
