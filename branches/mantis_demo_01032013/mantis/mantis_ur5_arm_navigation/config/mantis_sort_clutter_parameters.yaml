@@ -23,7 +23,7 @@ navigator:
 # ######################### grasp pick retry parameters ##########################
   pick_retry_attempts: 6
   pick_retry_offset: 0.03 # cm
-  pick_retry_retreat_distance: 0.03
+  pick_retry_retreat_distance: 0.05
   attached_object_bb_side: 0.1 # 10cm
 # ########################### place zone parameter ###############################
   singulation_zone_index: 0
