@@ -5,7 +5,7 @@
 			<visual>
 				<origin xyz="0 0.036 -0.1" rpy="0 0 0"/>
 				<geometry>
-					<mesh filename="package://mantis_config/config/meshes/vacuum_gripper_vis.STL" />
+					<mesh filename="package://mantis_config/config/meshes/vacuum_gripper_one_suction_cup.STL" />
 				</geometry>
 				<material name="silver">
 					<color rgba="0.8 0.8 0.8 1"/>
