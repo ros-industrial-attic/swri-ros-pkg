@@ -45,11 +45,19 @@ void RobotNavigator::fetchParameters(std::string nameSpace)
 	ros::param::param(nameSpace + "/" + PARAM_NAME_PLANNING_SCENE_SERVICE,planning_scene_service_,DEFAULT_PLANNING_SCENE_SERVICE);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_IK_PLUGING,ik_plugin_name_,DEFAULT_IK_PLUGING);
 	ros::param::param(nameSpace + "/" + PARAM_NAME_JOINT_STATES_TOPIC,joint_states_topic_,DEFAULT_JOINT_STATES_TOPIC);
+
+	ros::param::param(nameSpace + "/" + PARAM_PICK_APPROACH_DISTANCE,pick_approach_distance_,DF_PICK_APPROACH_DISTANCE);
+	ros::param::param(nameSpace + "/" + PARAM_PLACE_APPROACH_DISTANCE,place_approach_distance_,DF_PLACE_APPROACH_DISTANCE);
+	ros::param::param(nameSpace + "/" + PARAM_PLACE_RETREAT_DISTANCE,place_retreat_distance_,DF_PLACE_RETREAT_DISTANCE);
 }
 
 RobotNavigator::RobotNavigator()
 : cm_("robot_description"),
-  current_robot_state_(NULL)
+  current_robot_state_(NULL),
+  pick_approach_distance_(RobotNavigatorParameters::DF_PICK_APPROACH_DISTANCE),
+  place_approach_distance_(RobotNavigatorParameters::DF_PLACE_APPROACH_DISTANCE),
+  place_retreat_distance_(RobotNavigatorParameters::DF_PLACE_RETREAT_DISTANCE)
+
 {
 	ros::NodeHandle nh;
 
@@ -153,16 +161,18 @@ void RobotNavigator::setup()
 		grasp_pickup_goal_.arm_name = arm_group_name_;
 		grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
 		grasp_pickup_goal_.lift.direction.vector.z = 1.0;
-		grasp_pickup_goal_.lift.desired_distance = .1;
+		grasp_pickup_goal_.lift.desired_distance = pick_approach_distance_;
+		grasp_pickup_goal_.lift.min_distance = pick_approach_distance_;
+		grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
 		grasp_pickup_goal_.allow_gripper_support_collision = true;
 		grasp_pickup_goal_.collision_support_surface_name = "table";
 
 		// populate grasp place goal
 		grasp_place_goal_.arm_name = arm_group_name_;
-		grasp_place_goal_.desired_retreat_distance = .1;
-		grasp_place_goal_.min_retreat_distance = .1;
-		grasp_place_goal_.approach.desired_distance = .1;
-		grasp_place_goal_.approach.min_distance = .1;
+		grasp_place_goal_.desired_retreat_distance = place_retreat_distance_;
+		grasp_place_goal_.min_retreat_distance = place_retreat_distance_;
+		grasp_place_goal_.approach.desired_distance = place_approach_distance_;
+		grasp_place_goal_.approach.min_distance = place_approach_distance_;
 		grasp_place_goal_.approach.direction.header.frame_id = cm_.getWorldFrameId();
 		grasp_place_goal_.approach.direction.vector.x = 0.0;
 		grasp_place_goal_.approach.direction.vector.y = 0.0;
@@ -285,7 +295,7 @@ bool RobotNavigator::moveArm(const std::string& group_name,const std::vector<dou
   arm_navigation_msgs::GetMotionPlan::Request plan_req;
   arm_navigation_msgs::GetMotionPlan::Response plan_res;
 
-  plan_req.motion_plan_request.allowed_planning_time = ros::Duration(5.0);
+  plan_req.motion_plan_request.allowed_planning_time = ros::Duration(20.0f);
   plan_req.motion_plan_request.group_name = group_name;
 
   planning_environment::convertKinematicStateToRobotState(*current_robot_state_,
@@ -301,8 +311,8 @@ bool RobotNavigator::moveArm(const std::string& group_name,const std::vector<dou
   {
     joint_constraints[i].joint_name = joint_names[i];
     joint_constraints[i].position = joint_positions[i];
-    joint_constraints[i].tolerance_above = .01;
-    joint_constraints[i].tolerance_below = .01;
+    joint_constraints[i].tolerance_above = 0.2f;
+    joint_constraints[i].tolerance_below = 0.2f;
   }
 
   if(!planning_service_client_.call(plan_req, plan_res))
@@ -313,7 +323,7 @@ bool RobotNavigator::moveArm(const std::string& group_name,const std::vector<dou
 
   if(plan_res.error_code.val != plan_res.error_code.SUCCESS)
   {
-    ROS_WARN_STREAM(NODE_NAME<<": Planner failed");
+    ROS_WARN_STREAM(NODE_NAME<<": Planner failed, error code:"<<plan_res.error_code.val);
     return false;
   }
 
@@ -1286,7 +1296,8 @@ bool RobotNavigator::moveArmThroughPlaceSequence()
 	// checking grasp
 	if(!object_in_hand_map_[arm_group_name_])
 	{
-		return false;
+		ROS_WARN_STREAM(NODE_NAME<<": No object in hand reported, continuing");
+		//return false;
 	}
 
 //	updating grasp place data
