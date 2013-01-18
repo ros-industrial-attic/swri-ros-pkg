@@ -8,6 +8,7 @@
 		<param name="max_service_call_attempts" value="2"/>
 		<param name="interrupt_cycle" value="false"/>
 		<param name="continue_on_cycle_fail" value="false"/>
+		<rosparam command="load" file="$(find mantis_object_manipulation)/config/arm_supervisor_marker_parameters.yaml"/>
 	</node>
 	
 </launch>

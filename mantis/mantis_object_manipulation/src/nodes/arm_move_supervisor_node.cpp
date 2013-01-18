@@ -6,15 +6,20 @@
  */
 
 #include <ros/ros.h>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <tf/tf.h>
 #include <mantis_object_manipulation/ArmHandshaking.h>
 #include <boost/thread.hpp>
 #include <boost/assign/list_inserter.hpp>
 #include <boost/assign/list_of.hpp>
 #include <limits>
 
+
 // defaults
 const std::string DF_ARM1_HANDSHAKING_SERVICE_NAME = "arm1_handshaking_service";
 const std::string DF_ARM2_HANDSHAKING_SERVICE_NAME = "arm2_handshaking_service";
+const std::string DF_MARKER_ARRAY_TOPIC = "task_description_markers";
 const int DF_MAX_SERVICE_CALL_ATTEMPTS = 4;
 
 typedef mantis_object_manipulation::ArmHandshaking ArmServiceType;
@@ -26,9 +31,117 @@ static const std::string PARAM_MAX_CYCLE_COUNT="max_cycle_count";
 static const std::string PARAM_INTERRUPT_CYCLE="interrupt_cycle";
 static const std::string PARAM_CONTINUE_ON_CYCLE_FAIL="continue_on_cycle_fail";
 static const std::string PARAM_MAX_SERVICE_CALL_ATTEMPTS="max_service_call_attempts";
+static const std::string PARAM_ARM1_MARKER_DETAILS = "arm1_marker";
+static const std::string PARAM_ARM2_MARKER_DETAILS = "arm2_marker";
 
 class ConcurrentArmMoveSupervisor
 {
+
+public:
+	struct TaskMarkerDetails
+	{
+	public:
+		TaskMarkerDetails():
+			transform_(tf::Transform::getIdentity()),
+			name_space_(""),
+			text_(""),
+			text_size_(0.1f),
+			frame_id_("workcell_frame")
+		{
+			// populating default color member
+			color_.r = 1.0f;
+			color_.g = 1.0f;
+			color_.b = 1.0f;
+			color_.a = 1.0f;
+		}
+
+		~TaskMarkerDetails()
+		{
+
+		}
+
+		visualization_msgs::Marker getMarker()
+		{
+			task_marker_.color = color_;
+			task_marker_.id = id_;
+			task_marker_.header.frame_id = frame_id_;
+			task_marker_.header.stamp = ros::Time(0.0f);
+			task_marker_.ns = name_space_;
+			task_marker_.text = text_;
+
+			task_marker_.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+			task_marker_.scale.z = text_size_;
+			tf::poseTFToMsg(transform_,task_marker_.pose);
+
+			return task_marker_;
+		}
+
+		bool fetchParameters(std::string nameSpace = "")
+		{
+			ros::NodeHandle nh("~");
+			XmlRpc::XmlRpcValue param;
+
+			bool success = nh.getParam(nameSpace,param) && parseParameter(param);
+			if(success)
+			{
+				ROS_INFO_STREAM(ros::this_node::getName()<<": Successfully read marker parameters");
+			}
+			else
+			{
+				ROS_ERROR_STREAM(ros::this_node::getName()<<": Failure while reading marker parameters");
+			}
+			return success;
+		}
+
+		bool parseParameter(XmlRpc::XmlRpcValue &param)
+		{
+			bool success = true;
+			XmlRpc::XmlRpcValue colorParam, posParam;
+			tf::Vector3 pos;
+			double val;
+			if(param.getType() == XmlRpc::XmlRpcValue::TypeStruct)
+			{
+				frame_id_ = static_cast<std::string>(param["frame_id"]);
+				name_space_ = static_cast<std::string>(param["namespace"]);
+				text_ = static_cast<std::string>(param["text"]);
+				text_size_ = static_cast<double>(param["text_size"]);
+				id_ = static_cast<int>(param["id"]);
+
+				// parsing color
+				colorParam = param["color"];
+				color_.r = static_cast<double>(colorParam["r"]);
+				color_.g = static_cast<double>(colorParam["g"]);
+				color_.b = static_cast<double>(colorParam["b"]);
+				color_.a = static_cast<double>(colorParam["a"]);
+
+				// parsing position
+				posParam = param["position"];
+				val = static_cast<double>(posParam["x"]);pos.setX(val);
+				val = static_cast<double>(posParam["y"]);pos.setY(val);
+				val = static_cast<double>(posParam["z"]);pos.setZ(val);
+				transform_.setOrigin(pos);
+			}
+			else
+			{
+				success = false;
+			}
+
+			return success;
+		}
+
+	protected:
+
+		visualization_msgs::Marker task_marker_;
+
+		// ros parameters
+		std::string frame_id_;
+		std::string name_space_;
+		std::string text_;
+		int id_;
+		double text_size_;
+		tf::Transform transform_;
+		std_msgs::ColorRGBA color_;
+	};
 
 public:
 	struct TaskDetails
@@ -58,6 +171,9 @@ public:
 	public:
 		std::string name_;
 		ros::ServiceClient arm_client_;
+
+		// visualization members
+		visualization_msgs::Marker marker_;
 
 		// request members
 		//uint32_t command_code_; // simpler higher level command code
@@ -185,6 +301,7 @@ public:
 			for(i = task_set.begin(); i != task_set.end(); i++)
 			{
 				TaskDetails &task = *i;
+				ref_ptr_->addMarker(task.marker_);
 				task_thread_group.create_thread(boost::bind(&TaskDetails::sendAndMonitorTask,&task));
 			}
 
@@ -266,6 +383,11 @@ public:
 			return !termination_error;
 		}
 
+		void setSupervisorRef(ConcurrentArmMoveSupervisor &supv)
+		{
+			ref_ptr_ = &supv;
+		}
+
 	protected:
 
 		bool terminationErrorReceived(ConcurrentTaskSet &task_set)
@@ -279,6 +401,10 @@ public:
 
 			return termination;
 		}
+
+	protected:
+
+		ConcurrentArmMoveSupervisor* ref_ptr_;
 	};
 
 public:
@@ -327,6 +453,7 @@ public:
 		// creating sequence executor
 		bool stop_running = false;
 		TaskSetExecutor task_executor;
+		task_executor.setSupervisorRef(*this);
 
 		// clearing singulation zone
 		ROS_INFO_STREAM(": ------------------ Request Clutter Arm Clear Singulation ------------------ ");
@@ -461,11 +588,25 @@ protected:
 	ros::ServiceClient arm1_handshaking_client_;
 	ros::ServiceClient arm2_handshaking_client_;
 
+	// ros publishers
+	ros::Publisher marker_pub_;
+
+	// ros timers
+	ros::Timer pub_timer_;
+
 	// ros parameters
 	int max_cycle_count_;
 	int max_service_call_attempts_;
 	bool interrupt_cycle_;
 	bool continue_on_cycle_fail_;
+
+	// visualization members
+	TaskMarkerDetails arm1_marker_details_;
+	TaskMarkerDetails arm2_marker_details_;
+	visualization_msgs::MarkerArray task_desc_markers_;
+
+	// concurrency
+	boost::mutex marker_mutex_;
 
 	std::map<uint32_t,TaskDetails> task_definitions_;// contains the building blocks for the sequences
 
@@ -477,7 +618,9 @@ protected:
 		return nh.getParam(PARAM_MAX_CYCLE_COUNT,max_cycle_count_) &&
 				nh.getParam(PARAM_INTERRUPT_CYCLE,interrupt_cycle_) &&
 				nh.getParam(PARAM_CONTINUE_ON_CYCLE_FAIL,continue_on_cycle_fail_) &&
-				nh.getParam(PARAM_MAX_SERVICE_CALL_ATTEMPTS,max_service_call_attempts_);
+				nh.getParam(PARAM_MAX_SERVICE_CALL_ATTEMPTS,max_service_call_attempts_) &&
+				arm1_marker_details_.fetchParameters(PARAM_ARM1_MARKER_DETAILS) &&
+				arm2_marker_details_.fetchParameters(PARAM_ARM2_MARKER_DETAILS);
 	}
 
 	bool updateParameters()
@@ -487,7 +630,6 @@ protected:
 				nh.getParam(PARAM_INTERRUPT_CYCLE,interrupt_cycle_) &&
 				nh.getParam(PARAM_CONTINUE_ON_CYCLE_FAIL,continue_on_cycle_fail_);
 	}
-
 
 	bool checkServiceClientConnections()
 	{
@@ -511,6 +653,12 @@ protected:
 
 		initializeTaskDefinitions();
 
+		// setting up ros publishers
+		marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>(DF_MARKER_ARRAY_TOPIC,10);
+
+		// setting up timers
+		pub_timer_ = nh.createTimer(ros::Duration(2.0f),&ConcurrentArmMoveSupervisor::publisMarkerCallback,this);
+
 		// setting up clients
 		if(ros::service::waitForService(DF_ARM1_HANDSHAKING_SERVICE_NAME,-1) &&
 				ros::service::waitForService(DF_ARM2_HANDSHAKING_SERVICE_NAME,-1))
@@ -528,6 +676,39 @@ protected:
 		}
 
 		return true;
+	}
+
+	void addMarker(visualization_msgs::Marker &m)
+	{
+		// locking members
+		boost::mutex::scoped_lock lock(marker_mutex_);
+
+		// replacing marker with matching id
+		bool id_found = false;
+		for(std::size_t i = 0; i < task_desc_markers_.markers.size(); i++)
+		{
+			if(m.id == task_desc_markers_.markers[i].id)
+			{
+				task_desc_markers_.markers[i] = m;
+				id_found = true;
+				break;
+			}
+		}
+
+		if(!id_found)
+		{
+			task_desc_markers_.markers.push_back(m);
+		}
+	}
+
+	void publisMarkerCallback(const ros::TimerEvent &evnt)
+	{
+		boost::mutex::scoped_lock lock(marker_mutex_);
+
+		if(!task_desc_markers_.markers.empty())
+		{
+			marker_pub_.publish(task_desc_markers_);
+		}
 	}
 
 	void initializeTaskDefinitions()
@@ -673,6 +854,10 @@ protected:
 		ConcurrentTaskSet set;
 		TaskDetails task1, task2;
 
+		// defining markers
+		visualization_msgs::Marker arm1_marker = arm1_marker_details_.getMarker();
+		visualization_msgs::Marker arm2_marker = arm2_marker_details_.getMarker();
+
 		/* --------------------------------- Sort Cyclical Sequence definition -------------------------
 		 * clutter arm client starts at home position and there's one object in the singulation area
 		*/
@@ -681,8 +866,10 @@ protected:
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_SINGULATION];
 		task2 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_SORT];
-		task1.arm_client_ = clutter_client;
-		task2.arm_client_ = sort_client;
+		arm1_marker.text = "Perception and Grasp Planning";
+		arm2_marker.text = "Perception and Grasp Planning";
+		task1.arm_client_ = clutter_client; task1.marker_ = arm1_marker;
+		task2.arm_client_ = sort_client; task2.marker_ = arm2_marker;
 		set.push_back(task1);
 		set.push_back(task2);
 		sort_cycle_seq.push_back(set);
@@ -691,8 +878,10 @@ protected:
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK];// should be at home and moving to clutter pick zone
 		task2 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE];// should be at home and moving to singulation zone
-		task1.arm_client_ = clutter_client;
-		task2.arm_client_ = sort_client;
+		arm1_marker.text = "Picking Part";
+		arm2_marker.text = "Picking and Placing Part";
+		task1.arm_client_ = clutter_client;  task1.marker_ = arm1_marker;
+		task2.arm_client_ = sort_client;  task2.marker_ = arm2_marker;
 		set.push_back(task1);
 		set.push_back(task2);
 		sort_cycle_seq.push_back(set);
@@ -701,8 +890,10 @@ protected:
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PLACE_THEN_HOME];// should be at clutter pick and moving to singulation zone
 		task2 = task_definitions_[ArmRequest::TASK_MOVE_HOME];// should be at sorted and moving to home
-		task1.arm_client_ = clutter_client;
-		task2.arm_client_ = sort_client;
+		arm1_marker.text = "Placing Part and Moving To Home Position";
+		arm2_marker.text = "Moving To Home Position";
+		task1.arm_client_ = clutter_client; task1.marker_ = arm1_marker;
+		task2.arm_client_ = sort_client; task2.marker_ = arm2_marker;
 		set.push_back(task2);
 		set.push_back(task1);
 		sort_cycle_seq.push_back(set);
@@ -719,14 +910,16 @@ protected:
 		// perception and grasp planning from clutter to singulated zone
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_SINGULATION];
-		task1.arm_client_ = clutter_client;
+		arm1_marker.text = "Perception and Grasp Planning";
+		task1.arm_client_ = clutter_client; task1.marker_ = arm1_marker;
 		set.push_back(task1);
 		sort_start_seq.push_back(set);
 
 		// move to pick place then home
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE_THEN_HOME];
-		task1.arm_client_ = clutter_client;
+		arm1_marker.text = "Picking and Placing Part";
+		task1.arm_client_ = clutter_client; task1.marker_ = arm1_marker;
 		set.push_back(task1);
 		sort_start_seq.push_back(set);
 
@@ -738,14 +931,16 @@ protected:
 		// grasp planning from singulated to sorted zone
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_SORT];
-		task1.arm_client_ = sort_client;
+		arm2_marker.text = "Perception and Grasp Planning";
+		task1.arm_client_ = sort_client;task1.marker_ = arm2_marker;
 		set.push_back(task1);
 		sort_end_seq.push_back(set);
 
 		// move to pick place then home
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE_THEN_HOME];
-		task1.arm_client_ = sort_client;
+		arm2_marker.text = "Picking and Placing Part";
+		task1.arm_client_ = sort_client;task1.marker_ = arm2_marker;
 		set.push_back(task1);
 		sort_end_seq.push_back(set);
 	}
@@ -758,6 +953,10 @@ protected:
 		ConcurrentTaskSet set;
 		TaskDetails task1, task2;
 
+		// defining markers
+		visualization_msgs::Marker arm1_marker = arm1_marker_details_.getMarker();
+		visualization_msgs::Marker arm2_marker = arm2_marker_details_.getMarker();
+
 		/* --------------------------------- Clutter Cyclical Sequence definition -------------------------
 		 * sort arm client starts at home position and there's one object in the singulation area
 		*/
@@ -766,8 +965,10 @@ protected:
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_CLUTTER];
 		task2 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_SINGULATION];
-		task1.arm_client_ = clutter_client;
-		task2.arm_client_ = sort_client;
+		arm1_marker.text = "Perception and Grasp Planning";
+		arm2_marker.text = "Perception and Grasp Planning";
+		task1.arm_client_ = clutter_client; task1.marker_ = arm1_marker;
+		task2.arm_client_ = sort_client; task2.marker_ = arm2_marker;
 		set.push_back(task1);
 		set.push_back(task2);
 		clutter_cycle_seq.push_back(set);
@@ -776,8 +977,10 @@ protected:
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE];// should be at home and moving to singulated pick zone
 		task2 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK];// should be at home and moving to sorted zone
-		task1.arm_client_ = clutter_client;
-		task2.arm_client_ = sort_client;
+		arm1_marker.text = "Picking and Placing Part";
+		arm2_marker.text = "Picking Part";
+		task1.arm_client_ = clutter_client; task1.marker_ = arm1_marker;
+		task2.arm_client_ = sort_client; task2.marker_ = arm2_marker;
 		set.push_back(task1);
 		set.push_back(task2);
 		clutter_cycle_seq.push_back(set);
@@ -787,8 +990,10 @@ protected:
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_MOVE_HOME];// should be at clutter and moving home
 		task2 = task_definitions_[ArmRequest::TASK_MOVE_TO_PLACE_THEN_HOME];// should be at sorted and moving singulation then home
-		task1.arm_client_ = clutter_client;
-		task2.arm_client_ = sort_client;
+		arm1_marker.text = "Moving To Home Position";
+		arm2_marker.text = "Placing Part and Moving To Home Position";
+		task1.arm_client_ = clutter_client; task1.marker_ = arm1_marker;
+		task2.arm_client_ = sort_client; task2.marker_ = arm2_marker;
 		set.push_back(task2);
 		set.push_back(task1);
 		clutter_cycle_seq.push_back(set);
@@ -805,14 +1010,16 @@ protected:
 		// perception and grasp planning from clutter to singulated zone
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_SINGULATION];
-		task1.arm_client_ = sort_client;
+		arm2_marker.text = "Perception and Grasp Planning";
+		task1.arm_client_ = sort_client; task1.marker_ = arm2_marker;
 		set.push_back(task1);
 		clutter_start_seq.push_back(set);
 
 		// move to pick place then home
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE_THEN_HOME];
-		task1.arm_client_ = sort_client;
+		arm2_marker.text = "Picking and Placing Part";
+		task1.arm_client_ = sort_client; task1.marker_ = arm2_marker;
 		set.push_back(task1);
 		clutter_start_seq.push_back(set);
 
@@ -824,14 +1031,16 @@ protected:
 		// perception and grasp planning from singulated to clutter zone
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_GRASP_PLANNING_FOR_CLUTTER];
-		task1.arm_client_ = clutter_client;
+		arm1_marker.text = "Perception and Grasp Planning";
+		task1.arm_client_ = clutter_client; task1.marker_ = arm1_marker;
 		set.push_back(task1);
 		clutter_end_seq.push_back(set);
 
 		// move to pick place then home
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_MOVE_TO_PICK_PLACE_THEN_HOME];
-		task1.arm_client_ = clutter_client;
+		arm1_marker.text = "Picking and Placing Part";
+		task1.arm_client_ = clutter_client; task1.marker_ = arm1_marker;
 		set.push_back(task1);
 		clutter_end_seq.push_back(set);
 	}
@@ -879,12 +1088,18 @@ protected:
 		ConcurrentTaskSet set;
 		TaskDetails task1, task2;
 
+		// defining markers
+		visualization_msgs::Marker arm1_marker = arm1_marker_details_.getMarker();
+		visualization_msgs::Marker arm2_marker = arm2_marker_details_.getMarker();
+
 		// clear data
 		set.clear();
 		task1 = task_definitions_[ArmRequest::TASK_MOVE_HOME];
 		task2 = task_definitions_[ArmRequest::TASK_MOVE_HOME];
-		task1.arm_client_ = clutter_client;
-		task2.arm_client_ = sort_client;
+		arm1_marker.text = "Moving To Home Position";
+		arm2_marker.text = "Moving To Home Position";
+		task1.arm_client_ = clutter_client; task1.marker_ = arm1_marker;
+		task2.arm_client_ = sort_client; task2.marker_ = arm2_marker;
 		set.push_back(task1);
 		set.push_back(task2);
 		seq.push_back(set);
