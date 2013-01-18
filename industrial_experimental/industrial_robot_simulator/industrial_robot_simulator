@@ -132,14 +132,11 @@ class IndustrialRobotSimulator():
     """
     def trajectory_callback(self, msg_in):
 
-        rospy.loginfo("Received joint trajectory message: %s", str(msg_in))
         last_time = rospy.Duration(0)
         try:
             for point in msg_in.points:
                 rospy.sleep(point.time_from_start - last_time)
-                with self.lock:
-                    self.joint_positions = point.positions
-                    rospy.loginfo("Executing move: %s", str(point))
+                self.set_joint_positions(point.positions, msg_in.joint_names)
                 last_time = point.time_from_start
                 
        
@@ -149,7 +146,25 @@ class IndustrialRobotSimulator():
         finally:
             pass
 
-                   
+    """
+    Sets the internal robot joint positions based on a values and order
+    lists
+
+    @param keys:   keys defining joint value order
+    @type  keys:   list
+    @param values: list of joint values
+    @type  values: list
+    """
+    def set_joint_positions(self, keys, values):
+    
+        mapping = dict(zip(values, keys))
+        with self.lock:
+            for i in range(len(self.joint_names)):
+                self.joint_positions[i] = mapping[self.joint_names[i]]
+            
+            
+            
+        
 
 
 if __name__ == '__main__':

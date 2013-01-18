@@ -91,29 +91,24 @@ void JointTrajectoryAction::watchdog(const ros::TimerEvent &e)
   {
     if (!trajectory_state_recvd_)
     {
-      bool should_abort = false;
       // last_trajectory_state_ is null if the subscriber never makes a connection
       if (!last_trajectory_state_)
       {
-        should_abort = true;
         ROS_WARN("Aborting goal because we have never heard a controller state message.");
       }
       else
       {
-        should_abort = true;
         ROS_WARN_STREAM(
             "Aborting goal because we haven't heard from the controller in " << WATCHD0G_PERIOD_ << " seconds");
       }
 
-      if (should_abort)
-      {
-        abortGoal();
-      }
-
-      // Reset the trajectory state received flag
-      trajectory_state_recvd_ = false;
+      abortGoal();
+      
     }
   }
+  
+  // Reset the trajectory state received flag
+  trajectory_state_recvd_ = false;
 }
 
 void JointTrajectoryAction::goalCB(JointTractoryActionServer::GoalHandle & gh)
@@ -136,6 +131,8 @@ void JointTrajectoryAction::goalCB(JointTractoryActionServer::GoalHandle & gh)
       ROS_INFO_STREAM("Already within goal constraints, setting goal succeeded");
       gh.setAccepted();
       gh.setSucceeded();
+      has_active_goal_ = false;
+      
     }
     else
     {
@@ -196,7 +193,7 @@ void JointTrajectoryAction::controllerStateCB(const control_msgs::FollowJointTra
 {
   //ROS_DEBUG("Checking controller state feedback");
   last_trajectory_state_ = msg;
-  ros::Time now = ros::Time::now();
+  trajectory_state_recvd_ = true;
 
   if (!has_active_goal_)
   {
