@@ -29,8 +29,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UTILS_H_
-#define UTILS_H_
+#ifndef INDUSTRIAL_UTILS_H_
+#define INDUSTRIAL_UTILS_H_
 
 #include <vector>
 #include <string>
@@ -63,6 +63,7 @@ bool isSimilar(std::vector<std::string> lhs, std::vector<std::string> rhs);
  */
 bool isSame(const std::vector<std::string> & lhs, const std::vector<std::string> & rhs);
 
+
 } //industrial_utils
 
-#endif /* UTILS_H_ */
+#endif /* INDUSTRIAL_UTILS_H_ */

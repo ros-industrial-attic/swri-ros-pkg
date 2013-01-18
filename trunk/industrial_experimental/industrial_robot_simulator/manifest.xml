@@ -14,6 +14,8 @@
   <depend package="control_msgs"/>
   <depend package="trajectory_msgs"/>
   
+  <depend package="industrial_robot_client"/>
+  
   <export>
     <cpp cflags="-I${prefix}/include/"/>
   </export>

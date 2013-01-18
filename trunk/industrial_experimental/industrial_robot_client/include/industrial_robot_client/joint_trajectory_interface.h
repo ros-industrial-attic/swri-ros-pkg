@@ -53,10 +53,6 @@ namespace joint_trajectory_interface
 
 /**
  * \brief Message handler that relays joint trajectories to the robot controller
- */
-
-//* JointTrajectoryInterface
-/**
  *
  * THIS CLASS IS NOT THREAD-SAFE
  *

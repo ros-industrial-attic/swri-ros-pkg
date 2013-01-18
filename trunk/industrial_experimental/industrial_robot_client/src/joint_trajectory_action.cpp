@@ -29,168 +29,111 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/ros.h"
-#include <actionlib/server/action_server.h>
+#include <industrial_robot_client/joint_trajectory_action.h>
+#include <industrial_robot_client/utils.h>
+#include <industrial_utils/param_utils.h>
+#include <industrial_utils/utils.h>
 
-#include <trajectory_msgs/JointTrajectory.h>
-#include <control_msgs/FollowJointTrajectoryAction.h>
-#include <control_msgs/FollowJointTrajectoryFeedback.h>
-
-const double DEFAULT_GOAL_THRESHOLD = 0.01;
-
-class JointTrajectoryExecuter
+namespace industrial_robot_client
 {
-private:
-  typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction> JTAS;
-  typedef JTAS::GoalHandle GoalHandle;
-public:
-  JointTrajectoryExecuter(ros::NodeHandle &n) :
-    node_(n), action_server_(node_, "joint_trajectory_action", boost::bind(&JointTrajectoryExecuter::goalCB, this, _1),
-                             boost::bind(&JointTrajectoryExecuter::cancelCB, this, _1), false), has_active_goal_(false)
+namespace joint_trajectory_action
+{
+JointTrajectoryAction::JointTrajectoryAction() :
+    action_server_(node_, "joint_trajectory_action", boost::bind(&JointTrajectoryAction::goalCB, this, _1),
+                   boost::bind(&JointTrajectoryAction::cancelCB, this, _1), false), has_active_goal_(false)
+{
+  ros::NodeHandle pn("~");
+
+  pn.param("constraints/goal_threshold", goal_threshold_, DEFAULT_GOAL_THRESHOLD_);
+
+  if (!industrial_utils::param::getJointNames("controller_joint_names", joint_names_))
   {
-    using namespace XmlRpc;
-    ros::NodeHandle pn("~");
-    // Set up the default joint names (TODO: This should be made more generic.  The
-    // joint names can have an arbitrary prefix that isn't accounted for here.  This
-    // info can be found in the URDF, but I don't know how to get it here.
-    joint_names_.push_back("joint_s");
-    joint_names_.push_back("joint_l");
-    joint_names_.push_back("joint_e");
-    joint_names_.push_back("joint_u");
-    joint_names_.push_back("joint_r");
-    joint_names_.push_back("joint_b");
-    joint_names_.push_back("joint_t");
+    ROS_WARN("Unable to read 'controller_joint_names' param.  Using standard 6-DOF joint names.");
+  }
+  ROS_INFO_STREAM("Loaded " << joint_names_.size() << " joint names from 'controller_joint_names' parameter");
 
-    pn.param("constraints/goal_time", goal_time_constraint_, 0.0);
+  // The controller joint names parameter includes empty joint names for those joints not supported
+  // by the controller.  These are removed since the trajectory action should ignore these.
+  std::remove(joint_names_.begin(), joint_names_.end(), std::string());
+  ROS_INFO_STREAM("Filtered joint names to " << joint_names_.size() << " joints");
 
-    // Gets the constraints for each joint.
-    for (size_t i = 0; i < joint_names_.size(); ++i)
-    {
-      std::string ns = std::string("constraints/") + joint_names_[i];
-      double g, t;
-      pn.param(ns + "/goal", g, DEFAULT_GOAL_THRESHOLD);
-      pn.param(ns + "/trajectory", t, -1.0);
-      goal_constraints_[joint_names_[i]] = g;
-      trajectory_constraints_[joint_names_[i]] = t;
-    }
-    pn.param("constraints/stopped_velocity_tolerance", stopped_velocity_tolerance_, 0.01);
+  pub_trajectory_command_ = node_.advertise<trajectory_msgs::JointTrajectory>("joint_path_command", 1);
+  sub_trajectory_state_ = node_.subscribe("feedback_states", 1, &JointTrajectoryAction::controllerStateCB, this);
+  sub_robot_status_ = node_.subscribe("robot_status", 1, &JointTrajectoryAction::robotStatusCB, this);
 
-    pub_controller_command_ = node_.advertise<trajectory_msgs::JointTrajectory> ("command", 1);
-    sub_controller_state_ = node_.subscribe("feedback_states", 1, &JointTrajectoryExecuter::controllerStateCB, this);
+  watchdog_timer_ = node_.createTimer(ros::Duration(WATCHD0G_PERIOD_), &JointTrajectoryAction::watchdog, this);
+  action_server_.start();
+}
 
-    action_server_.start();
+JointTrajectoryAction::~JointTrajectoryAction()
+{
+}
+
+void JointTrajectoryAction::robotStatusCB(const industrial_msgs::RobotStatusConstPtr &msg)
+{
+  last_robot_status_ = msg; //caching robot status for later use.
+}
+
+void JointTrajectoryAction::watchdog(const ros::TimerEvent &e)
+{
+  // Some debug logging
+  if (!last_trajectory_state_)
+  {
+    ROS_DEBUG("Waiting for subscription to joint trajectory state");
+  }
+  if (!trajectory_state_recvd_)
+  {
+    ROS_DEBUG("Trajectory state not received since last watchdog");
   }
 
-  ~JointTrajectoryExecuter()
+  // Aborts the active goal if the controller does not appear to be active.
+  if (has_active_goal_)
   {
-    pub_controller_command_.shutdown();
-    sub_controller_state_.shutdown();
-    watchdog_timer_.stop();
-  }
-
-  bool withinGoalConstraints(const control_msgs::FollowJointTrajectoryFeedbackConstPtr &msg, const std::map<
-      std::string, double>& constraints, const trajectory_msgs::JointTrajectory& traj)
-  {
-    ROS_DEBUG("Checking goal constraints");
-    int last = traj.points.size() - 1;
-    for (size_t i = 0; i < msg->joint_names.size(); ++i)
-    {
-      double abs_error = fabs(msg->actual.positions[i] - traj.points[last].positions[i]);
-      double goal_constraint = constraints.at(msg->joint_names[i]);
-      if (goal_constraint >= 0 && abs_error > goal_constraint)
-      {
-        ROS_DEBUG("Bad constraint: %f, abs_errs: %f", goal_constraint, abs_error);
-        return false;
-      }
-      ROS_DEBUG("Checking constraint: %f, abs_errs: %f", goal_constraint, abs_error);
-    }
-    return true;
-  }
-
-private:
-
-  static bool setsEqual(const std::vector<std::string> &a, const std::vector<std::string> &b)
-  {
-    if (a.size() != b.size())
-      return false;
-
-    for (size_t i = 0; i < a.size(); ++i)
-    {
-      if (count(b.begin(), b.end(), a[i]) != 1)
-        return false;
-    }
-    for (size_t i = 0; i < b.size(); ++i)
-    {
-      if (count(a.begin(), a.end(), b[i]) != 1)
-        return false;
-    }
-
-    return true;
-  }
-
-  void watchdog(const ros::TimerEvent &e)
-  {
-    ros::Time now = ros::Time::now();
-
-    // Aborts the active goal if the controller does not appear to be active.
-    if (has_active_goal_)
+    if (!trajectory_state_recvd_)
     {
       bool should_abort = false;
-      if (!last_controller_state_)
+      // last_trajectory_state_ is null if the subscriber never makes a connection
+      if (!last_trajectory_state_)
       {
         should_abort = true;
         ROS_WARN("Aborting goal because we have never heard a controller state message.");
       }
-      else if ((now - last_controller_state_->header.stamp) > ros::Duration(5.0))
+      else
       {
         should_abort = true;
-        ROS_WARN("Aborting goal because we haven't heard from the controller in %.3lf seconds",
-            (now - last_controller_state_->header.stamp).toSec());
+        ROS_WARN_STREAM(
+            "Aborting goal because we haven't heard from the controller in " << WATCHD0G_PERIOD_ << " seconds");
       }
 
       if (should_abort)
       {
-        // Stops the controller.
-        trajectory_msgs::JointTrajectory empty;
-        empty.joint_names = joint_names_;
-        pub_controller_command_.publish(empty);
-
-        // Marks the current goal as aborted.
-        active_goal_.setAborted();
-        has_active_goal_ = false;
+        abortGoal();
       }
+
+      // Reset the trajectory state received flag
+      trajectory_state_recvd_ = false;
     }
   }
+}
 
-  void goalCB(GoalHandle gh)
+void JointTrajectoryAction::goalCB(JointTractoryActionServer::GoalHandle & gh)
+{
+
+  if (industrial_utils::isSimilar(joint_names_, gh.getGoal()->trajectory.joint_names))
   {
-    // Ensures that the joints in the goal match the joints we are commanding.
-    ROS_DEBUG("Received goal: goalCB");
-    if (!setsEqual(joint_names_, gh.getGoal()->trajectory.joint_names))
-    {
-      ROS_ERROR("Joints on incoming goal don't match our joints");
-      gh.setRejected();
-      return;
-    }
 
     // Cancels the currently active goal.
     if (has_active_goal_)
     {
       ROS_DEBUG("Received new goal, canceling current goal");
-      // Stops the controller.
-      trajectory_msgs::JointTrajectory empty;
-      empty.joint_names = joint_names_;
-      pub_controller_command_.publish(empty);
-
-      // Marks the current goal as canceled.
-      active_goal_.setCanceled();
-      has_active_goal_ = false;
+      abortGoal();
     }
 
     // Sends the trajectory along to the controller
-    if (withinGoalConstraints(last_controller_state_, goal_constraints_, gh.getGoal()->trajectory))
+    if (withinGoalConstraints(last_trajectory_state_, gh.getGoal()->trajectory))
     {
-      ROS_INFO_STREAM("Already within goal constraints");
+
+      ROS_INFO_STREAM("Already within goal constraints, setting goal succeeded");
       gh.setAccepted();
       gh.setSucceeded();
     }
@@ -203,156 +146,145 @@ private:
       ROS_INFO("Publishing trajectory");
 
       current_traj_ = active_goal_.getGoal()->trajectory;
-      pub_controller_command_.publish(current_traj_);
+      pub_trajectory_command_.publish(current_traj_);
     }
   }
-
-  void cancelCB(GoalHandle gh)
+  else
   {
-    ROS_DEBUG("Received action cancel request");
-    if (active_goal_ == gh)
-    {
-      // Stops the controller.
-      trajectory_msgs::JointTrajectory empty;
-      empty.joint_names = joint_names_;
-      pub_controller_command_.publish(empty);
-
-      // Marks the current goal as canceled.
-      active_goal_.setCanceled();
-      has_active_goal_ = false;
-    }
+    control_msgs::FollowJointTrajectoryResult rslt;
+    rslt.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;
+    gh.setRejected(rslt, "Joint names do not match");
   }
 
-  ros::NodeHandle node_;
-  JTAS action_server_;
-  ros::Publisher pub_controller_command_;
-  ros::Subscriber sub_controller_state_;
-  ros::Timer watchdog_timer_;
-
-  bool has_active_goal_;
-  GoalHandle active_goal_;
-  trajectory_msgs::JointTrajectory current_traj_;
-
-  std::vector<std::string> joint_names_;
-  std::map<std::string, double> goal_constraints_;
-  std::map<std::string, double> trajectory_constraints_;
-  double goal_time_constraint_;
-  double stopped_velocity_tolerance_;
-
-  control_msgs::FollowJointTrajectoryFeedbackConstPtr last_controller_state_;
-
-  void controllerStateCB(const control_msgs::FollowJointTrajectoryFeedbackConstPtr &msg)
+  // Adding some informational log messages to indicate unsupported goal constraints
+  if (gh.getGoal()->goal_time_tolerance.toSec() > 0.0)
   {
-    //ROS_DEBUG("Checking controller state feedback");
-    last_controller_state_ = msg;
-    ros::Time now = ros::Time::now();
+    ROS_WARN_STREAM("Ignoring goal time tolerance in action goal, may be supported in the future");
+  }
+  if (!gh.getGoal()->goal_tolerance.empty())
+  {
+    ROS_WARN_STREAM(
+        "Ignoring goal tolerance in action, using paramater tolerance of " << goal_threshold_ << " instead");
+  }
+  if (!gh.getGoal()->path_tolerance.empty())
+  {
+    ROS_WARN_STREAM("Ignoring goal path tolerance, option not supported by ROS-Industrial drivers");
+  }
+}
 
-    if (!has_active_goal_)
+void JointTrajectoryAction::cancelCB(JointTractoryActionServer::GoalHandle & gh)
+{
+  ROS_DEBUG("Received action cancel request");
+  if (active_goal_ == gh)
+  {
+    // Stops the controller.
+    trajectory_msgs::JointTrajectory empty;
+    empty.joint_names = joint_names_;
+    pub_trajectory_command_.publish(empty);
+
+    // Marks the current goal as canceled.
+    active_goal_.setCanceled();
+    has_active_goal_ = false;
+  }
+  else
+  {
+    ROS_WARN("Active goal and goal cancel do not match, ignoring cancel request");
+  }
+}
+
+void JointTrajectoryAction::controllerStateCB(const control_msgs::FollowJointTrajectoryFeedbackConstPtr &msg)
+{
+  //ROS_DEBUG("Checking controller state feedback");
+  last_trajectory_state_ = msg;
+  ros::Time now = ros::Time::now();
+
+  if (!has_active_goal_)
+  {
+    //ROS_DEBUG("No active goal, ignoring feedback");
+    return;
+  }
+  if (current_traj_.points.empty())
+  {
+    ROS_DEBUG("Current trajectory is empty, ignoring feedback");
+    return;
+  }
+
+  if (!industrial_utils::isSimilar(joint_names_, msg->joint_names))
+  {
+    ROS_ERROR("Joint names from the controller don't match our joint names.");
+    return;
+  }
+
+  // Checking for goal constraints
+  // Checks that we have ended inside the goal constraints and has motion stopped
+
+  ROS_DEBUG("Checking goal constraints");
+  if (withinGoalConstraints(last_trajectory_state_, current_traj_))
+  {
+    if (last_robot_status_)
     {
-      //ROS_DEBUG("No active goal, ignoring feedback");
-      return;
+      // Additional check for motion stoppage since the controller goal may still
+      // be moving.  The current robot driver calls a motion stop if it receives
+      // a new trajectory while it is still moving.  If the driver is not publishing
+      // the motion state (i.e. old driver), this will still work, but it warns you.
+      if (last_robot_status_->in_motion.val == industrial_msgs::TriState::FALSE)
+      {
+        ROS_INFO("Inside goal constraints, stopped moving, return success for action");
+        active_goal_.setSucceeded();
+        has_active_goal_ = false;
+      }
+      else if (last_robot_status_->in_motion.val == industrial_msgs::TriState::UNKNOWN)
+      {
+        ROS_INFO("Inside goal constraints, return success for action");
+        ROS_WARN("Robot status in motion unknown, the robot driver node and controller code should be updated");
+        active_goal_.setSucceeded();
+        has_active_goal_ = false;
+      }
+      else
+      {
+        ROS_DEBUG("Within goal constraints but robot is still moving");
+      }
     }
-    if (current_traj_.points.empty())
+    else
     {
-      ROS_DEBUG("Current trajecotry is empty, ignoring feedback");
-      return;
-    }
-    /* NOT CONCERNED ABOUT TRAJECTORY TIMING AT THIS POINT
-     if (now < current_traj_.header.stamp + current_traj_.points[0].time_from_start)
-     return;
-     */
-
-    if (!setsEqual(joint_names_, msg->joint_names))
-    {
-      ROS_ERROR("Joint names from the controller don't match our joint names.");
-      return;
-    }
-
-    // Checking for goal constraints
-    // Checks that we have ended inside the goal constraints
-
-    ROS_DEBUG("Checking goal contraints");
-    if (withinGoalConstraints(msg, goal_constraints_, current_traj_))
-    {
-      ROS_INFO("Inside goal contraints, return success for action");
+      ROS_INFO("Inside goal constraints, return success for action");
+      ROS_WARN("Robot status is not being published the robot driver node and controller code should be updated");
       active_goal_.setSucceeded();
       has_active_goal_ = false;
     }
-    // Verifies that the controller has stayed within the trajectory constraints.
-    /*  DISABLING THIS MORE COMPLICATED GOAL CHECKING AND ERROR DETECTION
-
-
-     int last = current_traj_.points.size() - 1;
-     ros::Time end_time = current_traj_.header.stamp + current_traj_.points[last].time_from_start;
-     if (now < end_time)
-     {
-     // Checks that the controller is inside the trajectory constraints.
-     for (size_t i = 0; i < msg->joint_names.size(); ++i)
-     {
-     double abs_error = fabs(msg->error.positions[i]);
-     double constraint = trajectory_constraints_[msg->joint_names[i]];
-     if (constraint >= 0 && abs_error > constraint)
-     {
-     // Stops the controller.
-     trajectory_msgs::JointTrajectory empty;
-     empty.joint_names = joint_names_;
-     pub_controller_command_.publish(empty);
-
-     active_goal_.setAborted();
-     has_active_goal_ = false;
-     ROS_WARN("Aborting because we would up outside the trajectory constraints");
-     return;
-     }
-     }
-     }
-     else
-     {
-     // Checks that we have ended inside the goal constraints
-     bool inside_goal_constraints = true;
-     for (size_t i = 0; i < msg->joint_names.size() && inside_goal_constraints; ++i)
-     {
-     double abs_error = fabs(msg->error.positions[i]);
-     double goal_constraint = goal_constraints_[msg->joint_names[i]];
-     if (goal_constraint >= 0 && abs_error > goal_constraint)
-     inside_goal_constraints = false;
-
-     // It's important to be stopped if that's desired.
-     if (fabs(msg->desired.velocities[i]) < 1e-6)
-     {
-     if (fabs(msg->actual.velocities[i]) > stopped_velocity_tolerance_)
-     inside_goal_constraints = false;
-     }
-     }
-
-     if (inside_goal_constraints)
-     {
-     active_goal_.setSucceeded();
-     has_active_goal_ = false;
-     }
-     else if (now < end_time + ros::Duration(goal_time_constraint_))
-     {
-     // Still have some time left to make it.
-     }
-     else
-     {
-     ROS_WARN("Aborting because we wound up outside the goal constraints");
-     active_goal_.setAborted();
-     has_active_goal_ = false;
-     }
-
-     }
-     */
   }
-};
-
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "joint_trajectory_action_node");
-  ros::NodeHandle node;//("~");
-  JointTrajectoryExecuter jte(node);
-
-  ros::spin();
-
-  return 0;
 }
+
+void JointTrajectoryAction::abortGoal()
+{
+  // Stops the controller.
+  trajectory_msgs::JointTrajectory empty;
+  pub_trajectory_command_.publish(empty);
+
+  // Marks the current goal as aborted.
+  active_goal_.setAborted();
+  has_active_goal_ = false;
+}
+
+bool JointTrajectoryAction::withinGoalConstraints(const control_msgs::FollowJointTrajectoryFeedbackConstPtr &msg,
+                                                  const trajectory_msgs::JointTrajectory & traj)
+{
+  bool rtn = false;
+  int last_point = traj.points.size() - 1;
+
+  if (industrial_robot_client::utils::isWithinRange(last_trajectory_state_->joint_names,
+                                                    last_trajectory_state_->actual.positions, traj.joint_names,
+                                                    traj.points[last_point].positions, goal_threshold_))
+  {
+    rtn = true;
+  }
+  else
+  {
+    rtn = false;
+  }
+  return rtn;
+}
+
+} //joint_trajectory_action
+} //industrial_robot_client
 
