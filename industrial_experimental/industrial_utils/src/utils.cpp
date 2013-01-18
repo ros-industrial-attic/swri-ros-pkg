@@ -36,12 +36,11 @@
 namespace industrial_utils
 {
 
-
 bool isSimilar(std::vector<std::string> lhs, std::vector<std::string> rhs)
 {
   bool rtn = false;
 
-  if(lhs.size() != rhs.size())
+  if (lhs.size() != rhs.size())
   {
     rtn = false;
   }
@@ -55,12 +54,11 @@ bool isSimilar(std::vector<std::string> lhs, std::vector<std::string> rhs)
   return rtn;
 }
 
-
 bool isSame(const std::vector<std::string> & lhs, const std::vector<std::string> & rhs)
 {
   bool rtn = false;
 
-  if(lhs.size() != rhs.size())
+  if (lhs.size() != rhs.size())
   {
     rtn = false;
   }
@@ -70,7 +68,6 @@ bool isSame(const std::vector<std::string> & lhs, const std::vector<std::string>
   }
   return rtn;
 }
-
 
 
 
