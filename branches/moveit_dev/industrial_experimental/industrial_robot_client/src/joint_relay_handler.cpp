@@ -60,8 +60,6 @@ bool JointRelayHandler::internalCB(SimpleMessage& in)
 {
   JointMessage joint_msg;
 
-  LOG_DEBUG("Executing internal CB");
-
   if (!joint_msg.init(in))
   {
     LOG_ERROR("Failed to initialize joint message");

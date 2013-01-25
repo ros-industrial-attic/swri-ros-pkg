@@ -83,13 +83,15 @@ bool getListParam(const std::string param_name, std::vector<std::string> & list_
 
 }
 
-bool getJointNames(const std::string param_name, int num_joints, std::vector<std::string> & joint_names)
+bool getJointNames(const std::string param_name, std::vector<std::string> & joint_names)
 {
   if (ros::param::has(param_name) && getListParam(param_name, joint_names))
     return true;
 
+  const int NUM_JOINTS = 6;  //Most robots have 6 joints
+
   joint_names.clear();
-  for (int i=0; i<num_joints; ++i)
+  for (int i=0; i<NUM_JOINTS; ++i)
   {
     std::stringstream tmp;
     tmp << "joint_" << i+1;

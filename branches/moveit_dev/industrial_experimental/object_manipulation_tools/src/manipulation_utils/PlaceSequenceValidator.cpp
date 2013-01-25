@@ -36,6 +36,7 @@
  */
 
 #include <object_manipulation_tools/manipulation_utils/PlaceSequenceValidator.h>
+#include <tf/transform_listener.h>
 using namespace object_manipulator;
 using namespace object_manipulation_msgs;
 

@@ -31,10 +31,14 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 
 set(SRC_FILES src/joint_relay_handler.cpp
+			  src/robot_status_relay_handler.cpp
               src/joint_trajectory_downloader.cpp
-              src/joint_trajectory_interface.cpp
               src/joint_trajectory_streamer.cpp
-              src/robot_state_interface.cpp)
+              src/joint_trajectory_interface.cpp
+              src/robot_state_interface.cpp
+              src/utils.cpp)
+              
+              
 
 # This library depends on the simple_message library, which is available
 # in two formats to support endian differences between robot & PC.
@@ -68,6 +72,14 @@ rosbuild_add_executable(motion_download_interface
   src/generic_joint_downloader_node.cpp)
 target_link_libraries(motion_download_interface industrial_robot_client)
 
-rosbuild_add_executable(joint_trajectory_action src/joint_trajectory_action.cpp)
+rosbuild_add_executable(joint_trajectory_action 
+  src/generic_joint_trajectory_action_node.cpp
+  src/joint_trajectory_action.cpp)
+target_link_libraries(joint_trajectory_action industrial_robot_client)
 rosbuild_link_boost(joint_trajectory_action thread)
-#target_link_libraries(example ${PROJECT_NAME})
+
+# Testing - Only performed on normal (non byte swapped library)
+rosbuild_add_gtest(utest test/utest.cpp)
+target_link_libraries(utest industrial_robot_client)
+
+

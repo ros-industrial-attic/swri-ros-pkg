@@ -29,20 +29,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "industrial_robot_client/robot_state_interface.h"
+#include "industrial_robot_client/joint_trajectory_action.h"
 
-using industrial_robot_client::robot_state_interface::RobotStateInterface;
+using industrial_robot_client::joint_trajectory_action::JointTrajectoryAction;
 
 int main(int argc, char** argv)
 {
   // initialize node
-  ros::init(argc, argv, "state_interface");
+  ros::init(argc, argv, "joint_trajectory_action");
 
-  // launch the default Robot State Interface connection/handlers
-  RobotStateInterface rsi;
-  if (rsi.init())
-  {
-    rsi.run();
-  }
+  JointTrajectoryAction action;
+  action.run();
+
   return 0;
 }

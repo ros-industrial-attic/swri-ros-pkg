@@ -65,6 +65,9 @@ namespace RobotNavigatorParameters
 	static const std::string DEFAULT_PLANNING_SCENE_SERVICE = "/environment_server/set_planning_scene_diff";
 	static const std::string DEFAULT_IK_PLUGING = "SIA20D_Mesh_manipulator_kinematics/IKFastKinematicsPlugin";
 	static const std::string DEFAULT_JOINT_STATES_TOPIC = "/joint_states";
+	static const double DF_PICK_APPROACH_DISTANCE = 0.1f;
+	static const double DF_PLACE_APPROACH_DISTANCE = 0.1f;
+	static const double DF_PLACE_RETREAT_DISTANCE = 0.1f;
 
 	// ros param names
 	static const std::string PARAM_NAME_ARM_GROUP = "arm_group";
@@ -83,6 +86,10 @@ namespace RobotNavigatorParameters
 	static const std::string PARAM_NAME_PLANNING_SCENE_SERVICE = "planning_scene_service_name";
 	static const std::string PARAM_NAME_IK_PLUGING = "arm_inverse_kinematics_plugin";
 	static const std::string PARAM_NAME_JOINT_STATES_TOPIC = "joint_state_topic";
+	static const std::string PARAM_PICK_APPROACH_DISTANCE = "/pick_approach_distance";
+	static const std::string PARAM_PLACE_APPROACH_DISTANCE = "/place_approach_distance";
+	static const std::string PARAM_PLACE_RETREAT_DISTANCE = "/place_retreat_distance";
+
 }
 
 
@@ -105,6 +112,9 @@ public:
 	static std::string MARKER_ATTACHED_OBJECT;
 	static std::string VISUALIZATION_TOPIC;
 
+	// others
+	static const tf::Transform PLACE_RECTIFICATION_TF; // used to orient the tcp's z vector in the normal direction for all place moves
+
 protected:
 	// setup
 	virtual void setup();
@@ -121,6 +131,8 @@ protected:
 	 */
 	virtual bool performSegmentation();
 	virtual bool performRecognition();
+	virtual bool performPickGraspPlanning();
+	virtual bool performPlaceGraspPlanning();
 	virtual bool performGraspPlanning();
 	virtual bool performTrajectoryFiltering(const std::string& group_name,trajectory_msgs::JointTrajectory& jt);
 
@@ -161,7 +173,7 @@ protected:
 	void addDetectedObjectToLocalPlanningScene(const household_objects_database_msgs::DatabaseModelPoseList& model);
 
 	// grasp execution
-	virtual bool attemptGraspSequence(const std::string& group_name,const object_manipulator::GraspExecutionInfo& gei);
+	virtual bool attemptGraspSequence(const std::string& group_name,const object_manipulator::GraspExecutionInfo& gei,bool performRecoveryMove = true);
 	virtual bool attemptPlaceSequence(const std::string& group_name,const object_manipulator::PlaceExecutionInfo& pei);
 
 	// demo monitoring
@@ -190,12 +202,14 @@ protected:
 	/* move sequence creation methods
 	 * These methods generate all the necessary move steps corresponding to each manipulation sequence
 	 */
-	virtual void createPickMoveSequence(const object_manipulation_msgs::PickupGoal &pickupGoal,
-			const std::vector<object_manipulation_msgs::Grasp> &grasps,
-			std::vector<object_manipulator::GraspExecutionInfo> &graspSequence);
-	virtual void createPlaceMoveSequence(const object_manipulation_msgs::PlaceGoal &placeGoal,
-			const std::vector<geometry_msgs::PoseStamped> &placePoses,
-			std::vector<object_manipulator::PlaceExecutionInfo> &placeSequence);
+	virtual bool createPickMoveSequence(const object_manipulation_msgs::PickupGoal &pickupGoal,
+			const std::vector<object_manipulation_msgs::Grasp> &grasps_candidates,
+			std::vector<object_manipulator::GraspExecutionInfo> &grasp_sequence,
+			std::vector<object_manipulation_msgs::Grasp> &valid_grasps);
+	virtual bool createPlaceMoveSequence(const object_manipulation_msgs::PlaceGoal &placeGoal,
+			const std::vector<geometry_msgs::PoseStamped> &place_poses,
+			std::vector<object_manipulator::PlaceExecutionInfo> &place_sequence);
+
 
 protected:
 
@@ -215,7 +229,6 @@ protected:
 	ros::ServiceClient rec_srv_;
 	ros::ServiceClient planning_service_client_;
 	ros::ServiceClient trajectory_filter_service_client_;
-	//ros::ServiceClient trajectory_filter_fast_service_client_;
 	ros::ServiceClient object_database_model_mesh_client_;
 	ros::ServiceClient grasp_planning_client;
 	ros::ServiceClient object_database_model_description_client_;
@@ -266,6 +279,10 @@ protected:
 	object_manipulation_msgs::PickupGoal grasp_pickup_goal_;
 	object_manipulation_msgs::PlaceGoal grasp_place_goal_;
 	std::vector<object_manipulation_msgs::Grasp> grasp_candidates_;
+
+	// pick/place move execution data
+	std::vector<object_manipulator::GraspExecutionInfo> grasp_pick_sequence_;
+	std::vector<object_manipulator::PlaceExecutionInfo> grasp_place_sequence_;
 
 	//
 	geometry_msgs::PoseStamped current_place_location_;
@@ -318,6 +335,11 @@ protected:
 
 	// plugins
 	std::string ik_plugin_name_;
+
+	// pick/place
+	double pick_approach_distance_;
+	double place_approach_distance_;
+	double place_retreat_distance_;
 
 	// ################################## end of ros parameters ##################################
 };
