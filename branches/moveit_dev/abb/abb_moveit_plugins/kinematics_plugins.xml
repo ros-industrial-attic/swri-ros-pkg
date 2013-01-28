@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='ASCII'?>
+<library path="lib/libirb2400_moveit_arm_kinematics">
+  <class name="irb_2400_manipulator_kinematics/IKFastKinematicsPlugin" type="irb_2400_manipulator_kinematics::IKFastKinematicsPlugin" base_class_type="kinematics::KinematicsBase">
+    <description>IKFast61 plugin for IRB2400 arm</description>
+  </class>
+</library>

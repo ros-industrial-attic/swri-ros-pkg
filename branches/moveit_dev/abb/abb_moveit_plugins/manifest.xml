@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='ASCII'?>
+<package>
+  <description brief="abb_moveit_plugins">
+    ABB-specific plugins for MoveIt
+  </description>
+  <author email="jzoss@swri.org">Jeremy Zoss</author>
+  <license>BSD</license>
+
+  <depend package="moveit_core"/>
+  <depend package="roscpp"/>
+
+  <export>
+    <moveit_core plugin="${prefix}/kinematics_plugins.xml"/>
+  </export>
+</package>
