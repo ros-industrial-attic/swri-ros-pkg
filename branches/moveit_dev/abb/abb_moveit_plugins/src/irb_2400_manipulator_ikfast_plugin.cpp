@@ -302,6 +302,9 @@ namespace irb_2400_manipulator_kinematics
 
   int IKFastKinematicsPlugin::solve(KDL::Frame &pose_frame, const std::vector<double> &vfree, IkSolutionList<IkReal> &solutions) const
   {
+    // IKFast56/61
+    solutions.Clear();
+
     //KDL::Rotation rot = KDL::Rotation::RotY(M_PI/2);
     KDL::Rotation orig = pose_frame.M;
     KDL::Rotation mult = orig;//*rot;
@@ -670,8 +673,8 @@ namespace irb_2400_manipulator_kinematics
     double initial_guess = ik_seed_state[free_params_[0]];
     vfree[0] = initial_guess;
 
-    // JKZ - replaced consistency_limit (scalar) w/ consistency_limits (vector).
-    //       Assume [0]th free_params element for now.  Probably wrong.
+    // replaced consistency_limit (scalar) w/ consistency_limits (vector).
+    // Assume [0]th free_params element for now.  Probably wrong.
     double max_limit = fmin(joint_max_vector_[free_params_[0]], initial_guess+consistency_limits[free_params_[0]]);
     double min_limit = fmax(joint_min_vector_[free_params_[0]], initial_guess-consistency_limits[free_params_[0]]);
 
@@ -883,8 +886,8 @@ namespace irb_2400_manipulator_kinematics
     double initial_guess = ik_seed_state[free_params_[0]];
     vfree[0] = initial_guess;
 
-    // JKZ - moveit replaced consistency_limit (scalar) w/ consistency_limits (vector)
-    //       Assuming [0]th free_params element.  Probably wrong.
+    // moveit replaced consistency_limit (scalar) w/ consistency_limits (vector)
+    // Assuming [0]th free_params element.  Probably wrong.
     double max_limit = fmin(joint_max_vector_[free_params_[0]], initial_guess+consistency_limits[free_params_[0]]);
     double min_limit = fmax(joint_min_vector_[free_params_[0]], initial_guess-consistency_limits[free_params_[0]]);
 
