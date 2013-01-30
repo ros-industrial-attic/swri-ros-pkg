@@ -7,7 +7,7 @@
   <param name="planning_plugin" value="$(arg planning_plugin)" />
   <param name="request_adapters" value="$(arg planning_adapters)" />
 
-  <rosparam command="load" file="$(find abb_irb2400_moveit_config)/config/kinematics.yaml"/>
-  <rosparam command="load" file="$(find abb_irb2400_moveit_config)/config/ompl_planning.yaml"/>
+  <rosparam command="load" file="$(find irb_2400_moveit_config)/config/kinematics.yaml"/>
+  <rosparam command="load" file="$(find irb_2400_moveit_config)/config/ompl_planning.yaml"/>
 
 </launch>

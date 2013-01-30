@@ -1,9 +1,9 @@
 <package>
 
-  <name>abb_irb2400_moveit_config</name>
+  <name>irb_2400_moveit_config</name>
   <version>0.1.0</version>
   <description>
-     abb_irb2400_moveit_config
+     irb_2400_moveit_config
   </description>
   <author email="assistant@moveit.ros.org">MoveIt Setup Assistant</author>
   <maintainer email="assistant@moveit.ros.org">MoveIt Setup Assistant</maintainer>

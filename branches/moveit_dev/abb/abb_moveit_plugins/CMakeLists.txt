@@ -29,10 +29,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-# Library containing IKFast plugin 
-rosbuild_add_library(irb2400_moveit_arm_kinematics
-  src/irb_2400_manipulator_ikfast_plugin.cpp
-  src/irb_2400_manipulator_ikfast_solver.cpp
+# Library containing IKFast plugin
+rosbuild_add_library(irb_2400_moveit_arm_kinematics
+  src/irb_2400_manipulator_ikfast_moveit_plugin.cpp
   )
-
-

@@ -14,9 +14,9 @@
  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
  #-------------------------------------
 
- <include file="$(find abb_irb2400_moveit_config)/launch/move_group.launch">
+ <include file="$(find irb_2400_moveit_config)/launch/move_group.launch">
   <arg name="publish_monitored_planning_scene" value="true" />
  </include>
 
- <include file="$(find abb_irb2400_moveit_config)/launch/moveit_rviz.launch"/>
+ <include file="$(find irb_2400_moveit_config)/launch/moveit_rviz.launch"/>
 </launch>
