@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find mantis_sia20d_arm_navigation)/launch/move_sia20d_arm.launch" />
+    <include file="$(find mantis_sia20d_arm_navigation)/launch/move_sia20d_gripper.launch" />
+</launch>

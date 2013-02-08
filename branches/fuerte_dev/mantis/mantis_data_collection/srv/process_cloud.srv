@@ -1,0 +1,5 @@
+sensor_msgs/PointCloud2 in_cloud
+float32 angle
+string objectName
+---
+int32 result
