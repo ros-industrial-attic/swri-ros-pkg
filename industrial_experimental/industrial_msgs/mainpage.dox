@@ -2,7 +2,7 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b industrial_msgs 
+\b  The industrial message package containes industrial specific messages definitions. This package is part of the ROS-Industrial program.
 
 <!-- 
 Provide an overview of your package.

@@ -1,7 +1,7 @@
 <package>
   <description brief="industrial_msgs">
 
-     industrial_msgs defines industrial specific messages, such as industrial robot state structures.
+     The industrial message package containes industrial specific messages definitions. This package is part of the ROS-Industrial program.
 
   </description>
   <author>Shaun M. Edwards</author>
