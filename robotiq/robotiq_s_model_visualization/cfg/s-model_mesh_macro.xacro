@@ -64,18 +64,18 @@
 		<!-- end of link list -->
 		<!-- joint list -->
 		<joint name="${prefix}joint_1" type="fixed">
-			<parent link="palm"/>
-			<child link="finger_1"/>
+			<parent link="${prefix}palm"/>
+			<child link="${prefix}finger_1"/>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 		</joint>
 		<joint name="${prefix}joint_2" type="fixed">
-			<parent link="palm"/>
-			<child link="finger_2"/>
+			<parent link="${prefix}palm"/>
+			<child link="${prefix}finger_2"/>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 		</joint>
 		<joint name="${prefix}joint_3" type="fixed">
-			<parent link="palm"/>
-			<child link="finger_3"/>
+			<parent link="${prefix}palm"/>
+			<child link="${prefix}finger_3"/>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 		</joint>
 		<!-- end of joint list -->
