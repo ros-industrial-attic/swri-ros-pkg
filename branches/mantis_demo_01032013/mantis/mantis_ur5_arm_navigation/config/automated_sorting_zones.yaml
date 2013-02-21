@@ -1,0 +1,81 @@
+pick_zones:
+#___________________________________#
+ - zone_name: singulated_zone
+   x_min: -0.50
+   x_max: 0.01
+   y_min: 0.25
+   y_max: 0.80
+   frame_id: workcell_frame
+#___________________________________#
+ - zone_name: clutter_zone
+   x_min: -1.1
+   x_max: -0.5
+   y_min: -0.32
+   y_max: 0.10
+   frame_id: workcell_frame
+#___________________________________#
+ - zone_name: sorted_zone
+   x_min: -1.1
+   x_max: -0.5
+   y_min: 0.101
+   y_max: 0.60
+   frame_id: workcell_frame
+place_zones:
+#___________________________________#
+ - zone_name: sorted_zone_1
+   x_min: -1.1
+   x_max: -0.5
+   y_min: 0.44
+   y_max: 0.60
+   frame_id: workcell_frame
+   pose_candidates: 8
+   orientation_axis:
+    x: 0.0
+    y: 0.0
+    z: 1.0
+   release_distance: 0.001
+   next_location:
+    min_spacing: 0.16
+    max_spacing: 0.20
+    generation_mode: 2
+   ids_allowed: [1]
+   objs_allowed: [BOXES]
+#___________________________________#
+ - zone_name: sorted_zone_2
+   x_min: -1.1
+   x_max: -0.5
+   y_min: 0.27
+   y_max: 0.435
+   frame_id: workcell_frame
+   pose_candidates: 8
+   orientation_axis:
+    x: 0.0
+    y: 0.0
+    z: 1.0
+   release_distance: 0.001
+   next_location:
+    min_spacing: 0.16
+    max_spacing: 0.20
+    generation_mode: 2
+   ids_allowed: [5]
+   objs_allowed: [CAPS]
+#___________________________________#
+ - zone_name: sorted_zone_3
+   x_min: -1.1
+   x_max: -0.5
+   y_min: 0.101
+   y_max: 0.265
+   frame_id: workcell_frame
+   pose_candidates: 8
+   orientation_axis:
+    x: 0.0
+    y: 0.0
+    z: 1.0
+   release_distance: 0.001
+   next_location:
+    min_spacing: 0.16
+    max_spacing: 0.20
+    generation_mode: 2
+   ids_allowed: [3]
+   objs_allowed: [TEES]
+
