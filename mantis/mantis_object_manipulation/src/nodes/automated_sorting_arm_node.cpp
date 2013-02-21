@@ -239,6 +239,34 @@ public:
 				break;
 			}
 
+			// moving for pickup in sorted zone
+			ROS_INFO_STREAM("Grasp Pick stage started");
+			if(moveArmThroughPickSequence())
+			{
+				ROS_INFO_STREAM("Grasp Pick stage completed");
+			}
+			else
+			{
+				ROS_WARN_STREAM("Grasp Pick stage failed");
+				moveArmToSide();
+				proceed = false;
+				break;
+			}
+
+			// moving for place in clutter zone
+			ROS_INFO_STREAM("Grasp Place stage started");
+			if(moveArmThroughPlaceSequence())
+			{
+				ROS_INFO_STREAM("Grasp Place stage completed");
+			}
+			else
+			{
+				ROS_WARN_STREAM("Grasp Place stage failed");
+				moveArmToSide();
+				proceed = false;
+				break;
+			}
+
 		}
 
 		return proceed;
