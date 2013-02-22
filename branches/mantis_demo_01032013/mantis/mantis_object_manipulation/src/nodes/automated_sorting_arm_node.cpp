@@ -34,6 +34,7 @@ public:
 		if(!moveArmToSide())
 		{
 			ROS_WARN_STREAM(NODE_NAME << ": Side moved failed");
+			return;
 		}
 		ROS_INFO_STREAM("Arm at home position");
 
@@ -62,6 +63,9 @@ public:
 				break;
 			}
 		}
+
+		spinner.stop();
+		ros::shutdown();
 	}
 
 	bool runSortCycle()
@@ -210,6 +214,12 @@ public:
 	{
 
 		bool proceed = true;
+
+		if(!moveArmToSide())
+		{
+			return false;
+		}
+
 		while(proceed)
 		{
 
@@ -217,7 +227,7 @@ public:
 			clearResultsFromLastSrvCall();
 			zone_selector_.goToPickZone(sorted_zone_index_);
 			ROS_INFO_STREAM("Segmentation stage started");
-			if(!performSegmentation())
+			if(performSegmentation())
 			{
 				ROS_INFO_STREAM("Segmentation stage completed");
 			}
@@ -229,7 +239,7 @@ public:
 
 			// planning
 			ROS_INFO_STREAM(": Grasp Planning stage started");
-			if(!performGraspPlanningForClutter())
+			if(performGraspPlanningForClutter())
 			{
 				ROS_INFO_STREAM(": Grasp Planning stage completed");
 			}
