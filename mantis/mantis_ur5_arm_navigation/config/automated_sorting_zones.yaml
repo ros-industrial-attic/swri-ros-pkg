@@ -1,8 +1,8 @@
 pick_zones:
 #___________________________________#
  - zone_name: singulated_zone
-   x_min: -0.50
-   x_max: 0.01
+   x_min: -0.38
+   x_max: -0.10
    y_min: 0.25
    y_max: 0.80
    frame_id: workcell_frame
@@ -10,12 +10,12 @@ pick_zones:
  - zone_name: clutter_zone
    x_min: -1.1
    x_max: -0.5
-   y_min: -0.32
-   y_max: 0.10
+   y_min: -0.36
+   y_max: 0.00
    frame_id: workcell_frame
 #___________________________________#
  - zone_name: sorted_zone
-   x_min: -1.1
+   x_min: -1.2
    x_max: -0.5
    y_min: 0.101
    y_max: 0.60
@@ -24,7 +24,7 @@ place_zones:
 #___________________________________#
  - zone_name: sorted_zone_1
    x_min: -1.1
-   x_max: -0.5
+   x_max: -0.4
    y_min: 0.44
    y_max: 0.60
    frame_id: workcell_frame
@@ -43,7 +43,7 @@ place_zones:
 #___________________________________#
  - zone_name: sorted_zone_2
    x_min: -1.1
-   x_max: -0.5
+   x_max: -0.4
    y_min: 0.27
    y_max: 0.435
    frame_id: workcell_frame
@@ -57,12 +57,12 @@ place_zones:
     min_spacing: 0.16
     max_spacing: 0.20
     generation_mode: 2
-   ids_allowed: [5]
+   ids_allowed: [0, 4, 5]
    objs_allowed: [CAPS]
 #___________________________________#
  - zone_name: sorted_zone_3
    x_min: -1.1
-   x_max: -0.5
+   x_max: -0.4
    y_min: 0.101
    y_max: 0.265
    frame_id: workcell_frame
