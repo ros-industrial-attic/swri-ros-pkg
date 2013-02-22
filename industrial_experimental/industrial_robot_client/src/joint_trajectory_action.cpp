@@ -287,7 +287,6 @@ bool JointTrajectoryAction::withinGoalConstraints(const control_msgs::FollowJoin
   else
   {
     int last_point = traj.points.size() - 1;
-    ROS_INFO_STREAM("Within goal constraints: Last point: " << last_point);
 
     if (industrial_robot_client::utils::isWithinRange(last_trajectory_state_->joint_names,
                                                       last_trajectory_state_->actual.positions, traj.joint_names,
