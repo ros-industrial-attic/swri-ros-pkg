@@ -272,7 +272,7 @@ class IndustrialRobotSimulatorNode():
     
         try:
     
-            rospy.loginfo('Received trajectory, executing callback')
+            rospy.loginfo('Received trajectory with %s points, executing callback', str(len(msg_in.points)))
             
             if self.motion_ctrl.is_in_motion():
                 if len(msg_in.points) > 0:
