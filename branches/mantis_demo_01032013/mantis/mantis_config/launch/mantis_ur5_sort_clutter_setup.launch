@@ -6,7 +6,7 @@
 	<arg name="sim_only" default="true"/>
 	<arg name="use_clutter_grasp_planner" default="true"/>
 
-	<arg name="sensor_usb_manual_setup" default="false"/>
+	<arg name="sensor_usb_manual_setup" default="true"/>
 	<arg name="sensor_usb_bus" default="002"/>
 	<arg name="sensor_usb_device" default="000"/>
 
