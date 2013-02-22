@@ -3,7 +3,7 @@
 	<!--rosparam command="load" file="$(find mantis_ur5_arm_navigation)/config/kinematics_parameters.yaml"/-->
 	<group ns="ur5_arm">
 		<node name="mantis_arm_navigator" pkg="mantis_object_manipulation" 
-			type="sort_clutter_arm_node" output="screen">		
+			type="automated_sorting_arm_node" output="screen">		
 			<rosparam command="load" file="$(find mantis_ur5_arm_navigation)/config/automated_sorting_parameters.yaml"/>
 			<rosparam command="load" file="$(find mantis_ur5_arm_navigation)/config/automated_sorting_zones.yaml"/>
 			<rosparam command="load" file="$(find mantis_ur5_arm_navigation)/config/kinematics_parameters.yaml"/>
