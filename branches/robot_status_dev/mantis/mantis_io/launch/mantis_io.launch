@@ -1,5 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-  <node name="soem_master" pkg="ocl" type="deployer-gnulinux" args="-s $(find mantis_io)/launch/io_config_script.ops --" output="screen"/>
-  <node name="mantis_output_server" pkg="mantis_io" type="digital_output_server" output="screen"/>
-</launch>

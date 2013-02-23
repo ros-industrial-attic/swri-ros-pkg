@@ -1,5 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-	<arg name="conf_file" default="$(find freetail_object_manipulation)/vcg/freetail_object_manipulation.vcg"/>
-	<node pkg="rviz" type="rviz" name="freetail_visualize" args="-d $(arg conf_file)"/>
-</launch>

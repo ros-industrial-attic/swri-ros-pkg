@@ -1,5 +1,0 @@
-sensor_msgs/PointCloud2 cluster
-float32 threshold
----
-string label
-nrg_object_recognition/pose pose
