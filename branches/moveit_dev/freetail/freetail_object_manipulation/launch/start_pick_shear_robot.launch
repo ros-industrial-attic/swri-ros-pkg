@@ -1,8 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-	<node name="freetail_manipulation" pkg="freetail_object_manipulation" type="robot_pick_shear_node" output="screen">
-		
-		<rosparam command="load" file="$(find freetail_object_manipulation)/config/pick_shear_place_parameters.yaml"/>
-
-	</node>  
-</launch>

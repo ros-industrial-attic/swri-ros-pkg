@@ -1,6 +1,0 @@
-- name: "Kinect Camera: Arm"
-  3d: arm_chain
-  cam: kinect_camera
-  plot_ops:
-    color: g
-    marker: s

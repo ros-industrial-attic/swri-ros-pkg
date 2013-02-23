@@ -1,7 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-  <node name="vfh_recognition" pkg="vfh_recognition" type="vfh_recognition_configurable" output="screen">.
-	<rosparam command="load" file="$(find vfh_recognition)/config/vfh_recognition_config_params.yaml"/>
-	<param name="InputDataDirectory" value="$(find vfh_recognition)/data"/>
-  </node>
-</launch>
