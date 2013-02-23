@@ -1,7 +1,0 @@
-cloud_sources:
-  - name: /camera/rgb/points_filtered2
-    frame_subsample: 1
-    point_subsample: 1
-    sensor_frame: kinect_rgb_optical_frame
-
-
