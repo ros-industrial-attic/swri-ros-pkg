@@ -1,9 +1,0 @@
-sensor_msgs/PointCloud[] clusters
-tabletop_object_detector/Table table
----
-
-string label
-int32 model_id
-nrg_object_recognition/pose pose
-visualization_msgs/Marker mesh_marker
-geometry_msgs/PoseStamped[] pick_poses

@@ -1,4 +1,0 @@
-sensor_msgs/PointCloud2 scene
----
-string objectLabel
-sensor_msgs/PointCloud2 model

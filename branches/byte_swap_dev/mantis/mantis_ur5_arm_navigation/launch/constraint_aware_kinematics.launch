@@ -1,9 +1,0 @@
-<launch>
-    <include file="$(find mantis_ur5_arm_navigation)/launch/mantis_ur5_planning_environment.launch" />
-    <node pkg="arm_kinematics_constraint_aware" type="arm_kinematics_constraint_aware" name="mantis_ur5_ur5_arm_kinematics">
-        <param name="group" type="string" value="ur5_arm" />
-        <param name="ur5_arm/root_name" type="string" value="ur5_arm/base_link" />
-        <param name="ur5_arm/tip_name" type="string" value="ur5_arm/ee_link" />
-        <param name="kinematics_solver" type="string" value="arm_kinematics_constraint_aware/KDLArmKinematicsPlugin" />
-    </node>
-</launch>

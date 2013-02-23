@@ -1,9 +1,0 @@
-<stack>
-  <description brief="freetail">Contains packages in support of the SwRI freetail program.  A program to develop bin picking software</description>
-  <author>Maintained by sedwards</author>
-  <license>BSD</license>  
-  <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/freetail</url>
-  <depend stack="ros" />
-
-</stack>

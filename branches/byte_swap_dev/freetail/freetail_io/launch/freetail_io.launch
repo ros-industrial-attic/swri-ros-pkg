@@ -1,4 +1,0 @@
-<launch>
-  <node name="soem_master" pkg="ocl" type="deployer-gnulinux" args="-s $(find freetail_io)/launch/io_config_script.ops --" output="screen"/>
-  <node name="gripper" pkg="freetail_io" type="suction_gripper" output="screen"/>
-</launch>
