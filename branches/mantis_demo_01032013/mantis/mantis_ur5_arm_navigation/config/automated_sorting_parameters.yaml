@@ -32,15 +32,15 @@ navigator:
 cluttered_dropoff:
   frame_id: workcell_frame
   position:
-    x: -0.6
-    y: -0.5
-    z: 0.30
+    x: -0.70
+    y: -0.48
+    z: 0.22
   orientation:
     axis:
       x: 0
       y: 0
       z: 1
-    angle: 0.7
+    angle: 0.01
 #  goal_candidates: 8
   next_location:
     generation_mode: 0
@@ -60,6 +60,8 @@ singulated_dropoff:
   next_location:
     generation_mode: 0
 joint_home_position:
-  side_position: [-1.20, -1.07948096023743, 1.14, -2.2049080765129627, -1.57158764211257, 1.57]
+  side_position: [-1.20, -1.07948096023743, 1.67, -2.2049080765129627, -1.57, 0.05]
   #side_position: [1.80, -1.07948096023743, 1.7135035147002855, -2.2049080765129627, -1.57158764211257, 1.57]
+joint_wait_position:
+  side_position: [0.01, -1.07948096023743, 1.67, -2.2049080765129627, -1.57, 0.05]
 
