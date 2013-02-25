@@ -4,7 +4,7 @@ joint_limits:
     has_velocity_limits: true
     max_velocity: 2.0
     has_acceleration_limits: true
-    max_acceleration: 1
+    max_acceleration: 2
     angle_wraparound: false
   ur5_arm_shoulder_lift_joint:
     has_position_limits: true
@@ -39,5 +39,5 @@ joint_limits:
     has_velocity_limits: true
     max_velocity: 2.0
     has_acceleration_limits: true
-    max_acceleration: 1
+    max_acceleration: 8 # max: 20
     angle_wraparound: false
