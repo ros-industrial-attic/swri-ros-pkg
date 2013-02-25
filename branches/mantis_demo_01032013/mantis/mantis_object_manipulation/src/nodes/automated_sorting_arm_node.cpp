@@ -7,6 +7,8 @@
 
 #include <mantis_object_manipulation/arm_navigators/SortClutterArmNavigator.h>
 
+static const std::string JOINT_WAIT_POSITION = "joint_wait_position";
+static const std::string JOINT_HOME_POSITION = "joint_home_position";
 
 class SortingRobotNavigator: public SortClutterArmNavigator
 {
@@ -31,7 +33,7 @@ public:
 		// arm setup
 		setup();
 
-		if(!moveArmToSide())
+		if(!moveArmHome())
 		{
 			ROS_WARN_STREAM(NODE_NAME << ": Side moved failed");
 			return;
@@ -73,15 +75,31 @@ public:
 		// moving parts from cluttered to sorted zone
 		bool proceed = true;
 
-		if(!moveArmToSide())
+		if(!moveArmHome())
 		{
 			return false;
 		}
 
 		while(proceed)
 		{
-			//segmentation in cluttered area for singulation
+
 			clearResultsFromLastSrvCall();
+
+			// moving away from camera view
+			ROS_INFO_STREAM("Moving to wait position");
+			if(moveArmToSide())
+			{
+				ROS_INFO_STREAM("Move to wait completed");
+			}
+			else
+			{
+				ROS_WARN_STREAM("Move to wait failed");
+				moveArmHome();
+				proceed = false;
+				break;
+			}
+
+			//segmentation in cluttered area for singulation
 			zone_selector_.goToPickZone(cluttered_zone_index_);
 			ROS_INFO_STREAM("Segmentation stage started");
 			if(performSegmentation())
@@ -115,7 +133,7 @@ public:
 			else
 			{
 				ROS_WARN_STREAM("Grasp Pick stage failed");
-				moveArmToSide();
+				moveArmHome();
 				proceed = false;
 				break;
 			}
@@ -129,14 +147,14 @@ public:
 			else
 			{
 				ROS_WARN_STREAM("Grasp Place stage failed");
-				moveArmToSide();
+				moveArmHome();
 				proceed = false;
 				break;
 			}
 
 			// singulation completed, start moving part from singulated to sorted zone
 			clearResultsFromLastSrvCall();
-			if(!moveArmToSide())
+			if(!moveArmHome())
 			{
 				proceed = false;
 				break;
@@ -187,7 +205,7 @@ public:
 			else
 			{
 				ROS_WARN_STREAM("Grasp Pick stage failed");
-				moveArmToSide();
+				moveArmHome();
 				proceed = false;
 				break;
 			}
@@ -201,10 +219,11 @@ public:
 			else
 			{
 				ROS_WARN_STREAM("Grasp Place stage failed");
-				moveArmToSide();
+				moveArmHome();
 				proceed = false;
 				break;
 			}
+
 		}
 
 		return proceed;
@@ -215,7 +234,7 @@ public:
 
 		bool proceed = true;
 
-		if(!moveArmToSide())
+		if(!moveArmHome())
 		{
 			return false;
 		}
@@ -258,7 +277,7 @@ public:
 			else
 			{
 				ROS_WARN_STREAM("Grasp Pick stage failed");
-				moveArmToSide();
+				moveArmHome();
 				proceed = false;
 				break;
 			}
@@ -272,7 +291,7 @@ public:
 			else
 			{
 				ROS_WARN_STREAM("Grasp Place stage failed");
-				moveArmToSide();
+				moveArmHome();
 				proceed = false;
 				break;
 			}
@@ -289,6 +308,26 @@ protected:
 		AutomatedPickerRobotNavigator::setup();
 	}
 
+	virtual void fetchParameters(std::string name_space = "")
+	{
+		SortClutterArmNavigator::fetchParameters(name_space);
+		joint_home_conf.fetchParameters(NODE_NAME + "/" + JOINT_HOME_POSITION);
+		joint_wait_conf.fetchParameters(NODE_NAME + "/" + JOINT_WAIT_POSITION);
+
+	}
+
+	virtual bool moveArmToSide()
+	{
+	    return updateChangesToPlanningScene() && moveArm(arm_group_name_,joint_wait_conf.SideAngles);
+	}
+
+	virtual bool moveArmHome()
+	{
+		return updateChangesToPlanningScene() && moveArm(arm_group_name_,joint_home_conf.SideAngles);
+	}
+
+	JointConfiguration joint_home_conf;
+	JointConfiguration joint_wait_conf;
 
 };
 
