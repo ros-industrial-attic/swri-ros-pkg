@@ -32,195 +32,116 @@
 -- POSSIBILITY OF SUCH DAMAGE.
 
 
-PROGRAM kl_type_sz
+
 --------------------------------------------------------------------------------
 -- 
--- Info on size of different KAREL types.
--- 
--- Info from KAREL Operation Manual, B-83144EN/01, Section 3.2.7
--- and KAREL Reference Manual, MARRC75KR07091E Rev C, Section 7.9, Table 7-17
+-- libssock routine prototypes
 -- 
 -- author: G.A. vd. Hoorn
 -- 
 --------------------------------------------------------------------------------
-%NOLOCKGROUP
-%NOPAUSE = COMMAND + TPENABLE + ERROR
-%COMMENT = 'Karel sizeof()'
 
 
 
 
 --------------------------------------------------------------------------------
 -- 
--- local routine prototypes
+-- Ping a host on the network. No connected socket necessary.
+-- 
+-- NB: hostname needs to be known to robot (setup DNS and / or 'Host Entry 
+--     table')
 -- 
 --------------------------------------------------------------------------------
-%INCLUDE karel_type_sz_h
-
-
-
-
---------------------------------------------------------------------------------
--- 
--- Empty body
--- 
---------------------------------------------------------------------------------
-BEGIN
-END kl_type_sz
+ROUTINE ssock_ping(host : STRING) : INTEGER FROM libssock
 
 
 
 
 --------------------------------------------------------------------------------
 -- 
--- sizeof(BYTE)
+-- Constructor: sets up member variables and initialises related robot 
+-- system variable.
 -- 
 --------------------------------------------------------------------------------
-ROUTINE sz_byte
-BEGIN
-    RETURN (1)
-END sz_byte
+ROUTINE ssock_ctor(this : ssock_t; tcp_port : INTEGER; tag_idx : INTEGER) : INTEGER FROM libssock
 
 
 
 
 --------------------------------------------------------------------------------
 -- 
--- sizeof(SHORT)
+-- Dump string rep of the given instance to to file descriptor 'fd'.
 -- 
 --------------------------------------------------------------------------------
-ROUTINE sz_short
-BEGIN
-    RETURN (2)
-END sz_short
+ROUTINE ssock_dump(this : ssock_t; fd : FILE) FROM libssock
 
 
 
 
 --------------------------------------------------------------------------------
 -- 
--- sizeof(INTEGER)
+-- Wait for a connection on the given socket instance, if not already connected
 -- 
 --------------------------------------------------------------------------------
-ROUTINE sz_int
-BEGIN
-    RETURN (4)
-END sz_int
+ROUTINE ssock_accept(this : ssock_t) : INTEGER FROM libssock
 
 
 
 
 --------------------------------------------------------------------------------
 -- 
--- sizeof(BOOLEAN)
+-- Disconnect the socket, if connected.
 -- 
 --------------------------------------------------------------------------------
-ROUTINE sz_bool
-BEGIN
-    RETURN (4)
-END sz_bool
+ROUTINE ssock_dconn(this : ssock_t) : INTEGER FROM libssock
 
 
 
 
 --------------------------------------------------------------------------------
 -- 
--- sizeof(REAL)
+-- Open a file descriptor on the given socket instance
 -- 
 --------------------------------------------------------------------------------
-ROUTINE sz_real
-BEGIN
-    RETURN (4)
-END sz_real
+ROUTINE ssock_ofd(this : ssock_t; fd : FILE; mode : STRING) : INTEGER FROM libssock
 
 
 
 
 --------------------------------------------------------------------------------
 -- 
--- sizeof(VECTOR)
+-- Close the given file descriptor (on the given socket instance)
 -- 
 --------------------------------------------------------------------------------
-ROUTINE sz_vector
-BEGIN
-    RETURN (3 * sz_real)
-END sz_vector
+ROUTINE ssock_cfd(this : ssock_t; fd : FILE) : INTEGER FROM libssock
 
 
 
 
 --------------------------------------------------------------------------------
 -- 
--- sizeof(CONFIG)
+-- Disconnect the socket, unconditionally.
 -- 
 --------------------------------------------------------------------------------
-ROUTINE sz_config
-BEGIN
-    RETURN ((3 * sz_int) + (4 * sz_bool))
-END sz_config
+ROUTINE ssock_dconnf(this : ssock_t) : INTEGER FROM libssock
 
 
 
 
 --------------------------------------------------------------------------------
 -- 
--- sizeof(POSITION)
+-- Wait for a connection on the given socket instance. If successful,
+-- open given file descriptor on it.
 -- 
 --------------------------------------------------------------------------------
-ROUTINE sz_pos
-BEGIN
-    RETURN ((4 * sz_vector) + sz_config)
-END sz_pos
+ROUTINE ssock_accpt2(this : ssock_t; fd : FILE) : INTEGER FROM libssock
 
 
 
 
 --------------------------------------------------------------------------------
 -- 
--- sizeof(XYZPWR)
+-- Disconnect the socket, if connected. Then close given file descriptor.
 -- 
 --------------------------------------------------------------------------------
-ROUTINE sz_xyzpwr
-BEGIN
-    RETURN ((6 * sz_real) + sz_config)
-END sz_xyzpwr
-
-
-
-
---------------------------------------------------------------------------------
--- 
--- sizeof(XYZPWREXT)
--- 
---------------------------------------------------------------------------------
-ROUTINE sz_xyzpwrext
-BEGIN
-    RETURN (sz_xyzpwr + (3 * sz_real))
-END sz_xyzpwrext
-
-
-
-
---------------------------------------------------------------------------------
--- 
--- sizeof(JOINTPOSn)
--- from KAREL Reference Manual, MARRC75KR07091E Rev C, Table 7-17
--- 
---------------------------------------------------------------------------------
-ROUTINE sz_jposn
-BEGIN
-    RETURN (4 + (sz_real * n))
-END sz_jposn
-
-
-
-
---------------------------------------------------------------------------------
--- 
--- sizeof(JOINTPOS9)
--- 
---------------------------------------------------------------------------------
-ROUTINE sz_jpos9
-BEGIN
-    RETURN (sz_jposn(9))
-END sz_jpos9
+ROUTINE ssock_dconn2(this : ssock_t; fd : FILE) : INTEGER FROM libssock
