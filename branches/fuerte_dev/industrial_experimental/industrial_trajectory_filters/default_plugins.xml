@@ -6,5 +6,14 @@
       <description>
 	Generates an trajectory of less than or equal to N points.
       </description>
+    </class>
+      
+    <class name="industrial_trajectory_filters/IndustrialUniformSampleFilterJointTrajectoryWithConstraints" 
+	   type="industrial_trajectory_filters::UniformSampleFilter<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>" 
+	   base_class_type="filters::FilterBase<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>">
+      <description>
+	Generates uniformly sampled trajectory with a set sample duration between points
+      </description>
+    </class>
   </library>
 </class_libraries>
