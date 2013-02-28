@@ -100,7 +100,7 @@ bool NPointFilter<T>::update(const T& trajectory_in,
 			int int_point_index = int(double(i) * int_point_increment);
 			ROS_INFO_STREAM("Intermediate point index: " << int_point_index);
 			trajectory_out.request.trajectory.points.push_back(
-					trajectory_in.request.trajectory.points[i]);
+					trajectory_in.request.trajectory.points[int_point_index]);
 		}
 
 		//Add last point to output trajectory
