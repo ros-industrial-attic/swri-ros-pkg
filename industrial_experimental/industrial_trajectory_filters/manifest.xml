@@ -11,6 +11,7 @@
   <depend package="filters"/>
   <depend package="trajectory_msgs"/>
   <depend package="arm_navigation_msgs"/>
+  <depend package="orocos_kdl"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
