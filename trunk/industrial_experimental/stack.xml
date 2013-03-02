@@ -14,5 +14,6 @@
   <depend stack="pr2_object_manipulation" /> <!-- tabletop_object_detector -->
   <depend stack="ros" />
   <depend stack="ros_comm" /> <!-- std_msgs, rospy, roscpp -->
+  <depend stack="orocos_kinematics_dynamics" /> <!-- orocos_kdl -->
 
 </stack>
