@@ -178,7 +178,7 @@
     <parent link="link_1"/>
     <child link="link_2"/>
     <axis xyz="0 1 0"/>
-    <limit effort="0" lower="-1.39" upper="2.78" velocity="2.8"/>
+    <limit effort="0" lower="-1.38" upper="2.78" velocity="2.8"/>
     <calibration falling="0" rising="0"/>
     <dynamics damping="0" friction="0"/>
     <!--safety_controller
@@ -192,7 +192,7 @@
     <parent link="link_2"/>
     <child link="link_3"/>
     <axis xyz="0 -1 0"/>
-    <limit effort="0" lower="-4.21" upper="1.45" velocity="3.0"/>
+    <limit effort="0" lower="-4.08" upper="1.38" velocity="3.0"/>
     <calibration falling="0" rising="0"/>
     <dynamics damping="0" friction="0"/>
     <!--safety_controller
@@ -220,7 +220,7 @@
     <parent link="link_4"/>
     <child link="link_5"/>
     <axis xyz="0 -1 0"/>
-    <limit effort="0" lower="-2.44" upper="2.44" velocity="5.9"/>
+    <limit effort="0" lower="-2.43" upper="2.43" velocity="5.9"/>
     <calibration falling="0" rising="0"/>
     <dynamics damping="0" friction="0"/>
     <!--safety_controller
@@ -233,8 +233,8 @@
     <origin rpy="0 0 0" xyz="0.10014 0 0.00013231"/>
     <parent link="link_5"/>
     <child link="link_6"/>
-    <axis xyz="-1 0 -0.0013212"/>
-    <limit effort="0" lower="-7.85" upper="7.85" velocity="9.0"/>
+    <axis xyz="-1 0 0"/>
+    <limit effort="0" lower="-7.84" upper="7.84" velocity="9.0"/>
     <calibration falling="0" rising="0"/>
     <dynamics damping="0" friction="0"/>
     <!--safety_controller
