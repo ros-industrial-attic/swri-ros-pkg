@@ -1,7 +1,0 @@
-<launch>
-
-  <node pkg="image_view" type="image_view" name="head_camera_viewer">
-    <remap from="image" to="/camera/rgb/image_mono"/>
-  </node>
-
-</launch>

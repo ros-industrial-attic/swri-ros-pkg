@@ -1,9 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-	<!-- argument list -->
-	<arg name="cloud_out_frame_id" default="workcell_frame"/>
-	
-	<node pkg="mantis_object_manipulation" name="republish_sensor_data_node" type="sensor_data_redirect_node">
-		<param name="point_cloud2_frame_id" value="$(arg cloud_out_frame_id)"/>
-	</node>
-</launch>
