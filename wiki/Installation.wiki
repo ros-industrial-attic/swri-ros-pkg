@@ -1,3 +1,0 @@
-#sidebar SidebarNav
-
-This information has been moved to the ROS wiki, [http://ros.org/wiki/Industrial here]
