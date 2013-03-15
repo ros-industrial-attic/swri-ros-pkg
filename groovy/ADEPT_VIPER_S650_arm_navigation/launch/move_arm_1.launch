@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="move_arm" type="move_arm_simple_action" name="ADEPT_VIPER_S650_move_arm_1">
+        <param name="group" type="string" value="arm_1" />
+        <remap from="arm_ik" to="ADEPT_VIPER_S650_arm_1_kinematics/get_constraint_aware_ik" />
+        <param name="controller_action_name" type="string" value="arm_1_controller/follow_joint_trajectory" />
+    </node>
+</launch>
