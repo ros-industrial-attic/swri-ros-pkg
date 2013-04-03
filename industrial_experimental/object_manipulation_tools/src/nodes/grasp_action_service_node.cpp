@@ -83,7 +83,7 @@ private:
 			ROS_INFO("%s",(nodeName + ": Executing a gripper grasp").c_str());
 
 			// wait
-			ros::Duration(1.0f).sleep();
+			ros::Duration(0.25f).sleep();
 			gh.setSucceeded();
 			break;
 
@@ -92,7 +92,7 @@ private:
 			ROS_INFO("%s",(nodeName + ": Executing a gripper release").c_str());
 
 			// wait
-			ros::Duration(1.0f).sleep();
+			ros::Duration(0.25f).sleep();
 			gh.setSucceeded();
 			break;
 
