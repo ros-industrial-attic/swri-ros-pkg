@@ -48,7 +48,9 @@ set(SRC_FILES src/byte_array.cpp
 					src/ping_handler.cpp
 					src/ping_message.cpp
 					src/joint_data.cpp
+					src/joint_feedback.cpp
 					src/joint_traj_pt.cpp
+					src/joint_traj_pt_full.cpp
 					src/joint_traj.cpp
 					src/robot_status.cpp
 					
