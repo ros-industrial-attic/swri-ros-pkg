@@ -1,0 +1,27 @@
+<package>
+  <description brief="ADEPT_VIPER_S650_arm_navigation">
+
+     ADEPT_VIPER_S650_arm_navigation
+
+  </description>
+  <author>Shaun Edwards</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/ADEPT_VIPER_S650_arm_navigation</url>
+  <depend package="planning_environment"/>
+  <depend package="arm_kinematics_constraint_aware"/>
+  <depend package="ompl_ros_interface"/>
+  <depend package="trajectory_filter_server"/>
+  <depend package="constraint_aware_spline_smoother"/>
+  <depend package="move_arm"/>
+  <depend package="adept_common"/>
+  <depend package="warehouse_ros"/>
+  <depend package="robot_state_publisher"/>
+  <depend package="interpolated_ik_motion_planner"/>
+  <depend package="rviz"/>
+  <depend package="move_arm_warehouse"/>
+  <depend package="industrial_deprecated"/>
+
+</package>
+
+

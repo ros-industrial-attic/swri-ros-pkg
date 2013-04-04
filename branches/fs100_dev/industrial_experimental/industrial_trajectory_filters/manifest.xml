@@ -1,0 +1,23 @@
+<package>
+  <description brief="industrial_trajectory_filters">
+
+     industrial_trajectory_filters
+
+  </description>
+  <author>Shaun Edwards</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/industrial_trajectory_filters</url>
+  <depend package="filters"/>
+  <depend package="trajectory_msgs"/>
+  <depend package="arm_navigation_msgs"/>
+  <depend package="orocos_kdl"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
+    <filters plugin="${prefix}/default_plugins.xml" />
+  </export>
+
+</package>
+
+
