@@ -47,20 +47,19 @@
 -- 
 --------------------------------------------------------------------------------
 %INCLUDE libind_hdr_t
-%INCLUDE ktype_sz_t
 
 
 TYPE
 ind_rs_t FROM libind_rs = STRUCTURE
         header_              : ind_hdr_t         -- message header
         
-        mode_                : INTEGER           -- operational mode
-        e_stopped_        : INTEGER           -- E Stop (tristate)
         drv_pwd_           : INTEGER           -- driver powered (tristate)
-        mtn_psble_         : INTEGER           -- motion possible (tristate)
-        in_motion_          : INTEGER           -- in motion (tristate)
-        in_error_              : INTEGER           -- in error state (tristate)
+        e_stopped_        : INTEGER           -- E Stop (tristate)
         error_code_         : INTEGER           -- vendor specific error code
+        in_error_              : INTEGER           -- in error state (tristate)
+        in_motion_          : INTEGER           -- in motion (tristate)
+        mode_                : INTEGER           -- operational mode
+        mtn_psble_         : INTEGER           -- motion possible (tristate)
         
 ENDSTRUCTURE
 

@@ -54,6 +54,7 @@ PROGRAM libind_hdr
 -- 
 --------------------------------------------------------------------------------
 %INCLUDE libind_hdr_t
+%INCLUDE libind_pkt_t
 %INCLUDE ktype_sz_t
 
 
@@ -120,7 +121,7 @@ BEGIN
 
 	-- set packet length to atleast the header
     -- (TODO: not sure this is the correct action)
-	IF (this.msg_type_ < RI_SZ_HDR) THEN
+	IF (this.length_ < RI_SZ_HDR) THEN
 		this.length_ = RI_SZ_HDR
 	ENDIF
 
@@ -167,7 +168,7 @@ BEGIN
 	CNV_INT_STR(this.reply_type_ , 1, 10, rt_str__)
 
 	-- done
-	RETURN ('hdr (l,mt,ct,rt,seq):' + len_str__ + ';' + mt_str__ + ';' &
+	RETURN ('h(lmcr):' + len_str__ + ';' + mt_str__ + ';' &
 		+ ct_str__ + ';' + rt_str__ )
 END ihdr_tostr
 
