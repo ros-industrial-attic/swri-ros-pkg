@@ -62,10 +62,22 @@ ROUTINE irs_ctor(this : ind_rs_t) FROM libind_rs
 -- 
 -- Reset state of the robot status.
 -- 
--- [in    ]  this    : the packet to reset
+-- [in    ]  this    : the message to reset
 -- 
 --------------------------------------------------------------------------------
 ROUTINE irs_reset(this : ind_rs_t) FROM libind_rs
+
+
+
+
+--------------------------------------------------------------------------------
+-- 
+-- Update the message with current robot status
+-- 
+-- [in    ]  this    : the message to update
+-- 
+--------------------------------------------------------------------------------
+ROUTINE irs_update(this : ind_rs_t) FROM libind_rs
 
 
 

@@ -55,6 +55,7 @@ PROGRAM libind_rs
 --------------------------------------------------------------------------------
 %INCLUDE libind_rs_t
 %INCLUDE libind_ts_t
+%INCLUDE libind_pkt_t
 
 
 
@@ -117,6 +118,46 @@ END irs_reset
 
 
 
+ROUTINE irs_update
+BEGIN
+	
+   irs_reset(this)
+         
+   -- (VERIFIED) teach pendant enabled (see table 15-2, KAREL Reference Manual)
+   IF OPOUT[7] THEN
+      this.mode_ = RS_M_MAN
+   ELSE
+      this.mode_ = RS_M_AUTO
+   ENDIF
+   
+   -- e-stop
+   this.e_stopped_ = TS_UNKNOWN
+   
+   -- drive power (see table 15-4, KAREL Reference Manual)
+   IF OPOUT[17] THEN
+      this.drv_pwd_ = TS_TRUE
+   ENDIF
+   
+   -- motion enable (see table 15-3, KAREL Reference Manual)
+   IF OPIN[23] THEN
+      this.mtn_psble_ = TS_TRUE
+   ENDIF
+   
+   -- in motion
+   this.in_motion_ = TS_UNKNOWN
+   
+   -- fault indicator (see table 15-4, KAREL Reference Manual)
+   IF OPOUT[21] THEN
+      this.in_error_  = TS_TRUE
+   ENDIF
+   
+   
+   
+END irs_update
+
+
+
+
 
 ROUTINE irs_tpc_srl
 VAR
@@ -126,15 +167,16 @@ BEGIN
 	stat__ = 0
 
     this.header_.length_     = RS_SZ_TOPIC
-    this.header_.msg_type_   = RI_CT_TOPIC
+    this.header_.msg_type_ = RI_MT_STATUS
+    this.header_.comm_type_   = RI_CT_TOPIC
     this.header_.reply_type_ = RI_RT_INVAL
     
     stat__ = ihdr_srlise(this.header_, fd)
    IF stat__ <> 0 THEN RETURN (-stat__); ENDIF
 
   -- write out all fields ..
-  WRITE fd(this.mode_, this.e_stopped_, this.drv_pwd_, this.mtn_psble_, &
-   this.in_motion_, this.in_error_, this.error_code_, CR)
+  WRITE fd( this.drv_pwd_,  this.e_stopped_, this.error_code_, & 
+  		 this.in_error_,  this.in_motion_, this.mode_, this.mtn_psble_, CR)
    stat__ = IO_STATUS(fd)
 
    RETURN (-stat__)
@@ -148,9 +190,9 @@ VAR
 	es_str__  : STRING[20]
 	dp_str__  : STRING[20]
 	mp_str__  : STRING[20]
-    im_str__  : STRING[20]
-    ie_str__  : STRING[20]
-    ec_str__  : STRING[20]
+	im_str__  : STRING[20]
+	ie_str__  : STRING[20]
+	ec_str__  : STRING[20]
 BEGIN
 	-- TODO: check for 'uninitialised' data and handle 
 	--       those (add 'unknown' or something)
@@ -163,9 +205,9 @@ BEGIN
 	CNV_INT_STR(this.error_code_      , 1, 10, ec_str__)
 
 	-- done
-	RETURN ('rs (md,es,dp,mp,im,ie,ec):' + md_str__ + ';' + es_str__ + ';' &
-		+ dp_str__ + ';' + mp_str__ + ';' + im_str__ + ';' + im_str__ + ';' &
-        + ie_str__ + ';' + ec_str__)
+	RETURN ('rs(dsceimp):' + dp_str__  + '' + es_str__ + ''  &
+		+ ec_str__  + '' + ie_str__ + '' +  im_str__ + '' + ''  &
+        		+ md_str__ + '' +  mp_str__)
 END irs_tostr
 
 
