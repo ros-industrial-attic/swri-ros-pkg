@@ -118,6 +118,28 @@ END irs_reset
 
 
 
+
+ROUTINE irs_in_mtn
+VAR
+	len__ : INTEGER
+	d__   : INTEGER
+BEGIN
+	-- 
+	len__ = ARRAY_LEN($MOR_GRP[1].$IN_POSITION)
+	d__   = 0
+
+	-- Check for not in position (indicates motion)
+	FOR d__ = 1 TO len__ DO
+		IF NOT $MOR_GRP[1].$IN_POSITION[d__] THEN
+			RETURN(TRUE)
+		ENDIF
+	ENDFOR
+	RETURN(FALSE)
+END irs_in_mtn
+
+
+
+
 ROUTINE irs_update
 BEGIN
 	
@@ -143,8 +165,12 @@ BEGIN
       this.mtn_psble_ = TS_TRUE
    ENDIF
    
-   -- in motion
-   this.in_motion_ = TS_UNKNOWN
+   -- (VERIFIED) in motion
+   IF irs_in_mtn  THEN
+   	this.in_motion_ = TS_TRUE
+   ELSE
+   	this.in_motion_ = TS_FALSE
+   ENDIF
    
    -- fault indicator (see table 15-4, KAREL Reference Manual)
    IF OPOUT[21] THEN
