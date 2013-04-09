@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<launch>
+	<!-- instructions 
+		Run the following launch files first
+		- run 'roslaunch mantis_io mantis_io.launch'
+		- run 'roslaunch mantis_config mantis_ur5_recognition_pick_place_setup.launch sim_only:=false'
+		- run 'roslaunch mantis_config mantis_ur5_visualization.launch'	
+	-->
+	
+
+	<group ns="ur5_arm">
+		<node name="mantis_arm_navigator" pkg="mantis_object_manipulation" 
+			type="recognition_pick_place_node" output="screen" respawn="false">		
+			<rosparam command="load" file="$(find mantis_ur5_arm_navigation)/config/recognition_pick_place_parameters.yaml"/>
+			<rosparam command="load" file="$(find mantis_ur5_arm_navigation)/config/kinematics_parameters.yaml"/>
+
+		</node>  
+	</group>
+</launch>

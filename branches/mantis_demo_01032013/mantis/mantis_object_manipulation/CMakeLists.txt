@@ -79,5 +79,8 @@ target_link_libraries(concurrent_arm_move_supervisor_node ${PROJECT_NAME})
 rosbuild_add_executable(automated_sorting_arm_node src/nodes/automated_sorting_arm_node.cpp)
 target_link_libraries(automated_sorting_arm_node ${PROJECT_NAME})
 
+rosbuild_add_executable(recognition_pick_place_node src/nodes/recognition_pick_place_node.cpp)
+target_link_libraries(recognition_pick_place_node ${PROJECT_NAME})
+
 #rosbuild_add_executable(sensor_data_redirect_node src/nodes/sensor_data_redirect.cpp)
 #rosbuild_add_executable(test_grasp_action_server src/test/test_grasp_action_server_node.cpp)
