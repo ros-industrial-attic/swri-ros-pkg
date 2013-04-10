@@ -95,12 +95,132 @@ protected:
 
 	virtual void setup()
 	{
-		AutomatedPickerRobotNavigator::setup();
+		ros::NodeHandle nh;
+		std::string nodeName = ros::this_node::getName();
+
+		ROS_INFO_STREAM(NODE_NAME<<": Loading ros parameters");
+
+		// getting ros parametets
+		fetchParameters(NAVIGATOR_NAMESPACE);
+
+		ROS_INFO_STREAM(NODE_NAME<<": Setting up execution Monitors");
+		// setting up execution monitors
+		{
+			joint_state_recorder_.reset(new JointStateTrajectoryRecorder(joint_states_topic_));
+			arm_controller_handler_.reset(new FollowJointTrajectoryControllerHandler(arm_group_name_,trajectory_action_service_));
+			gripper_controller_handler_.reset(new GraspPoseControllerHandler(gripper_group_name_,grasp_action_service_));
+
+			trajectory_execution_monitor_.addTrajectoryRecorder(joint_state_recorder_);
+			trajectory_execution_monitor_.addTrajectoryControllerHandler(arm_controller_handler_);
+			trajectory_execution_monitor_.addTrajectoryControllerHandler(gripper_controller_handler_);
+		}
+
+		ROS_INFO_STREAM(NODE_NAME<<": Setting up Service Clients");
+	    // setting up service clients, this is configuration specific
+		{
+			//recognition
+			recognition_client_ = nh.serviceClient<mantis_perception::mantis_recognition>(recognition_service_,true);
+
+			// path planning
+			planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>(path_planner_service_);
+
+			// trajectory filter
+			trajectory_filter_service_client_ = nh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>(trajectory_filter_service_);
+			ROS_INFO_STREAM(NODE_NAME<<": Waiting for trajectory filter service");
+			trajectory_filter_service_client_.waitForExistence();
+			ROS_INFO_STREAM(NODE_NAME<<": Trajectory filter service connected");
+
+			// planing scene
+			ROS_INFO_STREAM(NODE_NAME <<": Waiting for " + planning_scene_service_ + " service");
+			ros::service::waitForService(planning_scene_service_);
+			set_planning_scene_diff_client_ = nh.serviceClient<arm_navigation_msgs::SetPlanningSceneDiff>(planning_scene_service_);
+		}
+
+		// will use grasp execution client to request pre-grasp action since the default gripper controller handler
+		// ignores this step.
+		ROS_INFO_STREAM(NODE_NAME << ": Setting up Service Action Clients");
+		{
+			grasp_exec_action_client_ =
+					boost::make_shared< GraspActionServerClient >(grasp_action_service_,true);
+			while(!grasp_exec_action_client_->waitForServer(ros::Duration(0.5)))
+			{
+				ROS_INFO_STREAM(NODE_NAME << "Waiting for action service "<< grasp_action_service_);
+			}
+			ROS_INFO_STREAM(NODE_NAME<<" : Connected to action service "<<grasp_action_service_);
+		}
+
+		ROS_INFO_STREAM(NODE_NAME<<": Setting up ros publishers");
+		{
+			// setting up ros publishers
+			marker_publisher_ = nh.advertise<visualization_msgs::Marker> (VISUALIZATION_TOPIC, 128);
+			marker_array_pub_ = nh.advertise<visualization_msgs::MarkerArray>(MARKER_ARRAY_TOPIC,1);
+			attached_object_publisher_ = nh.advertise<arm_navigation_msgs::AttachedCollisionObject> ("attached_collision_object_alternate", 1);
+
+			// setting up timer obj
+			marker_pub_timer_ = nh.createTimer(ros::Duration(0.4f),&RecognitionPickNavigator::callbackPublishMarkers,this);
+
+			ROS_INFO_STREAM(NODE_NAME<<": Setting up dynamic libraries");
+
+			// trajectory generators
+			grasp_tester_ = GraspTesterPtr(new GraspSequenceValidator(&cm_, ik_plugin_name_));
+			place_tester_ = PlaceSequencePtr(new PlaceSequenceValidator(&cm_, ik_plugin_name_));
+
+			// trajectory callbacks
+			trajectories_finished_function_ = boost::bind(&RecognitionPickNavigator::trajectoryFinishedCallback, this, true,_1);
+			grasp_action_finished_function_ = boost::bind(&RecognitionPickNavigator::trajectoryFinishedCallback, this, false,_1);
+
+		}
+
+		ROS_INFO_STREAM(NODE_NAME<<": Setting up published markers");
+		{
+			visualization_msgs::Marker marker;
+			marker.header.frame_id = cm_.getWorldFrameId();
+			marker.ns = NODE_NAME;
+			marker.type = visualization_msgs::Marker::SPHERE;
+			marker.action = visualization_msgs::Marker::DELETE;
+			tf::poseTFToMsg(tf::Transform::getIdentity(),marker.pose);
+
+			// adding marker to map
+			addMarker(MARKER_SEGMENTED_OBJECT,marker);
+			addMarker(MARKER_ATTACHED_OBJECT,marker);
+
+			// pick and place zone markers
+			updateMarkerArrayMsg();
+		}
+
+		ROS_INFO_STREAM(NODE_NAME<<" Setting up grasp planning data");
+		{
+			// storing grasp pickup goal to be used later during pick move sequence execution
+			grasp_pickup_goal_.arm_name = arm_group_name_;
+			grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
+			grasp_pickup_goal_.lift.direction.vector.z = 1.0;
+			grasp_pickup_goal_.lift.desired_distance = pick_approach_distance_;
+			grasp_pickup_goal_.lift.min_distance = pick_approach_distance_;
+			grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
+			grasp_pickup_goal_.allow_gripper_support_collision = true;
+			grasp_pickup_goal_.collision_support_surface_name = "table";
+
+			// populate grasp place goal
+			grasp_place_goal_.arm_name = arm_group_name_;
+			grasp_place_goal_.desired_retreat_distance = place_retreat_distance_;
+			grasp_place_goal_.min_retreat_distance = place_retreat_distance_;
+			grasp_place_goal_.approach.desired_distance = place_approach_distance_;
+			grasp_place_goal_.approach.min_distance = place_approach_distance_;
+			grasp_place_goal_.approach.direction.header.frame_id = cm_.getWorldFrameId();
+			grasp_place_goal_.approach.direction.vector.x = 0.0;
+			grasp_place_goal_.approach.direction.vector.y = 0.0;
+			grasp_place_goal_.approach.direction.vector.z = -1.0;
+			grasp_place_goal_.allow_gripper_support_collision = true;
+			grasp_place_goal_.collision_support_surface_name = "table";
+			grasp_place_goal_.place_padding = .02;
+		}
+
+		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 	}
 
 	virtual void fetchParameters(std::string name_space = "")
 	{
-		AutomatedPickerRobotNavigator::fetchParameters(nameSpace);
+		AutomatedPickerRobotNavigator::fetchParameters(name_space);
 		singulated_dropoff_location_.fetchParameters(singulated_dropoff_ns_);
 	}
 
@@ -187,6 +307,11 @@ protected:
 	virtual bool moveArmHome()
 	{
 		return updateChangesToPlanningScene() && moveArm(arm_group_name_,joint_home_conf_.SideAngles);
+	}
+
+	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt)
+	{
+		AutomatedPickerRobotNavigator::callbackPublishMarkers(evnt);
 	}
 
 protected:
