@@ -33,12 +33,17 @@ public:
 		setup();
 
 		// cycle
+		int user_entry = 1;
 		while(ros::ok())
 		{
 			moveArmHome();
 
-			std::cout<<"\n\tPress enter to proceed: _";
-			std::cin.get(); // should lock the terminal until enter is pressed
+			std::cout<<"\n\tPress enter '1' to proceed or '0' to exit: ";
+			if(!(std::cin >> user_entry) || user_entry != 1)
+			{
+				ROS_INFO_STREAM("Exiting node");
+				break;
+			}
 
 			ROS_INFO_STREAM("Recognition started");
 			if(performRecognition())
@@ -77,7 +82,7 @@ public:
 
 			// moving for place in singulated zone
 			ROS_INFO_STREAM("Place started");
-			if(moveArmThroughPlaceSequence())
+			if(RobotNavigator::moveArmThroughPlaceSequence())
 			{
 				ROS_INFO_STREAM("Place completed");
 			}
@@ -120,6 +125,7 @@ protected:
 		{
 			//recognition
 			recognition_client_ = nh.serviceClient<mantis_perception::mantis_recognition>(recognition_service_,true);
+			recognition_client_.waitForExistence();
 
 			// path planning
 			planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>(path_planner_service_);
@@ -218,9 +224,25 @@ protected:
 		ROS_INFO_STREAM(NODE_NAME<<": Finished setup");
 	}
 
+	void updateMarkerArrayMsg()
+	{
+		typedef std::vector<visualization_msgs::Marker>::iterator Iter;
+		boost::mutex::scoped_lock lock(marker_array_mutex_);
+		{
+			for(Iter i = marker_array_msg_.markers.begin(); i != marker_array_msg_.markers.end(); i++)
+			{
+				visualization_msgs::Marker &marker = *i;
+				marker.action = visualization_msgs::Marker::DELETE;
+			}
+			marker_array_pub_.publish(marker_array_msg_);
+			marker_array_msg_.markers.clear();
+		}
+	}
+
 	virtual void fetchParameters(std::string name_space = "")
 	{
 		AutomatedPickerRobotNavigator::fetchParameters(name_space);
+		joint_home_conf_.fetchParameters(JOINT_CONFIGURATIONS_NAMESPACE);
 		singulated_dropoff_location_.fetchParameters(singulated_dropoff_ns_);
 	}
 
@@ -326,6 +348,7 @@ int main(int argc,char** argv)
 
 	RobotNavigator::Ptr navigator_ptr = RobotNavigator::Ptr(new RecognitionPickNavigator());
 	navigator_ptr->run();
+	exit(EXIT_SUCCESS);
 
 	return 0;
 }
