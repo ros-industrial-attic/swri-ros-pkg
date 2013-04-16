@@ -66,8 +66,8 @@ public:
 			}
 		}
 
-		spinner.stop();
-		ros::shutdown();
+		//spinner.stop();
+		//ros::shutdown();
 	}
 
 	bool runSortCycle()
@@ -341,5 +341,6 @@ int main(int argc, char** argv)
 
 	ROS_INFO_STREAM(ros::this_node::getName()<<": Sort Arm Navigator started");
 	navigator->run();
+	exit(EXIT_SUCCESS);
 	return 0;
 }
