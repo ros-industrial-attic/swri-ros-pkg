@@ -13,7 +13,7 @@
 	<arg name="arm_namespace" value="ur5_arm"/>
 
 	<!-- starting io -->
-	<include if="$(arg launch_io)" file="$(find mantis_io)/launch/mantis_io.launch"/>
+	<include unless="$(arg sim_only)" file="$(find mantis_io)/launch/mantis_io.launch"/>
 
 	<group ns="$(arg arm_namespace)">
 
