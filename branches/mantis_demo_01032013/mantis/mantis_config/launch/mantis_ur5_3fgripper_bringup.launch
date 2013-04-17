@@ -8,7 +8,7 @@
 
 	<!-- ____________________________ Fixed Parameters ____________________________  -->
 	<arg name="robot_description" 
-		default="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_ur5_arm_workspace.xacro'"/>
+		default="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_ur5_3fgripper_macro.xacro'"/>
 
 	<arg name="arm_namespace" value="ur5_arm"/>
 
