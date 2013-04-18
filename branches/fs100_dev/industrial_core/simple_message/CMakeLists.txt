@@ -55,6 +55,7 @@ set(SRC_FILES src/byte_array.cpp
 					src/robot_status.cpp
 					
 					src/messages/joint_message.cpp
+					src/messages/joint_feedback_message.cpp
 					src/messages/joint_traj_pt_message.cpp
 					src/messages/robot_status_message.cpp
 					

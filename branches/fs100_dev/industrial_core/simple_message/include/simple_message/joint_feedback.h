@@ -166,7 +166,7 @@ public:
   /**
    * \brief Clears the joint feedback timestamp
    */
-  industrial::shared_types::shared_real clearTime()
+  void clearTime()
   {
     this->time_ = 0;
     this->valid_fields_ &= ~ValidFieldTypes::TIME;  // clear the bit

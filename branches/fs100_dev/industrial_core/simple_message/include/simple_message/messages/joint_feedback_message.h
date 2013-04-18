@@ -114,10 +114,34 @@ public:
     return this->data_.byteLength();
   }
 
-  industrial::joint_feedback::JointFeedback data_;
+  industrial::shared_types::shared_int getRobotID()
+  {
+    return this->data_.getRobotID();
+  }
+
+  bool getTime(industrial::shared_types::shared_real & time)
+  {
+    return this->data_.getTime(time);
+  }
+
+  bool getPositions(industrial::joint_data::JointData &dest)
+  {
+    return this->data_.getPositions(dest);
+  }
+
+  bool getVelocities(industrial::joint_data::JointData &dest)
+  {
+    return this->data_.getVelocities(dest);
+  }
+
+  bool getAccelerations(industrial::joint_data::JointData &dest)
+  {
+    return this->data_.getAccelerations(dest);
+  }
 
 private:
 
+  industrial::joint_feedback::JointFeedback data_;
 
 };
 
