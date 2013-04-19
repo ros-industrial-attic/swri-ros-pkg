@@ -14,6 +14,7 @@
 
 	<!-- starting io -->
 	<include unless="$(arg sim_only)" file="$(find mantis_io)/launch/mantis_io.launch"/>
+	<!--include if="$(arg launch_io)" file="$(find mantis_io)/launch/mantis_io.launch"/-->
 
 	<group ns="$(arg arm_namespace)">
 
@@ -43,10 +44,10 @@
 			</node>
 
 			<!-- gripper interface -->
-			<param name="suction_on_output_channel" value="2"/>
+			<param name="suction_on_output_channel" value="3"/>
 			<param name="suction_check_output_channel" value="1"/>
 			<param name="use_sensor_feedback" value="false"/>
-			<node name="gripper" pkg="mantis_io" type="suction_gripper" output="screen"/>
+			<node name="grasp_action_service" pkg="mantis_io" type="simple_grasp_action_server" output="screen"/>
 		</group>
 
 		<!-- __________________________________ Simulation only __________________________________  -->
@@ -59,6 +60,10 @@
 
 			<!-- gripper executer action node -->
 			<node pkg="object_manipulation_tools" type="grasp_action_service" name="gripper_interface" output="screen"/>
+			<!--param name="suction_on_output_channel" value="2"/>
+			<param name="suction_check_output_channel" value="1"/>
+			<param name="use_sensor_feedback" value="false"/>
+			<node name="gripper" pkg="mantis_io" type="suction_gripper" output="screen"/-->
 		</group>
 	 
 	</group>
