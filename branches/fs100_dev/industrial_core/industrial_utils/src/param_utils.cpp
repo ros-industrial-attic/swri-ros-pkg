@@ -32,6 +32,7 @@
 #include <sstream>
 
 #include "industrial_utils/param_utils.h"
+#include "industrial_utils/utils.h"
 #include "ros/ros.h"
 #include "urdf/model.h"
 
@@ -83,14 +84,23 @@ bool getListParam(const std::string param_name, std::vector<std::string> & list_
 
 }
 
-bool getJointNames(const std::string param_name, std::vector<std::string> & joint_names)
+bool getJointNames(const std::string joint_list_param, const std::string urdf_param,
+		           std::vector<std::string> & joint_names)
 {
-  if (ros::param::has(param_name) && getListParam(param_name, joint_names))
+  joint_names.clear();
+
+  // 1) Try to read explicit list of joint names
+  if (ros::param::has(joint_list_param) && getListParam(joint_list_param, joint_names))
     return true;
 
-  const int NUM_JOINTS = 6;  //Most robots have 6 joints
+  // 2) Try to find joint names from URDF model
+  urdf::Model model;
+  if (ros::param::has(urdf_param) && model.initParam(urdf_param))
+    if (findChainJointNames(model.getRoot(), true, joint_names))
+      return true;
 
-  joint_names.clear();
+  // 3) Use default joint-names
+  const int NUM_JOINTS = 6;  //Most robots have 6 joints
   for (int i=0; i<NUM_JOINTS; ++i)
   {
     std::stringstream tmp;
@@ -98,7 +108,7 @@ bool getJointNames(const std::string param_name, std::vector<std::string> & join
     joint_names.push_back(tmp.str());
   }
 
-    return false;
+  return false;
 }
 
 bool getJointVelocityLimits(const std::string urdf_param_name, std::map<std::string, double> &velocity_limits)

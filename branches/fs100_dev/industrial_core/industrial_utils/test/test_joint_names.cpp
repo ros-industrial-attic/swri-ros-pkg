@@ -29,32 +29,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "fs100/industrial_robot_client/robot_state_interface.h"
-#include "fs100/industrial_robot_client/joint_feedback_relay_handler.h"
-#include "industrial_utils/param_utils.h"
+#include "industrial_utils/utils.h"
+#include "ros/ros.h"
 
-using industrial_robot_client::robot_state_interface::RobotStateInterface;
-using industrial_robot_client::joint_feedback_relay_handler::JointFeedbackRelayHandler;
-using industrial_utils::param::getJointNames;
+using namespace industrial_utils;
 
-int main(int argc, char** argv)
+#define ROS_ERROR_EXIT(...) do {ROS_ERROR(__VA_ARGS__); exit(-1); } while (0)
+
+// Quick program to test joint-name extraction from URDF
+int main(int argc, char **argv)
 {
-  // initialize node
-  ros::init(argc, argv, "state_interface");
+  if (argc != 2)
+    ROS_ERROR_EXIT("Usage: test_joint_names my_robot.urdf");
 
-  // launch the default Robot State Interface connection/handlers
-  RobotStateInterface rsi;
-  rsi.init();
+  urdf::Model model;
+  if (!model.initFile(argv[1]))
+    ROS_ERROR_EXIT("Unable to open URDF file: %s", argv[1]);
 
-  // add the JointFeedbackRelayHandler to the state-interface's message manager
-  JointFeedbackRelayHandler jointFeedbackHandler;
   std::vector<std::string> joint_names;
-  getJointNames("controller_joint_names", "robot_description", joint_names);
-  jointFeedbackHandler.init(rsi.get_connection(), joint_names);
-  rsi.add_handler(&jointFeedbackHandler);
+  if (!findChainJointNames(model.getRoot(), true, joint_names))
+    ROS_ERROR_EXIT("Unable to read Joint Names from URDF");
 
-  // run the node
-  rsi.run();
+  printf("Joint names: ");
+  std::ostringstream s;
+  std::copy(joint_names.begin(), joint_names.end(), std::ostream_iterator<std::string>(s, ", "));
+  std::string out = s.str();
+  std::cout << "[" << out.erase(out.size()-2) << "]" << std::endl;
 
-  return 0;
+  return 1;
 }
