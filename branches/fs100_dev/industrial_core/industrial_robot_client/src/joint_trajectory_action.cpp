@@ -46,7 +46,7 @@ JointTrajectoryAction::JointTrajectoryAction() :
 
   pn.param("constraints/goal_threshold", goal_threshold_, DEFAULT_GOAL_THRESHOLD_);
 
-  if (!industrial_utils::param::getJointNames("controller_joint_names", joint_names_))
+  if (!industrial_utils::param::getJointNames("controller_joint_names", "robot_description", joint_names_))
   {
     ROS_WARN("Unable to read 'controller_joint_names' param.  Using standard 6-DOF joint names.");
   }
