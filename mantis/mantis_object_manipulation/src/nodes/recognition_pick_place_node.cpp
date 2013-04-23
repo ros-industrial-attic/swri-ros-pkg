@@ -8,6 +8,15 @@
 #include <mantis_object_manipulation/arm_navigators/SortClutterArmNavigator.h>
 #include <iostream>
 
+namespace selection
+{
+	enum Selection
+	{
+		EXIT = 0,
+		PROCEED = 1
+	};
+}
+
 class RecognitionPickNavigator: public SortClutterArmNavigator
 {
 public:
@@ -33,13 +42,13 @@ public:
 		setup();
 
 		// cycle
-		int user_entry = 1;
+		int user_entry = selection::PROCEED;
 		while(ros::ok())
 		{
 			moveArmHome();
 
 			std::cout<<"\n\tPress enter '1' to proceed or '0' to exit: ";
-			if(!(std::cin >> user_entry) || user_entry != 1)
+			if(!(std::cin >> user_entry) || user_entry != selection::PROCEED)
 			{
 				ROS_INFO_STREAM("Exiting node");
 				break;
@@ -67,6 +76,27 @@ public:
 				break;
 			}
 
+			// moving to pre-grasp position and wait
+			ROS_INFO_STREAM("Moving to Pre-grasp");
+			if(moveToPregraspPose())
+			{
+				ROS_INFO_STREAM("Move to Pre-grasp succeeded");
+			}
+			else
+			{
+				ROS_ERROR_STREAM("Move to Pre-grasp failed");
+				moveArmHome();
+				break;
+			}
+
+			// waiting for user input
+			std::cout<<"\n\tPress enter '1' to proceed or '0' to exit: ";
+			if(!(std::cin >> user_entry) || user_entry != selection::PROCEED)
+			{
+				ROS_INFO_STREAM("Exiting node");
+				break;
+			}
+
 			// moving for pickup in cluttered zone
 			ROS_INFO_STREAM("Pickup started");
 			if(moveArmThroughPickSequence())
@@ -77,6 +107,14 @@ public:
 			{
 				ROS_WARN_STREAM("Pickup failed");
 				moveArmHome();
+				break;
+			}
+
+			// waiting for user input
+			std::cout<<"\n\tPress enter '1' to proceed or '0' to exit: ";
+			if(!(std::cin >> user_entry) || user_entry != selection::PROCEED)
+			{
+				ROS_INFO_STREAM("Exiting node");
 				break;
 			}
 
@@ -92,6 +130,7 @@ public:
 				moveArmHome();
 				break;
 			}
+
 		}
 
 	}
@@ -288,15 +327,9 @@ protected:
 		}
 
 		// storing grasp pickup goal to be used later during pick move sequence execution
-//		grasp_pickup_goal_.arm_name = arm_group_name_;
 		grasp_pickup_goal_.collision_object_name = modelId;
-//		grasp_pickup_goal_.lift.direction.header.frame_id = cm_.getWorldFrameId();
-//		grasp_pickup_goal_.lift.direction.vector.z = 1.0;
-//		grasp_pickup_goal_.lift.desired_distance = .1;
 		grasp_pickup_goal_.target.reference_frame_id = modelId;
-//		grasp_pickup_goal_.target.cluster = segmented_clusters_[0];
 		grasp_pickup_goal_.allow_gripper_support_collision = true;
-//		grasp_pickup_goal_.collision_support_surface_name = "table";
 		grasp_pickup_goal_.target.potential_models.push_back(modelPose);
 
 		// generating grasp pick sequence
@@ -329,6 +362,12 @@ protected:
 	virtual bool moveArmHome()
 	{
 		return updateChangesToPlanningScene() && moveArm(arm_group_name_,joint_home_conf_.SideAngles);
+	}
+
+	bool moveToPregraspPose()
+	{
+		// moving to pre-grasp configuration
+		return moveArm(arm_group_name_,grasp_pick_sequence_[0].approach_trajectory_.points[0].positions);
 	}
 
 	virtual void callbackPublishMarkers(const ros::TimerEvent &evnt)
