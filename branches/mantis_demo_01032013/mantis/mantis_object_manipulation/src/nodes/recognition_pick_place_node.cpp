@@ -18,13 +18,11 @@ namespace selection
 	enum Selection
 	{
 		EXIT = 0,
-		PROCEED = 1,
-		MOVE_TO_INTERMEDIATE_POSITION = 2
+		PROCEED = 1
 	};
 
 	static const std::map<std::string,int> SelectionMap = boost::assign::map_list_of("EXIT",(int)EXIT)
-		("PROCEED",PROCEED)
-		("MOVE_TO_INTERMEDIATE_POSITION",MOVE_TO_INTERMEDIATE_POSITION);
+		("PROCEED",PROCEED);
 }
 
 const static std::string PARAM_JOINT_INTERMEDIATE_POSITION = "joint_intermediate_position";
@@ -312,7 +310,7 @@ protected:
 
 	virtual void fetchParameters(std::string name_space = "")
 	{
-		ros::NodeHandle nh;
+		ros::NodeHandle nh("~");
 
 		AutomatedPickerRobotNavigator::fetchParameters(name_space);
 		joint_home_conf_.fetchParameters(nh.getNamespace() + "/" + PARAM_JOINT_HOME_POSITION);
