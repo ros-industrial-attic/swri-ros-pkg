@@ -6,16 +6,29 @@
  */
 
 #include <mantis_object_manipulation/arm_navigators/SortClutterArmNavigator.h>
+#include <map>
+#include <boost/assign/list_of.hpp>
+#include <boost/foreach.hpp>
 #include <iostream>
 
 namespace selection
 {
+	using namespace boost::assign;
+
 	enum Selection
 	{
 		EXIT = 0,
-		PROCEED = 1
+		PROCEED = 1,
+		MOVE_TO_INTERMEDIATE_POSITION = 2
 	};
+
+	static const std::map<std::string,int> SelectionMap = boost::assign::map_list_of("EXIT",(int)EXIT)
+		("PROCEED",PROCEED)
+		("MOVE_TO_INTERMEDIATE_POSITION",MOVE_TO_INTERMEDIATE_POSITION);
 }
+
+const static std::string PARAM_JOINT_INTERMEDIATE_POSITION = "joint_intermediate_position";
+const static std::string PARAM_JOINT_HOME_POSITION = "joint_home_position";
 
 class RecognitionPickNavigator: public SortClutterArmNavigator
 {
@@ -47,8 +60,8 @@ public:
 		{
 			moveArmHome();
 
-			std::cout<<"\n\tPress enter '1' to proceed or '0' to exit: ";
-			if(!(std::cin >> user_entry) || user_entry != selection::PROCEED)
+			std::cout<<"\n\tRecognition request prompt: ";
+			if(!promptUser())
 			{
 				ROS_INFO_STREAM("Exiting node");
 				break;
@@ -90,8 +103,8 @@ public:
 			}
 
 			// waiting for user input
-			std::cout<<"\n\tPress enter '1' to proceed or '0' to exit: ";
-			if(!(std::cin >> user_entry) || user_entry != selection::PROCEED)
+			std::cout<<"\n\tMove to pick prompt: ";
+			if(!promptUser())
 			{
 				ROS_INFO_STREAM("Exiting node");
 				break;
@@ -110,9 +123,28 @@ public:
 				break;
 			}
 
+			std::cout<<"\n\tMove to intermediate position prompt:";
+			if(promptUser())
+			{
+				if(updateChangesToPlanningScene() && moveArm(arm_group_name_,joint_intermediate_conf_.SideAngles))
+				{
+					ROS_INFO_STREAM("Move to intermediate position succeeded");
+				}
+				else
+				{
+					ROS_ERROR_STREAM("Move to intermediate position failed");
+					moveArmHome();
+					break;
+				}
+			}
+			else
+			{
+				ROS_WARN_STREAM("skipping intermediate position");
+			}
+
 			// waiting for user input
-			std::cout<<"\n\tPress enter '1' to proceed or '0' to exit: ";
-			if(!(std::cin >> user_entry) || user_entry != selection::PROCEED)
+			std::cout<<"\n\tMove to place prompt: ";
+			if(!promptUser())
 			{
 				ROS_INFO_STREAM("Exiting node");
 				break;
@@ -280,8 +312,11 @@ protected:
 
 	virtual void fetchParameters(std::string name_space = "")
 	{
+		ros::NodeHandle nh;
+
 		AutomatedPickerRobotNavigator::fetchParameters(name_space);
-		joint_home_conf_.fetchParameters(JOINT_CONFIGURATIONS_NAMESPACE);
+		joint_home_conf_.fetchParameters(nh.getNamespace() + "/" + PARAM_JOINT_HOME_POSITION);
+		joint_intermediate_conf_.fetchParameters(nh.getNamespace() + "/" + PARAM_JOINT_INTERMEDIATE_POSITION);
 		singulated_dropoff_location_.fetchParameters(singulated_dropoff_ns_);
 	}
 
@@ -375,9 +410,47 @@ protected:
 		AutomatedPickerRobotNavigator::callbackPublishMarkers(evnt);
 	}
 
+	bool promptUser()
+	{
+		int user_entry=selection::PROCEED;
+		bool proceed = true;
+
+		std::cout<<"\n\tSelect one of the following options:\n";
+		for(std::map<std::string,int>::const_iterator i = selection::SelectionMap.begin()
+				; i != selection::SelectionMap.end(); i++)
+		{
+			std::cout<<"\t\t( "<<i->second <<") - "<<i->first<<"\n";
+		}
+
+		std::cout<<"\n\tEnter Selection : ";
+		if(std::cin >> user_entry)
+		{
+			switch(user_entry)
+			{
+			case selection::PROCEED:
+
+				proceed = true;
+				break;
+
+			case selection::EXIT:
+
+				proceed = false;
+				break;
+			}
+		}
+		else
+		{
+			ROS_ERROR_STREAM("Unable to get user input, exiting");
+			proceed = false;
+		}
+
+		return proceed;
+	}
+
 protected:
 
 	JointConfiguration joint_home_conf_;
+	JointConfiguration joint_intermediate_conf_;
 
 };
 
