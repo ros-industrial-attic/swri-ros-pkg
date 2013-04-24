@@ -41,3 +41,5 @@ singulated_dropoff:
     generation_mode: 0
 joint_home_position:
   side_position: [0.6, -1.07948096023743, 1.67, -2.2049080765129627, -1.57, 0.05]
+joint_intermediate_position:
+  side_position: [0.8, -1.07948096023743, 1.67, -2.2049080765129627, -1.57, 0.05]
