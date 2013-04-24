@@ -42,4 +42,4 @@ singulated_dropoff:
 joint_home_position:
   side_position: [0.6, -1.07948096023743, 1.67, -2.2049080765129627, -1.57, 0.05]
 joint_intermediate_position:
-  side_position: [0.8, -1.07948096023743, 1.67, -2.2049080765129627, -1.57, 0.05]
+  side_position: [0.0, -1.07048096023743, 0.9352, -2.944, -1.57, 0.052]
