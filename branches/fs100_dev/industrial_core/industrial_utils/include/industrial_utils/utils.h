@@ -35,6 +35,7 @@
 #include <vector>
 #include <string>
 #include "urdf/model.h"
+#include "sensor_msgs/JointState.h"
 
 namespace industrial_utils
 {
@@ -63,6 +64,21 @@ bool isSimilar(std::vector<std::string> lhs, std::vector<std::string> rhs);
  * \return true set are similar (same members, same order)
  */
 bool isSame(const std::vector<std::string> & lhs, const std::vector<std::string> & rhs);
+
+/**
+ * \brief Checks to see if JointStates are similar:
+ *   - same joint names
+ *   - all positions within specified tolerance
+ *
+ * \param js1 first joint state
+ * \param js2 second joint state
+ * \param tol allowed tolerance between joint positions
+ *
+ * \return true JointStates are similar
+ */
+bool isSimilar(const sensor_msgs::JointState &js1,
+               const sensor_msgs::JointState &js2,
+               double tol);
 
 /*
  * \brief Returns joint names for a simple serial chain from a URDF tree

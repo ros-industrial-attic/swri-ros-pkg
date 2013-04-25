@@ -69,6 +69,41 @@ bool isSame(const std::vector<std::string> & lhs, const std::vector<std::string>
   return rtn;
 }
 
+bool isSimilar(const sensor_msgs::JointState &js1,
+               const sensor_msgs::JointState &js2,
+               double tol)
+{
+  std::vector<std::string> names1(js1.name), names2(js2.name);
+
+  if (!isSimilar(names1, names2))
+    return false;
+
+  if ( (js1.position.size() != js2.position.size()) ||
+       (js1.velocity.size() != js2.velocity.size()) ||
+       (js1.effort.size() != js2.effort.size()) )
+    return false;
+
+  for (int idx1=0; idx1<js1.name.size(); ++idx1)
+  {
+    int idx2 = std::find(js2.name.begin(), js2.name.end(), js1.name[idx1]) - js2.name.begin();
+
+    ROS_DEBUG("p1: %g, p2: %g, delta: %g", js1.position[idx1], js2.position[idx2], std::abs(js1.position[idx1]-js2.position[idx2]));
+    if ( (js1.position.size() > idx1) &&
+         (std::abs(js1.position[idx1] - js2.position[idx2]) > tol) )
+      return false;
+
+    if ( (js1.velocity.size() > idx1) &&
+         (std::abs(js1.velocity[idx1] - js2.velocity[idx2]) > tol) )
+      return false;
+
+    if ( (js1.effort.size() > idx1) &&
+         (std::abs(js1.effort[idx1] - js2.effort[idx2]) > tol) )
+      return false;
+  }
+
+  return true;
+}
+
 bool findChainJointNames(const boost::shared_ptr<const urdf::Link> &link, bool ignore_fixed,
 		                 std::vector<std::string> &joint_names)
 {
