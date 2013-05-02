@@ -1,0 +1,98 @@
+# http://ros.org/doc/groovy/api/catkin/html/user_guide/supposed.html
+cmake_minimum_required(VERSION 2.8.3)
+project(simple_message)
+# Load catkin and all dependencies required for this package
+find_package(catkin REQUIRED COMPONENTS roscpp industrial_msgs)
+
+# Build static libs, to reduce dependency-chaining for industrial_robot_client
+set(ROS_BUILD_STATIC_LIBS true)
+set(ROS_BUILD_SHARED_LIBS false)
+
+# The simple_message library is designed to cross compile on Ubuntu
+# and various robot controllers.  This requires conditionally compiling
+# certain functions and headers.  The definition below enables compiling
+# for a ROS node.
+add_definitions(-DROS=1)  #build using ROS libraries
+
+set(SRC_FILES 	src/byte_array.cpp
+		src/simple_message.cpp
+		src/smpl_msg_connection.cpp
+	
+		src/socket/simple_socket.cpp
+		src/socket/udp_socket.cpp
+		src/socket/udp_client.cpp
+		src/socket/udp_server.cpp
+		src/socket/tcp_socket.cpp
+		src/socket/tcp_client.cpp
+		src/socket/tcp_server.cpp
+	
+		src/message_handler.cpp
+		src/message_manager.cpp
+		src/ping_handler.cpp
+		src/ping_message.cpp
+		src/joint_data.cpp
+		src/joint_traj_pt.cpp
+		src/joint_traj.cpp
+		src/robot_status.cpp
+	
+		src/messages/joint_message.cpp
+		src/messages/joint_traj_pt_message.cpp
+		src/messages/robot_status_message.cpp
+	
+		src/simple_comms_fault_handler.cpp)
+					
+set(UTEST_SRC_FILES test/utest.cpp test/utest_message.cpp)
+
+# The simple message make file builds two libraries: simple_message and
+# simple_message_byte_swapping.
+#
+# simple_message - is the default library.  This library should be used
+# when the target for the simple message is the same endian (i.e. both
+# big-endian or little-endian).  Intel based machines are little endian
+#
+# simple_message_byte_swapping - is an alternative library that can be used
+# when the target for simple message is a DIFFERENT endian AND when the target
+# target cannot perform byte swapping (as is the case for some industrial
+# controllers).  This library performs byte swapping at the lowest load/unload
+# levels.
+
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+    CATKIN_DEPENDS roscpp industrial_msgs
+    INCLUDE_DIRS include 
+    LIBRARIES simple_message_bswap simple_message
+)
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(include
+  ${catkin_INCLUDE_DIRS}
+)
+
+
+# DEFAULT LIBRARY (SAME ENDIAN)
+add_library(simple_message ${SRC_FILES})
+target_link_libraries(simple_message ${catkin_LIBRARIES})
+
+catkin_add_gtest(utest ${UTEST_SRC_FILES})
+target_link_libraries(utest simple_message)
+
+# ALTERNATIVE LIBRARY (DIFFERENT ENDIAN)
+add_library(simple_message_bswap ${SRC_FILES})
+set_target_properties(simple_message_bswap PROPERTIES COMPILE_DEFINITIONS "BYTE_SWAPPING")
+target_link_libraries(simple_message_bswap ${catkin_LIBRARIES})
+
+catkin_add_gtest(utest_byte_swapping ${UTEST_SRC_FILES})
+target_link_libraries(utest_byte_swapping simple_message_bswap)
+
