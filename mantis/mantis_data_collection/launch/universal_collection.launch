@@ -1,9 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-
-  <!-- Run data collection node -->
-  <node pkg="mantis_data_collection" name="universal_data_collect" type="universal_data_collect" output="screen">
-	<param name="object_name" value="pvct"/>
-  </node> 
-
-</launch>

@@ -1,4 +1,0 @@
-<launch>
-    <include file="$(find armadillo)/launch/upload.launch" />
-    <rosparam command="load" ns="robot_description_planning" file="$(find armadillo_arm_navigation)/config/armadillo_planning_description.yaml" />
-</launch>

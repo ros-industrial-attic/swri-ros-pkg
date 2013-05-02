@@ -1,5 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-	<arg name="conf_file" default="$(find mantis_config)/vcg/dual_visualization.vcg"/>
-	<node pkg="rviz" type="rviz" name="mantis_ur5_visualization" args="-d $(arg conf_file)"/>
-</launch>

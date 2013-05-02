@@ -1,9 +1,0 @@
-service_type: FilterJointTrajectoryWithConstraints
-filter_chain:
-  -
-    name: unnormalize_trajectory
-    type: UnNormalizeFilterJointTrajectoryWithConstraints
-  -
-    name: iterative_parabolic_smoother
-    type: IterativeParabolicSmootherFilterJointTrajectoryWithConstraints
-    params: {max_iterations: 1000, max_time_change_per_it: 0.01}

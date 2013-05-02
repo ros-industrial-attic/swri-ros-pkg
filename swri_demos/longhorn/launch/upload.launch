@@ -1,4 +1,0 @@
-<launch>
-    <!-- Sends urdf to param server -->
-    <param name="robot_description"  textfile="$(find longhorn)/cfg/longhorn.xml"/>
-</launch>

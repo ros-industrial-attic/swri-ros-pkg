@@ -1,4 +1,0 @@
-<launch>
-    <param name="robot_description" textfile="$(find adept_common)/urdf/Adept_Viper_s650.urdf" />
-    <rosparam command="load" ns="robot_description_planning" file="$(find ADEPT_VIPER_S650_arm_navigation)/config/ADEPT_VIPER_S650_planning_description.yaml" />
-</launch>

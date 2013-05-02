@@ -1,9 +1,0 @@
-# OROCOS STACKS
-- git: {local-name: orocos/orocos_toolchain,             uri: 'http://git.gitorious.org/orocos-toolchain/orocos_toolchain.git'}
-- git: {local-name: orocos/rtt_ros_integration,          uri: 'http://git.mech.kuleuven.be/robotics/rtt_ros_integration.git'}
-- git: {local-name: orocos/rtt_ros_comm,                 uri: 'http://git.mech.kuleuven.be/robotics/rtt_ros_comm.git'}
-- git: {local-name: orocos/rtt_common_msgs,              uri: 'http://git.mech.kuleuven.be/robotics/rtt_common_msgs.git'}
-- git: {local-name: orocos/rtt_geometry.git,             uri: 'http://git.mech.kuleuven.be/robotics/rtt_geometry.git'}
-
-# SOEM STACKS
-- git: {local-name: soem,             uri: 'http://git.mech.kuleuven.be/robotics/soem.git'}
