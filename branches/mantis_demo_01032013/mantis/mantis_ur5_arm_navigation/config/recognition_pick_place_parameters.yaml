@@ -39,6 +39,20 @@ singulated_dropoff:
     angle: 0.01
   next_location:
     generation_mode: 0
+alternate_dropoff:
+  frame_id: workcell_frame
+  position:
+    x: -0.60
+    y: -0.20
+    z: 0.10
+  orientation:
+    axis:
+      x: 0
+      y: 0
+      z: 1
+    angle: 0.01
+  next_location:
+    generation_mode: 0
 joint_home_position:
   side_position: [0.6, -1.07948096023743, 1.67, -2.2049080765129627, -1.57, 0.05]
 joint_intermediate_position:
