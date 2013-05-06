@@ -11,6 +11,14 @@
 #include <boost/foreach.hpp>
 #include <iostream>
 
+// topics
+const static std::string ROTATION_CORRECTION_TOPIC = "rotation_correction";
+
+// parameters
+const static std::string PARAM_JOINT_INTERMEDIATE_POSITION = "joint_intermediate_position";
+const static std::string PARAM_JOINT_HOME_POSITION = "joint_home_position";
+const static std::string PARAM_ALTERNATE_DROPOFF_GOAL = "alternate_dropoff";
+
 namespace selection
 {
 	using namespace boost::assign;
@@ -25,8 +33,6 @@ namespace selection
 		("PROCEED",PROCEED);
 }
 
-const static std::string PARAM_JOINT_INTERMEDIATE_POSITION = "joint_intermediate_position";
-const static std::string PARAM_JOINT_HOME_POSITION = "joint_home_position";
 
 class RecognitionPickNavigator: public SortClutterArmNavigator
 {
@@ -45,6 +51,7 @@ public:
 	virtual void run()
 	{
 		ros::NodeHandle nh;
+		bool rotation_correction_succeeded_ = true;
 		ros::AsyncSpinner spinner(4);
 		spinner.start();
 		srand(time(NULL));
@@ -53,7 +60,6 @@ public:
 		setup();
 
 		// cycle
-		int user_entry = selection::PROCEED;
 		while(ros::ok())
 		{
 			moveArmHome();
@@ -121,6 +127,10 @@ public:
 				break;
 			}
 
+			// resetting rotation correction transform
+			rot_correction_tf_ = tf::Transform::getIdentity();
+			rotation_correction_succeeded_ = false;
+
 			std::cout<<"\n\tMove to intermediate position prompt:";
 			if(promptUser())
 			{
@@ -133,6 +143,20 @@ public:
 					ROS_ERROR_STREAM("Move to intermediate position failed");
 					moveArmHome();
 					break;
+				}
+
+				// calling rectification imaging service
+				mantis_perception::mantis_recognition::Request req;
+				mantis_perception::mantis_recognition::Response res;
+				if(rotation_correction_client_.call(req,res) && (res.pose.rotation > 0.0f))
+				{
+					rotation_correction_succeeded_ = true;
+					rot_correction_tf_.setRotation(tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),res.pose.rotation));
+				}
+				else
+				{
+					rotation_correction_succeeded_ = false;
+					ROS_ERROR_STREAM("Part orientation correction failed");
 				}
 			}
 			else
@@ -150,7 +174,8 @@ public:
 
 			// moving for place in singulated zone
 			ROS_INFO_STREAM("Place started");
-			if(RobotNavigator::moveArmThroughPlaceSequence())
+			if( (rotation_correction_succeeded_ ? performPlaceGraspPlanning(singulated_dropoff_location_) : performPlaceGraspPlanning(alternate_dropoff_location_))
+					&& RobotNavigator::moveArmThroughPlaceSequence())
 			{
 				ROS_INFO_STREAM("Place completed");
 			}
@@ -195,6 +220,10 @@ protected:
 			//recognition
 			recognition_client_ = nh.serviceClient<mantis_perception::mantis_recognition>(recognition_service_,true);
 			recognition_client_.waitForExistence();
+
+			// rotation correction
+			rotation_correction_client_ = nh.serviceClient<mantis_perception::mantis_recognition>(ROTATION_CORRECTION_TOPIC,true);
+			rotation_correction_client_.waitForExistence();
 
 			// path planning
 			planning_service_client_ = nh.serviceClient<arm_navigation_msgs::GetMotionPlan>(path_planner_service_);
@@ -316,6 +345,7 @@ protected:
 		joint_home_conf_.fetchParameters(nh.getNamespace() + "/" + PARAM_JOINT_HOME_POSITION);
 		joint_intermediate_conf_.fetchParameters(nh.getNamespace() + "/" + PARAM_JOINT_INTERMEDIATE_POSITION);
 		singulated_dropoff_location_.fetchParameters(singulated_dropoff_ns_);
+		alternate_dropoff_location_.fetchParameters(nh.getNamespace() + "/" + PARAM_ALTERNATE_DROPOFF_GOAL);
 	}
 
 	virtual bool performRecognition()
@@ -337,13 +367,12 @@ protected:
 		grasp_candidates_.push_back(object_manipulation_msgs::Grasp());
 		grasp_candidates_[0].desired_approach_distance = pick_approach_distance_;
 		grasp_candidates_[0].min_approach_distance = pick_approach_distance_;
-		grasp_candidates_[0].grasp_pose = candidate_pick_poses_[0].pose;
-		//manipulation_utils::generateCandidateGrasps(firstGrasp,tf::Vector3(0.0f,0.0f,1.0f),8,grasp_candidates_);
+		grasp_candidates_[0].grasp_pose = candidate_pick_poses_[0].pose; // pose of tcp relative to world
 
 		// instantiating needed transforms and poses
 		tf::StampedTransform wrist_in_tcp_tf = tf::StampedTransform();
-		tf::Transform object_in_world_tf; // will remove
-		tf::Transform object_in_world_inverse_tf;// will remove
+		tf::Transform object_in_world_tf;
+		tf::Transform object_in_world_inverse_tf;
 
 		// filling transforms
 		tf::poseMsgToTF(modelPose.pose.pose, object_in_world_tf);
@@ -388,6 +417,42 @@ protected:
 				<<" is: "<<grasp_candidates_[0].grasp_pose.position.x << " "
 				  << grasp_candidates_[0].grasp_pose.position.y << " "
 				  << grasp_candidates_[0].grasp_pose.position.z);
+
+		return true;
+	}
+
+	virtual bool performPlaceGraspPlanning(GoalLocation &goal)
+	{
+		using namespace mantis_object_manipulation;
+
+		// applying orientation correction to object pose
+		candidate_place_poses_.resize(1);
+		tf::poseTFToMsg(goal.GoalTransform * rot_correction_tf_,candidate_place_poses_[0].pose);
+
+		//	updating grasp place goal data
+		grasp_place_goal_.arm_name = arm_group_name_;
+		grasp_place_goal_.approach.direction.header.frame_id = cm_.getWorldFrameId();
+		grasp_place_goal_.collision_object_name = "attached_"+current_grasped_object_name_[arm_group_name_];
+
+		// finding valid grasp place sequence
+		geometry_msgs::Pose tcp_in_objct_pose;
+
+		// finding pose of wrist relative to object
+		updateChangesToPlanningScene();
+		tf::StampedTransform wrist_in_tcp_tf = tf::StampedTransform(), wrist_in_obj_tf = tf::StampedTransform();
+		_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wrist_in_tcp_tf);
+
+		// storing tcp to object pose in grasp place goal
+		tf::poseMsgToTF(grasp_candidates_[0].grasp_pose,wrist_in_obj_tf);
+		tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),tcp_in_objct_pose);
+		manipulation_utils::rectifyPoseZDirection(tcp_in_objct_pose,
+				PLACE_RECTIFICATION_TF,grasp_place_goal_.grasp.grasp_pose);
+
+		if(!createPlaceMoveSequence(grasp_place_goal_,candidate_place_poses_,grasp_place_sequence_))
+		{
+			ROS_ERROR_STREAM(NODE_NAME<<": Failed to create valid grasp place sequence");
+			return false;
+		}
 
 		return true;
 	}
@@ -447,8 +512,18 @@ protected:
 
 protected:
 
+	// ros services
+	ros::ServiceClient rotation_correction_client_;
+
+	// joint positions
 	JointConfiguration joint_home_conf_;
 	JointConfiguration joint_intermediate_conf_;
+
+	// place goals
+	GoalLocation alternate_dropoff_location_;
+
+	// poses/transforms
+	tf::Transform rot_correction_tf_;
 
 };
 
