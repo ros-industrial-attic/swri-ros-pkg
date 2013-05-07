@@ -38,8 +38,9 @@ namespace industrial_robot_client
 {
 namespace joint_trajectory_action
 {
-  const double JointTrajectoryAction::DEFAULT_GOAL_THRESHOLD_ = 0.01;
-  const double JointTrajectoryAction::WATCHD0G_PERIOD_ = 1.0;
+
+const double JointTrajectoryAction::WATCHD0G_PERIOD_ = 1.0;
+const double JointTrajectoryAction::DEFAULT_GOAL_THRESHOLD_ = 0.01;
 
 JointTrajectoryAction::JointTrajectoryAction() :
     action_server_(node_, "joint_trajectory_action", boost::bind(&JointTrajectoryAction::goalCB, this, _1),
