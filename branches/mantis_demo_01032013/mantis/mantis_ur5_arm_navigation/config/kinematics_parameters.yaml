@@ -1,4 +1,4 @@
 ur5_arm:
-  max_solver_iterations: 1000
-  max_search_iterations: 20
+  max_solver_iterations: 2000
+  max_search_iterations: 100
   epsilon: 0.00001
