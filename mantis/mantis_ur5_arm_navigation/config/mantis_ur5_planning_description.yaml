@@ -78,6 +78,9 @@ default_collision_operations:
     object2: ur5_arm_wrist_2_link
     operation: disable  # Adjacent in collision
   - object1: ur5_arm_wrist_2_link
+    object2: ur5_arm_forearm_link
+    operation: disable  # Adjacent in collision
+  - object1: ur5_arm_wrist_2_link
     object2: ur5_arm_wrist_3_link
     operation: disable  # Adjacent in collision
   - object1: ur5_arm_wrist_3_link
