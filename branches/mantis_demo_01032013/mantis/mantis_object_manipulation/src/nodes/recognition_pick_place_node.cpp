@@ -83,7 +83,7 @@ public:
 			}
 
 			ROS_INFO_STREAM("Grasp planning started");
-			if(performPickGraspPlanning() && performPlaceGraspPlanning(singulated_dropoff_location_))
+			if(performPickGraspPlanning())
 			{
 				ROS_INFO_STREAM("Grasp planning succeeded");
 			}
@@ -146,22 +146,29 @@ public:
 				}
 
 				// calling rectification imaging service
+				ROS_INFO_STREAM("Calling '" + ROTATION_CORRECTION_TOPIC + "' service");
+				double angle = 0.0f;
 				mantis_perception::mantis_recognition::Request req;
 				mantis_perception::mantis_recognition::Response res;
 				if(rotation_correction_client_.call(req,res) && (res.pose.rotation > 0.0f))
 				{
 					rotation_correction_succeeded_ = true;
-					rot_correction_tf_.setRotation(tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),res.pose.rotation));
+					angle = static_cast<double>(M_PI * res.pose.rotation)/180.0f;
+					rot_correction_tf_.setRotation(tf::Quaternion(tf::Vector3(0.0f,0.0f,1.0f),angle));
+					ROS_INFO_STREAM("'" << ROTATION_CORRECTION_TOPIC <<
+							"' service succeeded with angle: "<<res.pose.rotation<<"( "<<angle <<" radians)");
+
 				}
 				else
 				{
 					rotation_correction_succeeded_ = false;
-					ROS_ERROR_STREAM("Part orientation correction failed");
+					ROS_ERROR_STREAM("'" + ROTATION_CORRECTION_TOPIC + "' service failed");
 				}
 			}
 			else
 			{
 				ROS_WARN_STREAM("skipping intermediate position");
+
 			}
 
 			// waiting for user input
@@ -222,7 +229,7 @@ protected:
 			recognition_client_.waitForExistence();
 
 			// rotation correction
-			rotation_correction_client_ = nh.serviceClient<mantis_perception::mantis_recognition>(ROTATION_CORRECTION_TOPIC,true);
+			rotation_correction_client_ = nh.serviceClient<mantis_perception::mantis_recognition>(nh.getNamespace() + "/" + ROTATION_CORRECTION_TOPIC,true);
 			rotation_correction_client_.waitForExistence();
 
 			// path planning
@@ -424,10 +431,25 @@ protected:
 	virtual bool performPlaceGraspPlanning(GoalLocation &goal)
 	{
 		using namespace mantis_object_manipulation;
+		tf::Transform generated_object_tf;
+		geometry_msgs::PoseStamped generated_object_pose;
+
 
 		// applying orientation correction to object pose
-		candidate_place_poses_.resize(1);
-		tf::poseTFToMsg(goal.GoalTransform * rot_correction_tf_,candidate_place_poses_[0].pose);
+		candidate_place_poses_.clear();
+		generated_object_pose.header.frame_id = goal.GoalTransform.frame_id_;
+		tf::poseTFToMsg(goal.GoalTransform * rot_correction_tf_,generated_object_pose.pose);
+		tf::poseMsgToTF(generated_object_pose.pose,generated_object_tf);
+		candidate_place_poses_.push_back(generated_object_pose);
+
+
+		// printing object location results
+		ROS_INFO_STREAM("Generated "<<candidate_place_poses_.size()
+				<<" candidates with location at:  "<<generated_object_tf.getOrigin().x() <<
+				", "<<generated_object_tf.getOrigin().y()<<", "<<generated_object_tf.getOrigin().z());
+		ROS_INFO_STREAM("Generated object goal angle "<<generated_object_tf.getRotation().getAngle()
+				<<"( "<<180.0f *generated_object_tf.getRotation().getAngle()/M_PI<<" degrees)");
+
 
 		//	updating grasp place goal data
 		grasp_place_goal_.arm_name = arm_group_name_;
@@ -444,9 +466,9 @@ protected:
 
 		// storing tcp to object pose in grasp place goal
 		tf::poseMsgToTF(grasp_candidates_[0].grasp_pose,wrist_in_obj_tf);
-		tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),tcp_in_objct_pose);
-		manipulation_utils::rectifyPoseZDirection(tcp_in_objct_pose,
-				PLACE_RECTIFICATION_TF,grasp_place_goal_.grasp.grasp_pose);
+		tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),grasp_place_goal_.grasp.grasp_pose);
+		//tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),tcp_in_objct_pose);
+		//manipulation_utils::rectifyPoseZDirection(tcp_in_objct_pose,PLACE_RECTIFICATION_TF,grasp_place_goal_.grasp.grasp_pose);
 
 		if(!createPlaceMoveSequence(grasp_place_goal_,candidate_place_poses_,grasp_place_sequence_))
 		{
@@ -460,6 +482,15 @@ protected:
 	virtual bool moveArmHome()
 	{
 		return updateChangesToPlanningScene() && moveArm(arm_group_name_,joint_home_conf_.SideAngles);
+	}
+
+	bool moveLastJointByAngle(const JointConfiguration &j,double angle)
+	{
+		std::vector<double> joint_vals(j.SideAngles.begin(),j.SideAngles.end());
+		ROS_INFO_STREAM("Start Angle: "<< joint_vals.back());
+		joint_vals[joint_vals.size()-1] = joint_vals.back() + angle;
+		ROS_INFO_STREAM("End Angle: "<< joint_vals.back());
+		return updateChangesToPlanningScene() && moveArm(arm_group_name_,joint_vals);
 	}
 
 	bool moveToPregraspPose()
