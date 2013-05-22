@@ -84,9 +84,14 @@ bool JointTrajectoryInterface::init(SmplMsgConnection* connection, const std::ve
   this->joint_vel_limits_ = velocity_limits;
   connection_->makeConnect();
 
+  // try to read velocity limits from URDF, if none specified
+  if (joint_vel_limits_.empty() && !industrial_utils::param::getJointVelocityLimits("robot_description", joint_vel_limits_))
+    ROS_WARN("Unable to read velocity limits from 'robot_description' param.  Velocity validation disabled.");
+
   this->srv_stop_motion_ = this->node_.advertiseService("stop_motion", &JointTrajectoryInterface::stopMotionCB, this);
   this->srv_joint_trajectory_ = this->node_.advertiseService("joint_path_command", &JointTrajectoryInterface::jointTrajectoryCB, this);
   this->sub_joint_trajectory_ = this->node_.subscribe("joint_path_command", 0, &JointTrajectoryInterface::jointTrajectoryCB, this);
+  this->sub_cur_pos_ = this->node_.subscribe("joint_states", 1, &JointTrajectoryInterface::jointStateCB, this);
 
   return true;
 }
@@ -217,7 +222,6 @@ bool JointTrajectoryInterface::calc_speed(const trajectory_msgs::JointTrajectory
 bool JointTrajectoryInterface::calc_velocity(const trajectory_msgs::JointTrajectoryPoint& pt, double* rbt_velocity)
 {
   std::vector<double> vel_ratios;
-  static bool limits_initialized = false;
 
   ROS_ASSERT(all_joint_names_.size() == pt.positions.size());
 
@@ -227,14 +231,6 @@ bool JointTrajectoryInterface::calc_velocity(const trajectory_msgs::JointTraject
     ROS_WARN("Joint velocities unspecified.  Using default/safe speed.");
     *rbt_velocity = default_vel_ratio_;
     return true;
-  }
-
-  // read velocity limits from URDF if not specified
-  if (joint_vel_limits_.empty() && !limits_initialized)
-  {
-    limits_initialized = true;
-    if (!getJointVelocityLimits("robot_description", joint_vel_limits_))
-      ROS_WARN("Unable to read velocity limits from 'robot_description' param.  Will use default/safe speed.");
   }
 
   for (size_t i=0; i<all_joint_names_.size(); ++i)
@@ -257,7 +253,7 @@ bool JointTrajectoryInterface::calc_velocity(const trajectory_msgs::JointTraject
     *rbt_velocity = vel_ratios[max_idx];
   else
   {
-    ROS_WARN("Joint velocity-limits unspecified.  Using default velocity-ratio.");
+    ROS_WARN_ONCE("Joint velocity-limits unspecified.  Using default velocity-ratio.");
     *rbt_velocity = default_vel_ratio_;
   }
 
@@ -354,6 +350,11 @@ bool JointTrajectoryInterface::is_valid(const trajectory_msgs::JointTrajectory &
   return true;
 }
 
+// copy robot JointState into local cache
+void JointTrajectoryInterface::jointStateCB(const sensor_msgs::JointStateConstPtr &msg)
+{
+  this->cur_joint_pos_ = *msg;
+}
 
 } //joint_trajectory_interface
 } //industrial_robot_client
