@@ -53,6 +53,7 @@ namespace joint_trajectory_interface
   using industrial::smpl_msg_connection::SmplMsgConnection;
   using industrial::tcp_client::TcpClient;
   using industrial::joint_traj_pt_message::JointTrajPtMessage;
+  namespace StandardSocketPorts = industrial::simple_socket::StandardSocketPorts;
 
 /**
  * \brief Message handler that relays joint trajectories to the robot controller
@@ -73,9 +74,15 @@ public:
     /**
      * \brief Initialize robot connection using default method.
      *
+     * \param default_ip default IP address to use for robot connection [OPTIONAL]
+     *                    - this value will be used if ROS param "robot_ip_address" cannot be read
+     * \param default_port default port to use for robot connection [OPTIONAL]
+     *                    - this value will be used if ROS param "~port" cannot be read
+     *
      * \return true on success, false otherwise
      */
-    virtual bool init();
+    virtual bool init(std::string default_ip = "", int default_port = StandardSocketPorts::MOTION);
+
 
     /**
      * \brief Initialize robot connection using specified method.
