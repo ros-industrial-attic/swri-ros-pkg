@@ -1,7 +1,7 @@
 ﻿/*
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2011, Southwest Research Institute
+ * Copyright (c) 2013, Southwest Research Institute
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,7 @@
 #include "industrial_msgs/CmdJointTrajectory.h"
 #include "industrial_msgs/StopMotion.h"
 #include "sensor_msgs/JointState.h"
+#include "simple_message/simple_message.h"
 #include "simple_message/smpl_msg_connection.h"
 #include "simple_message/socket/tcp_client.h"
 #include "simple_message/messages/joint_traj_pt_message.h"
@@ -53,6 +54,7 @@ namespace joint_trajectory_interface
   using industrial::smpl_msg_connection::SmplMsgConnection;
   using industrial::tcp_client::TcpClient;
   using industrial::joint_traj_pt_message::JointTrajPtMessage;
+  using industrial::simple_message::SimpleMessage;
   namespace StandardSocketPorts = industrial::simple_socket::StandardSocketPorts;
 
 /**
@@ -82,7 +84,6 @@ public:
      * \return true on success, false otherwise
      */
     virtual bool init(std::string default_ip = "", int default_port = StandardSocketPorts::MOTION);
-
 
     /**
      * \brief Initialize robot connection using specified method.
@@ -123,15 +124,15 @@ protected:
   virtual void trajectoryStop();
 
   /**
-   * \brief Convert ROS trajectory message into stream of JointTrajPtMessages for sending to robot.
+   * \brief Convert ROS trajectory message into stream of SimpleMessages for sending to robot.
    *   Also includes various joint transforms that can be overridden for robot-specific behavior.
    *
    * \param[in] traj ROS JointTrajectory message
-   * \param[out] msgs list of JointTrajPtMessages for sending to robot
+   * \param[out] msgs list of SimpleMessages for sending to robot
    *
    * \return true on success, false otherwise
    */
-  virtual bool trajectory_to_msgs(const trajectory_msgs::JointTrajectoryConstPtr &traj, std::vector<JointTrajPtMessage>* msgs);
+  virtual bool trajectory_to_msgs(const trajectory_msgs::JointTrajectoryConstPtr &traj, std::vector<SimpleMessage>* msgs);
 
   /**
    * \brief Transform joint positions before publishing.
@@ -162,17 +163,15 @@ protected:
                       const std::vector<std::string>& rbt_joint_names, trajectory_msgs::JointTrajectoryPoint* rbt_pt);
 
   /**
-   * \brief Reduce the ROS velocity commands (per-joint velocities) to a single scalar for communication to the robot.
-   *   For flexibility, the robot command message contains both "velocity" and "duration" fields.  The specific robot
-   *   implementation can utilize either or both of these fields, as appropriate.
+   * \brief Create SimpleMessage for sending to the robot
    *
-   * \param[in] pt trajectory point data, in order/count expected by robot connection
-   * \param[out] rbt_velocity computed velocity scalar for robot message (if needed by robot)
-   * \param[out] rbt_duration computed move duration for robot message (if needed by robot)
+   * \param[in] seq sequence # of this point in the overall trajectory
+   * \param[in] pt  trajectory point data
+   * \param[out] msg message for sending to robot
    *
    * \return true on success, false otherwise
    */
-  virtual bool calc_speed(const trajectory_msgs::JointTrajectoryPoint& pt, double* rbt_velocity, double* rbt_duration);
+  virtual bool create_message(int seq, const trajectory_msgs::JointTrajectoryPoint &pt, SimpleMessage* msg);
 
   /**
    * \brief Reduce the ROS velocity commands (per-joint velocities) to a single scalar for communication to the robot.
@@ -200,15 +199,15 @@ protected:
    * \brief Send trajectory to robot, using this node's robot-connection.
    *   Specific method must be implemented in a derived class (e.g. streaming, download, etc.)
    *
-   * \param messages List of SimpleMessage JointTrajPtMessages to send to robot.
+   * \param messages List of SimpleMessages to send to robot.
    *
    * \return true on success, false otherwise
    */
-  virtual bool send_to_robot(const std::vector<JointTrajPtMessage>& messages)=0;
+  virtual bool send_to_robot(const std::vector<SimpleMessage>& messages)=0;
 
   /**
    * \brief Callback function registered to ROS topic-subscribe.
-   *   Transform message into SimpleMessage objects and send commands to robot.
+   *   Transform ROS message into SimpleMessage objects and send commands to robot.
    *
    * \param msg JointTrajectory message from ROS trajectory-planner
    */
@@ -223,7 +222,7 @@ protected:
    * \return true always.  Look at res.code.val to see if call actually succeeded.
    */
   virtual bool stopMotionCB(industrial_msgs::StopMotion::Request &req,
-                                    industrial_msgs::StopMotion::Response &res);
+                            industrial_msgs::StopMotion::Response &res);
 
   /**
    * \brief Validate that trajectory command meets minimum requirements
@@ -255,10 +254,7 @@ protected:
   std::map<std::string, double> joint_vel_limits_;  // cache of max joint velocities from URDF
   sensor_msgs::JointState cur_joint_pos_;  // cache of last received joint state
 
-
 private:
-  static JointTrajPtMessage create_message(int seq, std::vector<double> joint_pos, double velocity, double duration);
-
   /**
    * \brief Callback function registered to ROS CmdJointTrajectory service
    *   Duplicates message-topic functionality, but in service form.

@@ -1,7 +1,7 @@
 /*
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2011, Southwest Research Institute
+ * Copyright (c) 2013, Southwest Research Institute
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,12 @@
  */
 
 #include <algorithm>
-#include "industrial_robot_client/joint_trajectory_interface.h"
+#include "fs100/industrial_robot_client/joint_trajectory_interface.h"
 #include "simple_message/joint_traj_pt.h"
 #include "industrial_utils/param_utils.h"
 
 using namespace industrial_utils::param;
 using industrial::simple_message::SimpleMessage;
-namespace StandardSocketPorts = industrial::simple_socket::StandardSocketPorts;
 namespace SpecialSeqValues = industrial::joint_traj_pt::SpecialSeqValues;
 typedef industrial::joint_traj_pt::JointTrajPt rbt_JointTrajPt;
 typedef trajectory_msgs::JointTrajectoryPoint  ros_JointTrajPt;
@@ -69,7 +68,7 @@ bool JointTrajectoryInterface::init(std::string default_ip, int default_port)
     return false;
   }
 
-  char* ip_addr = strdup(ip.c_str());  // connection.init() requires "char*", not "const char*"
+  char* ip_addr = strdup(ip.c_str()); // connection.init() requires "char*", not "const char*"
   ROS_INFO("Joint Trajectory Interface connecting to IP address: '%s:%d'", ip_addr, port);
   default_tcp_connection_.init(ip_addr, port);
   free(ip_addr);
@@ -141,7 +140,7 @@ void JointTrajectoryInterface::jointTrajectoryCB(const trajectory_msgs::JointTra
   }
 
   // convert trajectory into robot-format
-  std::vector<JointTrajPtMessage> robot_msgs;
+  std::vector<SimpleMessage> robot_msgs;
   if (!trajectory_to_msgs(msg, &robot_msgs))
     return;
 
@@ -149,7 +148,7 @@ void JointTrajectoryInterface::jointTrajectoryCB(const trajectory_msgs::JointTra
   send_to_robot(robot_msgs);
 }
 
-bool JointTrajectoryInterface::trajectory_to_msgs(const trajectory_msgs::JointTrajectoryConstPtr& traj, std::vector<JointTrajPtMessage>* msgs)
+bool JointTrajectoryInterface::trajectory_to_msgs(const trajectory_msgs::JointTrajectoryConstPtr& traj, std::vector<SimpleMessage>* msgs)
 {
   msgs->clear();
 
@@ -159,8 +158,8 @@ bool JointTrajectoryInterface::trajectory_to_msgs(const trajectory_msgs::JointTr
 
   for (size_t i=0; i<traj->points.size(); ++i)
   {
+    SimpleMessage msg;
     ros_JointTrajPt rbt_pt, xform_pt;
-    double vel, duration;
 
     // select / reorder joints for sending to robot
     if (!select(traj->joint_names, traj->points[i], this->all_joint_names_, &rbt_pt))
@@ -170,11 +169,10 @@ bool JointTrajectoryInterface::trajectory_to_msgs(const trajectory_msgs::JointTr
     if (!transform(rbt_pt, &xform_pt))
       return false;
 
-    // reduce velocity to a single scalar, for robot command
-    if (!calc_speed(xform_pt, &vel, &duration))
+    // convert trajectory point to ROS message
+    if (!create_message(i, xform_pt, &msg))
       return false;
 
-    JointTrajPtMessage msg = create_message(i, xform_pt.positions, vel, duration);
     msgs->push_back(msg);
   }
 
@@ -219,11 +217,6 @@ bool JointTrajectoryInterface::select(const std::vector<std::string>& ros_joint_
     }
   }
   return true;
-}
-
-bool JointTrajectoryInterface::calc_speed(const trajectory_msgs::JointTrajectoryPoint& pt, double* rbt_velocity, double* rbt_duration)
-{
-	return calc_velocity(pt, rbt_velocity) && calc_duration(pt, rbt_duration);
 }
 
 // default velocity calculation computes the %-of-max-velocity for the "critical joint" (closest to velocity-limit)
@@ -295,21 +288,26 @@ bool JointTrajectoryInterface::calc_duration(const trajectory_msgs::JointTraject
   return true;
 }
 
-JointTrajPtMessage JointTrajectoryInterface::create_message(int seq, std::vector<double> joint_pos, double velocity, double duration)
+bool JointTrajectoryInterface::create_message(int seq, const trajectory_msgs::JointTrajectoryPoint &pt, SimpleMessage *msg)
 {
   industrial::joint_data::JointData pos;
-  ROS_ASSERT(joint_pos.size() <= (unsigned int)pos.getMaxNumJoints());
+  ROS_ASSERT(pt.positions.size() <= (unsigned int)pos.getMaxNumJoints());
 
-  for (size_t i=0; i<joint_pos.size(); ++i)
-    pos.setJoint(i, joint_pos[i]);
+  for (size_t i=0; i<pt.positions.size(); ++i)
+    pos.setJoint(i, pt.positions[i]);
 
-  rbt_JointTrajPt pt;
-  pt.init(seq, pos, velocity, duration);
+  // calculate velocity & duration
+  double velocity, duration;
+  if (!calc_velocity(pt, &velocity) || !calc_duration(pt, &duration))
+    return false;
 
-  JointTrajPtMessage msg;
-  msg.init(pt);
+  rbt_JointTrajPt msg_data;
+  msg_data.init(seq, pos, velocity, duration);
 
-  return msg;
+  JointTrajPtMessage jtp_msg;
+  jtp_msg.init(msg_data);
+
+  return jtp_msg.toTopic(*msg);  // assume "topic" COMM_TYPE for now
 }
 
 void JointTrajectoryInterface::trajectoryStop()
@@ -325,7 +323,7 @@ void JointTrajectoryInterface::trajectoryStop()
 }
 
 bool JointTrajectoryInterface::stopMotionCB(industrial_msgs::StopMotion::Request &req,
-		                                    industrial_msgs::StopMotion::Response &res)
+                                            industrial_msgs::StopMotion::Response &res)
 {
   trajectoryStop();
 
