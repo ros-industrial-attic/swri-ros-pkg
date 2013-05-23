@@ -29,53 +29,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "abb_common/abb_utils.h"
-#include "industrial_robot_client/robot_state_interface.h"
-#include "industrial_utils/param_utils.h"
+#include "fs100/industrial_robot_client/robot_state_interface.h"
 
 using industrial_robot_client::robot_state_interface::RobotStateInterface;
-using industrial_robot_client::joint_relay_handler::JointRelayHandler;
-
-class ABB_JointRelayHandler : public JointRelayHandler
-{
-  bool J23_coupled_;
-
-public:
-  ABB_JointRelayHandler() : JointRelayHandler()
-  {
-    if (ros::param::has("J23_coupled"))
-      ros::param::get("J23_coupled", this->J23_coupled_);
-    else
-      J23_coupled_ = false;
-  }
-
-  bool transform(const std::vector<double>& pos_in, std::vector<double>* pos_out)
-  {
-    // correct for parallel linkage effects, if desired
-    //   - use NEGATIVE factor for motor->joint correction
-    abb::utils::linkage_transform(pos_in, pos_out, J23_coupled_ ? -1:0 );
-
-    return true;
-  }
-};
 
 int main(int argc, char** argv)
 {
+  const int FS100_state_port = 50241;  // FS100 uses a "non-standard" port to comply with MotoPlus guidelines
+
   // initialize node
   ros::init(argc, argv, "state_interface");
 
   // launch the default Robot State Interface connection/handlers
   RobotStateInterface rsi;
-  rsi.init();
-
-  // replace the JointRelayHandler with ABB-version
-  ABB_JointRelayHandler jointHandler;  // for joint-linkage correction
-  std::vector<std::string> joint_names = rsi.get_joint_names();
-  jointHandler.init(rsi.get_connection(), joint_names);
-  rsi.add_handler(&jointHandler);
-
-  // run the node
-  rsi.run();
-
+  if (rsi.init("", FS100_state_port))
+  {
+    rsi.run();
+  }
   return 0;
 }

@@ -29,12 +29,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "industrial_robot_client/robot_state_interface.h"
+#include "fs100/industrial_robot_client/robot_state_interface.h"
 #include "industrial_utils/param_utils.h"
 
 using industrial::smpl_msg_connection::SmplMsgConnection;
 using industrial_utils::param::getJointNames;
-namespace StandardSocketPorts = industrial::simple_socket::StandardSocketPorts;
 
 namespace industrial_robot_client
 {
@@ -45,6 +44,7 @@ RobotStateInterface::RobotStateInterface()
 {
   this->connection_ = NULL;
   this->add_handler(&default_joint_handler_);
+  this->add_handler(&default_joint_feedback_handler_);
   this->add_handler(&default_robot_status_handler_);
 }
 
@@ -81,10 +81,7 @@ bool RobotStateInterface::init(SmplMsgConnection* connection)
 {
   std::vector<std::string> joint_names;
   if (!getJointNames("controller_joint_names", "robot_description", joint_names))
-  {
-    ROS_ERROR("Failed to initialize joint_names.  Aborting");
-    return false;
-  }
+    ROS_WARN("Unable to read 'controller_joint_names' param.  Using standard 6-DOF joint names.");
 
   return init(connection, joint_names);
 }
@@ -103,6 +100,10 @@ bool RobotStateInterface::init(SmplMsgConnection* connection, std::vector<std::s
   if (!default_joint_handler_.init(connection_, joint_names_))
     return false;
   this->add_handler(&default_joint_handler_);
+
+  if (!default_joint_feedback_handler_.init(connection_, joint_names_))
+    return false;
+  this->add_handler(&default_joint_feedback_handler_);
 
   if (!default_robot_status_handler_.init(connection_))
       return false;
