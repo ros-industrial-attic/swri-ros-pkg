@@ -1,4 +1,0 @@
-string objectName
-int32 delta
----
-int32 result

@@ -1,4 +1,0 @@
-<launch>
-    <param name="robot_description" textfile="$(find longhorn)/cfg/longhorn.xml" />
-    <rosparam command="load" ns="robot_description_planning" file="$(find longhorn_arm_navigation)/config/longhorn_planning_description.yaml" />
-</launch>

@@ -1,3 +1,0 @@
-<launch>
-    <include file="$(find freetail_arm_navigation)/launch/move_sia20d_arm.launch" />
-</launch>
