@@ -1,0 +1,8 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: lrmate200ic_config
+    relative_path: urdf/lrmate200ic.urdf
+  SRDF:
+    relative_path: config/lrmate200ic.srdf
+  CONFIG:
+    generated_timestamp: 1369732289
