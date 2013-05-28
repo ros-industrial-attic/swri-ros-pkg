@@ -1,15 +1,15 @@
 <package>
   <description brief="lrmate200ic_config">
      <p>
-     This package contains configurations and 3D models for Fanuc 
-     LR Mate 200iC manipulators. This currently includes the base model 
-     and the 5H variant.
+     This package contains configurations, 3D models and launch files 
+     for Fanuc LR Mate 200iC manipulators. This currently includes the 
+     base model and the 5H variant.
      </p>
      <p>
      Joint limits and max joint velocities are based on the information in 
      the <em>FANUC Robot LR Mate 200iC Mechanical Unit Operator's Manual</em> 
      version <em>B-82584EN/07</em>. All URDFs / XACROs are based on the 
-     default motion and joint velocity limits, unless explicitly noted (ie: 
+     default motion and joint velocity limits, unless noted otherwise (ie: 
      no support for high speed joints, extended / limited motion ranges or 
      other options).
      </p>
