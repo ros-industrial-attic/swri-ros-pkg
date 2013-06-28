@@ -21,7 +21,7 @@
 
   <!-- load the correct version of the robot state node -->
   <node if="$(arg use_bswap)" name="joint_state" 
-    pkg="fanuc_common" type="robot_state_bswap" />
+    pkg="fanuc_driver" type="robot_state_bswap" />
   <node unless="$(arg use_bswap)" name="joint_state" 
-    pkg="fanuc_common" type="robot_state" />
+    pkg="fanuc_driver" type="robot_state" />
 </launch>

@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <fanuc_common/fanuc_utils.h>
+#include <fanuc_driver/fanuc_utils.h>
 #include <ros/ros.h>
 
 

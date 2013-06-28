@@ -16,7 +16,7 @@
 
   <rosparam command="load" file="$(find fanuc_config)/config/joint_names_m430ia2f.yaml" />
 
-  <include file="$(find fanuc_common)/launch/fanuc_robot_state.launch">
+  <include file="$(find fanuc_driver)/launch/fanuc_robot_state.launch">
     <arg name="robot_ip"   value="$(arg robot_ip)" />
     <arg name="J23_factor" value="$(arg J23_factor)" />
     <arg name="use_bswap"  value="$(arg use_bswap)" />

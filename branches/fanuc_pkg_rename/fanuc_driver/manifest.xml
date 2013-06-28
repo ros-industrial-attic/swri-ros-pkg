@@ -9,6 +9,6 @@
   <author>G.A. vd. Hoorn (TU Delft Robotics Institute)</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/fanuc_common</url>
+  <url>http://ros.org/wiki/fanuc_driver</url>
   <depend package="industrial_robot_client"/>
 </package>

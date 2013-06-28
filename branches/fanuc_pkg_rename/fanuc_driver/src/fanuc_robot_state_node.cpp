@@ -36,7 +36,7 @@
  * Author: G.A. vd. Hoorn - TU Delft Robotics Institute
  */
 
-#include <fanuc_common/fanuc_utils.h>
+#include <fanuc_driver/fanuc_utils.h>
 
 #include <industrial_robot_client/robot_state_interface.h>
 #include <industrial_utils/param_utils.h>
