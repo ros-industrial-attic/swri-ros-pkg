@@ -1,5 +1,5 @@
 <launch>
-    <include file="$(find fanuc_config)/launch/load_m430ia2f.launch" />
+    <include file="$(find fanuc_m430ia_support)/launch/load_m430ia2f.launch" />
     <param name="use_gui" value="true"/>
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
