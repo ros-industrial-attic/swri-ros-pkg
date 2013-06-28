@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:include filename="$(find fanuc_assets)/urdf/common_materials.xacro"/>
+
 	<xacro:macro name="fanuc_m16ib20" params="prefix">
-
-
 		<!-- links -->
 		<link name="${prefix}base_link">
 			<visual>
@@ -10,9 +10,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/base_link.STL"/>
 				</geometry>
-				<material name="fyel">
-					<color rgba="0.9 0.9 0 1" />
-				</material>
+				<xacro:material_fanuc_yellow />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -27,7 +25,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_1.STL"/>
 				</geometry>
-				<material name="fyel" />
+				<xacro:material_fanuc_yellow />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -42,7 +40,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_2.STL"/>
 				</geometry>
-				<material name="fyel" />
+				<xacro:material_fanuc_yellow />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -57,7 +55,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_3.STL"/>
 				</geometry>
-				<material name="fyel" />
+				<xacro:material_fanuc_yellow />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -72,7 +70,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_4.STL"/>
 				</geometry>
-				<material name="fyel" />
+				<xacro:material_fanuc_yellow />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -87,7 +85,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_5.STL"/>
 				</geometry>
-				<material name="fyel" />
+				<xacro:material_fanuc_yellow />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -102,9 +100,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_6.STL"/>
 				</geometry>
-				<material name="fblack">
-					<color rgba="0.1 0.1 0.1 1"/>
-				</material>
+				<xacro:material_fanuc_black />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -114,7 +110,6 @@
 			</collision>
 		</link>
 		<link name="${prefix}tool0"/>
-
 
 		<!-- joints -->
 		<joint name="${prefix}joint_1" type="revolute">
@@ -164,6 +159,5 @@
 			<child link="${prefix}tool0"/>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 		</joint>
-
 	</xacro:macro>
 </robot>

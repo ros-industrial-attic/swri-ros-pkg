@@ -10,8 +10,8 @@
       <geometry>
         <mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/base_link.STL"/>
       </geometry>
-      <material name="fyel">
-        <color rgba="0.9 0.9 0 1"/>
+      <material name="">
+        <color rgba="0.96 0.76 0.13 1.0"/>
       </material>
     </visual>
     <collision>
@@ -27,7 +27,9 @@
       <geometry>
         <mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_1.STL"/>
       </geometry>
-      <material name="fyel"/>
+      <material name="">
+        <color rgba="0.96 0.76 0.13 1.0"/>
+      </material>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -42,7 +44,9 @@
       <geometry>
         <mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_2.STL"/>
       </geometry>
-      <material name="fyel"/>
+      <material name="">
+        <color rgba="0.96 0.76 0.13 1.0"/>
+      </material>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -57,7 +61,9 @@
       <geometry>
         <mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_3.STL"/>
       </geometry>
-      <material name="fyel"/>
+      <material name="">
+        <color rgba="0.96 0.76 0.13 1.0"/>
+      </material>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -72,7 +78,9 @@
       <geometry>
         <mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_4.STL"/>
       </geometry>
-      <material name="fyel"/>
+      <material name="">
+        <color rgba="0.96 0.76 0.13 1.0"/>
+      </material>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -87,7 +95,9 @@
       <geometry>
         <mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_5.STL"/>
       </geometry>
-      <material name="fyel"/>
+      <material name="">
+        <color rgba="0.96 0.76 0.13 1.0"/>
+      </material>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -102,8 +112,8 @@
       <geometry>
         <mesh filename="package://fanuc_m16ib_support/meshes/m16ib20/visual/Link_6.STL"/>
       </geometry>
-      <material name="fblack">
-        <color rgba="0.1 0.1 0.1 1"/>
+      <material name="">
+        <color rgba="0.15 0.15 0.15 1.0"/>
       </material>
     </visual>
     <collision>

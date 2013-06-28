@@ -10,8 +10,8 @@
       <geometry>
         <mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/base_link.stl"/>
       </geometry>
-      <material name="fgrey">
-        <color rgba="0.20 0.20 0.20 1"/>
+      <material name="">
+        <color rgba="0.34 0.35 0.36 1.0"/>
       </material>
     </visual>
     <collision>
@@ -27,8 +27,8 @@
       <geometry>
         <mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_1.stl"/>
       </geometry>
-      <material name="fyel">
-        <color rgba="0.9 0.9 0 1"/>
+      <material name="">
+        <color rgba="0.96 0.76 0.13 1.0"/>
       </material>
     </visual>
     <collision>
@@ -44,7 +44,9 @@
       <geometry>
         <mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_2.stl"/>
       </geometry>
-      <material name="fyel"/>
+      <material name="">
+        <color rgba="0.96 0.76 0.13 1.0"/>
+      </material>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -59,7 +61,9 @@
       <geometry>
         <mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_3.stl"/>
       </geometry>
-      <material name="fyel"/>
+      <material name="">
+        <color rgba="0.96 0.76 0.13 1.0"/>
+      </material>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -74,7 +78,9 @@
       <geometry>
         <mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_4.stl"/>
       </geometry>
-      <material name="fyel"/>
+      <material name="">
+        <color rgba="0.96 0.76 0.13 1.0"/>
+      </material>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -89,7 +95,9 @@
       <geometry>
         <mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_5.stl"/>
       </geometry>
-      <material name="fyel"/>
+      <material name="">
+        <color rgba="0.96 0.76 0.13 1.0"/>
+      </material>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -104,8 +112,8 @@
       <geometry>
         <mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_6.stl"/>
       </geometry>
-      <material name="fblack">
-        <color rgba="0.1 0.1 0.1 1"/>
+      <material name="">
+        <color rgba="0.15 0.15 0.15 1.0"/>
       </material>
     </visual>
     <collision>

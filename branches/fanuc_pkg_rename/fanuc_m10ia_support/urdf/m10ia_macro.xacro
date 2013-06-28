@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:include filename="$(find fanuc_assets)/urdf/common_materials.xacro"/>
+
 	<xacro:macro name="fanuc_m10ia" params="prefix">
-
-
 		<!-- links -->
 		<link name="${prefix}base_link">
 			<visual>
@@ -10,9 +10,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/base_link.stl"/>
 				</geometry>
-				<material name="fgrey">
-					<color rgba="0.20 0.20 0.20 1"/>
-				</material>
+				<xacro:material_fanuc_grey />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="-1.578 0 0"/>
@@ -27,9 +25,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_1.stl"/>
 				</geometry>
-				<material name="fyel">
-					<color rgba="0.9 0.9 0 1"/>
-				</material>
+				<xacro:material_fanuc_yellow />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -44,7 +40,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_2.stl"/>
 				</geometry>
-				<material name="fyel"/>
+				<xacro:material_fanuc_yellow />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -59,7 +55,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_3.stl"/>
 				</geometry>
-				<material name="fyel"/>
+				<xacro:material_fanuc_yellow />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -74,7 +70,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_4.stl"/>
 				</geometry>
-				<material name="fyel"/>
+				<xacro:material_fanuc_yellow />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -89,7 +85,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_5.stl"/>
 				</geometry>
-				<material name="fyel"/>
+				<xacro:material_fanuc_yellow />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -104,9 +100,7 @@
 				<geometry>
 					<mesh filename="package://fanuc_m10ia_support/meshes/m10ia/visual/link_6.stl"/>
 				</geometry>
-				<material name="fblack">
-					<color rgba="0.1 0.1 0.1 1"/>
-				</material>
+				<xacro:material_fanuc_black />
 			</visual>
 			<collision>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -116,7 +110,6 @@
 			</collision>
 		</link>
 		<link name="${prefix}tool0"/>
-
 
 		<!-- joints -->
 		<joint name="${prefix}joint_1" type="revolute">
@@ -166,6 +159,5 @@
 			<child link="${prefix}tool0"/>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 		</joint>
-
 	</xacro:macro>
 </robot>
