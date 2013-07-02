@@ -150,7 +150,7 @@ public:
 				double angle = 0.0f;
 				mantis_perception::mantis_recognition::Request req;
 				mantis_perception::mantis_recognition::Response res;
-				if(rotation_correction_client_.call(req,res) && (res.pose.rotation > 0.0f))
+				if(rotation_correction_client_.call(req,res) && (res.pose.rotation >= 0.0f))
 				{
 					rotation_correction_succeeded_ = true;
 					angle = static_cast<double>(M_PI * res.pose.rotation)/180.0f;
@@ -434,7 +434,6 @@ protected:
 		tf::Transform generated_object_tf;
 		geometry_msgs::PoseStamped generated_object_pose;
 
-
 		// applying orientation correction to object pose
 		candidate_place_poses_.clear();
 		generated_object_pose.header.frame_id = goal.GoalTransform.frame_id_;
@@ -449,6 +448,10 @@ protected:
 				", "<<generated_object_tf.getOrigin().y()<<", "<<generated_object_tf.getOrigin().z());
 		ROS_INFO_STREAM("Generated object goal angle "<<generated_object_tf.getRotation().getAngle()
 				<<"( "<<180.0f *generated_object_tf.getRotation().getAngle()/M_PI<<" degrees)");
+		ROS_INFO_STREAM("Generated object goal axis: "<<generated_object_tf.getRotation().getAxis().getX()
+						<<", "<<generated_object_tf.getRotation().getAxis().getY()
+						<<", "<<generated_object_tf.getRotation().getAxis().getZ()
+						<<" ");
 
 
 		//	updating grasp place goal data
@@ -464,12 +467,13 @@ protected:
 		tf::StampedTransform wrist_in_tcp_tf = tf::StampedTransform(), wrist_in_obj_tf = tf::StampedTransform();
 		_TfListener.lookupTransform(gripper_link_name_,wrist_link_name_,ros::Time(0),wrist_in_tcp_tf);
 
-		// storing tcp to object pose in grasp place goal
+		// storing tcp in object pose in grasp place goal
 		tf::poseMsgToTF(grasp_candidates_[0].grasp_pose,wrist_in_obj_tf);
 		tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),grasp_place_goal_.grasp.grasp_pose);
 		//tf::poseTFToMsg(wrist_in_obj_tf*(wrist_in_tcp_tf.inverse()),tcp_in_objct_pose);
 		//manipulation_utils::rectifyPoseZDirection(tcp_in_objct_pose,PLACE_RECTIFICATION_TF,grasp_place_goal_.grasp.grasp_pose);
 
+		grasp_place_sequence_.clear();
 		if(!createPlaceMoveSequence(grasp_place_goal_,candidate_place_poses_,grasp_place_sequence_))
 		{
 			ROS_ERROR_STREAM(NODE_NAME<<": Failed to create valid grasp place sequence");
