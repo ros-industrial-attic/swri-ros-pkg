@@ -30,7 +30,7 @@ singulated_dropoff:
   position:
     x: -0.80
     y: -0.20
-    z: 0.10
+    z: 0.180
   orientation:
     axis:
       x: 0
@@ -45,7 +45,7 @@ alternate_dropoff:
   position:
     x: -0.30
     y: 0.60
-    z: 0.08
+    z: 0.07
   orientation:
     axis:
       x: 0
