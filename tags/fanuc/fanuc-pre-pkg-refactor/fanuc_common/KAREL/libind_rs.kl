@@ -1,0 +1,298 @@
+-- Software License Agreement (BSD License)
+--
+-- Copyright (c) 2013, Southwest Research Institute
+-- All rights reserved.
+--
+-- Redistribution and use in source and binary forms, with or without
+-- modification, are permitted provided that the following conditions
+-- are met:
+--
+--  * Redistributions of source code must retain the above copyright
+--    notice, this list of conditions and the following disclaimer.
+--  * Redistributions in binary form must reproduce the above
+--    copyright notice, this list of conditions and the following
+--    disclaimer in the documentation and/or other materials provided
+--    with the distribution.
+--  * Neither the name of the Southwest Research Institute nor the names 
+--    of its contributors may be used to endorse or promote products 
+--    derived from this software without specific prior written 
+--    permission.
+--
+-- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+-- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+-- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+-- FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+-- COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+-- INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+-- BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+-- LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+-- CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+-- LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+-- ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+-- POSSIBILITY OF SUCH DAMAGE.
+
+
+PROGRAM libind_rs
+--------------------------------------------------------------------------------
+-- 
+-- Library routines for creating / processing ROS Industrial robot status packets
+-- 
+-- 
+-- author: Shaun Edwards
+-- 
+--------------------------------------------------------------------------------
+%NOLOCKGROUP
+%NOPAUSE= COMMAND + TPENABLE + ERROR
+%COMMENT = 'r1'
+
+
+
+
+--------------------------------------------------------------------------------
+-- 
+-- local types & constants
+-- 
+--------------------------------------------------------------------------------
+%INCLUDE libind_rs_t
+%INCLUDE libind_ts_t
+%INCLUDE libind_pkt_t
+
+
+CONST
+	TP_ESTOP     = 250    -- EMERGENCY STOP  - TP input   signal 250
+	SO_FAULT_LED =   3    -- FAULT LED       - SOP output signal   3
+	SI_CECR_B0   =   8    -- CE/CR Select b0 - SOP input  signal   8
+	SI_CECR_B1   =   9    -- CE/CR Select b1 - SOP input  signal   9
+
+
+
+
+--------------------------------------------------------------------------------
+-- 
+-- remote routine prototypes
+-- 
+--------------------------------------------------------------------------------
+
+
+
+
+--------------------------------------------------------------------------------
+-- 
+-- local routine prototypes
+-- 
+--------------------------------------------------------------------------------
+%INCLUDE libind_rs_h
+%INCLUDE libind_hdr_h
+
+
+
+
+--------------------------------------------------------------------------------
+-- 
+-- Empty body
+-- 
+--------------------------------------------------------------------------------
+BEGIN
+END libind_rs
+
+
+
+
+ROUTINE irs_ctor
+BEGIN
+	irs_reset(this)
+END irs_ctor
+
+
+
+
+ROUTINE irs_reset
+BEGIN
+	USING this DO
+
+		ihdr_reset(header_)
+		header_.msg_type_ = RI_MT_STATUS
+
+		mode_             = RS_M_UNKNWN
+		e_stopped_        = TS_UNKNOWN
+		drv_pwd_          = TS_UNKNOWN
+		mtn_psble_        = TS_UNKNOWN
+		in_motion_        = TS_UNKNOWN
+		in_error_         = TS_UNKNOWN
+		error_code_       = TS_UNKNOWN
+	ENDUSING
+END irs_reset
+
+
+
+
+ROUTINE irs_in_mtn
+VAR
+	len__ : INTEGER
+	d__   : INTEGER
+BEGIN
+	-- 
+	len__ = ARRAY_LEN($MOR_GRP[1].$IN_POSITION)
+	d__   = 0
+
+	-- Check for not in position (indicates motion)
+	FOR d__ = 1 TO len__ DO
+		IF (NOT $MOR_GRP[1].$IN_POSITION[d__]) THEN
+			RETURN (TRUE)
+		ENDIF
+	ENDFOR
+
+	-- 
+	RETURN (FALSE)
+END irs_in_mtn
+
+
+
+
+ROUTINE get_err_ : INTEGER
+VAR
+	seq_num__    : INTEGER
+	err_code__   : INTEGER
+	cause_code__ : INTEGER
+	time_int__   : INTEGER
+	severity__   : INTEGER
+	err_str__    : STRING[64]
+	cause_str__  : STRING[64]
+	prog_name__  : STRING[32]
+BEGIN
+	-- MAXINT requests most recent error
+	seq_num__ = MAXINT
+
+	ERR_DATA(seq_num__, err_code__, err_str__, cause_code__, 
+		cause_str__, time_int__, severity__, prog_name__)
+
+	RETURN (err_code__)
+END get_err_
+
+
+
+
+ROUTINE irs_update
+BEGIN
+	-- 
+	irs_reset(this)
+
+	-- check state of mode select switch using 'CE/CR Select' bits:
+	--   both high == AUTO
+	-- 
+	-- TP can be (dis,en)abled without changing mode select switch
+	-- so it isn't a reliable indicator of robot mode.
+	-- 
+	-- Table 14-1, Karel Reference Manual, MARRC75KR07091E Rev C
+	this.mode_ = RS_M_MAN
+	IF (OPIN[SI_CECR_B0] AND OPIN[SI_CECR_B0]) THEN
+		this.mode_ = RS_M_AUTO
+	ENDIF
+
+	-- Determine state of E-Stop
+	-- 
+	-- NOTE: this currently only works for E-Stop on TP, NOT for
+	--       the button on the controller itself.
+	-- TODO: add read-out of E-Stop on controller cabinet
+	-- 
+	-- Table 14-5, Karel Reference Manual, MARRC75KR07091E Rev C
+	this.e_stopped_ = TS_FALSE
+	IF (TPIN[TP_ESTOP]) THEN this.e_stopped_ = TS_TRUE; ENDIF
+
+	-- is robot currently moving?
+	this.in_motion_ = TS_FALSE
+	IF (irs_in_mtn) THEN this.in_motion_ = TS_TRUE; ENDIF
+
+	-- use state of FAULT LED as fault indicator, and report most recent error.
+	-- 
+	-- The 'FAULT' signal (OPOUT[21]) is only available when UOP signals have 
+	-- been properly configured, so use the 'FAULT LED' as an indirect 
+	-- indicator.
+	-- 
+	-- Table 14-2, Karel Reference Manual, MARRC75KR07091E Rev C
+	this.in_error_   = TS_FALSE
+	this.error_code_ = 0
+	IF (OPOUT[SO_FAULT_LED]) THEN
+		-- NOTE: this is not necessarily the code of the error that caused the
+		--       robot to go into error mode, just the most recent one
+		this.in_error_ = TS_TRUE
+		this.error_code_ = get_err_
+	ENDIF
+
+	-- 'drives powered' and 'motion enabled' are UNKNOWN for now (presence of 
+	--  OPOUT[17] and OPIN[23] depends on specific IO configuration)
+	this.drv_pwd_   = TS_UNKNOWN
+	this.mtn_psble_ = TS_UNKNOWN
+END irs_update
+
+
+
+
+ROUTINE irs_tpc_srl
+VAR
+	stat__ : INTEGER
+BEGIN
+	--
+	stat__ = 0
+
+	this.header_.length_     = RS_SZ_TOPIC
+	this.header_.msg_type_   = RI_MT_STATUS
+	this.header_.comm_type_  = RI_CT_TOPIC
+	this.header_.reply_type_ = RI_RT_INVAL
+
+	stat__ = ihdr_srlise(this.header_, fd)
+	IF (stat__ <> 0) THEN RETURN (-ABS(stat__)); ENDIF
+
+	-- write out all fields ..
+	WRITE fd(this.drv_pwd_, 
+		this.e_stopped_, 
+		this.error_code_,
+		this.in_error_,
+		this.in_motion_,
+		this.mode_,
+		this.mtn_psble_, 
+	CR)
+
+	stat__ = IO_STATUS(fd)
+
+	-- 
+	RETURN (-stat__)
+END irs_tpc_srl
+
+
+
+
+ROUTINE irs_tostr
+VAR
+	md_str__  : STRING[20]
+	es_str__  : STRING[20]
+	dp_str__  : STRING[20]
+	mp_str__  : STRING[20]
+	im_str__  : STRING[20]
+	ie_str__  : STRING[20]
+	ec_str__  : STRING[20]
+BEGIN
+	-- TODO: check for 'uninitialised' data and handle 
+	--       those (add 'unknown' or something)
+	CNV_INT_STR(this.mode_            , 1, 10, md_str__)
+	CNV_INT_STR(this.e_stopped_       , 1, 10, es_str__)
+	CNV_INT_STR(this.drv_pwd_         , 1, 10, dp_str__)
+	CNV_INT_STR(this.mtn_psble_       , 1, 10, mp_str__)
+	CNV_INT_STR(this.in_motion_       , 1, 10, im_str__)
+	CNV_INT_STR(this.in_error_        , 1, 10, ie_str__)
+	CNV_INT_STR(this.error_code_      , 1, 10, ec_str__)
+
+	-- done
+	RETURN ('rs(dsceimp):' + dp_str__  + '' + es_str__ + '' &
+		+ ec_str__  + '' + ie_str__ + '' +  im_str__ + '' + '' &
+		+ md_str__ + '' +  mp_str__)
+END irs_tostr
+
+
+
+
+ROUTINE irs_dump
+BEGIN
+	WRITE fd(ihdr_tostr(this.header_), CR)
+	WRITE fd(irs_tostr(this), CR)
+END irs_dump
