@@ -1,6 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-	<node name="freetail_manipulation" pkg="freetail_object_manipulation" type="manipulation_demo_node" output="screen">
-		<rosparam command="load" file="$(find freetail_object_manipulation)/config/manipulation_demo.yaml"/>	
-	</node>  
-</launch>

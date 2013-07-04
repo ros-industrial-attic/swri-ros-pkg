@@ -1,8 +1,0 @@
-#params for the overhead grasp planner
-#world_frame_id: "/base_link"
-default_pregrasp_distance: 0.1 #meters
-plane_proximity_threshold: 0.01 #meters
-search_radius: -0.01 #meters
-num_returned_candidate_grasps: 8
-grasp_pose_in_world_coordinates: True
-approach_vector: [0.0,0.0, -1.0]

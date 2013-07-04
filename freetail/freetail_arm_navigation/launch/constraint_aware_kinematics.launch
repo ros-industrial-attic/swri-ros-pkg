@@ -1,9 +1,0 @@
-<launch>
-    <include file="$(find freetail_arm_navigation)/launch/freetail_planning_environment.launch" />
-    <node pkg="arm_kinematics_constraint_aware" type="arm_kinematics_constraint_aware" name="freetail_sia20d_arm_kinematics">
-        <param name="group" type="string" value="sia20d_arm" />
-        <param name="sia20d_arm/root_name" type="string" value="base_link" />
-        <param name="sia20d_arm/tip_name" type="string" value="palm" />
-        <param name="kinematics_solver" type="string" value="arm_kinematics_constraint_aware/KDLArmKinematicsPlugin" />
-    </node>
-</launch>

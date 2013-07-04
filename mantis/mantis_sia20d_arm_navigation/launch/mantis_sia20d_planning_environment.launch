@@ -1,4 +1,0 @@
-<launch>
-    <param name="robot_description" textfile="$(find mantis_config)/urdf/mantis_sia20d.urdf" />
-    <rosparam command="load" ns="robot_description_planning" file="$(find mantis_sia20d_arm_navigation)/config/mantis_sia20d_planning_description.yaml" />
-</launch>
