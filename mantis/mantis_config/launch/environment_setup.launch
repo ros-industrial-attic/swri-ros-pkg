@@ -1,8 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-	<arg name="local_machine_ip" default="192.168.32.10"/>
-	<arg name="remote_machine_ip" default="192.168.32.6"/>
-
-	<machine name="mantis_pc1" address="$(arg local_machine_ip)" 
-		env-loader="$(find mantis_config)/scripts/environment_setup.sh"/>
-</launch>

@@ -1,4 +1,0 @@
-<launch>
-    <include file="$(find mantis_ur5_arm_navigation)/launch/move_ur5_arm.launch" />
-    <include file="$(find mantis_ur5_arm_navigation)/launch/move_ur5_gripper.launch" />
-</launch>

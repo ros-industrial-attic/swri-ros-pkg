@@ -1,5 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-	<include file="$(find mantis_object_manipulation)/launch/start_sia20d_automated_manipulation.launch"/>
-	<include file="$(find mantis_object_manipulation)/launch/start_ur5_automated_manipulation.launch"/>
-</launch>

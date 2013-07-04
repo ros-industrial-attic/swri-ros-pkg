@@ -1,7 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-  <node name="vacuum_gripper_grasp_planner" pkg="object_manipulation_tools" type="overhead_grasp_planner_server" output="screen">
-    <rosparam command="load" file="$(find mantis_grasp_planning)/config/overhead_grasp_planner_parameters.yaml"/>
-    <param name="publish_results" type="bool" value="True"/>
-  </node> 
-</launch>
