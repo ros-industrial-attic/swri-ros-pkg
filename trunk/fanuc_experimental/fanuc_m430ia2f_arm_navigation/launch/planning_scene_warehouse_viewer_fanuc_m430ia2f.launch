@@ -7,11 +7,11 @@
   <param name="warehouse_port" value="27020"/>
   <node name="mongo" type="mongo_wrapper_ros.py" pkg="warehouse_ros">
     <param name="overwrite" value="false"/>
-    <param name="database_path" value="arm_navigation_dbs/m430ia2f"/>
+    <param name="database_path" value="arm_navigation_dbs/fanuc_m430ia2f"/>
   </node>
 
   <include file="$(find planning_environment)/launch/environment_server.launch">
-    <arg name="use_monitor" value="true" />
+    <arg name="use_monitor" value="false" />
     <arg name="use_collision_map" value="false" />
   </include>
   <include file="$(find m430ia2f_arm_navigation)/launch/constraint_aware_kinematics.launch" />
@@ -22,26 +22,19 @@
 
   <node name="interpolated_ik_node_right" pkg="interpolated_ik_motion_planner" 
 	type="interpolated_ik_motion_planner.py" args="r" respawn="false" output="screen">
-    <param name="robot_prefix" type="string" value="m430ia2f"/>
+    <param name="robot_prefix" type="string" value="fanuc_m430ia2f"/>
     <param name="consistent_angle" type="double" value="1.05"/>
   </node>
   <node name="interpolated_ik_node_left" pkg="interpolated_ik_motion_planner" 
 	type="interpolated_ik_motion_planner.py" args="l" respawn="false" output="screen">
-    <param name="robot_prefix" type="string" value="m430ia2f"/>
+    <param name="robot_prefix" type="string" value="fanuc_m430ia2f"/>
     <param name="consistent_angle" type="double" value="1.05"/>
   </node>
 
-  <arg name="robot_ip" />
-  <arg name="use_bswap" default="true" />
-  <include file="$(find fanuc_common)/launch/robot_interface_streaming_m430ia2f.launch">
-    <arg name="robot_ip"   value="$(arg robot_ip)" />
-    <arg name="use_bswap"  value="$(arg use_bswap)" />
-  </include>
-
-  <node pkg="rviz" type="rviz" name='rviz_warehouse_viewer' args="-d $(find m430ia2f_arm_navigation)/config/planning_scene_warehouse_viewer.rviz" />
+  <node pkg="rviz" type="rviz" name='rviz_warehouse_viewer' args="-d $(find fanuc_m430ia2f_arm_navigation)/config/planning_scene_warehouse_viewer.rviz" />
   
   <!-- Called when left arm executes trajectory using controllers -->
-  <param name="execute_left_trajectory" value="/joint_trajectory_action" />
+  <param name="execute_left_trajectory" value="none" />
   <!-- Called when right arm executes trajectory using controllers -->
   <param name="execute_right_trajectory" value="none" />
   <!-- Called to get left arm inverse kinematics with collision checking -->
@@ -81,6 +74,4 @@
   <!-- Called to send the planning scene to the environment server -->
   <param name="set_planning_scene_diff_name" value="environment_server/set_planning_scene_diff"/>
   <param name="vis_topic_name" value="planning_scene_visualizer_markers"/>
-
-  <param name="use_robot_data" value="true"/>
 </launch>
