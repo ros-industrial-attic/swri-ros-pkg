@@ -1,0 +1,17 @@
+<package>
+  <name>industrial_experimental</name>
+  <version>1.0.0</version>
+  <description>industrial_experimental contains experimental code for ros industrial</description>
+
+  <maintainer email="sedwards@swri.org">Shaun Edwards</maintainer>
+  <license>BSD</license>
+  <url type="website">http://ros.org/wiki/industrial_experimental</url>
+  <author email="sedwards@swri.org">Shaun Edwards</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <run_depend>industrial_trajectory_filters</run_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>
