@@ -32,8 +32,9 @@
 #ifndef N_POINT_FILTER_H_
 #define N_POINT_FILTER_H_
 
-#include <filters/filter_base.h>
-#include <pluginlib/class_list_macros.h>
+#include <industrial_trajectory_filters/filter_base.h>
+
+
 
 namespace industrial_trajectory_filters
 {
@@ -41,7 +42,7 @@ namespace industrial_trajectory_filters
 // \brief This is a simple filter which reduces a trajectory to N points or less
 template <typename T>
 
-class NPointFilter: public filters::FilterBase<T>
+class NPointFilter: public industrial_trajectory_filters::FilterBase<T>
 {
 public:
 	NPointFilter();
@@ -59,6 +60,9 @@ private:
   int			n_points_;					// @brief number of points to reduce trajectory to
 
 };
+
+// Specializing trajectory filter implementation
+typedef NPointFilter<MessageAdapter> NPointFilterAdapter;
 
 }
 
