@@ -29,9 +29,7 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <arm_navigation_msgs/FilterJointTrajectoryWithConstraints.h>
 #include <industrial_trajectory_filters/uniform_sample_filter.h>
-
 #include <kdl/velocityprofile_spline.hpp>
 #include <ros/ros.h>
 
@@ -41,10 +39,13 @@ const double DEFAULT_SAMPLE_DURATION=0.050;  //seconds
 
 
 template <typename T>
-UniformSampleFilter<T>::UniformSampleFilter()
+UniformSampleFilter<T>::UniformSampleFilter():
+	industrial_trajectory_filters::FilterBase<T>()
 {
 	ROS_INFO_STREAM("Constructing N point filter");
 	sample_duration_ = DEFAULT_SAMPLE_DURATION;
+	this->filter_name_ = "UniformSampleFilter";
+	this->filter_type_ = "UniformSampleFilter";
 }
 
 template <typename T>
@@ -54,7 +55,7 @@ UniformSampleFilter<T>::~UniformSampleFilter()
 template <typename T>
 bool UniformSampleFilter<T>::configure()
 {
-  if (!filters::FilterBase<T>::getParam("sample_duration", sample_duration_))
+  if(!this->nh_.getParam("sample_duration", sample_duration_))
   {
     ROS_WARN_STREAM("UniformSampleFilter, params has no attribute sample_duration.");
   }
@@ -226,8 +227,16 @@ bool UniformSampleFilter<T>::interpolatePt(
 
 
 
+// registering planner adapter
+CLASS_LOADER_REGISTER_CLASS(industrial_trajectory_filters::UniformSampleFilterAdapter,
+		planning_request_adapter::PlanningRequestAdapter);
+
+/*
+ * Old plugin declaration for arm navigation trajectory filters
 PLUGINLIB_DECLARE_CLASS(industrial_trajectory_filters,
-		IndustrialUniformSampleFilterJointTrajectoryWithConstraints,
-		industrial_trajectory_filters::UniformSampleFilter<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>,
+		IndustrialNPointFilterJointTrajectoryWithConstraints,
+		industrial_trajectory_filters::NPointFilter<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>,
 		filters::FilterBase<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>);
+
+*/
 

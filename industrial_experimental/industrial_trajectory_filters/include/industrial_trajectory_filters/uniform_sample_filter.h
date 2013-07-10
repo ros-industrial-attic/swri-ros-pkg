@@ -32,11 +32,16 @@
 #ifndef UNIFORM_SAMPLE_FILTER_H_
 #define UNIFORM_SAMPLE_FILTER_H_
 
+
+#include <industrial_trajectory_filters/filter_base.h>
+
+/*
+ * These headers were part of the trajectory filter interface from the
+ * arm navigation system.  These can no longer be included in a catkin based
+ * package.
 #include <filters/filter_base.h>
 #include <pluginlib/class_list_macros.h>
-
-
-
+*/
 
 namespace industrial_trajectory_filters
 {
@@ -45,7 +50,7 @@ namespace industrial_trajectory_filters
 // a trajectory using linear interpolation.
 template <typename T>
 
-class UniformSampleFilter: public filters::FilterBase<T>
+class UniformSampleFilter: public industrial_trajectory_filters::FilterBase<T>
 {
 public:
 	UniformSampleFilter();
@@ -70,6 +75,8 @@ public:
 private:
   double			sample_duration_;					// @brief uniform sample duration (sec)
 };
+
+typedef UniformSampleFilter<MessageAdapter> UniformSampleFilterAdapter;
 
 }
 

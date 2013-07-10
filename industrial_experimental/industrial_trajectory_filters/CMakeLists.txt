@@ -2,73 +2,56 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(industrial_trajectory_filters)
 # Load catkin and all dependencies required for this package
-# TODO: remove all from COMPONENTS that are not catkin packages.
-find_package(catkin REQUIRED COMPONENTS filters trajectory_msgs arm_navigation_msgs orocos_kdl)
+find_package(catkin REQUIRED COMPONENTS moveit_ros_planning trajectory_msgs orocos_kdl)
+#find_package(catkin REQUIRED COMPONENTS filters trajectory_msgs arm_navigation_msgs orocos_kdl)
 
-# include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
-# CATKIN_MIGRATION: removed during catkin migration
-# cmake_minimum_required(VERSION 2.4.6)
+## System dependencies are found with CMake's conventions
+find_package(Boost REQUIRED COMPONENTS system thread)
 
-# CATKIN_MIGRATION: removed during catkin migration
-# include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
-
-
-# CATKIN_MIGRATION: removed during catkin migration
-# rosbuild_init()
-
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-
-#uncomment if you have defined messages
-#add_message_files(
-  FILES
-  # TODO: List your msg files here
-)
-#uncomment if you have defined services
-#add_service_files(
-  FILES
-  # TODO: List your msg files here
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(include
+  ${catkin_INCLUDE_DIRS}
 )
 
-#common commands for building c++ executables and libraries
-#add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#
-# CATKIN_MIGRATION: removed during catkin migration
-# rosbuild_add_boost_directories()
-#find_package(Boost REQUIRED COMPONENTS thread)
-include_directories(${Boost_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-#add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+#######################################
+## Declare ROS messages and services ##
+#######################################
 
-add_library(industrial_trajectory_filters
-                     src/uniform_sample_filter.cpp
-                     src/n_point_filter.cpp)
+## Generate messages in the 'msg' folder
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
+
+## Generate services in the 'srv' folder
+# add_service_files(
+#   FILES
+#   Service1.srv
+#   Service2.srv
+# )
+
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+    CATKIN_DEPENDS moveit_ros_planning trajectory_msgs orocos_kdl
+    INCLUDE_DIRS include
+    LIBRARIES #industrial_trajectory_filters
+)
+
+###########
+## Build ##
+###########
+
+add_library(industrial_trajectory_filters src/n_point_filter.cpp src/uniform_sample_filter.cpp)
+target_link_libraries(industrial_trajectory_filters ${catkin_LIBRARIES})
                      
 
-## Generate added messages and services with any dependencies listed here
-generate_messages(
-  #TODO DEPENDENCIES geometry_msgs std_msgs
-)
-# TODO: fill in what other packages will need to use this package
-## DEPENDS: system dependencies of this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## INCLUDE_DIRS: 
-## LIBRARIES: libraries you create in this project that dependent projects also need
-catkin_package(
-    DEPENDS filters trajectory_msgs arm_navigation_msgs orocos_kdl
-    CATKIN_DEPENDS # TODO
-    INCLUDE_DIRS # TODO include
-    LIBRARIES # TODO
-)
+
