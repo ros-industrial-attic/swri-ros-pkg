@@ -9,15 +9,21 @@
   <author>Shaun Edwards</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+
   <build_depend>trajectory_msgs</build_depend>
+  <build_depend>pluginlib</build_depend>
+  <build_depend>moveit_core</build_depend>
   <build_depend>moveit_ros_planning</build_depend>
   <build_depend>orocos_kdl</build_depend>
+
   <run_depend>trajectory_msgs</run_depend>
+  <run_depend>pluginlib</run_depend>
+  <run_depend>moveit_core</run_depend>
   <run_depend>moveit_ros_planning</run_depend>
   <run_depend>orocos_kdl</run_depend>
 
-  <export>
-    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" cflags="-I${prefix}/include"/>
+  <export>	
     <moveit_core plugin="${prefix}/planning_request_adapters_plugin_description.xml"/> 
+    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" cflags="-I${prefix}/include"/>
   </export>
 </package>
