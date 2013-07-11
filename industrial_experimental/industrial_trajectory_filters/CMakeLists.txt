@@ -14,6 +14,9 @@ include_directories(include
   ${catkin_INCLUDE_DIRS}
 )
 
+# Package definitions
+set(MOVEIT_LIB_NAME moveit_industrial_trajectory_filters_plugins)
+
 #######################################
 ## Declare ROS messages and services ##
 #######################################
@@ -43,15 +46,22 @@ include_directories(include
 catkin_package(
     CATKIN_DEPENDS moveit_ros_planning trajectory_msgs orocos_kdl
     INCLUDE_DIRS include
-    LIBRARIES #industrial_trajectory_filters
+    LIBRARIES ${MOVEIT_LIB_NAME}
 )
 
 ###########
 ## Build ##
 ###########
 
-add_library(industrial_trajectory_filters src/n_point_filter.cpp src/uniform_sample_filter.cpp)
-target_link_libraries(industrial_trajectory_filters ${catkin_LIBRARIES})
-                     
+add_library(${MOVEIT_LIB_NAME} src/n_point_filter.cpp src/uniform_sample_filter.cpp)
+target_link_libraries(${MOVEIT_LIB_NAME} ${catkin_LIBRARIES})
+
+#############
+## Install ##
+#############
+#install(TARGETS ${MOVEIT_LIB_NAME}
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+
+
 
 
