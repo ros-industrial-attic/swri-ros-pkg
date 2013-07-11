@@ -95,7 +95,7 @@
  *	     "ompl_planning_pipeline.launch" file in a moveit package for your robot you would add the following element:
  *	     <param name="my_filter_parameter" value="5" />
  *
- *	 e - (Optional)  the "adaptAndPlan" methods default implementation already maps the trajectory data between the
+ *	 i - (Optional)  the "adaptAndPlan" methods default implementation already maps the trajectory data between the
  *	 	 MessageAdapter structure and the planning interface objects in the argument list.  The filter's implementation
  *	 	 should override this method whenever a custom adapter structure is used.
  */
@@ -203,7 +203,7 @@ protected:
 	  	  // calling planner first
 	  	  bool result = planner(planning_scene, req, res);
 
-	  	  // applying filter to planned trajectories
+	  	  // applying filter to planned trajectory
 	  	  if (result && res.trajectory_)
 	  	  {
 	  		// mapping arguments into message adapter struct
