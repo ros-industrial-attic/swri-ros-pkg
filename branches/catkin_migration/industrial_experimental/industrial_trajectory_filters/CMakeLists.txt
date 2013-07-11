@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 2.8.3)
 project(industrial_trajectory_filters)
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS moveit_ros_planning trajectory_msgs orocos_kdl)
-#find_package(catkin REQUIRED COMPONENTS filters trajectory_msgs arm_navigation_msgs orocos_kdl)
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
