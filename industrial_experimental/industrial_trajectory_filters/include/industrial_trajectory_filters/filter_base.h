@@ -81,7 +81,7 @@
  *
  *   	 In case the "MessageAdapter" structure does not fit the expected template class then the filter's implementation
  *   	 must provide its own adapter structure that resembles the necessary parts of expected arm_navigation message type.
- *   	 The specialization of such filter would then pass the custom adapter structure as the template argument as follows:
+ *   	 The specialization of such filter would then pass the custom adapter structure in the template argument as follows:
  *
  *   	 typedef NPointFilter<CustomMessageAdapter> NPointFilterAdapter;
  *
@@ -91,7 +91,11 @@
  *   	 CLASS_LOADER_REGISTER_CLASS(industrial_trajectory_filters::NPointFilterAdapter,
  *		 planning_request_adapter::PlanningRequestAdapter);
  *
- *	 h - (Optional)  the "adaptAndPlan" methods default implementation already maps the trajectory data between the
+ *	 h - All parameters used by your filter must me made available as a regular ros parameter.  For instance, in the
+ *	     "ompl_planning_pipeline.launch" file in a moveit package for your robot you would add the following element:
+ *	     <param name="my_filter_parameter" value="5" />
+ *
+ *	 e - (Optional)  the "adaptAndPlan" methods default implementation already maps the trajectory data between the
  *	 	 MessageAdapter structure and the planning interface objects in the argument list.  The filter's implementation
  *	 	 should override this method whenever a custom adapter structure is used.
  */
