@@ -5,6 +5,23 @@
 
 =ROS-Industrial=
 <g:plusone size="medium"></g:plusone>
+----
+
+=The ROS-Industrial Repository has moved to [http://github.com/ros-industrial Github].  Please use the Github repositories and issue trackers.  This repository will remain active for historical purposes.=
+
+*New [http://github.com/ros-industrial repository].
+
+*For more information on the ROS-Industrial progam, go to our [http://www.ros.org/wiki/Industrial main site]
+
+*For more information go to the ROS-Industrial software, go to our [http://www.ros.org/wiki/Industrial wiki]
+
+*Contact us:* [mailto:swri-ros-pkg-dev@googlegroups.com ROS-Industrial Developers Group]
+
+*Join our developers list:* [https://groups.google.com/group/swri-ros-pkg-dev/boxsubscribe Developers List]
+
+----
+
+=Old Content=
 
 ROS-Industrial is a BSD-licensed ROS stack that contains libraries, tools and drivers for industrial hardware. The goals of ROS-Industrial are to: 
  * Create a community supported by industrial robotics researchers and professionals 
