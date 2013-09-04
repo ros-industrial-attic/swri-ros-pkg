@@ -26,7 +26,11 @@
 
   <depend package="fanuc_assets"/>
   <depend package="fanuc_driver"/>
+
   <depend package="xacro"/>
   <depend package="urdf"/>
+  <depend package="robot_state_publisher"/>
+  <depend package="joint_state_publisher"/>
+  <depend package="rviz"/>
 
 </package>
