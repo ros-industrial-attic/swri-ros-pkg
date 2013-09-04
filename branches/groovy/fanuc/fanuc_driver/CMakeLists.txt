@@ -3,9 +3,6 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rosbuild_init()
 
-#Add unit test to check roslaunch dependencies.
-rosbuild_add_roslaunch_check(launch)
-
 # The definition is copied from the CMakeList for the simple_message package.
 add_definitions(-DLINUXSOCKETS=1)  #build using LINUX SOCKETS libraries
 
