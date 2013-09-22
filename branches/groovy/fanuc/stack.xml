@@ -21,4 +21,5 @@
   <depend stack="ros" />
   <depend stack="ros_comm" /> <!-- std_msgs, rospy, roscpp -->
   <depend stack="industrial_core" /> <!-- simple_message -->
+  <depend stack="robot_model_visualization" /> <!-- joint_state_publisher -->
 </stack>
