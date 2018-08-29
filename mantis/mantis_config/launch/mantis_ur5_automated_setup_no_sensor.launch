@@ -11,7 +11,7 @@
 
 	<!-- fixed parameters -->
 	<arg name="arm_namespace" value="ur5_arm"/>
-	<arg name="robot_description" value="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_ur5_arm_workspace.xacro'"/>
+	<arg name="robot_description" value="$(find xacro)/xacro --inorder '$(find mantis_config)/urdf/mantis_ur5_arm_workspace.xacro'"/>
 	<arg name="sensor_name" value="$(arg arm_namespace)_kinect"/>
 
 	<!-- launching environment configuration -->

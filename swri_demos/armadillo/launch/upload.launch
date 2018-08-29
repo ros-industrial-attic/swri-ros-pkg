@@ -4,7 +4,7 @@
     <arg name="calibrated" default="true" />
 
     <group unless="$(arg calibrated)">
-      <param name="robot_description" command="$(find xacro)/xacro.py '$(find armadillo)/cfg/armadillo.xacro'" />
+      <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find armadillo)/cfg/armadillo.xacro'" />
     </group>
 
     <group if="$(arg calibrated)">
