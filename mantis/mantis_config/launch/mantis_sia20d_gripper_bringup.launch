@@ -6,7 +6,7 @@
 	<arg name="launch_io" default="false"/>
 
 	<!-- ____________________________ Fixed Parameters ____________________________  -->
-	<arg name="robot_description" value="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_sia20d_arm_workspace.xacro'"/>
+	<arg name="robot_description" value="$(find xacro)/xacro --inorder '$(find mantis_config)/urdf/mantis_sia20d_arm_workspace.xacro'"/>
 	<arg name="arm_namespace" value="sia20d_arm"/>
 
 	<!-- starting io -->

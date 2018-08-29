@@ -13,7 +13,7 @@
 
 	<!--arm 1 state pub-->
 	<group ns="$(arg arm1_namespace)">
-		<param name="robot_description"  command="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_ur5_arm_workspace.xacro'"/>
+		<param name="robot_description"  command="$(find xacro)/xacro --inorder '$(find mantis_config)/urdf/mantis_ur5_arm_workspace.xacro'"/>
 		<node pkg="robot_state_publisher" name="st_pub" type="state_publisher"/>
 	</group>
 
@@ -29,7 +29,7 @@
 
 	<!--arm 2 state pub-->
 	<group ns="$(arg arm2_namespace)">
-		<param name="robot_description"  command="$(find xacro)/xacro.py '$(find mantis_config)/urdf/mantis_sia20d_arm_workspace.xacro'"/>
+		<param name="robot_description"  command="$(find xacro)/xacro --inorder '$(find mantis_config)/urdf/mantis_sia20d_arm_workspace.xacro'"/>
 		<node pkg="robot_state_publisher" name="st_pub" type="state_publisher"/>
 	</group> 
 
